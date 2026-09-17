@@ -56,17 +56,29 @@ class Team:
 
     # ------------------------------------------------------------ orchestration
     def run(self, problem: str, roles: Optional[List[str]] = None, mode: str = "solo",
-            n: int = 0) -> Dict[str, Any]:
+            n: int = 0, tools: bool = False, objective_id: str = "") -> Dict[str, Any]:
+        """tools=False → prompt-only specialists (fast, cheap, original behaviour).
+        tools=True  → real scoped agents through AgentRuntime (capabilities, budgets, blackboard,
+        parallel), recorded under ~/.rad/agents/runs."""
         if not roles:
             roles = ([r for r in DEFAULT_ROLES][:max(1, n)] if n > 0
                      else ["coder", "reviewer", "planner"])
         answers: List[Dict[str, Any]] = []
-        for role in roles:
-            try:
-                text = self.caller_for(role)(problem)
-            except Exception as e:
-                text = f"[agent {role} failed: {str(e)[:120]}]"
-            answers.append({"role": role, "answer": text.strip()[:4000]})
+        if tools:
+            from rad.agents import AgentRuntime
+            rt = AgentRuntime(self.home, auto=bool(self.home.cfg.get("auto")))
+            runs = rt.run_parallel([{"agent": r, "task": problem, "objective_id": objective_id} for r in roles],
+                                   scope=objective_id or f"team-{int(time.time())}")
+            for r in runs:
+                answers.append({"role": r.role, "answer": (r.output or "")[:4000], "run": r.id,
+                                "status": r.status, "tool_calls": r.tool_calls, "denied": r.denied})
+        else:
+            for role in roles:
+                try:
+                    text = self.caller_for(role)(problem)
+                except Exception as e:
+                    text = f"[agent {role} failed: {str(e)[:120]}]"
+                answers.append({"role": role, "answer": text.strip()[:4000]})
 
         if mode == "debate":
             critique = self._debate(problem, answers)

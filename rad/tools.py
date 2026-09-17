@@ -231,7 +231,9 @@ TOOLS: List[Dict[str, Any]] = [
             "roles": {"type": "array", "items": {"type": "string"},
                       "description": "optional: which specialists (coder, reviewer, planner, researcher, writer)"},
             "mode": {"type": "string", "enum": ["solo", "debate"],
-                     "description": "solo = answer+synthesize; debate = also cross-critique (default solo)"}},
+                     "description": "solo = answer+synthesize; debate = also cross-critique (default solo)"},
+            "tools": {"type": "boolean",
+                      "description": "true = agents may use their own scoped tools (research/code/test); default false = advice only"}},
             "required": ["problem"]}}},
 ]
 
@@ -364,7 +366,7 @@ def run_tool(name: str, args: Dict[str, Any], ctx: ToolCtx) -> str:
             if not ctx.auto:
                 if not ctx.confirm(f"  spawn agents [{', '.join(roles or ['coder','reviewer','planner'])}] on: {problem[:80]}"):
                     return "user declined to spawn a team."
-            res = Team(ctx.home).run(problem, roles=roles, mode=mode)
+            res = Team(ctx.home).run(problem, roles=roles, mode=mode, tools=bool(args.get("tools", False)))
             out = []
             for a in res["answers"]:
                 out.append(f"--- {a['role']} ---\n{a['answer'][:1200]}")

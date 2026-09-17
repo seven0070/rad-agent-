@@ -67,6 +67,7 @@ class Check:
       json_valid    {path}
       reply_matches {pattern}          regex against the task's final reply
       llm_judge     {question}         model-graded — records verdict as UNVERIFIED-BY-MACHINE
+      agent_review  {criteria,[agent]} independent reviewer agent (read-only tools); never VERIFIED alone
     """
     kind: str
     args: Dict[str, Any] = field(default_factory=dict)

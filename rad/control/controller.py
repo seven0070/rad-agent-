@@ -164,7 +164,7 @@ class Controller:
         self.store.save(obj)
         obs_dir = self.store.dir(obj.id)
         observer = Observer(obs_dir)
-        verifier = Verifier(self.home.workspace(), observer, llm=self._brain())
+        verifier = Verifier(self.home.workspace(), observer, llm=self._brain(), home=self.home)
         recovery = RecoveryEngine()
         repairs: Dict[str, int] = {}
         lock = threading.RLock()

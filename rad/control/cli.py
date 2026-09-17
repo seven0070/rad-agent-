@@ -304,6 +304,60 @@ def cmd_why(args) -> int:
     return 0
 
 
+def cmd_agents(args) -> int:
+    from rad.agents import ALL_CAPS, AgentRegistry, AgentRuntime, Blackboard
+    home = RadHome(args.home)
+    reg = AgentRegistry(home)
+    a = args.agents_action
+    if a == "list":
+        for aid, sp in reg.all().items():
+            flag = "" if sp.enabled else col.dim(" (disabled)")
+            print(f"  {col.bold(aid):<14} caps: {', '.join(sp.caps):<40} budget: {sp.budget_tool_calls} tools/{sp.budget_seconds}s"
+                  f"{('  model: ' + sp.model) if sp.model else ''}{flag}")
+        return 0
+    if a == "define":
+        if not args.agents_args:
+            fail("usage: rad agents define <id> [--caps fs.read,web] [--prompt …] [--model m] [--provider p] [--tools N] [--seconds S]")
+            return 1
+        caps = args.caps.split(",") if args.caps else None
+        try:
+            sp = reg.define(args.agents_args[0], caps=caps, prompt=args.prompt, model=args.model, provider=args.provider,
+                            budget_tool_calls=args.tools, budget_seconds=args.seconds, role=args.agents_args[0])
+        except ValueError as e:
+            fail(str(e)); return 1
+        ok(f"agent {sp.id}: caps {', '.join(sp.caps)}")
+        return 0
+    if a == "remove":
+        return 0 if (args.agents_args and reg.remove(args.agents_args[0])) else (fail("no such custom agent") or 1)
+    if a == "run":
+        if len(args.agents_args) < 2:
+            fail("usage: rad agents run <id> <task…>")
+            return 1
+        rt = AgentRuntime(home, auto=args.auto or bool(home.cfg.get("auto")))
+        run = rt.run_agent(args.agents_args[0], " ".join(args.agents_args[1:]))
+        print(f"  [{run.status}] {run.agent}  {run.tool_calls} tool calls" + (f"  denied: {run.denied}" if run.denied else ""))
+        print("  " + (run.output or "").replace("\n", "\n  ")[:3000])
+        return 0 if run.status == "done" else 1
+    if a == "runs":
+        for r in reg.runs(n=args.n):
+            when = time.strftime("%m-%d %H:%M", time.localtime(r["started"]))
+            print(f"  {col.dim(when)} {r['id']} {r['agent']:<11} {_c(r['status']) if r['status'] in STATUS_COL else r['status']:<8} "
+                  f"{r['tool_calls']:>2} tools  {r['input'][:60]}")
+        return 0
+    if a == "caps":
+        print("  " + "\n  ".join(ALL_CAPS))
+        return 0
+    if a == "board":
+        scope = args.agents_args[0] if args.agents_args else "last"
+        if scope == "last":
+            o = Controller(home).store.resolve("last")
+            scope = o.id if o else scope
+        for n_ in Blackboard(home, scope).notes():
+            print(f"  [{n_['author']}/{n_['kind']}] {n_['text'][:200]}" + (f"  ← {n_['evidence']}" if n_["evidence"] else ""))
+        return 0
+    return 1
+
+
 # ---------------------------------------------------------------- parser hookup
 
 def add_parsers(sub) -> None:
@@ -341,6 +395,16 @@ def add_parsers(sub) -> None:
     wy = sub.add_parser("why", help="provenance: rad why <claim | artifact path>")
     wy.add_argument("query", nargs="*"); wy.add_argument("--objective", default=None)
     wy.set_defaults(fn=cmd_why)
+
+    ag = sub.add_parser("agents", help="scoped sub-agents: registry, capabilities, runs, blackboard")
+    ag.add_argument("agents_action", nargs="?", default="list",
+                    choices=["list", "define", "remove", "run", "runs", "caps", "board"])
+    ag.add_argument("agents_args", nargs="*")
+    ag.add_argument("--caps", default=None); ag.add_argument("--prompt", default=None)
+    ag.add_argument("--model", default=None); ag.add_argument("--provider", default=None)
+    ag.add_argument("--tools", type=int, default=None); ag.add_argument("--seconds", type=int, default=None)
+    ag.add_argument("--auto", action="store_true"); ag.add_argument("-n", type=int, default=30)
+    ag.set_defaults(fn=cmd_agents)
 
     evp = sub.add_parser("events", help="recent control-plane events across objectives")
     evp.add_argument("-n", type=int, default=40)

@@ -188,7 +188,7 @@ def test_plan_runner_max_steps(tmp_path, monkeypatch):
 def test_spawn_agents_tool(tmp_path, monkeypatch):
     from rad.tools import ToolCtx, run_tool
     home = RadHome(tmp_path)
-    monkeypatch.setattr(Team, "run", lambda self, problem, roles=None, mode="solo", n=0: {
+    monkeypatch.setattr(Team, "run", lambda self, problem, roles=None, mode="solo", n=0, **kw: {
         "problem": problem, "mode": mode, "roles": roles or [],
         "answers": [{"role": "coder", "answer": "code says X"}],
         "final": "final says Y", "at": 0})

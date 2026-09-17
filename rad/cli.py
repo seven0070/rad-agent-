@@ -838,6 +838,7 @@ def build_parser() -> argparse.ArgumentParser:
     tm.add_argument("--roles", default=None, help="comma list: coder,reviewer,planner,researcher,writer")
     tm.add_argument("--n", type=int, default=0, help="number of default roles to spawn")
     tm.add_argument("--backend", default="builtin", choices=["builtin", "autogen"])
+    tm.add_argument("--tools", action="store_true", help="agents may use their own scoped tools (see `rad agents`)")
     tm.set_defaults(fn=cmd_team)
 
     wo = sub.add_parser("world", help="world model — Rad's picture of your world")
@@ -878,8 +879,7 @@ def cmd_team(args) -> int:
         ok("autogen run finished")
         print(out)
         return 0
-    info(f"  spawning {roles or 'coder,reviewer,planner'} ({args.mode} mode)…")
-    res = team.run(problem, roles=roles, mode=args.mode, n=args.n)
+    res = team.run(problem, roles=roles, mode=args.mode, n=args.n, tools=args.tools)
     for a in res["answers"]:
         tag = col.cyan(a["role"]) if a["role"] != "debate" else col.magenta("debate")
         print(f"\n  [{tag}]")

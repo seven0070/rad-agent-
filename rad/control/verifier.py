@@ -28,7 +28,8 @@ UNVERIFIED = "UNVERIFIED"       # no machine checks available — do not treat a
 
 class Verifier:
     def __init__(self, workspace: Path, observer: Observer,
-                 llm: Optional[Callable[[str], str]] = None, shell_timeout: int = 60) -> None:
+                 llm: Optional[Callable[[str], str]] = None, shell_timeout: int = 60, home=None) -> None:
+        self.home = home
         self.ws = workspace
         self.observer = observer
         self.llm = llm
@@ -64,12 +65,13 @@ class Verifier:
 
         machine = [r for r in results if r.get("machine", True)]
         hard_fail = any(not r["ok"] for r in machine)
-        has_checks = bool(task.checks)
+        soft_fail = any(not r["ok"] for r in results if not r.get("machine", True))
+        machine_checks = [r for r in machine if r["level"] == "check"]
         produced = [r for r in results if r["level"] == "artifact"]
-        if hard_fail:
+        if hard_fail or soft_fail:
             status = FAILED
-        elif has_checks:
-            status = VERIFIED
+        elif machine_checks:
+            status = VERIFIED            # at least one machine check passed, none failed
         elif produced and not errors:
             # no explicit checks, but the task demonstrably produced non-empty artifacts
             # (real files with hashes) and nothing errored — that is machine evidence
@@ -137,6 +139,19 @@ class Verifier:
             if c.kind == "reply_matches":
                 ok = re.search(a["pattern"], reply or "", re.I | re.S) is not None
                 return {**base, "ok": ok, "detail": f"reply matches /{a['pattern']}/={ok}"}
+            if c.kind == "agent_review":
+                from rad.agents import AgentRuntime
+                rt = AgentRuntime(self.home, auto=True) if self.home else None
+                if rt is None:
+                    return {**base, "ok": False, "machine": False, "detail": "no home for agent runtime"}
+                res = rt.review(a.get("subject") or reply or "", a.get("criteria") or [],
+                                agent_id=a.get("agent", "reviewer"))
+                grounded = res["tool_calls"] > 0 or bool(res["checked"])
+                ok = res["pass"] and grounded
+                detail = (f"reviewer {'passed' if res['pass'] else 'failed'}"
+                          + ("" if grounded else " (ungrounded: read nothing)")
+                          + (": " + "; ".join(res["issues"][:3]) if res["issues"] else ""))
+                return {**base, "ok": ok, "machine": False, "detail": detail[:300], "run": res["run"]}
             if c.kind == "llm_judge":
                 if not self.llm:
                     return {**base, "ok": False, "machine": False, "detail": "no model available to judge"}

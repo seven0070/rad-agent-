@@ -22,6 +22,7 @@ Check kinds (exactly these):
   file_exists {{"path"}}            file_min_bytes {{"path","n"}}      file_contains {{"path","text"}}
   json_valid {{"path"}}             shell_ok {{"command"}}            shell_output {{"command","contains"}}
   reply_matches {{"pattern"}}       (regex on the agent's final reply — weakest; use only when nothing else fits)
+  agent_review {{"criteria":[...]}} (independent read-only reviewer agent — use for quality of prose/code, IN ADDITION to a file check)
 
 GOAL: {goal}
 SUCCESS CRITERIA:
