@@ -39,6 +39,8 @@ class Session:
         self.turns = 0
         self._last_user = ""
         self.last_provider = ""
+        # injectable: the control plane wraps this to observe/budget every action
+        self.tool_runner = run_tool
 
     def _last_provider_hint(self) -> str:
         return self.last_provider or "…"
@@ -65,6 +67,13 @@ class Session:
                     extra_parts.append(wb)
             except Exception:
                 pass
+            try:
+                from rad.usermodel import UserModel
+                ub = UserModel(self.home).context_block()
+                if ub:
+                    extra_parts.append(ub)
+            except Exception:
+                pass
         connected = self.home.skills()
         if connected:
             names = ", ".join(f"{n} ({len(e.get('tools', []))} tools)" for n, e in connected.items())
@@ -83,6 +92,11 @@ class Session:
         self.turns += 1
         self._last_user = user_text
         self.mem.session_log("user", user_text)
+        try:                                   # deterministic patterns only, labelled INFERRED
+            from rad.usermodel import UserModel
+            UserModel(self.home).learn_from_text(user_text, caller=None, source="chat")
+        except Exception:
+            pass
         self.working.append({"role": "user", "content": user_text})
         self._trim()
 
@@ -113,7 +127,7 @@ class Session:
                 for tc in tool_reqs:
                     name, args = tc["name"], tc.get("arguments", {})
                     print(col.magenta(f"  ⚙ {name} {json.dumps(args, ensure_ascii=False)[:160]}"))
-                    out = run_tool(name, args, self.ctx)
+                    out = self.tool_runner(name, args, self.ctx)
                     out = out[:20000]
                     self.working.append({"role": "tool", "tool_call_id": tc.get("id", ""),
                                          "name": name, "content": out})
@@ -143,7 +157,7 @@ class Session:
             try:
                 from rad.world import WorldModel
                 first = next((m["content"] for m in self.working if m.get("role") == "user"), "")
-                WorldModel(self.home).learn(str(first)[:1500], source="chat-close")
+                WorldModel(self.home).learn(str(first)[:1500], source="chat-close")   # → INFERRED
             except Exception:
                 pass
         info(f"  — session saved to short-term memory ({self.turns} turns) —")
@@ -228,7 +242,9 @@ def repl(home: RadHome, auto: bool = False, voice: bool = False) -> None:
             ok("noted — the Evolver will use this")
             continue
         if line.startswith("/remember "):
-            e = s.mem.add("semantic", line[len("/remember "):].strip(), tags=["user-pinned"])
+            from rad.memory import USER_PROVIDED
+            e = s.mem.add("semantic", line[len("/remember "):].strip(), tags=["user-pinned"],
+                          origin=USER_PROVIDED, source="chat:/remember", importance=0.8)
             ok("remembered" if e else "already in memory")
             continue
         if line.startswith("/recall "):
@@ -241,13 +257,24 @@ def repl(home: RadHome, auto: bool = False, voice: bool = False) -> None:
         if line.startswith("/evolve "):
             direction = line[len("/evolve "):].strip()
             try:
+                from rad.evolution import Evolution, propose_from_direction
                 def _llm(prompt: str) -> str:
                     return s.router.chat([{"role": "user", "content": prompt}]).text
                 has_brain = bool(s.router.build_chain())
-                dna = s.dna.evolve(direction, llm=_llm if has_brain else None)
+                changes = propose_from_direction(home, direction, _llm if has_brain else None)
+                if not changes:
+                    ok("direction produced no change"); continue
+                evo = Evolution(home)
+                c = evo.propose(direction, changes, origin="llm" if has_brain else "heuristic")
+                if c.status == "rejected":
+                    ok(c.reason); continue
                 if not has_brain:
-                    info("  (no brain online — deterministic evolution)")
-                ok(f"evolved → generation {dna['generation']}")
+                    warn(f"  no brain online — candidate {c.id} saved; `rad evolve approve {c.id}` applies it ungated")
+                    continue
+                info("  sandboxing + running the lab gate (this takes a while)…")
+                evo.evaluate(c, suite=home.cfg.get("evolution_suite", "smoke"))
+                c = evo.promote(c)
+                (ok if c.status == "promoted" else fail)(f"{c.id}: {c.status} — {c.reason}")
             except Exception as e:
                 fail(str(e))
             continue

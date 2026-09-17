@@ -32,6 +32,14 @@ DEFAULTS: Dict[str, Any] = {
     "drive_folder": "RadAgent",
     "watch_every_min": 30,
     "custom_providers": [],       # open door: any OpenAI-compatible endpoint
+    "allow_outside_workspace": False,  # file tools may leave the workspace (off = boundary enforced)
+    "plan_infer_done": False,
+    "objective_parallel": 2,      # max ready tasks run concurrently (only with --auto)
+    "accept_unverified_done": True,  # tasks w/o checks may complete on a DONE: claim (recorded UNVERIFIED)
+    "evolution_require_approval": False,  # gated evolution also needs `rad evolve approve <id>` before promotion
+    "evolution_suite": "smoke",     # lab suite used as the promotion gate
+    "allow_api_fix": False,         # let GET /v1/doctor?fix=1 apply repairs
+    "api_port": 7331,
 }
 
 
@@ -70,6 +78,10 @@ class RadHome:
             "logs", "models", "keys",
         ):
             (self.root / sub).mkdir(parents=True, exist_ok=True)
+        try:
+            os.chmod(self.root / "keys", 0o700)
+        except OSError:
+            pass
 
     @property
     def config_path(self) -> Path:

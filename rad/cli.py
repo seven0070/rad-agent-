@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import platform
 import re
 import subprocess
@@ -12,7 +13,7 @@ from typing import List, Optional
 
 from rad import __version__
 from rad.home import RadHome, mask
-from rad.ui import col, fail, info, ok, warn
+from rad.ui import ask, col, fail, info, ok, warn
 
 from rad import providers as P
 
@@ -146,7 +147,9 @@ def cmd_search(args) -> int:
 def cmd_remember(args) -> int:
     from rad.memory import Memory
     home = _home(args)
-    e = Memory(home).add(args.layer, " ".join(args.text), tags=["cli"])
+    from rad.memory import USER_PROVIDED
+    e = Memory(home).add(args.layer, " ".join(args.text), tags=["cli"], origin=USER_PROVIDED,
+                         source="cli:remember", importance=0.8)
     ok("stored in long-term memory" if e else "already in memory (duplicates are strengthened, not duplicated)")
     return 0
 
@@ -180,28 +183,279 @@ def cmd_memory(args) -> int:
         faded, archived = m.decay_and_archive()
         ok(f"pruned: {faded} faded in place, {archived} archived")
         return 0
+    if args.memory_action == "conflicts":
+        cons = m.contradictions()
+        if not cons:
+            info("  no contradictions in memory")
+            return 0
+        for a, b in cons:
+            print(f"  {col.yellow('⚡')} {a.id} [{a.origin.lower()} c={a.confidence:.2f} {a.verification.lower()}] {a.text[:80]}")
+            print(f"     vs {b.id} [{b.origin.lower()} c={b.confidence:.2f} {b.verification.lower()}] {b.text[:80]}")
+        info("  resolve: rad memory verify <id> | rad memory forget <id> | rad memory correct <id> <new text>")
+        return 0
+    if args.memory_action in ("forget", "verify", "correct", "dispute"):
+        if not args.memory_args:
+            fail(f"usage: rad memory {args.memory_action} <id> [text]")
+            return 1
+        mid = args.memory_args[0]
+        if args.memory_action == "forget":
+            return 0 if (m.forget(mid) and ok(f"archived {mid}") is None) else (fail("no such memory") or 1)
+        if args.memory_action == "verify":
+            e = m.verify(mid, ok=True)
+            return 0 if (e and ok(f"verified {e.id}") is None) else (fail("no such memory") or 1)
+        if args.memory_action == "dispute":
+            e = m.verify(mid, ok=False)
+            return 0 if (e and ok(f"marked {e.id} CONTRADICTED") is None) else (fail("no such memory") or 1)
+        new = " ".join(args.memory_args[1:]).strip()
+        if not new:
+            fail("usage: rad memory correct <id> <new text>")
+            return 1
+        e = m.correct(mid, new)
+        return 0 if (e and ok(f"corrected → {e.id} (user_provided, verified)") is None) else (fail("no such memory") or 1)
     print(col.bold("Memory layers:"))
     print(m.show())
     return 0
 
 
-def cmd_evolve(args) -> int:
-    from rad.dna import Evolver
+def cmd_user(args) -> int:
+    from rad.usermodel import UserModel, DICT_SECTIONS, SECTIONS
     home = _home(args)
-    direction = " ".join(args.direction) if args.direction else ""
+    um = UserModel(home)
+    a = args.user_action
+    if a == "show":
+        print(col.bold("User model:"))
+        print(um.show())
+        return 0
+    if a == "set":
+        if len(args.user_args) < 3:
+            fail("usage: rad user set <section> <key> <value…>   sections: " + ", ".join(sorted(DICT_SECTIONS)))
+            return 1
+        sec, key, val = args.user_args[0], args.user_args[1], " ".join(args.user_args[2:])
+        try:
+            um.set(sec, key, val)
+        except ValueError as e:
+            fail(str(e)); return 1
+        ok(f"{sec}.{key} = {val}")
+        return 0
+    if a == "add":
+        if len(args.user_args) < 2:
+            fail("usage: rad user add <section> <value…>   sections: goals, projects, constraints, routines, active_priorities")
+            return 1
+        try:
+            um.add(args.user_args[0], " ".join(args.user_args[1:]))
+        except ValueError as e:
+            fail(str(e)); return 1
+        ok("added")
+        return 0
+    if a == "forget":
+        if len(args.user_args) < 2:
+            fail("usage: rad user forget <section> <key|value>")
+            return 1
+        return 0 if um.forget(args.user_args[0], " ".join(args.user_args[1:])) else (fail("not found") or 1)
+    if a == "reset":
+        um.save({s: ({} if s in DICT_SECTIONS else []) for s in SECTIONS})
+        ok("user model reset")
+        return 0
+    return 1
+
+
+def cmd_evolve(args) -> int:
+    """Gated evolution. `rad evolve <direction>` proposes → sandboxes → runs the lab on both →
+    promotes only if the gate passes. Sub-commands inspect/approve/rollback candidates.
+    `--unsafe-direct` keeps the old ungated behaviour (explicit opt-out, logged)."""
+    from rad.evolution import Evolution, InvalidCandidate, propose_from_direction, propose_from_evidence
+    from rad.lab import Lab
+    home = _home(args)
+    evo = Evolution(home)
+    words = list(args.direction or [])
+    sub = words[0] if words and words[0] in ("list", "show", "approve", "reject", "rollback", "verify", "from-lab", "log") else None
+    if sub:
+        rest = words[1:]
+        if sub == "list":
+            for c in evo.candidates(args.n):
+                ev = c.evidence
+                sc = f"{ev.get('base_score')}→{ev.get('cand_score')}" if "cand_score" in ev else "-"
+                print(f"  {c.id} {c.status:<10} gen={c.generation if c.generation is not None else '-':<3} lab={sc:<12} {c.origin:<9} {c.direction[:50]}")
+            return 0
+        if sub == "log":
+            for e in evo.log(args.n):
+                print(f"  {time.strftime('%m-%d %H:%M', time.localtime(e['at']))} {e['kind']:<17} {e['candidate']} {e.get('direction','')[:50]}"
+                      + (f"  gate={e['gate']} {e.get('reasons')}" if 'gate' in e else "") + (f"  {e.get('reason','')}" if e.get('reason') else ""))
+            return 0
+        c = evo.get(rest[0]) if rest else None
+        if sub in ("show", "approve", "reject", "rollback") and not c:
+            fail(f"usage: rad evolve {sub} <candidate-id>"); return 1
+        if sub == "show":
+            d = c.to_dict(); d["evidence"].pop("sandbox", None)
+            print(json.dumps(d, indent=2, ensure_ascii=False)); return 0
+        if sub == "approve":
+            gate_ok = bool((c.evidence.get("gate") or {}).get("pass"))
+            if not gate_ok and not args.force:
+                fail(f"{c.id} has not passed the lab gate ({'; '.join((c.evidence.get('gate') or {}).get('reasons', ['not evaluated']))}). "
+                     "Use --force to apply it anyway (recorded as UNGATED).")
+                return 1
+            c = evo.promote(c, approved_by="user", force=not gate_ok)
+            (ok if c.status == "promoted" else fail)(f"{c.id}: {c.status} — {c.reason}")
+            return 0 if c.status == "promoted" else 1
+        if sub == "reject":
+            evo.reject(c, " ".join(rest[1:]) or "rejected by user"); ok(f"{c.id} rejected"); return 0
+        if sub == "rollback":
+            if evo.rollback(c):
+                ok(f"{c.id} rolled back (DNA to parent generation, config restored)"); return 0
+            fail("only promoted candidates can be rolled back"); return 1
+        if sub == "verify":
+            info("  re-running the lab on the live configuration…")
+            out = evo.verify_current(home.cfg.get("evolution_suite", "smoke"))
+            print(f"  {out['label']} score={out['score']} gate={'PASS' if out['gate']['pass'] else 'FAIL ' + '; '.join(out['gate']['reasons'])}")
+            if out["rolled_back"]:
+                warn(f"  rolled back {out['rolled_back']}")
+            return 0 if out["gate"]["pass"] else 2
+        if sub == "from-lab":
+            rep = Lab(home).find(rest[0]) if rest else (Lab(home).history(1) or [None])[0]
+            if not rep:
+                fail("no lab run found (rad lab run first)"); return 1
+            props = propose_from_evidence(home, rep)
+            if not props:
+                ok("lab report suggests no change"); return 0
+            for pr in props:
+                c = evo.propose(pr["why"], pr["changes"], origin="heuristic")
+                if c.status == "rejected":
+                    info(f"  skip: {c.reason}"); continue
+                info(f"  evaluating {c.id}: {pr['why']}")
+                evo.evaluate(c, suite=home.cfg.get("evolution_suite", "smoke"))
+                c = evo.promote(c)
+                (ok if c.status == "promoted" else warn)(f"  {c.id}: {c.status} — {c.reason}")
+            return 0
+    direction = " ".join(words)
     if not direction:
-        fail("usage: rad evolve <direction>   e.g.  rad evolve reply shorter and more casual")
+        fail("usage: rad evolve <direction> | list | show|approve|reject|rollback <id> | verify | from-lab [label] | log")
         return 1
     r = _router(home)
-    llm = (lambda p: _llm(home, p)) if r.build_chain() else None
+    has_brain = bool(r.build_chain())
+    llm = (lambda p: _llm(home, p)) if has_brain else None
     if llm is None:
-        info("  (no brain online — using deterministic evolution)")
+        info("  (no brain online — deterministic proposal)")
     try:
-        dna = Evolver(home).evolve(direction, llm=llm)
-        ok(f"evolved → generation {dna['generation']}")
+        changes = propose_from_direction(home, direction, llm)
     except Exception as e:
-        fail(str(e))
+        fail(f"proposal failed: {e}"); return 1
+    if not changes:
+        ok("direction produced no change"); return 0
+    if getattr(args, "unsafe_direct", False):
+        c = evo.propose(direction, changes, origin="llm" if has_brain else "heuristic")
+        if c.status == "rejected":
+            ok(c.reason); return 0
+        c = evo.promote(c, approved_by="user --unsafe-direct", force=True)
+        warn(f"applied without lab gate → generation {c.generation} (rad evolve rollback {c.id} to undo)")
+        return 0
+    try:
+        c = evo.propose(direction, changes, origin="llm" if has_brain else "heuristic")
+    except InvalidCandidate as e:
+        fail(f"rejected: {e}"); return 1
+    if c.status == "rejected":
+        ok(c.reason); return 0
+    for k, d in c.evidence["diff"].items():
+        print(f"  {k}: {col.dim(str(d['from'])[:80])} → {str(d['to'])[:80]}")
+    if not has_brain:
+        warn("  no brain online: the lab gate cannot run. Candidate saved; run `rad evolve approve "
+             f"{c.id} --force` to apply it ungated, or come back when a brain is available.")
+        c.evidence["gate"] = {"pass": False, "reasons": ["lab not run (no brain)"]}; evo._save(c)
+        return 0
+    suite = home.cfg.get("evolution_suite", "smoke")
+    info(f"  sandboxing candidate and running lab suite '{suite}' on baseline and candidate…")
+    gate = evo.evaluate(c, suite=suite)
+    ev = c.evidence
+    print(f"  baseline score={ev['base_score']} safety={ev['base_safety']} honesty={ev['base_honesty']}  →  "
+          f"candidate score={ev['cand_score']} safety={ev['cand_safety']} honesty={ev['cand_honesty']}")
+    c = evo.promote(c)
+    if c.status == "promoted":
+        ok(f"gate passed → promoted as generation {c.generation}  ({c.id}; `rad evolve rollback {c.id}` to undo)")
+        return 0
+    if gate["pass"]:
+        warn(f"gate passed; {c.reason}  → rad evolve approve {c.id}")
+        return 0
+    fail(f"gate FAILED → not applied. {'; '.join(gate['reasons'])}")
+    return 2
+
+
+def cmd_doctor(args) -> int:
+    from rad.doctor import Doctor, render
+    home = _home(args)
+    print(col.bold(f"rad doctor{' --fix' if args.fix else ''}:"))
+    findings = Doctor(home, fix=args.fix, probe_network=not args.offline).run()
+    print(render(findings))
+    if args.json:
+        print(json.dumps([f.__dict__ for f in findings], indent=2))
+    return 1 if any(f.status == "fail" for f in findings) else 0
+
+
+def cmd_storage(args) -> int:
+    from rad.storage import SCHEMA_VERSION, Storage
+    home = _home(args)
+    st = Storage(home)
+    a = args.storage_action
+    if a == "status":
+        sch = st.schema()
+        print(f"  schema v{sch.get('version', 0)} (code expects v{SCHEMA_VERSION}); pending: {[m.name for m in st.pending()] or 'none'}")
+        for a_ in sch.get("applied", []):
+            print(f"    v{a_['version']} {a_['name']}  {time.strftime('%Y-%m-%d %H:%M', time.localtime(a_['at']))}  {a_.get('summary', '')}")
+        for k, v in st.usage().items():
+            print(f"  {k:<12} {v['files']:>5} files  {v['bytes'] / 1e3:>9.1f} KB")
+        return 0
+    if a == "migrate":
+        done = st.migrate(dry_run=args.dry_run)
+        for d in done:
+            print(f"  v{d['version']} {d['name']} {d.get('summary', '')}{' (dry run)' if d.get('dry_run') else ''}")
+        ok("up to date" if not done else f"{len(done)} step(s)")
+        return 0
+    if a == "check":
+        f = st.integrity(repair=args.repair)
+        for x in f:
+            print(f"  {'fixed ' if x['repaired'] else ''}{x['path']}: {x['problem']}")
+        (ok if not f else warn)(f"{len(f)} finding(s)")
+        return 0 if not f else 1
+    if a == "snapshot":
+        p = st.snapshot(label=args.label or "manual", include_keys=args.include_keys)
+        ok(f"snapshot → {p}" + ("" if args.include_keys else "  (keys excluded; --include-keys to add)"))
+        return 0
+    if a == "snapshots":
+        for p in st.snapshots():
+            print(f"  {p.name}  {p.stat().st_size / 1e3:.1f} KB")
+        return 0
+    if a == "restore":
+        if not args.label:
+            fail("usage: rad storage restore --label <snapshot file name>"); return 1
+        p = home.root / "backups" / args.label
+        if not p.exists():
+            fail(f"no such snapshot {p.name}"); return 1
+        if not args.yes and not ask(f"  restore {p.name} over {home.root}? (a pre-restore snapshot is taken first)"):
+            return 1
+        ok(f"restored: {', '.join(st.restore(p))}")
+        return 0
+    return 1
+
+
+def cmd_serve(args) -> int:
+    from rad.api import make_server, token_for
+    home = _home(args)
+    host = args.host or "127.0.0.1"
+    if host not in ("127.0.0.1", "localhost", "::1") and not args.i_know_this_exposes_rad:
+        fail("binding to a non-loopback host exposes RAD's control plane to the network. "
+             "Add --i-know-this-exposes-rad if that is really what you want (and use a firewall).")
         return 1
+    tok = token_for(home, rotate=args.rotate_token)
+    port = args.port or int(home.cfg.get("api_port", 7331))
+    srv = make_server(home, host=host, port=port)
+    print(col.bold(f"rad api  http://{host}:{port}/v1"))
+    print(f"  token: {tok}   (stored 0600 at {home.root / 'api.token'}; --rotate-token to replace)")
+    print(f"  auto={'on' if home.cfg.get('auto') else 'off — POST /objectives creates PENDING only'}   log: {home.root / 'logs' / 'api.jsonl'}")
+    print(col.dim("  curl -H \"Authorization: Bearer $TOKEN\" http://%s:%d/v1/health" % (host, port)))
+    try:
+        srv.serve_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        srv.server_close()
     return 0
 
 
@@ -239,15 +493,51 @@ def cmd_connect(args) -> int:
 
 
 def cmd_skills(args) -> int:
+    from rad import skills as SK
     home = _home(args)
     reg = home.skills()
+    a = args.skills_action
+    if a == "audit":
+        rows = SK.audit(home)
+        if not rows:
+            info("no skills connected"); return 0
+        for r in rows:
+            mark = col.red("!") if r["flags"] else col.green("✓")
+            print(f"  {mark} {col.bold(r['name']):<18} approval={r['approval']:<7} trust={r['trust']:<7} caps={', '.join(r['capabilities'])}  {r['tools']} tools")
+            for f in r["flags"]:
+                print(f"        {col.dim(f)}")
+        return 1 if any(r["flags"] for r in rows) else 0
+    if a == "approve":
+        if not args.skills_args:
+            fail("usage: rad skills approve <name> [allow|ask|deny|policy]"); return 1
+        try:
+            m = SK.approve(home, args.skills_args[0], args.skills_args[1] if len(args.skills_args) > 1 else "allow")
+        except ValueError as e:
+            fail(str(e)); return 1
+        ok(f"{m['name']}: approval={m['approval']} pinned={m['pinned']}"); return 0
+    if a == "declare":
+        if len(args.skills_args) < 3:
+            fail("usage: rad skills declare <skill> <tool> <cap,cap>   caps: fs.read fs.write shell web mcp"); return 1
+        try:
+            m = SK.declare(home, args.skills_args[0], args.skills_args[1], args.skills_args[2].split(","))
+        except ValueError as e:
+            fail(str(e)); return 1
+        ok(f"{m['name']}.{args.skills_args[1]} → {m['tools'][args.skills_args[1]]}"); return 0
+    if a == "manifest":
+        if not args.skills_args:
+            fail("usage: rad skills manifest <name>"); return 1
+        m = SK.ensure_manifest(home, args.skills_args[0])
+        if not m:
+            fail("not connected"); return 1
+        print(json.dumps(m, indent=2)); return 0
     if not reg:
         info("no skills connected yet — `rad connect <link>`")
         return 0
     for name, e in reg.items():
-        print(f"  • {col.bold(name)}  {col.dim(e.get('transport', 'stdio'))}")
+        m = SK.ensure_manifest(home, name)
+        print(f"  • {col.bold(name)}  {col.dim(e.get('transport', 'stdio'))}  approval={m.get('approval')}  caps={', '.join(m.get('capabilities', []))}")
         for t in e.get("tools", []):
-            print(f"      {t['name']:<32} {col.dim((t.get('description') or '')[:80])}")
+            print(f"      {t['name']:<32} {col.dim(','.join(m.get('tools', {}).get(t['name'], [])) + '  ' + (t.get('description') or '')[:60])}")
     return 0
 
 
@@ -551,6 +841,7 @@ def cmd_plan(args) -> int:
             fail("no current plan — `rad plan <goal>` first")
             return 1
         info("  Rad is now executing the plan with its hands…")
+        info("  (tip: `rad objective run <goal>` adds verification, recovery and resume)")
         rep = PlanRunner(home, auto=args.auto).run(max_steps=args.max)
         print()
         if rep["blocked"]:
@@ -644,11 +935,39 @@ def build_parser() -> argparse.ArgumentParser:
     sl.set_defaults(fn=cmd_sleep)
 
     me = sub.add_parser("memory", help="memory layers")
-    me.add_argument("memory_action", nargs="?", default="show", choices=["show", "prune"])
+    me.add_argument("memory_action", nargs="?", default="show",
+                    choices=["show", "prune", "conflicts", "forget", "verify", "dispute", "correct"])
+    me.add_argument("memory_args", nargs="*")
     me.set_defaults(fn=cmd_memory)
 
-    ev = sub.add_parser("evolve", help="directed evolution: rad evolve <direction>")
+    us = sub.add_parser("user", help="the user model — what Rad believes about you (inspect / correct)")
+    us.add_argument("user_action", nargs="?", default="show", choices=["show", "set", "add", "forget", "reset"])
+    us.add_argument("user_args", nargs="*")
+    us.set_defaults(fn=cmd_user)
+
+    sv = sub.add_parser("serve", help="local JSON API over the control plane (loopback, bearer token)")
+    sv.add_argument("--port", type=int, default=None); sv.add_argument("--host", default=None)
+    sv.add_argument("--rotate-token", action="store_true"); sv.add_argument("--i-know-this-exposes-rad", action="store_true")
+    sv.set_defaults(fn=cmd_serve)
+
+    dr = sub.add_parser("doctor", help="health check of RAD; --fix repairs what is safe")
+    dr.add_argument("--fix", action="store_true"); dr.add_argument("--offline", action="store_true", help="skip provider probes")
+    dr.add_argument("--json", action="store_true")
+    dr.set_defaults(fn=cmd_doctor)
+
+    so = sub.add_parser("storage", help="schema/migrations/integrity/snapshots of ~/.rad")
+    so.add_argument("storage_action", nargs="?", default="status",
+                    choices=["status", "migrate", "check", "snapshot", "snapshots", "restore"])
+    so.add_argument("--dry-run", action="store_true"); so.add_argument("--repair", action="store_true")
+    so.add_argument("--label", default=None); so.add_argument("--include-keys", action="store_true")
+    so.add_argument("--yes", "-y", action="store_true")
+    so.set_defaults(fn=cmd_storage)
+
+    ev = sub.add_parser("evolve", help="gated evolution: rad evolve <direction> | list | approve/reject/rollback <id> | verify | from-lab")
     ev.add_argument("direction", nargs="*")
+    ev.add_argument("--unsafe-direct", action="store_true", help="apply without the lab gate (logged)")
+    ev.add_argument("--force", action="store_true", help="with approve: apply a candidate that did not pass the gate")
+    ev.add_argument("-n", type=int, default=20)
     ev.set_defaults(fn=cmd_evolve)
 
     dn = sub.add_parser("dna", help="Rad's identity")
@@ -660,7 +979,9 @@ def build_parser() -> argparse.ArgumentParser:
                                           help="skip tool-list approval")
     cn.set_defaults(fn=cmd_connect)
 
-    sk = sub.add_parser("skills", help="list connected skills"); sk.set_defaults(fn=cmd_skills)
+    sk = sub.add_parser("skills", help="connected skills: list | audit | approve <name> [allow|ask|deny] | declare | manifest")
+    sk.add_argument("skills_action", nargs="?", default="list", choices=["list", "audit", "approve", "declare", "manifest"])
+    sk.add_argument("skills_args", nargs="*"); sk.set_defaults(fn=cmd_skills)
     dp = sub.add_parser("drop", help="disconnect a skill"); dp.add_argument("name"); dp.set_defaults(fn=cmd_drop)
 
     dv = sub.add_parser("drive", help="Google Drive cloud mind")
@@ -747,6 +1068,9 @@ def build_parser() -> argparse.ArgumentParser:
     pl.add_argument("--max", type=int, default=None, help="run at most N steps")
     pl.set_defaults(fn=cmd_plan)
 
+    from rad.control.cli import add_parsers as _control_parsers
+    _control_parsers(sub)
+
     tm = sub.add_parser("team", help="multi-agent cognition — specialists + synthesis")
     tm.add_argument("team_action", nargs="?", default="roles", choices=["run", "roles", "history"])
     tm.add_argument("team_problem", nargs="*")
@@ -754,13 +1078,15 @@ def build_parser() -> argparse.ArgumentParser:
     tm.add_argument("--roles", default=None, help="comma list: coder,reviewer,planner,researcher,writer")
     tm.add_argument("--n", type=int, default=0, help="number of default roles to spawn")
     tm.add_argument("--backend", default="builtin", choices=["builtin", "autogen"])
+    tm.add_argument("--tools", action="store_true", help="agents may use their own scoped tools (see `rad agents`)")
     tm.set_defaults(fn=cmd_team)
 
     wo = sub.add_parser("world", help="world model — Rad's picture of your world")
     wo.add_argument("world_action", nargs="?", default="show",
-                    choices=["show", "query", "add", "learn", "sync", "cypher"])
+                    choices=["show", "query", "add", "learn", "sync", "cypher", "retract", "confirm", "disputes"])
     wo.add_argument("world_term", nargs="*")
     wo.add_argument("--path", default=None, help="file to mine (learn)")
+    wo.add_argument("--history", action="store_true", help="query: include superseded relations")
     wo.set_defaults(fn=cmd_world)
 
     v = sub.add_parser("version", help="version"); v.set_defaults(fn=cmd_version)
@@ -793,8 +1119,7 @@ def cmd_team(args) -> int:
         ok("autogen run finished")
         print(out)
         return 0
-    info(f"  spawning {roles or 'coder,reviewer,planner'} ({args.mode} mode)…")
-    res = team.run(problem, roles=roles, mode=args.mode, n=args.n)
+    res = team.run(problem, roles=roles, mode=args.mode, n=args.n, tools=args.tools)
     for a in res["answers"]:
         tag = col.cyan(a["role"]) if a["role"] != "debate" else col.magenta("debate")
         print(f"\n  [{tag}]")
@@ -816,7 +1141,7 @@ def cmd_world(args) -> int:
         if not term:
             fail("usage: rad world query <term>")
             return 1
-        hits = w.query(term)
+        hits = w.query(term, include_history=args.history)
         if not hits:
             info("  nothing in the world model matches")
             return 0
@@ -824,7 +1149,26 @@ def cmd_world(args) -> int:
             if h["type"] == "entity":
                 print(f"    • {h['name']}  {col.dim(h.get('kind', ''))}")
             else:
-                print(f"    → {h['from']} {col.dim('–' + h['rel'] + '–>')} {h['to']}")
+                st = h.get("status", "current")
+                tag = col.dim(f"{h.get('origin', 'inferred').lower()} c={h.get('confidence', 0.5):.2f}")
+                flag = col.yellow(f" [{st}]") if st != "current" else ""
+                print(f"    → {h['from']} {col.dim('–' + h['rel'] + '–>')} {h['to']}  {tag}{flag}")
+        return 0
+    if args.world_action in ("retract", "confirm"):
+        if len(args.world_term) < 3:
+            fail(f"usage: rad world {args.world_action} <from> <rel> <to…>")
+            return 1
+        a_, rel, b_ = args.world_term[0], args.world_term[1], " ".join(args.world_term[2:])
+        fn = w.retract if args.world_action == "retract" else w.confirm
+        return 0 if (fn(a_, rel, b_) and ok(f"{args.world_action}ed: {a_} –{rel}–> {b_}") is None) else (fail("no such relation") or 1)
+    if args.world_action == "disputes":
+        ds = w.disputes()
+        if not ds:
+            info("  no disputed relations")
+            return 0
+        for r in ds:
+            print(f"  {col.yellow('⚡')} {r['from']} –{r['rel']}–> {r['to']}  {col.dim(r.get('origin', '').lower())}  disputes: {r.get('disputes')}")
+        info("  resolve: rad world confirm <from> <rel> <to> | rad world retract <from> <rel> <to>")
         return 0
     if args.world_action == "add":
         sentence = " ".join(args.world_term)
@@ -880,6 +1224,17 @@ def main(argv: Optional[List[str]] = None) -> int:
         else:
             argv = ["chat"] + argv
     args = parser.parse_args(argv)
+    if getattr(args, "fn", None) not in (cmd_storage, cmd_doctor):
+        try:
+            from rad.storage import Storage
+            home = _home(args)
+            st = Storage(home)
+            if st.pending():
+                done = st.migrate()
+                if done and not done[0]["name"].startswith("fresh home"):
+                    info(f"  storage migrated to v{st.version()} ({len(done)} step(s); snapshot in ~/.rad/backups)")
+        except Exception as e:                     # never block the CLI on housekeeping
+            warn(f"  storage migration skipped: {str(e)[:80]} (run `rad doctor`)")
     if not getattr(args, "fn", None):
         parser.print_help()
         return 0

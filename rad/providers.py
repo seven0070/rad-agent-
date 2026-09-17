@@ -97,6 +97,13 @@ def _sse_lines(resp) -> Iterable[str]:
         yield payload
 
 
+def _body_bytes(resp: Any) -> bytes:
+    """Non-streaming responses arrive as bytes; tolerate file-like objects too."""
+    if isinstance(resp, (bytes, bytearray)):
+        return bytes(resp)
+    return resp.read()
+
+
 def _read_error_body(body: Any) -> str:
     try:
         d = json.loads(body.decode("utf-8", "replace"))
@@ -274,7 +281,7 @@ def _chat_openai(spec: ProviderSpec, key: Optional[str], messages: List[Dict[str
                             status=status, retryable=_retryable(status))
     res = ChatResult(provider=spec.name, model=model)
     if stream_cb is None:
-        d = json.loads(resp.read().decode())
+        d = json.loads(_body_bytes(resp).decode())
         msg = d["choices"][0]["message"]
         res.text = msg.get("content") or ""
         res.usage = {"in": d.get("usage", {}).get("prompt_tokens", 0),
@@ -401,7 +408,7 @@ def _chat_anthropic(spec: ProviderSpec, key: Optional[str], messages: List[Dict[
                             status=status, retryable=_retryable(status))
     res = ChatResult(provider=spec.name, model=model)
     if stream_cb is None:
-        d = json.loads(resp.read().decode())
+        d = json.loads(_body_bytes(resp).decode())
         for block in d.get("content", []):
             if block.get("type") == "text":
                 res.text += block.get("text", "")
@@ -516,7 +523,7 @@ def _chat_gemini(spec: ProviderSpec, key: Optional[str], messages: List[Dict[str
                             status=status, retryable=_retryable(status))
     res = ChatResult(provider=spec.name, model=model)
     if stream_cb is None:
-        d = json.loads(resp.read().decode())
+        d = json.loads(_body_bytes(resp).decode())
         cand = (d.get("candidates") or [{}])[0]
         for part in (cand.get("content") or {}).get("parts", []):
             if part.get("text"):

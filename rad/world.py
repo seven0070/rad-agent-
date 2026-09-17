@@ -42,6 +42,32 @@ ENTITY_STOP = {"the", "this", "that", "it", "a", "an", "i", "my", "we", "you",
                "he", "she", "rad", "today", "this"}
 
 
+ENTITY_KINDS = ("person", "organization", "project", "task", "artifact", "tool", "software",
+                "website", "event", "concept", "location", "thing", "entity")
+RELATION_KINDS = ("owns", "works_on", "works_at", "depends_on", "created", "uses", "knows",
+                  "contains", "related_to", "derived_from", "is", "likes", "located_in", "named")
+# relations where one subject normally has ONE current value → a new value supersedes (temporal)
+FUNCTIONAL = {"located_in", "works_at", "named", "is"}
+
+# origin of a fact (same vocabulary as memory)
+USER_PROVIDED = "USER_PROVIDED"
+OBSERVED = "OBSERVED"
+INFERRED = "INFERRED"
+MODEL_GENERATED = "MODEL_GENERATED"
+_CONF = {USER_PROVIDED: 0.9, OBSERVED: 0.8, INFERRED: 0.5, MODEL_GENERATED: 0.4}
+
+
+def _origin_for(source: str) -> str:
+    s = (source or "").lower()
+    if s.startswith(("manual", "user")):
+        return USER_PROVIDED
+    if s.startswith(("obj_", "file:", "tool:", "artifact")):
+        return OBSERVED
+    if s.startswith(("llm", "sleep", "chat-close")):
+        return MODEL_GENERATED
+    return INFERRED
+
+
 class WorldModel:
     def __init__(self, home: RadHome) -> None:
         self.home = home
@@ -53,9 +79,12 @@ class WorldModel:
     # ------------------------------------------------------------ storage
     def data(self) -> Dict[str, Any]:
         try:
-            return json.loads(self.path.read_text())
+            d = json.loads(self.path.read_text())
         except Exception:
+            d = None
+        if not isinstance(d, dict) or not isinstance(d.get("entities"), dict) or not isinstance(d.get("relations"), list):
             return {"entities": {}, "relations": [], "updated": 0}
+        return d
 
     def save(self, d: Dict[str, Any]) -> None:
         d["updated"] = time.time()
@@ -78,13 +107,15 @@ class WorldModel:
                 m = re.search(r"\{.*\}", raw or "", re.S)
                 if m:
                     got = json.loads(m.group(0))
+                    lorigin = USER_PROVIDED if source == "manual" else MODEL_GENERATED
                     for e in got.get("entities", [])[:8]:
                         if isinstance(e, dict) and e.get("name"):
-                            if self._add_entity(d, str(e["name"]), str(e.get("kind", "thing")), source):
+                            if self._add_entity(d, str(e["name"]), str(e.get("kind", "thing")).lower(), source, lorigin):
                                 added += 1
                     for r in got.get("relations", [])[:8]:
                         if isinstance(r, dict) and r.get("from") and r.get("to") and r.get("rel"):
-                            if self._add_relation(d, str(r["from"]), str(r["rel"]), str(r["to"]), source):
+                            if self._add_relation(d, str(r["from"]), str(r["rel"]).lower().replace(" ", "_"),
+                                                  str(r["to"]), source, lorigin):
                                 added += 1
                     self.save(d)
                     return added
@@ -118,43 +149,105 @@ class WorldModel:
             self.save(d)
         return added
 
-    def _add_entity(self, d: Dict[str, Any], name: str, kind: str, source: str) -> bool:
+    def _add_entity(self, d: Dict[str, Any], name: str, kind: str, source: str,
+                    origin: Optional[str] = None) -> bool:
         key = name.lower()
+        kind = (kind or "thing").lower()[:30]
+        origin = origin or _origin_for(source)
+        now = time.time()
         if key not in d["entities"]:
-            d["entities"][key] = {"name": name, "kind": kind, "sources": [source],
-                                  "seen": time.time(), "count": 1}
+            d["entities"][key] = {"name": name, "kind": kind, "sources": [source], "origin": origin,
+                                  "confidence": _CONF[origin], "seen": now, "first_seen": now, "count": 1}
             return True
         e = d["entities"][key]
         e["count"] += 1
-        e["seen"] = time.time()
+        e["seen"] = now
         if source not in e["sources"]:
             e["sources"].append(source)
+            # independent re-observation raises confidence a little
+            e["confidence"] = min(0.98, e.get("confidence", 0.5) + 0.05)
+        if _CONF[origin] > _CONF.get(e.get("origin", INFERRED), 0):
+            e["origin"], e["confidence"] = origin, max(e.get("confidence", 0), _CONF[origin])
+        if e.get("kind") in ("entity", "thing") and kind not in ("entity", "thing"):
+            e["kind"] = kind
         return False
 
-    def _add_relation(self, d: Dict[str, Any], a: str, rel: str, b: str, source: str) -> bool:
+    def _add_relation(self, d: Dict[str, Any], a: str, rel: str, b: str, source: str,
+                      origin: Optional[str] = None) -> bool:
+        origin = origin or _origin_for(source)
+        now = time.time()
+        rel = rel if rel in RELATION_KINDS else rel.replace(" ", "_")[:30]
         for r in d["relations"]:
             if r["from"].lower() == a.lower() and r["rel"] == rel and r["to"].lower() == b.lower():
                 if source not in r["sources"]:
                     r["sources"].append(source)
+                    r["confidence"] = min(0.98, r.get("confidence", 0.5) + 0.05)
+                if _CONF[origin] > _CONF.get(r.get("origin", INFERRED), 0):
+                    r["origin"], r["confidence"] = origin, max(r.get("confidence", 0), _CONF[origin])
+                if r.get("until"):          # re-asserted after being superseded → current again
+                    r["until"] = None
+                    r["status"] = "current"
                 return False
-        d["relations"].append({"from": a, "rel": rel, "to": b, "sources": [source], "at": time.time()})
+        new = {"from": a, "rel": rel, "to": b, "sources": [source], "at": now, "since": now, "until": None,
+               "origin": origin, "confidence": _CONF[origin], "status": "current"}
+        if rel in FUNCTIONAL:
+            for r in d["relations"]:
+                if r["from"].lower() == a.lower() and r["rel"] == rel and r.get("status", "current") == "current":
+                    if _CONF[origin] >= r.get("confidence", 0):
+                        r["until"], r["status"] = now, "superseded"
+                        r["superseded_by"] = f"{b}"
+                    else:
+                        new["status"] = "disputed"       # weaker source disagrees with a stronger one
+                        new["disputes"] = r["to"]
+        d["relations"].append(new)
         return True
 
+    # ------------------------------------------------------------ correction
+    def retract(self, a: str, rel: str, b: str) -> bool:
+        d = self.data()
+        for r in d["relations"]:
+            if r["from"].lower() == a.lower() and r["rel"] == rel and r["to"].lower() == b.lower() \
+                    and r.get("status", "current") != "retracted":
+                r["status"], r["until"] = "retracted", time.time()
+                self.save(d)
+                return True
+        return False
+
+    def confirm(self, a: str, rel: str, b: str) -> bool:
+        d = self.data()
+        for r in d["relations"]:
+            if r["from"].lower() == a.lower() and r["rel"] == rel and r["to"].lower() == b.lower():
+                r["origin"], r["confidence"], r["status"], r["until"] = USER_PROVIDED, 0.95, "current", None
+                for o in d["relations"]:
+                    if o is not r and o["from"].lower() == a.lower() and o["rel"] == rel and rel in FUNCTIONAL:
+                        o["status"], o["until"] = "superseded", time.time()
+                self.save(d)
+                return True
+        return False
+
+    def disputes(self) -> List[Dict[str, Any]]:
+        return [r for r in self.data()["relations"] if r.get("status") == "disputed"]
+
+    def current_relations(self, d: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+        d = d or self.data()
+        return [r for r in d["relations"] if r.get("status", "current") in ("current", "disputed")]
+
     # ------------------------------------------------------------ query
-    def query(self, term: str) -> List[Dict[str, Any]]:
+    def query(self, term: str, include_history: bool = False) -> List[Dict[str, Any]]:
         d = self.data()
         t = term.lower()
         out: List[Dict[str, Any]] = []
         for e in d["entities"].values():
             if t in e["name"].lower():
                 out.append({"type": "entity", **e})
-        for r in d["relations"]:
+        rels = self.current_relations(d) if not include_history else d["relations"]
+        for r in rels:
             if t in (r["from"] + " " + r["to"] + " " + r["rel"]).lower():
                 out.append({"type": "relation", **r})
         # neighbors: entities related to a matched entity
         matched = {e["name"].lower() for e in out if e["type"] == "entity"}
         if matched:
-            for r in d["relations"]:
+            for r in rels:
                 if (r["from"].lower() in matched or r["to"].lower() in matched) and \
                         not any(o["type"] == "relation" and o.get("at") == r.get("at") for o in out):
                     out.append({"type": "relation", **r})
@@ -173,15 +266,20 @@ class WorldModel:
             overlap = len(q & set(e["name"].lower().split()))
             if overlap:
                 scored.append((overlap * 2 + min(e["count"], 3) * 0.3, f"- {e['name']} ({e['kind']})"))
-        for r in d["relations"]:
+        for r in self.current_relations(d):
             blob = (r["from"] + " " + r["to"]).lower()
             overlap = len(q & set(blob.split()))
             if overlap:
-                scored.append((overlap * 2 + 0.5, f"- {r['from']} --{r['rel']}--> {r['to']}"))
+                tag = r.get("origin", "inferred").lower()
+                if r.get("status") == "disputed":
+                    tag += ",disputed"
+                scored.append((overlap * 2 + 0.5 + r.get("confidence", 0.5),
+                               f"- {r['from']} --{r['rel']}--> {r['to']} ({tag})"))
         if not scored:
             return ""
         scored.sort(key=lambda x: -x[0])
-        return "World model (what Rad knows about your world):\n" + "\n".join(s[1] for s in scored[:max_items])
+        return ("World model (what Rad knows about your world; model_generated/inferred are unconfirmed):\n"
+                + "\n".join(s[1] for s in scored[:max_items]))
 
     def show(self) -> str:
         d = self.data()
@@ -192,15 +290,33 @@ class WorldModel:
         for e in ents[:8]:
             kind = col.dim(f"{e['kind']} x{e['count']}")
             out.append(f"    • {e['name']:<20} {kind}")
-        for r in d["relations"][:8]:
+        for r in self.current_relations(d)[:8]:
             rel = col.dim(f"–{r['rel']}–>")
-            out.append(f"    → {r['from']} {rel} {r['to']}")
+            tag = col.dim(f"{r.get('origin', 'inferred').lower()} c={r.get('confidence', 0.5):.2f}")
+            flag = col.yellow(" disputed") if r.get("status") == "disputed" else ""
+            out.append(f"    → {r['from']} {rel} {r['to']}  {tag}{flag}")
+        hist = [r for r in d["relations"] if r.get("status") == "superseded"]
+        if hist:
+            out.append(col.dim(f"    ({len(hist)} superseded relation(s) kept as history — `rad world query <x> --history`)"))
         if not ents and not d["relations"]:
             out.append(col.dim("  empty — it learns from memory, chat and `rad world add`"))
         return "\n".join(out)
 
     def add(self, sentence: str, caller: Optional[Callable[[str], str]] = None) -> int:
         return self.learn(sentence, source="manual", caller=caller)
+
+    def learn_observation(self, objective_id: str, task_id: str, artifacts: List[Dict[str, Any]]) -> int:
+        """Ground truth from the control plane: artifacts really exist → OBSERVED facts."""
+        d = self.data()
+        n = 0
+        for a in artifacts:
+            name = a["location"].rsplit("/", 1)[-1]
+            n += self._add_entity(d, name, "artifact", f"{objective_id}/{task_id}", OBSERVED)
+            n += self._add_relation(d, objective_id, "created", name, f"{objective_id}/{task_id}", OBSERVED)
+        if artifacts:
+            self._add_entity(d, objective_id, "task", objective_id, OBSERVED)
+            self.save(d)
+        return n
 
 
 # ------------------------------------------------------------ kuzu backend (optional)

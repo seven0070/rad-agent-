@@ -92,13 +92,21 @@ class PlanRunner:
                     p.toggle(i, done=True, note=note)
                     ok(f"step {i + 1} done — {note}")
                     report.append({"step": i + 1, "text": step["text"], "state": "done", "note": note})
-                else:
-                    # no marker — treat as done if it produced work, note the tail
+                elif self.home.cfg.get("plan_infer_done"):
+                    # legacy behaviour (opt-in): silence counts as done
                     tail = (reply or "").strip().splitlines()
                     note = (tail[-1][:160] if tail else "(no reply)")
                     p.toggle(i, done=True, note=note)
                     ok(f"step {i + 1} done (no marker — inferred) — {note}")
                     report.append({"step": i + 1, "text": step["text"], "state": "done(inferred)", "note": note})
+                else:
+                    # no marker → NOT verified. Never confuse "produced text" with "completed".
+                    note = "no DONE:/BLOCKED: marker — completion unverified"
+                    p.toggle(i, done=False, blocked=True, note=note)
+                    blocked = note
+                    report.append({"step": i + 1, "text": step["text"], "state": "unverified", "note": note})
+                    warn(f"step {i + 1} UNVERIFIED — {note}")
+                    break
                 plan = p.load() or plan
         finally:
             session.close()

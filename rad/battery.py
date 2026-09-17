@@ -253,17 +253,20 @@ class Benchmark:
 def build_caller(home: RadHome, provider: Optional[str] = None, model: Optional[str] = None,
                  temperature: float = 0.2):
     """A (system, user) -> text caller routed through Rad's provider socket,
-    pinned to a specific provider/model (used for A/B brain battles)."""
+    pinned to a specific provider/model for EVERY call (used for A/B brain battles).
+
+    The pin is applied per call and restored afterwards, so callers built for
+    different brains can be interleaved without leaking config."""
     from rad.router import RouterState
     r = RouterState(home)
-    old_force = home.cfg.get("force_provider")
-    old_model = home.cfg.get("model")
-    if provider:
-        home.cfg["force_provider"] = provider
-    if model:
-        home.cfg["model"] = model
 
     def caller(system: str, user: str) -> str:
+        old_force = home.cfg.get("force_provider")
+        old_model = home.cfg.get("model")
+        if provider:
+            home.cfg["force_provider"] = provider
+        if model:
+            home.cfg["model"] = model
         try:
             msgs = ([{"role": "system", "content": system}] if system else [])
             msgs.append({"role": "user", "content": user})

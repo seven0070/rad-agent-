@@ -98,7 +98,7 @@ class RouterState:
     def chat(self, messages: List[Dict[str, Any]], tools: Optional[List[Dict[str, Any]]] = None,
              stream_cb: Optional[Callable[[str], None]] = None,
              need_vision: bool = False, temperature: float = 0.7,
-             model_override: Optional[str] = None) -> P.ChatResult:
+             model_override: Optional[str] = None, max_tokens: int = 0) -> P.ChatResult:
         chain = self.build_chain(need_vision=need_vision)
         if not chain:
             raise P.ProviderError(
@@ -112,7 +112,8 @@ class RouterState:
                 model = "edge0-" + (self.home.cfg.get("edge0_tier", "10b"))
             try:
                 res = P.chat(entry.spec, entry.key, messages, model=model, tools=tools,
-                             stream_cb=stream_cb, temperature=temperature)
+                             stream_cb=stream_cb, temperature=temperature,
+                             max_tokens=max_tokens)
                 self.preferred[entry.spec.tier] = entry.spec.name
                 self.failures.pop(entry.spec.name, None)
                 self._record_cost(entry, res)

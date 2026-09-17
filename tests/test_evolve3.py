@@ -146,8 +146,24 @@ def test_plan_runner_stops_on_blocked(tmp_path, monkeypatch):
     assert plan["steps"][1].get("blocked") is True and not plan["steps"][1]["done"]
 
 
-def test_plan_runner_infers_done_without_marker(tmp_path, monkeypatch):
+def test_plan_runner_no_marker_is_unverified_by_default(tmp_path, monkeypatch):
+    """A reply with no DONE:/BLOCKED: marker must NOT be counted as completion."""
+    home = _plan_home(tmp_path, ["only step", "next step"])
+
+    class S(FakeSession):
+        script = ["I created the file and verified it works.", "DONE: never reached"]
+    monkeypatch.setattr("rad.planrun.Session", S)
+    rep = PlanRunner(home, auto=True).run()
+    assert rep["done"] == 0
+    assert rep["ran"] == 1                      # execution halts at the unverified step
+    assert rep["report"][0]["state"] == "unverified"
+    step = Plan(home).load()["steps"][0]
+    assert not step["done"] and step.get("blocked")
+
+
+def test_plan_runner_infers_done_when_opted_in(tmp_path, monkeypatch):
     home = _plan_home(tmp_path, ["only step"])
+    home.update(plan_infer_done=True)
 
     class S(FakeSession):
         script = ["I created the file and verified it works."]
@@ -172,7 +188,7 @@ def test_plan_runner_max_steps(tmp_path, monkeypatch):
 def test_spawn_agents_tool(tmp_path, monkeypatch):
     from rad.tools import ToolCtx, run_tool
     home = RadHome(tmp_path)
-    monkeypatch.setattr(Team, "run", lambda self, problem, roles=None, mode="solo", n=0: {
+    monkeypatch.setattr(Team, "run", lambda self, problem, roles=None, mode="solo", n=0, **kw: {
         "problem": problem, "mode": mode, "roles": roles or [],
         "answers": [{"role": "coder", "answer": "code says X"}],
         "final": "final says Y", "at": 0})
