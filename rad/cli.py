@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import platform
 import re
 import subprocess
@@ -259,23 +260,122 @@ def cmd_user(args) -> int:
 
 
 def cmd_evolve(args) -> int:
-    from rad.dna import Evolver
+    """Gated evolution. `rad evolve <direction>` proposes → sandboxes → runs the lab on both →
+    promotes only if the gate passes. Sub-commands inspect/approve/rollback candidates.
+    `--unsafe-direct` keeps the old ungated behaviour (explicit opt-out, logged)."""
+    from rad.evolution import Evolution, InvalidCandidate, propose_from_direction, propose_from_evidence
+    from rad.lab import Lab
     home = _home(args)
-    direction = " ".join(args.direction) if args.direction else ""
+    evo = Evolution(home)
+    words = list(args.direction or [])
+    sub = words[0] if words and words[0] in ("list", "show", "approve", "reject", "rollback", "verify", "from-lab", "log") else None
+    if sub:
+        rest = words[1:]
+        if sub == "list":
+            for c in evo.candidates(args.n):
+                ev = c.evidence
+                sc = f"{ev.get('base_score')}→{ev.get('cand_score')}" if "cand_score" in ev else "-"
+                print(f"  {c.id} {c.status:<10} gen={c.generation if c.generation is not None else '-':<3} lab={sc:<12} {c.origin:<9} {c.direction[:50]}")
+            return 0
+        if sub == "log":
+            for e in evo.log(args.n):
+                print(f"  {time.strftime('%m-%d %H:%M', time.localtime(e['at']))} {e['kind']:<17} {e['candidate']} {e.get('direction','')[:50]}"
+                      + (f"  gate={e['gate']} {e.get('reasons')}" if 'gate' in e else "") + (f"  {e.get('reason','')}" if e.get('reason') else ""))
+            return 0
+        c = evo.get(rest[0]) if rest else None
+        if sub in ("show", "approve", "reject", "rollback") and not c:
+            fail(f"usage: rad evolve {sub} <candidate-id>"); return 1
+        if sub == "show":
+            d = c.to_dict(); d["evidence"].pop("sandbox", None)
+            print(json.dumps(d, indent=2, ensure_ascii=False)); return 0
+        if sub == "approve":
+            gate_ok = bool((c.evidence.get("gate") or {}).get("pass"))
+            if not gate_ok and not args.force:
+                fail(f"{c.id} has not passed the lab gate ({'; '.join((c.evidence.get('gate') or {}).get('reasons', ['not evaluated']))}). "
+                     "Use --force to apply it anyway (recorded as UNGATED).")
+                return 1
+            c = evo.promote(c, approved_by="user", force=not gate_ok)
+            (ok if c.status == "promoted" else fail)(f"{c.id}: {c.status} — {c.reason}")
+            return 0 if c.status == "promoted" else 1
+        if sub == "reject":
+            evo.reject(c, " ".join(rest[1:]) or "rejected by user"); ok(f"{c.id} rejected"); return 0
+        if sub == "rollback":
+            if evo.rollback(c):
+                ok(f"{c.id} rolled back (DNA to parent generation, config restored)"); return 0
+            fail("only promoted candidates can be rolled back"); return 1
+        if sub == "verify":
+            info("  re-running the lab on the live configuration…")
+            out = evo.verify_current(home.cfg.get("evolution_suite", "smoke"))
+            print(f"  {out['label']} score={out['score']} gate={'PASS' if out['gate']['pass'] else 'FAIL ' + '; '.join(out['gate']['reasons'])}")
+            if out["rolled_back"]:
+                warn(f"  rolled back {out['rolled_back']}")
+            return 0 if out["gate"]["pass"] else 2
+        if sub == "from-lab":
+            rep = Lab(home).find(rest[0]) if rest else (Lab(home).history(1) or [None])[0]
+            if not rep:
+                fail("no lab run found (rad lab run first)"); return 1
+            props = propose_from_evidence(home, rep)
+            if not props:
+                ok("lab report suggests no change"); return 0
+            for pr in props:
+                c = evo.propose(pr["why"], pr["changes"], origin="heuristic")
+                if c.status == "rejected":
+                    info(f"  skip: {c.reason}"); continue
+                info(f"  evaluating {c.id}: {pr['why']}")
+                evo.evaluate(c, suite=home.cfg.get("evolution_suite", "smoke"))
+                c = evo.promote(c)
+                (ok if c.status == "promoted" else warn)(f"  {c.id}: {c.status} — {c.reason}")
+            return 0
+    direction = " ".join(words)
     if not direction:
-        fail("usage: rad evolve <direction>   e.g.  rad evolve reply shorter and more casual")
+        fail("usage: rad evolve <direction> | list | show|approve|reject|rollback <id> | verify | from-lab [label] | log")
         return 1
     r = _router(home)
-    llm = (lambda p: _llm(home, p)) if r.build_chain() else None
+    has_brain = bool(r.build_chain())
+    llm = (lambda p: _llm(home, p)) if has_brain else None
     if llm is None:
-        info("  (no brain online — using deterministic evolution)")
+        info("  (no brain online — deterministic proposal)")
     try:
-        dna = Evolver(home).evolve(direction, llm=llm)
-        ok(f"evolved → generation {dna['generation']}")
+        changes = propose_from_direction(home, direction, llm)
     except Exception as e:
-        fail(str(e))
-        return 1
-    return 0
+        fail(f"proposal failed: {e}"); return 1
+    if not changes:
+        ok("direction produced no change"); return 0
+    if getattr(args, "unsafe_direct", False):
+        c = evo.propose(direction, changes, origin="llm" if has_brain else "heuristic")
+        if c.status == "rejected":
+            ok(c.reason); return 0
+        c = evo.promote(c, approved_by="user --unsafe-direct", force=True)
+        warn(f"applied without lab gate → generation {c.generation} (rad evolve rollback {c.id} to undo)")
+        return 0
+    try:
+        c = evo.propose(direction, changes, origin="llm" if has_brain else "heuristic")
+    except InvalidCandidate as e:
+        fail(f"rejected: {e}"); return 1
+    if c.status == "rejected":
+        ok(c.reason); return 0
+    for k, d in c.evidence["diff"].items():
+        print(f"  {k}: {col.dim(str(d['from'])[:80])} → {str(d['to'])[:80]}")
+    if not has_brain:
+        warn("  no brain online: the lab gate cannot run. Candidate saved; run `rad evolve approve "
+             f"{c.id} --force` to apply it ungated, or come back when a brain is available.")
+        c.evidence["gate"] = {"pass": False, "reasons": ["lab not run (no brain)"]}; evo._save(c)
+        return 0
+    suite = home.cfg.get("evolution_suite", "smoke")
+    info(f"  sandboxing candidate and running lab suite '{suite}' on baseline and candidate…")
+    gate = evo.evaluate(c, suite=suite)
+    ev = c.evidence
+    print(f"  baseline score={ev['base_score']} safety={ev['base_safety']} honesty={ev['base_honesty']}  →  "
+          f"candidate score={ev['cand_score']} safety={ev['cand_safety']} honesty={ev['cand_honesty']}")
+    c = evo.promote(c)
+    if c.status == "promoted":
+        ok(f"gate passed → promoted as generation {c.generation}  ({c.id}; `rad evolve rollback {c.id}` to undo)")
+        return 0
+    if gate["pass"]:
+        warn(f"gate passed; {c.reason}  → rad evolve approve {c.id}")
+        return 0
+    fail(f"gate FAILED → not applied. {'; '.join(gate['reasons'])}")
+    return 2
 
 
 def cmd_dna(args) -> int:
@@ -728,8 +828,11 @@ def build_parser() -> argparse.ArgumentParser:
     us.add_argument("user_args", nargs="*")
     us.set_defaults(fn=cmd_user)
 
-    ev = sub.add_parser("evolve", help="directed evolution: rad evolve <direction>")
+    ev = sub.add_parser("evolve", help="gated evolution: rad evolve <direction> | list | approve/reject/rollback <id> | verify | from-lab")
     ev.add_argument("direction", nargs="*")
+    ev.add_argument("--unsafe-direct", action="store_true", help="apply without the lab gate (logged)")
+    ev.add_argument("--force", action="store_true", help="with approve: apply a candidate that did not pass the gate")
+    ev.add_argument("-n", type=int, default=20)
     ev.set_defaults(fn=cmd_evolve)
 
     dn = sub.add_parser("dna", help="Rad's identity")

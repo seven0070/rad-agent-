@@ -257,13 +257,24 @@ def repl(home: RadHome, auto: bool = False, voice: bool = False) -> None:
         if line.startswith("/evolve "):
             direction = line[len("/evolve "):].strip()
             try:
+                from rad.evolution import Evolution, propose_from_direction
                 def _llm(prompt: str) -> str:
                     return s.router.chat([{"role": "user", "content": prompt}]).text
                 has_brain = bool(s.router.build_chain())
-                dna = s.dna.evolve(direction, llm=_llm if has_brain else None)
+                changes = propose_from_direction(home, direction, _llm if has_brain else None)
+                if not changes:
+                    ok("direction produced no change"); continue
+                evo = Evolution(home)
+                c = evo.propose(direction, changes, origin="llm" if has_brain else "heuristic")
+                if c.status == "rejected":
+                    ok(c.reason); continue
                 if not has_brain:
-                    info("  (no brain online — deterministic evolution)")
-                ok(f"evolved → generation {dna['generation']}")
+                    warn(f"  no brain online — candidate {c.id} saved; `rad evolve approve {c.id}` applies it ungated")
+                    continue
+                info("  sandboxing + running the lab gate (this takes a while)…")
+                evo.evaluate(c, suite=home.cfg.get("evolution_suite", "smoke"))
+                c = evo.promote(c)
+                (ok if c.status == "promoted" else fail)(f"{c.id}: {c.status} — {c.reason}")
             except Exception as e:
                 fail(str(e))
             continue
