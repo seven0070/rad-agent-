@@ -76,6 +76,10 @@ class RadHome:
             "logs", "models", "keys",
         ):
             (self.root / sub).mkdir(parents=True, exist_ok=True)
+        try:
+            os.chmod(self.root / "keys", 0o700)
+        except OSError:
+            pass
 
     @property
     def config_path(self) -> Path:

@@ -13,7 +13,7 @@ from typing import List, Optional
 
 from rad import __version__
 from rad.home import RadHome, mask
-from rad.ui import col, fail, info, ok, warn
+from rad.ui import ask, col, fail, info, ok, warn
 
 from rad import providers as P
 
@@ -376,6 +376,63 @@ def cmd_evolve(args) -> int:
         return 0
     fail(f"gate FAILED → not applied. {'; '.join(gate['reasons'])}")
     return 2
+
+
+def cmd_doctor(args) -> int:
+    from rad.doctor import Doctor, render
+    home = _home(args)
+    print(col.bold(f"rad doctor{' --fix' if args.fix else ''}:"))
+    findings = Doctor(home, fix=args.fix, probe_network=not args.offline).run()
+    print(render(findings))
+    if args.json:
+        print(json.dumps([f.__dict__ for f in findings], indent=2))
+    return 1 if any(f.status == "fail" for f in findings) else 0
+
+
+def cmd_storage(args) -> int:
+    from rad.storage import SCHEMA_VERSION, Storage
+    home = _home(args)
+    st = Storage(home)
+    a = args.storage_action
+    if a == "status":
+        sch = st.schema()
+        print(f"  schema v{sch.get('version', 0)} (code expects v{SCHEMA_VERSION}); pending: {[m.name for m in st.pending()] or 'none'}")
+        for a_ in sch.get("applied", []):
+            print(f"    v{a_['version']} {a_['name']}  {time.strftime('%Y-%m-%d %H:%M', time.localtime(a_['at']))}  {a_.get('summary', '')}")
+        for k, v in st.usage().items():
+            print(f"  {k:<12} {v['files']:>5} files  {v['bytes'] / 1e3:>9.1f} KB")
+        return 0
+    if a == "migrate":
+        done = st.migrate(dry_run=args.dry_run)
+        for d in done:
+            print(f"  v{d['version']} {d['name']} {d.get('summary', '')}{' (dry run)' if d.get('dry_run') else ''}")
+        ok("up to date" if not done else f"{len(done)} step(s)")
+        return 0
+    if a == "check":
+        f = st.integrity(repair=args.repair)
+        for x in f:
+            print(f"  {'fixed ' if x['repaired'] else ''}{x['path']}: {x['problem']}")
+        (ok if not f else warn)(f"{len(f)} finding(s)")
+        return 0 if not f else 1
+    if a == "snapshot":
+        p = st.snapshot(label=args.label or "manual", include_keys=args.include_keys)
+        ok(f"snapshot → {p}" + ("" if args.include_keys else "  (keys excluded; --include-keys to add)"))
+        return 0
+    if a == "snapshots":
+        for p in st.snapshots():
+            print(f"  {p.name}  {p.stat().st_size / 1e3:.1f} KB")
+        return 0
+    if a == "restore":
+        if not args.label:
+            fail("usage: rad storage restore --label <snapshot file name>"); return 1
+        p = home.root / "backups" / args.label
+        if not p.exists():
+            fail(f"no such snapshot {p.name}"); return 1
+        if not args.yes and not ask(f"  restore {p.name} over {home.root}? (a pre-restore snapshot is taken first)"):
+            return 1
+        ok(f"restored: {', '.join(st.restore(p))}")
+        return 0
+    return 1
 
 
 def cmd_dna(args) -> int:
@@ -828,6 +885,19 @@ def build_parser() -> argparse.ArgumentParser:
     us.add_argument("user_args", nargs="*")
     us.set_defaults(fn=cmd_user)
 
+    dr = sub.add_parser("doctor", help="health check of RAD; --fix repairs what is safe")
+    dr.add_argument("--fix", action="store_true"); dr.add_argument("--offline", action="store_true", help="skip provider probes")
+    dr.add_argument("--json", action="store_true")
+    dr.set_defaults(fn=cmd_doctor)
+
+    so = sub.add_parser("storage", help="schema/migrations/integrity/snapshots of ~/.rad")
+    so.add_argument("storage_action", nargs="?", default="status",
+                    choices=["status", "migrate", "check", "snapshot", "snapshots", "restore"])
+    so.add_argument("--dry-run", action="store_true"); so.add_argument("--repair", action="store_true")
+    so.add_argument("--label", default=None); so.add_argument("--include-keys", action="store_true")
+    so.add_argument("--yes", "-y", action="store_true")
+    so.set_defaults(fn=cmd_storage)
+
     ev = sub.add_parser("evolve", help="gated evolution: rad evolve <direction> | list | approve/reject/rollback <id> | verify | from-lab")
     ev.add_argument("direction", nargs="*")
     ev.add_argument("--unsafe-direct", action="store_true", help="apply without the lab gate (logged)")
@@ -1087,6 +1157,17 @@ def main(argv: Optional[List[str]] = None) -> int:
         else:
             argv = ["chat"] + argv
     args = parser.parse_args(argv)
+    if getattr(args, "fn", None) not in (cmd_storage, cmd_doctor):
+        try:
+            from rad.storage import Storage
+            home = _home(args)
+            st = Storage(home)
+            if st.pending():
+                done = st.migrate()
+                if done and not done[0]["name"].startswith("fresh home"):
+                    info(f"  storage migrated to v{st.version()} ({len(done)} step(s); snapshot in ~/.rad/backups)")
+        except Exception as e:                     # never block the CLI on housekeeping
+            warn(f"  storage migration skipped: {str(e)[:80]} (run `rad doctor`)")
     if not getattr(args, "fn", None):
         parser.print_help()
         return 0

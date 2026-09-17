@@ -79,9 +79,12 @@ class WorldModel:
     # ------------------------------------------------------------ storage
     def data(self) -> Dict[str, Any]:
         try:
-            return json.loads(self.path.read_text())
+            d = json.loads(self.path.read_text())
         except Exception:
+            d = None
+        if not isinstance(d, dict) or not isinstance(d.get("entities"), dict) or not isinstance(d.get("relations"), list):
             return {"entities": {}, "relations": [], "updated": 0}
+        return d
 
     def save(self, d: Dict[str, Any]) -> None:
         d["updated"] = time.time()

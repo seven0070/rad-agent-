@@ -45,8 +45,12 @@ class UserModel:
             d = json.loads(self.path.read_text(encoding="utf-8"))
         except Exception:
             d = {}
+        if not isinstance(d, dict):
+            d = {}
         for s in SECTIONS:
-            d.setdefault(s, {} if s in DICT_SECTIONS else [])
+            want = dict if s in DICT_SECTIONS else list
+            if not isinstance(d.get(s), want):
+                d[s] = want()
         return d
 
     def save(self, d: Dict[str, Any]) -> None:
