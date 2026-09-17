@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rad-agent"
+version = "0.1.0"
+description = "Rad — an open, self-evolving, free-first AI agent with a human-inspired mind"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { file = "LICENSE" }
+authors = [{ name = "Rad" }]
+dependencies = []
+
+[project.optional-dependencies]
+vault = ["cryptography>=41"]
+cloud = ["google-auth>=2", "google-auth-oauthlib>=1", "google-api-python-client>=2"]
+voice = ["faster-whisper>=1.0", "sounddevice>=0.4", "piper-tts>=1.2"]
+dev = ["pytest>=7"]
+
+[project.scripts]
+rad = "rad.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["rad*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
