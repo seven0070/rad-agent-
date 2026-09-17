@@ -228,10 +228,47 @@ rad keys add groq gsk_…      # or: export GROQ_API_KEY=…  (auto-detected)
 rad chat --voice             # talk to it out loud
 ```
 
+## Objectives — the control plane (v0.2)
+
+`rad objective run <goal>` is the autonomous path. Unlike chat or `rad plan run`, RAD
+itself owns the state; the model only proposes.
+
+```
+Objective → Planner → Task graph (DAG, machine-checkable checks per task)
+         → Executor (the normal brain loop, every tool call observed + budgeted)
+         → Verifier (files / shell / regex — never the model's own word)
+         → Recovery (retry with feedback · repair step · replan · ask user · abort)
+         → Objective verification → COMPLETED | NEEDS_USER | FAILED
+```
+
+```
+rad objective run "Write three facts about X to facts.md, then summarise into summary.txt" \
+    --criteria "facts.md has 3 facts" --criteria "summary.txt exists" --auto
+rad objective list | inspect [id] | resume [id] | pause | cancel
+rad trace [id] [--kind TOOL_RESULT] [--json]     # full event trail
+rad events                                        # recent events across objectives
+```
+
+What you get that the chat loop cannot give you:
+
+* A model that says "DONE: wrote report.md" without writing it is **caught**, told exactly which
+  check failed, and retried. After bounded retries it replans; after that it asks you.
+* Tasks with no plannable checks complete as `UNVERIFIED`, and the final report says so.
+* Crash or Ctrl-C mid-run → `rad objective resume` continues from the checkpoint; completed
+  tasks are not re-run.
+* Budgets (tool calls, model calls, retries, time) stop runaway loops.
+* Every file written or produced by a shell command is a versioned artifact with a sha256.
+
+State lives in `~/.rad/objectives/<id>/` (objective.json, tasks.json, events.jsonl,
+observations/, artifacts.json) — plain files, like everything else.
+
 ## Every command
 
 ```
 rad                          # chat (default)
+rad objective run <goal>     # autonomous: plan → execute → verify → recover (see above)
+rad objective list|inspect|resume|pause|cancel
+rad trace [id] · rad inspect [id] · rad events
 rad chat --voice --auto --use <p> --free-lock --model <m> --workspace <dir>
 
 rad keys add <provider> <key> | list | rm <provider>

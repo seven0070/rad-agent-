@@ -551,6 +551,7 @@ def cmd_plan(args) -> int:
             fail("no current plan — `rad plan <goal>` first")
             return 1
         info("  Rad is now executing the plan with its hands…")
+        info("  (tip: `rad objective run <goal>` adds verification, recovery and resume)")
         rep = PlanRunner(home, auto=args.auto).run(max_steps=args.max)
         print()
         if rep["blocked"]:
@@ -746,6 +747,9 @@ def build_parser() -> argparse.ArgumentParser:
     pl.add_argument("--auto", action="store_true", help="hands act without confirmation")
     pl.add_argument("--max", type=int, default=None, help="run at most N steps")
     pl.set_defaults(fn=cmd_plan)
+
+    from rad.control.cli import add_parsers as _control_parsers
+    _control_parsers(sub)
 
     tm = sub.add_parser("team", help="multi-agent cognition — specialists + synthesis")
     tm.add_argument("team_action", nargs="?", default="roles", choices=["run", "roles", "history"])

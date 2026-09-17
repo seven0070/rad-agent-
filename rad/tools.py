@@ -394,5 +394,7 @@ def _shell(cmd: str, ctx: ToolCtx) -> str:
     except subprocess.TimeoutExpired:
         return "[timeout after 180s]"
     out = (proc.stdout or "") + (("\n[stderr]\n" + proc.stderr) if proc.stderr else "")
-    out = out.strip() or f"(no output) exit={proc.returncode}"
+    out = out.strip() or "(no output)"
+    if proc.returncode != 0:
+        out += f"\n[exit={proc.returncode}]"
     return out[-8000:] if len(out) > 8000 else out

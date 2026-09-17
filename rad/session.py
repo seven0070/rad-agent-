@@ -39,6 +39,8 @@ class Session:
         self.turns = 0
         self._last_user = ""
         self.last_provider = ""
+        # injectable: the control plane wraps this to observe/budget every action
+        self.tool_runner = run_tool
 
     def _last_provider_hint(self) -> str:
         return self.last_provider or "…"
@@ -113,7 +115,7 @@ class Session:
                 for tc in tool_reqs:
                     name, args = tc["name"], tc.get("arguments", {})
                     print(col.magenta(f"  ⚙ {name} {json.dumps(args, ensure_ascii=False)[:160]}"))
-                    out = run_tool(name, args, self.ctx)
+                    out = self.tool_runner(name, args, self.ctx)
                     out = out[:20000]
                     self.working.append({"role": "tool", "tool_call_id": tc.get("id", ""),
                                          "name": name, "content": out})
