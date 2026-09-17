@@ -435,6 +435,30 @@ def cmd_storage(args) -> int:
     return 1
 
 
+def cmd_serve(args) -> int:
+    from rad.api import make_server, token_for
+    home = _home(args)
+    host = args.host or "127.0.0.1"
+    if host not in ("127.0.0.1", "localhost", "::1") and not args.i_know_this_exposes_rad:
+        fail("binding to a non-loopback host exposes RAD's control plane to the network. "
+             "Add --i-know-this-exposes-rad if that is really what you want (and use a firewall).")
+        return 1
+    tok = token_for(home, rotate=args.rotate_token)
+    port = args.port or int(home.cfg.get("api_port", 7331))
+    srv = make_server(home, host=host, port=port)
+    print(col.bold(f"rad api  http://{host}:{port}/v1"))
+    print(f"  token: {tok}   (stored 0600 at {home.root / 'api.token'}; --rotate-token to replace)")
+    print(f"  auto={'on' if home.cfg.get('auto') else 'off — POST /objectives creates PENDING only'}   log: {home.root / 'logs' / 'api.jsonl'}")
+    print(col.dim("  curl -H \"Authorization: Bearer $TOKEN\" http://%s:%d/v1/health" % (host, port)))
+    try:
+        srv.serve_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        srv.server_close()
+    return 0
+
+
 def cmd_dna(args) -> int:
     from rad.dna import Evolver
     home = _home(args)
@@ -469,15 +493,51 @@ def cmd_connect(args) -> int:
 
 
 def cmd_skills(args) -> int:
+    from rad import skills as SK
     home = _home(args)
     reg = home.skills()
+    a = args.skills_action
+    if a == "audit":
+        rows = SK.audit(home)
+        if not rows:
+            info("no skills connected"); return 0
+        for r in rows:
+            mark = col.red("!") if r["flags"] else col.green("✓")
+            print(f"  {mark} {col.bold(r['name']):<18} approval={r['approval']:<7} trust={r['trust']:<7} caps={', '.join(r['capabilities'])}  {r['tools']} tools")
+            for f in r["flags"]:
+                print(f"        {col.dim(f)}")
+        return 1 if any(r["flags"] for r in rows) else 0
+    if a == "approve":
+        if not args.skills_args:
+            fail("usage: rad skills approve <name> [allow|ask|deny|policy]"); return 1
+        try:
+            m = SK.approve(home, args.skills_args[0], args.skills_args[1] if len(args.skills_args) > 1 else "allow")
+        except ValueError as e:
+            fail(str(e)); return 1
+        ok(f"{m['name']}: approval={m['approval']} pinned={m['pinned']}"); return 0
+    if a == "declare":
+        if len(args.skills_args) < 3:
+            fail("usage: rad skills declare <skill> <tool> <cap,cap>   caps: fs.read fs.write shell web mcp"); return 1
+        try:
+            m = SK.declare(home, args.skills_args[0], args.skills_args[1], args.skills_args[2].split(","))
+        except ValueError as e:
+            fail(str(e)); return 1
+        ok(f"{m['name']}.{args.skills_args[1]} → {m['tools'][args.skills_args[1]]}"); return 0
+    if a == "manifest":
+        if not args.skills_args:
+            fail("usage: rad skills manifest <name>"); return 1
+        m = SK.ensure_manifest(home, args.skills_args[0])
+        if not m:
+            fail("not connected"); return 1
+        print(json.dumps(m, indent=2)); return 0
     if not reg:
         info("no skills connected yet — `rad connect <link>`")
         return 0
     for name, e in reg.items():
-        print(f"  • {col.bold(name)}  {col.dim(e.get('transport', 'stdio'))}")
+        m = SK.ensure_manifest(home, name)
+        print(f"  • {col.bold(name)}  {col.dim(e.get('transport', 'stdio'))}  approval={m.get('approval')}  caps={', '.join(m.get('capabilities', []))}")
         for t in e.get("tools", []):
-            print(f"      {t['name']:<32} {col.dim((t.get('description') or '')[:80])}")
+            print(f"      {t['name']:<32} {col.dim(','.join(m.get('tools', {}).get(t['name'], [])) + '  ' + (t.get('description') or '')[:60])}")
     return 0
 
 
@@ -885,6 +945,11 @@ def build_parser() -> argparse.ArgumentParser:
     us.add_argument("user_args", nargs="*")
     us.set_defaults(fn=cmd_user)
 
+    sv = sub.add_parser("serve", help="local JSON API over the control plane (loopback, bearer token)")
+    sv.add_argument("--port", type=int, default=None); sv.add_argument("--host", default=None)
+    sv.add_argument("--rotate-token", action="store_true"); sv.add_argument("--i-know-this-exposes-rad", action="store_true")
+    sv.set_defaults(fn=cmd_serve)
+
     dr = sub.add_parser("doctor", help="health check of RAD; --fix repairs what is safe")
     dr.add_argument("--fix", action="store_true"); dr.add_argument("--offline", action="store_true", help="skip provider probes")
     dr.add_argument("--json", action="store_true")
@@ -914,7 +979,9 @@ def build_parser() -> argparse.ArgumentParser:
                                           help="skip tool-list approval")
     cn.set_defaults(fn=cmd_connect)
 
-    sk = sub.add_parser("skills", help="list connected skills"); sk.set_defaults(fn=cmd_skills)
+    sk = sub.add_parser("skills", help="connected skills: list | audit | approve <name> [allow|ask|deny] | declare | manifest")
+    sk.add_argument("skills_action", nargs="?", default="list", choices=["list", "audit", "approve", "declare", "manifest"])
+    sk.add_argument("skills_args", nargs="*"); sk.set_defaults(fn=cmd_skills)
     dp = sub.add_parser("drop", help="disconnect a skill"); dp.add_argument("name"); dp.set_defaults(fn=cmd_drop)
 
     dv = sub.add_parser("drive", help="Google Drive cloud mind")

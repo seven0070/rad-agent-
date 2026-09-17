@@ -38,6 +38,8 @@ DEFAULTS: Dict[str, Any] = {
     "accept_unverified_done": True,  # tasks w/o checks may complete on a DONE: claim (recorded UNVERIFIED)
     "evolution_require_approval": False,  # gated evolution also needs `rad evolve approve <id>` before promotion
     "evolution_suite": "smoke",     # lab suite used as the promotion gate
+    "allow_api_fix": False,         # let GET /v1/doctor?fix=1 apply repairs
+    "api_port": 7331,
 }
 
 

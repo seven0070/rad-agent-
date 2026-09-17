@@ -43,11 +43,11 @@ CONFIG_TYPES: Dict[str, Tuple[type, ...]] = {
     "max_context_chars": (int,), "memory_k": (int,), "sleep_threshold_hours": (int, float), "drive_folder": (str,),
     "watch_every_min": (int, float), "custom_providers": (list,), "allow_outside_workspace": (bool,),
     "plan_infer_done": (bool,), "objective_parallel": (int,), "accept_unverified_done": (bool,),
-    "evolution_require_approval": (bool,), "evolution_suite": (str,),
+    "evolution_require_approval": (bool,), "evolution_suite": (str,), "allow_api_fix": (bool,), "api_port": (int,),
 }
 CONFIG_RANGES: Dict[str, Tuple[Any, Any]] = {
     "max_tool_rounds": (1, 50), "max_context_chars": (2000, 400000), "memory_k": (0, 50),
-    "objective_parallel": (1, 8), "sleep_threshold_hours": (0, 24 * 30), "watch_every_min": (1, 24 * 60),
+    "objective_parallel": (1, 8), "api_port": (1024, 65535), "sleep_threshold_hours": (0, 24 * 30), "watch_every_min": (1, 24 * 60),
 }
 CONFIG_ENUMS: Dict[str, set] = {
     "edge0_tier": {"10b", "35b"}, "tts": {"auto", "piper", "openai", "off"}, "stt": {"auto", "whisper", "openai", "off"},

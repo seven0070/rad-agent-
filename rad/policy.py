@@ -156,6 +156,20 @@ class Policy:
         self.path = home.root / "policy.json"
         self.audit_path = home.root / "audit.jsonl"
         self._data = self._load()
+        self._mtime = self._stat()
+
+    def _stat(self) -> float:
+        try:
+            return self.path.stat().st_mtime_ns
+        except OSError:
+            return 0.0
+
+    def _refresh(self) -> None:
+        """Rules edited by another process/instance (rad policy …) take effect on the next decision."""
+        m = self._stat()
+        if m != self._mtime:
+            self._data = self._load()
+            self._mtime = m
 
     # ---- persistence
     def _load(self) -> Dict[str, Any]:
@@ -170,6 +184,7 @@ class Policy:
 
     def save(self) -> None:
         _write_json(self.path, self._data)
+        self._mtime = self._stat()
 
     @property
     def rules(self) -> List[Rule]:
@@ -216,6 +231,7 @@ class Policy:
     def decide(self, capability: str, resource: str, *, auto: bool = False,
                agent_caps: Optional[List[str]] = None, path: Optional[Path] = None,
                tool: str = "") -> Decision:
+        self._refresh()
         # 1. hard layer — nothing below can override
         if capability == CAP_SHELL and (why := hard_check_shell(resource)):
             return Decision(HARD_DENY, why, "hard")
@@ -234,7 +250,7 @@ class Policy:
                 return Decision(DENY, f"host {host} not in web_allow", "rule")
         # 4. rules, first match wins
         for i, r in enumerate(self.rules):
-            if r.capability == capability and fnmatch.fnmatch(resource, r.match):
+            if r.capability == capability and (fnmatch.fnmatch(resource, r.match) or (tool and fnmatch.fnmatch(tool, r.match))):
                 eff = r.effect
                 if eff == ASK and auto:
                     return Decision(ALLOW, f"rule#{i} {r.match!r} ASK → auto", "rule", r.limits)

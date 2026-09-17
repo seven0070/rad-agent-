@@ -425,8 +425,19 @@ def _run_tool(name: str, args: Dict[str, Any], ctx: ToolCtx) -> str:
             return "\n\n".join(out)
 
         if name.startswith("mcp__"):
-            _gate(ctx, CAP_MCP, name, f"  mcp {name}({json.dumps(args)[:120]})", tool=name)
             skill, tool = name[5:].split("__", 1)
+            from rad.skills import skill_capability
+            caps, approval = skill_capability(ctx.home, skill, tool)
+            if approval == "deny":
+                ctx.policy().audit(CAP_MCP, name, __import__("rad.policy", fromlist=["Decision"]).Decision("DENY", f"skill {skill} approval=deny", "rule"),
+                                   tool=name, actor=ctx.actor, outcome="denied")
+                raise PolicyDenied(f"DENIED by policy (skill '{skill}' is set to deny; rad skills approve {skill} ask).")
+            # the skill's effective capabilities are gated individually (a file-writing MCP tool is fs.write, not just mcp)
+            for cap in sorted(set(caps) | {CAP_MCP}):
+                res = name if cap == CAP_MCP else f"{name} {json.dumps(args)[:200]}"
+                if approval == "allow" and cap == CAP_MCP:
+                    continue                       # skill-level allow covers the generic mcp ASK; real caps still gated
+                _gate(ctx, cap, res, f"  mcp {name}({json.dumps(args)[:120]}) [{cap}]", tool=name)
             return ctx.mcp_call(skill, tool, args)
 
         return f"unknown tool: {name}"
