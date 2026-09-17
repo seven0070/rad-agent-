@@ -54,11 +54,13 @@ class Plan:
         self.save(plan)
         return plan
 
-    def toggle(self, idx: int, done: bool = True, note: str = "") -> Optional[Dict[str, Any]]:
+    def toggle(self, idx: int, done: bool = True, note: str = "", blocked: bool = False) -> Optional[Dict[str, Any]]:
         p = self.load()
         if not p or not (0 <= idx < len(p["steps"])):
             return None
         p["steps"][idx]["done"] = done
+        if blocked:
+            p["steps"][idx]["blocked"] = True
         if note:
             p["steps"][idx]["note"] = note
         self.save(p)
@@ -75,7 +77,12 @@ class Plan:
         done = sum(1 for s in p["steps"] if s["done"])
         out.append(f"  progress: {done}/{len(p['steps'])}")
         for i, s in enumerate(p["steps"]):
-            mark = col.green("[x]") if s["done"] else " [ ]"
+            if s.get("blocked"):
+                mark = col.red("[!]")
+            elif s["done"]:
+                mark = col.green("[x]")
+            else:
+                mark = " [ ]"
             note = f"  {col.dim('(' + s['note'] + ')')}" if s.get("note") else ""
             out.append(f"   {mark} {i + 1}. {s['text']}{note}")
         return "\n".join(out)

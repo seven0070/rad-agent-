@@ -221,6 +221,18 @@ TOOLS: List[Dict[str, Any]] = [
             "image": {"type": "string"},
             "question": {"type": "string", "description": "what to look for (default: describe)"}},
             "required": ["image"]}}},
+    {"type": "function", "function": {
+        "name": "spawn_agents",
+        "description": ("Delegate a hard problem to a team of specialist sub-agents (each an instance of "
+                       "this same brain with a role) and get a synthesized final answer. Use for "
+                       "problems that benefit from multiple perspectives (design, review, planning)."),
+        "parameters": {"type": "object", "properties": {
+            "problem": {"type": "string", "description": "the problem for the team"},
+            "roles": {"type": "array", "items": {"type": "string"},
+                      "description": "optional: which specialists (coder, reviewer, planner, researcher, writer)"},
+            "mode": {"type": "string", "enum": ["solo", "debate"],
+                     "description": "solo = answer+synthesize; debate = also cross-critique (default solo)"}},
+            "required": ["problem"]}}},
 ]
 
 TOOL_PROTOCOL_NOTE = (
@@ -324,6 +336,23 @@ def run_tool(name: str, args: Dict[str, Any], ctx: ToolCtx) -> str:
         if name == "see_image":
             return see_image(str(args.get("image", "")), str(args.get("question", "")),
                              ctx.router, ctx.home)
+
+        if name == "spawn_agents":
+            from rad.team import Team
+            problem = str(args.get("problem", "")).strip()
+            if not problem:
+                return "empty problem"
+            roles = [str(r) for r in (args.get("roles") or [])] or None
+            mode = str(args.get("mode", "solo"))
+            if not ctx.auto:
+                if not ctx.confirm(f"  spawn agents [{', '.join(roles or ['coder','reviewer','planner'])}] on: {problem[:80]}"):
+                    return "user declined to spawn a team."
+            res = Team(ctx.home).run(problem, roles=roles, mode=mode)
+            out = []
+            for a in res["answers"]:
+                out.append(f"--- {a['role']} ---\n{a['answer'][:1200]}")
+            out.append(f"--- FINAL (synthesized) ---\n{res['final']}")
+            return "\n\n".join(out)
 
         if name.startswith("mcp__"):
             if not ctx.auto:

@@ -104,6 +104,43 @@ the provider socket (local engine, free tier, paid, or a trained adapter). It is
 socket: a heavier external harness (lm-evaluation-harness, etc.) can be added later without
 touching the promotion loop.
 
+## Evolution 3.0 — parallel minds, a world model, hands that act
+
+Evolution 2.0 gave Rad a *smarter* brain. Evolution 3.0 gives it **teammates**, a
+**picture of the world**, and the ability to **run its own plans** with its hands.
+
+```
+rad team run "pick a db for my api" [--mode solo|debate] [--roles a,b] [--n 3]
+    A team of specialists (coder·reviewer·planner·researcher·writer — each an
+    instance of the SAME brain with a role grown from the DNA) tackles the problem,
+    then a writer synthesizes one final answer.  --mode debate adds a reviewer
+    cross-critique round.  --backend autogen runs a real AutoGen agent graph when
+    autogen-agentchat is installed; builtin is always available.
+rad team roles | history
+
+rad world show | query <term> | add <sentence> | learn [--path file]
+    The world model: an entity/relation graph ("X works at Y", "Z is my server",
+    "A depends on B") mined from chat, memory and manual facts.  Extraction is
+    brain-assisted when online, heuristic when offline.  Relevant facts are
+    auto-injected into context when the topic comes up — prediction, not recall.
+rad world sync | cypher <query>
+    Mirrors the graph into an embedded Kuzu graph DB (the engine Graphiti runs on) —
+    query it in Cypher, serverless, no key needed.
+
+rad plan run [--auto] [--max N]
+    Rad EXECUTES the current plan with its hands — full brain loop + tools,
+    confirm-gated unless --auto.  Each step ends in DONE: <note> or BLOCKED: <why>;
+    a BLOCKED step stops execution and hands control back to a human.
+```
+
+Mid-chat, the brain can also **delegate**: the `spawn_agents` tool lets Rad itself
+convene a team when a problem benefits from multiple perspectives.
+
+The OSS consumed here (behind Rad's sockets, so they stay swappable):
+* **AutoGen** (`autogen-agentchat`) — real multi-agent orchestration backend.
+* **Graphiti / Kuzu** — the knowledge-graph layer; Rad drives Kuzu (embedded) directly
+  and its extraction is brain-backed, so no separate LLM server is required.
+
 ## The Evolver (who Rad is)
 
 DNA (identity: persona, style, lessons) is separate from memory (knowledge).
@@ -178,6 +215,7 @@ pip install -e .
 pip install -e ".[vault]"    # Fernet-encrypted key vault
 pip install -e ".[cloud]"    # Google Drive cloud mind
 pip install -e ".[voice]"    # faster-whisper + sounddevice + piper
+pip install -e ".[agi]"      # multi-agent backends (AutoGen) + world graph (Kuzu)
 rad install edge0            # Mac: the built-in MoE brain
 rad install voice|cloud|vault|dev   # same, via rad
 ```
@@ -228,7 +266,10 @@ rad corpus show | export [--out file]     # experience → training data
 rad benchmark [--provider P] [--model M] [--cats …]   # capability battery, 0-100
 rad brain add|list|current|promote|rollback           # verified-evolution protocol
 rad train [--plan] [--run --model M --out D]          # weight training backends
-rad plan <goal> | status | done <n> | clear           # goal planning
+rad plan <goal> | status | done <n> | run [--auto] | clear   # plan + self-execution
+rad team run <problem> [--mode solo|debate] [--roles …] [--backend builtin|autogen]
+rad team roles | history                              # multi-agent specialists
+rad world show|query|add|learn|sync|cypher            # world model (entity/relation graph)
 rad provider add <name> <url> [--key K] [--tier local|free|paid] [--model M]
 rad workspace [path]
 rad install vault|cloud|voice|dev|edge0
@@ -278,14 +319,17 @@ Rad runs on Windows (10/11) out of the box — `python -m venv .venv`, `pip inst
 
 ```bash
 pip install -e ".[dev]"
-pytest            # 46 tests: router, memory, DNA, web parsers, MCP handshake, jobs, tools,
-                  # corpus miner, capability battery, promotion protocol, planner
+pytest            # 59 tests: router, memory, DNA, web parsers, MCP handshake, jobs, tools,
+                  # corpus miner, capability battery, promotion protocol, planner,
+                  # multi-agent team, world model (heuristic + brain extraction), plan executor
 ```
 
 ## Roadmap (v2)
 
 LoRA fine-tune of Rad's personality into Edge0 weights · expert pruning/distillation for lighter
-35b · web/phone face · remote-MCP tool execution hardening · multi-user sessions.
+35b · web/phone face · remote-MCP tool execution hardening · multi-user sessions ·
+full Graphiti temporal pipeline (LLM extraction over episodes) when a graph server is present ·
+SWE-bench / AgentBench bootstrap data wired to the corpus miner.
 
 ## License
 

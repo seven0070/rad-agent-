@@ -538,13 +538,27 @@ def cmd_plan(args) -> int:
     home = _home(args)
     p = Plan(home)
     # argparse eats action words into plan_goal (nargs="*" greed) — normalize
-    if args.plan_action is None and args.plan_goal and args.plan_goal[0] in ("status", "done", "clear"):
+    if args.plan_action is None and args.plan_goal and args.plan_goal[0] in ("status", "done", "clear", "run"):
         args.plan_action = args.plan_goal[0]
         args.plan_goal = args.plan_goal[1:]
     # `rad plan done 1` — the number rides in plan_goal, not --step
     if args.plan_action == "done" and args.step == 0 and args.plan_goal and args.plan_goal[0].isdigit():
         args.step = int(args.plan_goal[0])
         args.plan_goal = args.plan_goal[1:]
+    if args.plan_action == "run":
+        from rad.planrun import PlanRunner
+        if Plan(home).load() is None:
+            fail("no current plan — `rad plan <goal>` first")
+            return 1
+        info("  Rad is now executing the plan with its hands…")
+        rep = PlanRunner(home, auto=args.auto).run(max_steps=args.max)
+        print()
+        if rep["blocked"]:
+            warn(f"  execution stopped — human needed: {rep['blocked']}")
+            return 2
+        ok(f"  ran {rep['ran']} step(s): {rep['done']} done")
+        print(Plan(home).status())
+        return 0
     if args.plan_action == "status":
         print(col.bold("Plan:"))
         print(p.status())
@@ -725,14 +739,133 @@ def build_parser() -> argparse.ArgumentParser:
     tr.add_argument("--backend", default="auto", choices=["auto", "mlx", "unsloth", "peft"])
     tr.set_defaults(fn=cmd_train)
 
-    pl = sub.add_parser("plan", help="goal planning: decompose, track, drive")
+    pl = sub.add_parser("plan", help="goal planning: decompose, track, drive, RUN")
     pl.add_argument("plan_goal", nargs="*")
-    pl.add_argument("plan_action", nargs="?", default=None, choices=["status", "done", "clear"])
+    pl.add_argument("plan_action", nargs="?", default=None, choices=["status", "done", "clear", "run"])
     pl.add_argument("--step", type=int, default=0); pl.add_argument("--note", default=None)
+    pl.add_argument("--auto", action="store_true", help="hands act without confirmation")
+    pl.add_argument("--max", type=int, default=None, help="run at most N steps")
     pl.set_defaults(fn=cmd_plan)
+
+    tm = sub.add_parser("team", help="multi-agent cognition — specialists + synthesis")
+    tm.add_argument("team_action", nargs="?", default="roles", choices=["run", "roles", "history"])
+    tm.add_argument("team_problem", nargs="*")
+    tm.add_argument("--mode", default="solo", choices=["solo", "debate"])
+    tm.add_argument("--roles", default=None, help="comma list: coder,reviewer,planner,researcher,writer")
+    tm.add_argument("--n", type=int, default=0, help="number of default roles to spawn")
+    tm.add_argument("--backend", default="builtin", choices=["builtin", "autogen"])
+    tm.set_defaults(fn=cmd_team)
+
+    wo = sub.add_parser("world", help="world model — Rad's picture of your world")
+    wo.add_argument("world_action", nargs="?", default="show",
+                    choices=["show", "query", "add", "learn", "sync", "cypher"])
+    wo.add_argument("world_term", nargs="*")
+    wo.add_argument("--path", default=None, help="file to mine (learn)")
+    wo.set_defaults(fn=cmd_world)
 
     v = sub.add_parser("version", help="version"); v.set_defaults(fn=cmd_version)
     return p
+
+
+def cmd_team(args) -> int:
+    from rad.team import Team, DEFAULT_ROLES, autogen_available, run_autogen
+    home = _home(args)
+    team = Team(home)
+    if args.team_action == "roles":
+        info("  specialist roles:")
+        for name, desc in DEFAULT_ROLES.items():
+            print(f"    {col.cyan(name + ':'):<14} {desc[:80]}")
+        info(f"  backends: builtin=always, autogen={'installed' if autogen_available() else 'not installed'}")
+        return 0
+    if args.team_action == "history":
+        print("\n".join(team.history(15)))
+        return 0
+    problem = " ".join(args.team_problem).strip()
+    if not problem:
+        fail("usage: rad team run <problem> [--mode solo|debate] [--roles a,b] [--n 3]")
+        return 1
+    roles = [r.strip() for r in args.roles.split(",")] if args.roles else None
+    if args.backend == "autogen":
+        out = run_autogen(home, problem, roles or ["coder", "reviewer", "planner"])
+        if out is None:
+            fail("autogen backend unavailable (no chain or not installed) — use --backend builtin")
+            return 1
+        ok("autogen run finished")
+        print(out)
+        return 0
+    info(f"  spawning {roles or 'coder,reviewer,planner'} ({args.mode} mode)…")
+    res = team.run(problem, roles=roles, mode=args.mode, n=args.n)
+    for a in res["answers"]:
+        tag = col.cyan(a["role"]) if a["role"] != "debate" else col.magenta("debate")
+        print(f"\n  [{tag}]")
+        print("  " + a["answer"].replace("\n", "\n  ")[:900])
+    print(col.bold("\n  → final (synthesized):"))
+    print("  " + res["final"].replace("\n", "\n  ")[:1500])
+    return 0
+
+
+def cmd_world(args) -> int:
+    from rad.world import WorldModel
+    home = _home(args)
+    w = WorldModel(home)
+    if args.world_action == "show":
+        print(w.show())
+        return 0
+    if args.world_action == "query":
+        term = " ".join(args.world_term)
+        if not term:
+            fail("usage: rad world query <term>")
+            return 1
+        hits = w.query(term)
+        if not hits:
+            info("  nothing in the world model matches")
+            return 0
+        for h in hits:
+            if h["type"] == "entity":
+                print(f"    • {h['name']}  {col.dim(h.get('kind', ''))}")
+            else:
+                print(f"    → {h['from']} {col.dim('–' + h['rel'] + '–>')} {h['to']}")
+        return 0
+    if args.world_action == "add":
+        sentence = " ".join(args.world_term)
+        if not sentence:
+            fail("usage: rad world add <sentence about your world>")
+            return 1
+        caller = None
+        if _router(home).build_chain():
+            def caller(prompt: str) -> str:
+                return _router(home).chat([{"role": "user", "content": prompt}], stream_cb=None).text
+            caller = caller
+        n = w.add(sentence, caller=caller)
+        ok(f"learned {n} new fact(s)" if n else "nothing new learned")
+        return 0
+    if args.world_action == "sync":
+        from rad.world import kuzu_sync
+        out = kuzu_sync(home, w)
+        if out is None:
+            fail("kuzu not installed — `pip install kuzu` (optional graph mirror)")
+            return 1
+        ok(out)
+        return 0
+    if args.world_action == "cypher":
+        from rad.world import kuzu_query
+        cypher = " ".join(args.world_term).strip()
+        if not cypher:
+            fail("usage: rad world cypher <cypher query>   e.g. cypher MATCH (n:EntityNode) RETURN n.name AS name")
+            return 1
+        print(kuzu_query(home, cypher))
+        return 0
+    # learn: mine a file or the short-term memory store
+    if args.path:
+        text = Path(args.path).read_text(errors="ignore")
+        n = w.learn(text, source=f"file:{Path(args.path).name}")
+    else:
+        n = 0
+        for f in sorted((home.root / "memory" / "short").glob("*.md")):
+            n += w.learn(f.read_text(errors="ignore"), source=f.name)
+    ok(f"world model: +{n} new fact(s) mined")
+    print(w.show())
+    return 0
 
 
 def main(argv: Optional[List[str]] = None) -> int:

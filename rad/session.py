@@ -58,6 +58,13 @@ class Session:
             block = self.mem.format_for_prompt(memories)
             if block:
                 extra_parts.append(block)
+            try:
+                from rad.world import WorldModel
+                wb = WorldModel(self.home).context_block(self._last_user)
+                if wb:
+                    extra_parts.append(wb)
+            except Exception:
+                pass
         connected = self.home.skills()
         if connected:
             names = ", ".join(f"{n} ({len(e.get('tools', []))} tools)" for n, e in connected.items())
@@ -132,6 +139,13 @@ class Session:
         if self.turns >= 3:
             last = self.working[-1].get("content", "") if self.working else ""
             self.dna.add_lesson(f"recent session ended: {str(last)[:200]}")
+        if self.turns >= 2:
+            try:
+                from rad.world import WorldModel
+                first = next((m["content"] for m in self.working if m.get("role") == "user"), "")
+                WorldModel(self.home).learn(str(first)[:1500], source="chat-close")
+            except Exception:
+                pass
         info(f"  — session saved to short-term memory ({self.turns} turns) —")
 
 
