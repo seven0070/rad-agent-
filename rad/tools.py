@@ -271,10 +271,27 @@ def _blocked(cmd: str) -> Optional[str]:
     return None
 
 
+class PathOutsideWorkspace(Exception):
+    pass
+
+
 def _resolve_path(ctx: ToolCtx, path: str) -> Path:
+    """Resolve a tool path. The workspace is a *boundary*, not just a default:
+    absolute paths and `..` traversal that escape it are refused unless the
+    user has set `allow_outside_workspace: true` in config."""
+    ws = ctx.home.workspace().resolve()
     p = Path(path).expanduser()
     if not p.is_absolute():
-        p = ctx.home.workspace() / p
+        p = ws / p
+    p = p.resolve()
+    if ctx.home.cfg.get("allow_outside_workspace"):
+        return p
+    try:
+        p.relative_to(ws)
+    except ValueError:
+        raise PathOutsideWorkspace(
+            f"{path} is outside the workspace {ws} — refused. "
+            "(set allow_outside_workspace: true in rad.json, or change workspace)")
     return p
 
 
@@ -362,6 +379,8 @@ def run_tool(name: str, args: Dict[str, Any], ctx: ToolCtx) -> str:
             return ctx.mcp_call(skill, tool, args)
 
         return f"unknown tool: {name}"
+    except PathOutsideWorkspace as e:
+        return f"BLOCKED by safety policy: {e}"
     except Exception as e:
         return f"tool error: {e}"
 

@@ -32,6 +32,8 @@ DEFAULTS: Dict[str, Any] = {
     "drive_folder": "RadAgent",
     "watch_every_min": 30,
     "custom_providers": [],       # open door: any OpenAI-compatible endpoint
+    "allow_outside_workspace": False,  # file tools may leave the workspace (off = boundary enforced)
+    "plan_infer_done": False,     # plan run: treat a reply with no DONE:/BLOCKED: marker as done
 }
 
 
