@@ -358,6 +358,65 @@ def cmd_agents(args) -> int:
     return 1
 
 
+def cmd_policy(args) -> int:
+    from rad.policy import Policy
+    home = RadHome(args.home)
+    pol = Policy(home)
+    a = args.policy_action
+    if a == "show":
+        print(pol.explain()); return 0
+    if a == "allow" or a == "deny" or a == "ask" or a == "limit":
+        if len(args.policy_args) < 1:
+            fail(f"usage: rad policy {a} <capability> [glob] [--limits '{{json}}'] [--note …]"); return 1
+        cap = args.policy_args[0]; match = args.policy_args[1] if len(args.policy_args) > 1 else "*"
+        try:
+            limits = json.loads(args.limits) if args.limits else {}
+            r = pol.add_rule(cap, {"allow": "ALLOW", "deny": "DENY", "ask": "ASK", "limit": "LIMITED"}[a], match, limits, args.note or "")
+        except (ValueError, json.JSONDecodeError) as e:
+            fail(str(e)); return 1
+        ok(f"rule added: {r.capability} {r.effect} match={r.match!r}"); return 0
+    if a == "default":
+        if len(args.policy_args) != 2:
+            fail("usage: rad policy default <capability> <ALLOW|ASK|DENY|LIMITED>"); return 1
+        try:
+            pol.set_default(args.policy_args[0], args.policy_args[1])
+        except ValueError as e:
+            fail(str(e)); return 1
+        ok("default set"); return 0
+    if a == "rm":
+        try:
+            idx = int(args.policy_args[0])
+        except (IndexError, ValueError):
+            fail("usage: rad policy rm <rule#>"); return 1
+        return 0 if pol.remove_rule(idx) else (fail("no such rule") or 1)
+    if a == "web-allow":
+        pol._data["web_allow"] = [d.strip().lower() for d in args.policy_args if d.strip()]
+        pol.save(); ok(f"web_allow = {pol._data['web_allow'] or '(any public host)'}"); return 0
+    if a == "reset":
+        pol.reset(); ok("policy reset to built-in defaults"); return 0
+    if a == "test":
+        if len(args.policy_args) < 2:
+            fail("usage: rad policy test <capability> <resource…>"); return 1
+        cap = args.policy_args[0]; res = " ".join(args.policy_args[1:])
+        from pathlib import Path as _P
+        d = pol.decide(cap, res, auto=args.auto, path=_P(res) if cap.startswith("fs.") else None,
+                       tool="fetch_page" if cap == "web" else "")
+        print(f"  {d.effect}  ({d.by}: {d.reason})" + (f"  limits={d.limits}" if d.limits else ""))
+        return 0
+    return 1
+
+
+def cmd_audit(args) -> int:
+    from rad.policy import Policy
+    home = RadHome(args.home)
+    for r in reversed(Policy(home).audit_tail(args.n, effect=args.effect)):
+        when = time.strftime("%m-%d %H:%M:%S", time.localtime(r["at"]))
+        eff = r["effect"]
+        c = col.red if eff in ("DENY", "HARD_DENY") else (col.yellow if eff in ("ASK", "LIMITED") else col.green)
+        print(f"  {col.dim(when)} {c(eff):<18} {r['cap']:<12} {r.get('actor',''):<16} {r['tool']:<12} {r['resource'][:60]}  {col.dim(r['reason'] + ' → ' + r['outcome'])}")
+    return 0
+
+
 # ---------------------------------------------------------------- parser hookup
 
 def add_parsers(sub) -> None:
@@ -405,6 +464,18 @@ def add_parsers(sub) -> None:
     ag.add_argument("--tools", type=int, default=None); ag.add_argument("--seconds", type=int, default=None)
     ag.add_argument("--auto", action="store_true"); ag.add_argument("-n", type=int, default=30)
     ag.set_defaults(fn=cmd_agents)
+
+    pp = sub.add_parser("policy", help="capability permissions: show/allow/ask/deny/limit/default/test")
+    pp.add_argument("policy_action", nargs="?", default="show",
+                    choices=["show", "allow", "ask", "deny", "limit", "default", "rm", "web-allow", "reset", "test"])
+    pp.add_argument("policy_args", nargs="*")
+    pp.add_argument("--limits", default=None, help='JSON, e.g. \'{"timeout": 30, "max_bytes": 20000}\'')
+    pp.add_argument("--note", default=None); pp.add_argument("--auto", action="store_true")
+    pp.set_defaults(fn=cmd_policy)
+
+    au = sub.add_parser("audit", help="permission decisions log")
+    au.add_argument("-n", type=int, default=40); au.add_argument("--effect", default=None)
+    au.set_defaults(fn=cmd_audit)
 
     evp = sub.add_parser("events", help="recent control-plane events across objectives")
     evp.add_argument("-n", type=int, default=40)

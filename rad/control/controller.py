@@ -471,6 +471,8 @@ class Controller:
         original = session.tool_runner
         ctl = self
         lock = lock or threading.RLock()
+        if getattr(session, "ctx", None) is not None and not str(session.ctx.actor).startswith("agent:"):
+            session.ctx.actor = f"control:{obj.id}"
 
         def wrapped(name, args, ctx):
             with lock:

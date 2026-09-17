@@ -26,13 +26,7 @@ from rad.home import RadHome, _write_json
 
 # ---------------------------------------------------------------- capabilities
 
-CAP_READ = "fs.read"
-CAP_WRITE = "fs.write"
-CAP_SHELL = "shell"
-CAP_WEB = "web"
-CAP_VISION = "vision"
-CAP_SPAWN = "agents.spawn"
-CAP_MCP = "mcp"
+from rad.policy import CAP_MCP, CAP_READ, CAP_SHELL, CAP_SPAWN, CAP_VISION, CAP_WEB, CAP_WRITE  # noqa: E402
 ALL_CAPS = (CAP_READ, CAP_WRITE, CAP_SHELL, CAP_WEB, CAP_VISION, CAP_SPAWN, CAP_MCP)
 
 TOOL_CAP = {
@@ -253,6 +247,10 @@ class AgentRuntime:
         session = self._session()
         original = session.tool_runner
         t0 = time.time()
+        ctx = getattr(session, "ctx", None)
+        if ctx is not None:                      # envelope enforced again inside run_tool's policy gate
+            ctx.agent_caps = list(spec.caps)
+            ctx.actor = f"agent:{spec.id}"
 
         def guarded(name, args, ctx):
             cap = cap_for_tool(name)
