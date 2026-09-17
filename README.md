@@ -74,6 +74,36 @@ sensory (RAM, this turn) → working (RAM, this task)
 * **`rad sleep`** (and auto-sleep) consolidates short-term → long-term, prunes, and syncs to Drive.
 * Relevant memories are **auto-recalled** into context each turn; `rad recall` / `rad remember` for manual.
 
+## Evolution 2.0 — verified weight/model evolution
+
+The DNA loop evolves *who Rad is*. This loop evolves *how smart the brain is* —
+with the law that **nothing goes live without winning a benchmark battle**.
+
+```
+rad corpus                    # mine sessions + 👍/👎/corrections → training pairs (JSONL)
+rad corpus export             # the raw material for any trainer
+rad train --plan              # backends here (MLX-LM/Unsloth/PEFT) + Route B:
+                              # train anywhere (your Mac / rented GPU), bring the adapter back
+rad brain add trained-1 --provider edge0 --model <m> --adapter ./rad-adapter/adapter.pt
+rad brain promote trained-1   # A/B benchmark battle vs current brain — promote only if it WINS
+rad brain list | current | rollback
+rad benchmark                 # the Capability Battery: math·logic·code·tool·json·summarize·style
+                              # → 0-100, per-category, saved history + trend (▲/▼)
+rad plan <goal>               # goal decomposition (LLM-backed, deterministic fallback)
+rad plan status | done <n> | clear
+```
+
+**The promotion protocol** (the safety core of self-improvement):
+1. Candidate = provider+model, tuned settings, or a staged **weight adapter**
+2. Both candidate and current brain run the identical Capability Battery
+3. Candidate promoted only if `score ≥ current + margin` — then it's pinned as the live brain
+4. Every promotion is a **generation** with parent pointer — `rad brain rollback` always
+
+The battery is built-in, deterministic, and dependency-free — it scores *any* brain through
+the provider socket (local engine, free tier, paid, or a trained adapter). It is also a plug
+socket: a heavier external harness (lm-evaluation-harness, etc.) can be added later without
+touching the promotion loop.
+
 ## The Evolver (who Rad is)
 
 DNA (identity: persona, style, lessons) is separate from memory (knowledge).
@@ -193,6 +223,12 @@ rad jobs | rad jobs cancel <id>
 
 rad say <text> | rad listen [--seconds N]
 rad models                   # local engine models
+
+rad corpus show | export [--out file]     # experience → training data
+rad benchmark [--provider P] [--model M] [--cats …]   # capability battery, 0-100
+rad brain add|list|current|promote|rollback           # verified-evolution protocol
+rad train [--plan] [--run --model M --out D]          # weight training backends
+rad plan <goal> | status | done <n> | clear           # goal planning
 rad provider add <name> <url> [--key K] [--tier local|free|paid] [--model M]
 rad workspace [path]
 rad install vault|cloud|voice|dev|edge0
@@ -242,7 +278,8 @@ Rad runs on Windows (10/11) out of the box — `python -m venv .venv`, `pip inst
 
 ```bash
 pip install -e ".[dev]"
-pytest            # 34 tests: router, memory, DNA, web parsers, MCP handshake, jobs, tools
+pytest            # 46 tests: router, memory, DNA, web parsers, MCP handshake, jobs, tools,
+                  # corpus miner, capability battery, promotion protocol, planner
 ```
 
 ## Roadmap (v2)

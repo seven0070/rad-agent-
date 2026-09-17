@@ -432,6 +432,151 @@ def cmd_version(args) -> int:
     return 0
 
 
+# ---------------------------------------------------------------- evolution 2.0
+
+def cmd_corpus(args) -> int:
+    from rad.corpus import Corpus
+    home = _home(args)
+    c = Corpus(home)
+    if args.corpus_action == "export":
+        dest = c.export(args.out)
+        s = c.stats()
+        ok(f"exported {s['total']} pairs → {dest}")
+        return 0
+    print(col.bold("Corpus (Rad's experience as training data):"))
+    print(c.show())
+    return 0
+
+
+def cmd_benchmark(args) -> int:
+    from rad.battery import Benchmark, build_caller
+    home = _home(args)
+    bench = Benchmark(home)
+    cats = args.cats.split(",") if args.cats else None
+    chain = _router(home).build_chain()
+    if not chain and not args.provider:
+        fail("no brain available to benchmark — add a key or start a local engine")
+        return 1
+    provider_name = args.provider or (chain[0].spec.name if chain else None)
+    model_name = args.model or (chain[0].model if chain else None) or "?"
+    label = args.label or f"{provider_name}:{model_name}"
+    caller = build_caller(home, provider=args.provider, model=args.model)
+    try:
+        caller("You are Rad.", "Reply with exactly: OK")
+    except Exception as e:
+        fail(f"brain '{provider_name}' unreachable: {e}")
+        return 1
+    info("  running capability battery (this calls the brain per task)…")
+    rep = bench.run(caller, label=label, provider=provider_name, model=model_name, categories=cats)
+    print(col.bold(f"\n  score: {rep['score']}/100   ({label})"))
+    for c, v in sorted(rep["categories"].items()):
+        print(f"    {c:<14} {v:>6}")
+    print()
+    print(col.bold("  history:"))
+    print(bench.compare())
+    return 0
+
+
+def cmd_brain(args) -> int:
+    from rad.brains import Brains
+    home = _home(args)
+    b = Brains(home)
+    if args.brain_action == "add":
+        cand = b.add(args.name, args.provider, model=args.model or "", adapter=args.adapter,
+                     temperature=args.temp, note=args.note or "")
+        ok(f"brain candidate '{cand['name']}' added"
+           + (f" (adapter staged: {cand['adapter']})" if cand.get("adapter") else ""))
+        if not b.current() or b.current()["name"] == cand["name"]:
+            ok("it is now the current brain (first candidate)")
+        return 0
+    if args.brain_action == "list":
+        print(col.bold("Brain candidates (nothing goes live without winning the battery):"))
+        print(b.show())
+        return 0
+    if args.brain_action == "current":
+        cur = b.current()
+        if cur:
+            print(f"  {cur['name']}  →  {cur['provider']}/{cur.get('model') or '?'}"
+                  + (f"  adapter: {cur['adapter']}" if cur.get("adapter") else ""))
+        else:
+            print("  no pinned brain — routing chain decides per request")
+        return 0
+    if args.brain_action == "promote":
+        from rad.battery import Benchmark
+        bench = Benchmark(home)
+        info("  benchmark battle: candidate vs current brain…")
+        res = b.promote(args.name, bench, margin=args.margin)
+        if res["promoted"]:
+            ok(f"PROMOTED: {res['candidate']} — {res['new']} vs {res['old']} (margin {args.margin})")
+        else:
+            warn(f"rejected: {res['candidate']} — {res['new']} vs current {res['old']} "
+                 f"(needs +{args.margin}). The throne stands.")
+        return 0
+    if args.brain_action == "rollback":
+        prev = b.rollback()
+        if prev:
+            ok(f"rolled back to brain '{prev}'")
+        else:
+            info("nothing to roll back")
+        return 0
+    fail("usage: rad brain add|list|current|promote|rollback")
+    return 1
+
+
+def cmd_train(args) -> int:
+    from rad import train
+    home = _home(args)
+    if args.run:
+        return train.run_training(home, args.model or "edge0-35b",
+                                   args.out or str(home.root / "adapters"), backend=args.backend)
+    print(train.plan(home, model_ref=args.model or "edge0-35b", out_dir=args.out or ""))
+    return 0
+
+
+def cmd_plan(args) -> int:
+    from rad.plan import Plan
+    home = _home(args)
+    p = Plan(home)
+    # argparse eats action words into plan_goal (nargs="*" greed) — normalize
+    if args.plan_action is None and args.plan_goal and args.plan_goal[0] in ("status", "done", "clear"):
+        args.plan_action = args.plan_goal[0]
+        args.plan_goal = args.plan_goal[1:]
+    # `rad plan done 1` — the number rides in plan_goal, not --step
+    if args.plan_action == "done" and args.step == 0 and args.plan_goal and args.plan_goal[0].isdigit():
+        args.step = int(args.plan_goal[0])
+        args.plan_goal = args.plan_goal[1:]
+    if args.plan_action == "status":
+        print(col.bold("Plan:"))
+        print(p.status())
+        return 0
+    if args.plan_action == "done":
+        if not args.step:
+            fail("which step?  rad plan done <n> [--note x]")
+            return 1
+        if p.toggle(args.step - 1, done=True, note=args.note or "") is None:
+            fail(f"no such step {args.step}")
+            return 1
+        ok(f"step {args.step} marked done")
+        print(p.status())
+        return 0
+    if args.plan_action == "clear":
+        p.clear()
+        ok("plan cleared")
+        return 0
+    if args.plan_goal:
+        caller = None
+        if p.load() is None and _router(home).build_chain():
+            def caller(prompt: str) -> str:
+                return _router(home).chat([{"role": "user", "content": prompt}], stream_cb=None).text
+            caller = caller
+        plan = p.create(" ".join(args.plan_goal), caller=caller)
+        ok(f"plan created: {len(plan['steps'])} steps")
+        print(p.status())
+        return 0
+    fail("usage: rad plan <goal> | status | done <n> [--note x] | clear")
+    return 1
+
+
 # ---------------------------------------------------------------- parser
 
 def build_parser() -> argparse.ArgumentParser:
@@ -548,6 +693,43 @@ def build_parser() -> argparse.ArgumentParser:
     ins = sub.add_parser("install", help="install optional parts")
     ins.add_argument("thing", choices=["vault", "cloud", "voice", "dev", "edge0"])
     ins.set_defaults(fn=cmd_install)
+
+    # evolution 2.0
+    co = sub.add_parser("corpus", help="experience → training data")
+    co.add_argument("corpus_action", nargs="?", default="show", choices=["show", "export"])
+    co.add_argument("--out", default=None)
+    co.set_defaults(fn=cmd_corpus)
+
+    bm = sub.add_parser("benchmark", help="capability battery — is Rad smarter? now it's a number")
+    bm.add_argument("--provider", default=None); bm.add_argument("--model", default=None)
+    bm.add_argument("--cats", default=None, help="comma list: math,logic,code,tool,json,summarize,style")
+    bm.add_argument("--label", default=None)
+    bm.set_defaults(fn=cmd_benchmark)
+
+    br = sub.add_parser("brain", help="brain candidates + promotion protocol (verified evolution)")
+    brsub = br.add_subparsers(dest="brain_action")
+    bradd = brsub.add_parser("add")
+    bradd.add_argument("name"); bradd.add_argument("--provider", required=True)
+    bradd.add_argument("--model", default=""); bradd.add_argument("--adapter", default=None)
+    bradd.add_argument("--temp", type=float, default=0.7); bradd.add_argument("--note", default="")
+    brsub.add_parser("list")
+    brsub.add_parser("current")
+    brpromo = brsub.add_parser("promote"); brpromo.add_argument("name"); brpromo.add_argument("--margin", type=float, default=0.0)
+    brsub.add_parser("rollback")
+    br.set_defaults(fn=cmd_brain)
+
+    tr = sub.add_parser("train", help="weight evolution: corpus → trainer backends")
+    tr.add_argument("--plan", action="store_true")
+    tr.add_argument("--run", action="store_true")
+    tr.add_argument("--model", default=None); tr.add_argument("--out", default=None)
+    tr.add_argument("--backend", default="auto", choices=["auto", "mlx", "unsloth", "peft"])
+    tr.set_defaults(fn=cmd_train)
+
+    pl = sub.add_parser("plan", help="goal planning: decompose, track, drive")
+    pl.add_argument("plan_goal", nargs="*")
+    pl.add_argument("plan_action", nargs="?", default=None, choices=["status", "done", "clear"])
+    pl.add_argument("--step", type=int, default=0); pl.add_argument("--note", default=None)
+    pl.set_defaults(fn=cmd_plan)
 
     v = sub.add_parser("version", help="version"); v.set_defaults(fn=cmd_version)
     return p

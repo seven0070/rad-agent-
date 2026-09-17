@@ -165,6 +165,11 @@ def repl(home: RadHome, auto: bool = False, voice: bool = False) -> None:
     s = Session(home, auto=auto, voice=voice)
 
     # startup status line
+    from rad.brains import Brains
+    brain = Brains(home).current()
+    if brain:
+        info(f"  brain: {col.cyan(brain['name'])} → {brain['provider']}/{brain.get('model') or '?'}"
+             + (f"  {col.dim('adapter: ' + brain['adapter'].split('/')[-1])}" if brain.get("adapter") else ""))
     chain = s.router.build_chain()
     if chain:
         names = " → ".join(f"{e.spec.name}[{e.spec.tier}]" for e in chain[:5])
