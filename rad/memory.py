@@ -11,6 +11,7 @@ Used = stronger. Unused = fades. Faded = archived (never hard-deleted).
 from __future__ import annotations
 
 import json
+import os
 import re
 import time
 import uuid
@@ -22,6 +23,21 @@ from rad.home import RadHome
 
 LAYERS = ("episodic", "semantic", "procedural")
 
+# Where a memory came from. Never treat MODEL_GENERATED / INFERRED as fact.
+USER_PROVIDED = "USER_PROVIDED"     # user said it / pinned it
+OBSERVED = "OBSERVED"               # a tool saw it (file, command output, web page)
+INFERRED = "INFERRED"               # heuristic extraction from a log
+MODEL_GENERATED = "MODEL_GENERATED" # LLM consolidation / summary
+ORIGINS = (USER_PROVIDED, OBSERVED, INFERRED, MODEL_GENERATED)
+ORIGIN_CONFIDENCE = {USER_PROVIDED: 0.9, OBSERVED: 0.8, INFERRED: 0.5, MODEL_GENERATED: 0.4}
+
+# verification state
+UNVERIFIED = "UNVERIFIED"
+VERIFIED = "VERIFIED"
+CONTRADICTED = "CONTRADICTED"
+
+_NEG = re.compile(r"\b(not|no|never|n't|isn't|aren't|doesn't|don't|won't|without)\b", re.I)
+
 STOP = set("""a an and are as at be but by for from had has have if in into is it its
 no not of on or so that the their them they this to was were will with you your i me my
 """.split())
@@ -30,6 +46,10 @@ no not of on or so that the their them they this to was were will with you your 
 def tokenize(text: str) -> List[str]:
     toks = re.findall(r"[a-z0-9_]{3,}", text.lower())
     return [t for t in toks if t not in STOP]
+
+
+_SVO = re.compile(r"\b((?:the\s+)?user(?:'s)?(?:\s+\w+)?|my\s+\w+|\w+)\s+"
+                  r"(is|are|uses|prefers|likes|runs|lives in|works at|is called|named)\s+(.{2,60})$")
 
 
 def jaccard(a: str, b: str) -> float:
@@ -49,6 +69,13 @@ class Entry:
     strength: float = 1.0
     tags: List[str] = field(default_factory=list)
     path: Optional[Path] = None
+    origin: str = INFERRED
+    confidence: float = 0.5
+    source: str = ""                 # e.g. "chat", "obj_123/t_abc", "file:notes.md", "https://…"
+    verification: str = UNVERIFIED
+    contradicts: List[str] = field(default_factory=list)   # ids of conflicting memories
+    importance: float = 0.5
+    uses: int = 0
 
     def to_file(self) -> str:
         head = [
@@ -59,15 +86,56 @@ class Entry:
             f"last_used: {self.last_used}",
             f"strength: {self.strength:.3f}",
             f"tags: {json.dumps(self.tags)}",
+            f"origin: {self.origin}",
+            f"confidence: {self.confidence:.2f}",
+            f"source: {self.source}",
+            f"verification: {self.verification}",
+            f"contradicts: {json.dumps(self.contradicts)}",
+            f"importance: {self.importance:.2f}",
+            f"uses: {self.uses}",
             "---",
         ]
         return "\n".join(head) + "\n" + self.text
+
+    @property
+    def trust(self) -> float:
+        """Effective trust used for ranking: confidence, penalised if contradicted."""
+        t = self.confidence
+        if self.verification == VERIFIED:
+            t = max(t, 0.95)
+        elif self.verification == CONTRADICTED:
+            t *= 0.3
+        return t
 
 
 class Memory:
     def __init__(self, home: RadHome) -> None:
         self.home = home
         self.root = home.memory_dir
+        self._cache: Optional[List[Entry]] = None
+        self._cache_sig: Optional[Tuple[int, float]] = None
+
+    # ------------------------------------------------------------ index cache
+    def _signature(self) -> Tuple[int, float]:
+        """Cheap change detector: (#files, newest mtime_ns) across layers. Listing a directory
+        is ~100x cheaper than parsing every file, which is what happened on every turn before."""
+        n, newest = 0, 0
+        for l in LAYERS:
+            d = self.long_dir(l)
+            if not d.exists():
+                continue
+            with os.scandir(d) as it:
+                for ent in it:
+                    if ent.name.endswith(".md"):
+                        n += 1
+                        try:
+                            newest = max(newest, ent.stat().st_mtime_ns)
+                        except OSError:
+                            pass
+        return n, float(newest)
+
+    def _invalidate(self) -> None:
+        self._cache = None
 
     # ------------------------------------------------------------ paths
     def long_dir(self, layer: str) -> Path:
@@ -92,28 +160,83 @@ class Memory:
 
     # ------------------------------------------------------------ add
     def add(self, layer: str, text: str, tags: Optional[List[str]] = None,
-            strength: float = 1.0) -> Optional[Entry]:
-        """Add a long-term memory. Returns None if it duplicates an existing one."""
+            strength: float = 1.0, origin: str = INFERRED, source: str = "",
+            confidence: Optional[float] = None, importance: float = 0.5) -> Optional[Entry]:
+        """Add a long-term memory. Near-duplicates reinforce the existing entry (and may
+        upgrade its origin/verification); contradictions are linked, never silently merged."""
         text = text.strip()
         if not text or layer not in LAYERS:
             return None
-        for e in self.scan(layer):
-            if jaccard(e.text, text) > 0.7:
-                e.strength = min(1.0, e.strength + 0.1)
-                e.last_used = time.time()
-                self._save(e)
-                return e
+        if origin not in ORIGINS:
+            origin = INFERRED
+        conf = ORIGIN_CONFIDENCE[origin] if confidence is None else max(0.0, min(1.0, confidence))
         now = time.time()
+        existing = self.scan(layer)
+        for e in existing:
+            if jaccard(e.text, text) > 0.7 and not self._conflicts(e.text, text):
+                e.strength = min(1.0, e.strength + 0.1)
+                e.last_used = now
+                # a stronger origin upgrades the memory; independent re-observation counts as verification
+                if ORIGIN_CONFIDENCE[origin] > ORIGIN_CONFIDENCE.get(e.origin, 0):
+                    e.origin, e.confidence = origin, max(e.confidence, conf)
+                if origin in (USER_PROVIDED, OBSERVED) and e.verification != CONTRADICTED:
+                    e.verification = VERIFIED
+                    e.confidence = max(e.confidence, conf)
+                if source and source != e.source:
+                    e.source = e.source or source
+                self._save(e)
+                self._invalidate()
+                return e
         entry = Entry(id=uuid.uuid4().hex[:10], layer=layer, text=text,
-                      created=now, last_used=now, strength=strength, tags=tags or [])
+                      created=now, last_used=now, strength=strength, tags=tags or [],
+                      origin=origin, confidence=conf, source=source, importance=importance)
+        # contradiction: same topic, opposite polarity or different value for same subject
+        for e in existing:
+            if self._conflicts(e.text, text):
+                entry.contradicts.append(e.id)
+                if e.id not in entry.contradicts:
+                    pass
+                e.contradicts = list(dict.fromkeys(e.contradicts + [entry.id]))
+                # the *less* trusted side is marked CONTRADICTED
+                if conf > e.trust:
+                    e.verification = CONTRADICTED
+                else:
+                    entry.verification = CONTRADICTED
+                self._save(e)
         entry.path = self.long_dir(layer) / f"{entry.id}.md"
         entry.path.write_text(entry.to_file(), encoding="utf-8")
+        self._invalidate()
         return entry
+
+    @staticmethod
+    def _conflicts(a: str, b: str) -> bool:
+        """Heuristic contradiction: high topical overlap but (a) opposite negation, or
+        (b) 'X is/uses/prefers Y' vs 'X is/uses/prefers Z' with Y != Z."""
+        ja = jaccard(a, b)
+        if ja < 0.3:
+            return False
+        neg_a, neg_b = bool(_NEG.search(a)), bool(_NEG.search(b))
+        if neg_a != neg_b and ja >= 0.4:
+            return True
+        m1 = _SVO.search(a.lower())
+        m2 = _SVO.search(b.lower())
+        if m1 and m2 and m1.group(1) == m2.group(1) and m1.group(2) == m2.group(2):
+            oa, ob = set(tokenize(m1.group(3))), set(tokenize(m2.group(3)))
+            if oa and ob and not (oa & ob):
+                return True
+        return False
 
     # ------------------------------------------------------------ scan / recall
     def scan(self, layer: Optional[str] = None) -> List[Entry]:
+        sig = self._signature()
+        if self._cache is None or sig != self._cache_sig:
+            self._cache = self._scan_all()
+            self._cache_sig = sig
+        return [e for e in self._cache if e.layer == layer] if layer else list(self._cache)
+
+    def _scan_all(self) -> List[Entry]:
         out: List[Entry] = []
-        layers = [layer] if layer else list(LAYERS)
+        layers = list(LAYERS)
         for l in layers:
             d = self.long_dir(l)
             if not d.exists():
@@ -143,11 +266,19 @@ class Memory:
             created=float(meta.get("created", 0)), last_used=float(meta.get("last_used", 0)),
             strength=float(meta.get("strength", 1.0)),
             tags=json.loads(meta.get("tags", "[]")), path=path,
+            origin=meta.get("origin", INFERRED),
+            confidence=float(meta.get("confidence", ORIGIN_CONFIDENCE.get(meta.get("origin", INFERRED), 0.5))),
+            source=meta.get("source", ""),
+            verification=meta.get("verification", UNVERIFIED),
+            contradicts=json.loads(meta.get("contradicts", "[]") or "[]"),
+            importance=float(meta.get("importance", 0.5)),
+            uses=int(float(meta.get("uses", 0))),
         )
 
     def _save(self, e: Entry) -> None:
         if e.path and e.path.exists():
             e.path.write_text(e.to_file(), encoding="utf-8")
+            self._invalidate()
 
     def recall(self, query: str, k: int = 5) -> List[Entry]:
         q = set(tokenize(query))
@@ -164,9 +295,69 @@ class Memory:
                 continue
             age_days = max(0.0, (now - e.last_used) / 86400)
             recency = 0.3 if age_days < 1 else (0.15 if age_days < 7 else 0.0)
-            scored.append((overlap * 3.0 + e.strength * 0.5 + recency, e))
+            scored.append((overlap * 3.0 + e.strength * 0.5 + recency + e.trust * 1.0 + e.importance * 0.3, e))
         scored.sort(key=lambda x: -x[0])
-        return [e for _, e in scored[:k]]
+        out = [e for _, e in scored[:k]]
+        for e in out:                       # used = stronger (spaced reinforcement)
+            e.uses += 1
+            e.last_used = now
+        for e in out:
+            self._save(e)
+        return out
+
+    # ------------------------------------------------------------ correction
+    def get(self, mid: str) -> Optional[Entry]:
+        for e in self.scan():
+            if e.id == mid or e.id.startswith(mid):
+                return e
+        return None
+
+    def forget(self, mid: str) -> bool:
+        """Archive a memory (never hard-delete) and unlink contradictions pointing at it."""
+        e = self.get(mid)
+        if not e or not e.path:
+            return False
+        self.archive_dir().mkdir(parents=True, exist_ok=True)
+        e.path.rename(self.archive_dir() / e.path.name)
+        for o in self.scan():
+            if e.id in o.contradicts:
+                o.contradicts = [c for c in o.contradicts if c != e.id]
+                if not o.contradicts and o.verification == CONTRADICTED:
+                    o.verification = UNVERIFIED
+                self._save(o)
+        self._invalidate()
+        return True
+
+    def correct(self, mid: str, new_text: str) -> Optional[Entry]:
+        """User correction: replaces text, marks USER_PROVIDED + VERIFIED, archives the old version."""
+        e = self.get(mid)
+        if not e:
+            return None
+        self.forget(e.id)
+        return self.add(e.layer, new_text, tags=e.tags + ["corrected"], origin=USER_PROVIDED,
+                        source="user-correction", importance=max(e.importance, 0.7))
+
+    def verify(self, mid: str, ok: bool = True) -> Optional[Entry]:
+        e = self.get(mid)
+        if not e:
+            return None
+        e.verification = VERIFIED if ok else CONTRADICTED
+        if ok:
+            e.confidence = max(e.confidence, 0.9)
+        self._save(e)
+        return e
+
+    def contradictions(self) -> List[Tuple[Entry, Entry]]:
+        seen = set()
+        out = []
+        by_id = {e.id: e for e in self.scan()}
+        for e in by_id.values():
+            for c in e.contradicts:
+                key = tuple(sorted((e.id, c)))
+                if c in by_id and key not in seen:
+                    seen.add(key)
+                    out.append((e, by_id[c]))
+        return out
 
     def boost(self, e: Entry) -> None:
         e.strength = min(1.0, e.strength + 0.1)
@@ -180,7 +371,10 @@ class Memory:
         for e in self.scan():
             idle_days = max(0.0, (now - e.last_used) / 86400)
             if idle_days > 7:
-                new = e.strength * (0.9 ** (idle_days / 7.0))
+                half = 7.0 * (1.0 + e.importance + (1.0 if e.verification == VERIFIED else 0.0))
+                if e.verification == CONTRADICTED:
+                    half = 3.0
+                new = e.strength * (0.9 ** (idle_days / half))
                 if new < threshold:
                     dest = self.archive_dir() / f"{e.layer}-{e.id}.md"
                     e.path.rename(dest)
@@ -232,6 +426,8 @@ class Memory:
         """
         text = self.unslept_short_text()
         added = 0
+        _heuristic_only = False
+        _user_lines: set = set()
         if text:
             grouped: Dict[str, List[str]] = {"episodic": [], "semantic": [], "procedural": []}
             if consolidator is not None:
@@ -243,6 +439,7 @@ class Memory:
                 except Exception:
                     out = None
             if not any(grouped.values()):
+                _heuristic_only = True
                 for line in text.splitlines():
                     m = re.match(r"^\[.*?\] (user|rad): (.+)$", line.strip())
                     if not m:
@@ -255,9 +452,13 @@ class Memory:
                     layer = {"remember": "semantic", "fact": "semantic", "skill": "procedural"}[kind]
                     if val and val not in grouped[layer]:
                         grouped[layer].append(val)
+                        _user_lines.add(val)
+            llm_used = consolidator is not None and any(grouped.values()) and not _heuristic_only
+            origin = MODEL_GENERATED if llm_used else INFERRED
             for layer, items in grouped.items():
                 for item in items:
-                    if self.add(layer, item):
+                    o = USER_PROVIDED if item in _user_lines else origin
+                    if self.add(layer, item, origin=o, source="sleep"):
                         added += 1
             self.mark_slept()
         faded, archived = self.decay_and_archive()
@@ -267,9 +468,13 @@ class Memory:
     def format_for_prompt(self, entries: List[Entry], k: int = 5) -> str:
         if not entries:
             return ""
-        lines = ["Long-term memories relevant to this conversation (use if helpful):"]
+        lines = ["Long-term memories relevant to this conversation (use if helpful; "
+                 "treat MODEL_GENERATED/INFERRED as hints, not facts; CONTRADICTED = disputed):"]
         for e in entries[:k]:
-            lines.append(f"- [{e.layer}] {e.text}")
+            tag = e.origin.lower()
+            if e.verification != UNVERIFIED:
+                tag += "," + e.verification.lower()
+            lines.append(f"- [{e.layer}|{tag}] {e.text}")
         return "\n".join(lines)
 
     def show(self) -> str:
@@ -282,7 +487,11 @@ class Memory:
             entries.sort(key=lambda e: -e.strength)
             out.append(f"  long/{l:<11} {len(entries):>3} memories")
             for e in entries[:3]:
-                out.append(f"      {col.dim(f's={e.strength:.2f}')} {e.text[:70]}")
+                meta = col.dim(f"s={e.strength:.2f} c={e.confidence:.2f} {e.origin[:4].lower()}")
+                out.append(f"      {meta} {e.text[:70]}")
+        cons = self.contradictions()
+        if cons:
+            out.append(col.yellow(f"  ⚠ {len(cons)} contradiction(s) — `rad memory conflicts`"))
         arch = list((self.root / "archive").glob("*.md"))
         out.append(f"  archive:      {len(arch)} faded memories (recoverable)")
         return "\n".join(out)

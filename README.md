@@ -64,6 +64,10 @@ local engines → free cloud tiers (round-robin) → paid (unless free-lock)
 
 ## Human-inspired memory
 
+> v0.2: every memory carries origin (user / observed / inferred / model-generated), confidence and
+> verification state; contradictions are linked not merged; a structured **user model** (`rad user`) and a
+> **temporal world model** (`rad world`) sit beside raw memories. Details: `docs/MEMORY.md`.
+
 ```
 sensory (RAM, this turn) → working (RAM, this task)
 → short-term (disk, days, decays)

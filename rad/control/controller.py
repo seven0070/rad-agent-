@@ -378,7 +378,37 @@ class Controller:
                                 "objective verification failed: " + "; ".join(
                                     r["detail"][:80] for r in ver["results"] if not r["ok"]))
         obj.result = self._final_report(obj, graph, observer, ver)
+        self._learn(obj, graph, observer, ver)
         return self._finish(obj, graph, log, ObjectiveStatus.COMPLETED, "")
+
+    def _learn(self, obj: Objective, graph: TaskGraph, observer: Observer, ver: Dict[str, Any]) -> None:
+        """Experience → memory, with honest origins. Artifacts are OBSERVED; the fact that the
+        objective completed is OBSERVED; nothing the model merely *said* is stored as fact."""
+        try:
+            from rad.memory import Memory, OBSERVED
+            from rad.world import WorldModel
+            mem = Memory(self.home)
+            arts = list(observer.artifacts().values())
+            summary = (f"objective '{obj.goal[:120]}' completed ({ver['status']}); "
+                       f"{len(graph.tasks)} tasks, {obj.usage.retries} retries"
+                       + (f"; artifacts: {', '.join(a['location'].rsplit('/', 1)[-1] for a in arts[:5])}" if arts else ""))
+            mem.add("episodic", summary, tags=["objective", obj.id], origin=OBSERVED, source=obj.id, importance=0.6)
+            # procedural lesson only when a recovery actually worked (verified after retry)
+            for t in graph.tasks.values():
+                if t.attempts > 1 and t.status == TaskStatus.COMPLETED and t.verification.get("status") == VERIFIED \
+                        and t.failure_class:
+                    mem.add("procedural",
+                            f"when a step fails with {t.failure_class}, retrying with the failed-check feedback "
+                            f"worked (task: {t.text[:80]})",
+                            tags=["lesson", t.failure_class], origin=OBSERVED, source=f"{obj.id}/{t.id}", importance=0.5)
+            by_task: Dict[str, List[Dict[str, Any]]] = {}
+            for a in arts:
+                by_task.setdefault(a["task_id"], []).append(a)
+            wm = WorldModel(self.home)
+            for tid, items in by_task.items():
+                wm.learn_observation(obj.id, tid, items)
+        except Exception:
+            pass
 
     def _final_report(self, obj: Objective, graph: TaskGraph, observer: Observer, ver: Dict[str, Any]) -> str:
         lines = [f"Objective: {obj.goal}", f"Verification: {ver['status']}"]

@@ -67,6 +67,13 @@ class Session:
                     extra_parts.append(wb)
             except Exception:
                 pass
+            try:
+                from rad.usermodel import UserModel
+                ub = UserModel(self.home).context_block()
+                if ub:
+                    extra_parts.append(ub)
+            except Exception:
+                pass
         connected = self.home.skills()
         if connected:
             names = ", ".join(f"{n} ({len(e.get('tools', []))} tools)" for n, e in connected.items())
@@ -85,6 +92,11 @@ class Session:
         self.turns += 1
         self._last_user = user_text
         self.mem.session_log("user", user_text)
+        try:                                   # deterministic patterns only, labelled INFERRED
+            from rad.usermodel import UserModel
+            UserModel(self.home).learn_from_text(user_text, caller=None, source="chat")
+        except Exception:
+            pass
         self.working.append({"role": "user", "content": user_text})
         self._trim()
 
@@ -145,7 +157,7 @@ class Session:
             try:
                 from rad.world import WorldModel
                 first = next((m["content"] for m in self.working if m.get("role") == "user"), "")
-                WorldModel(self.home).learn(str(first)[:1500], source="chat-close")
+                WorldModel(self.home).learn(str(first)[:1500], source="chat-close")   # → INFERRED
             except Exception:
                 pass
         info(f"  — session saved to short-term memory ({self.turns} turns) —")
@@ -230,7 +242,9 @@ def repl(home: RadHome, auto: bool = False, voice: bool = False) -> None:
             ok("noted — the Evolver will use this")
             continue
         if line.startswith("/remember "):
-            e = s.mem.add("semantic", line[len("/remember "):].strip(), tags=["user-pinned"])
+            from rad.memory import USER_PROVIDED
+            e = s.mem.add("semantic", line[len("/remember "):].strip(), tags=["user-pinned"],
+                          origin=USER_PROVIDED, source="chat:/remember", importance=0.8)
             ok("remembered" if e else "already in memory")
             continue
         if line.startswith("/recall "):

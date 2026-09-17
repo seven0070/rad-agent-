@@ -146,7 +146,9 @@ def cmd_search(args) -> int:
 def cmd_remember(args) -> int:
     from rad.memory import Memory
     home = _home(args)
-    e = Memory(home).add(args.layer, " ".join(args.text), tags=["cli"])
+    from rad.memory import USER_PROVIDED
+    e = Memory(home).add(args.layer, " ".join(args.text), tags=["cli"], origin=USER_PROVIDED,
+                         source="cli:remember", importance=0.8)
     ok("stored in long-term memory" if e else "already in memory (duplicates are strengthened, not duplicated)")
     return 0
 
@@ -180,9 +182,80 @@ def cmd_memory(args) -> int:
         faded, archived = m.decay_and_archive()
         ok(f"pruned: {faded} faded in place, {archived} archived")
         return 0
+    if args.memory_action == "conflicts":
+        cons = m.contradictions()
+        if not cons:
+            info("  no contradictions in memory")
+            return 0
+        for a, b in cons:
+            print(f"  {col.yellow('⚡')} {a.id} [{a.origin.lower()} c={a.confidence:.2f} {a.verification.lower()}] {a.text[:80]}")
+            print(f"     vs {b.id} [{b.origin.lower()} c={b.confidence:.2f} {b.verification.lower()}] {b.text[:80]}")
+        info("  resolve: rad memory verify <id> | rad memory forget <id> | rad memory correct <id> <new text>")
+        return 0
+    if args.memory_action in ("forget", "verify", "correct", "dispute"):
+        if not args.memory_args:
+            fail(f"usage: rad memory {args.memory_action} <id> [text]")
+            return 1
+        mid = args.memory_args[0]
+        if args.memory_action == "forget":
+            return 0 if (m.forget(mid) and ok(f"archived {mid}") is None) else (fail("no such memory") or 1)
+        if args.memory_action == "verify":
+            e = m.verify(mid, ok=True)
+            return 0 if (e and ok(f"verified {e.id}") is None) else (fail("no such memory") or 1)
+        if args.memory_action == "dispute":
+            e = m.verify(mid, ok=False)
+            return 0 if (e and ok(f"marked {e.id} CONTRADICTED") is None) else (fail("no such memory") or 1)
+        new = " ".join(args.memory_args[1:]).strip()
+        if not new:
+            fail("usage: rad memory correct <id> <new text>")
+            return 1
+        e = m.correct(mid, new)
+        return 0 if (e and ok(f"corrected → {e.id} (user_provided, verified)") is None) else (fail("no such memory") or 1)
     print(col.bold("Memory layers:"))
     print(m.show())
     return 0
+
+
+def cmd_user(args) -> int:
+    from rad.usermodel import UserModel, DICT_SECTIONS, SECTIONS
+    home = _home(args)
+    um = UserModel(home)
+    a = args.user_action
+    if a == "show":
+        print(col.bold("User model:"))
+        print(um.show())
+        return 0
+    if a == "set":
+        if len(args.user_args) < 3:
+            fail("usage: rad user set <section> <key> <value…>   sections: " + ", ".join(sorted(DICT_SECTIONS)))
+            return 1
+        sec, key, val = args.user_args[0], args.user_args[1], " ".join(args.user_args[2:])
+        try:
+            um.set(sec, key, val)
+        except ValueError as e:
+            fail(str(e)); return 1
+        ok(f"{sec}.{key} = {val}")
+        return 0
+    if a == "add":
+        if len(args.user_args) < 2:
+            fail("usage: rad user add <section> <value…>   sections: goals, projects, constraints, routines, active_priorities")
+            return 1
+        try:
+            um.add(args.user_args[0], " ".join(args.user_args[1:]))
+        except ValueError as e:
+            fail(str(e)); return 1
+        ok("added")
+        return 0
+    if a == "forget":
+        if len(args.user_args) < 2:
+            fail("usage: rad user forget <section> <key|value>")
+            return 1
+        return 0 if um.forget(args.user_args[0], " ".join(args.user_args[1:])) else (fail("not found") or 1)
+    if a == "reset":
+        um.save({s: ({} if s in DICT_SECTIONS else []) for s in SECTIONS})
+        ok("user model reset")
+        return 0
+    return 1
 
 
 def cmd_evolve(args) -> int:
@@ -645,8 +718,15 @@ def build_parser() -> argparse.ArgumentParser:
     sl.set_defaults(fn=cmd_sleep)
 
     me = sub.add_parser("memory", help="memory layers")
-    me.add_argument("memory_action", nargs="?", default="show", choices=["show", "prune"])
+    me.add_argument("memory_action", nargs="?", default="show",
+                    choices=["show", "prune", "conflicts", "forget", "verify", "dispute", "correct"])
+    me.add_argument("memory_args", nargs="*")
     me.set_defaults(fn=cmd_memory)
+
+    us = sub.add_parser("user", help="the user model — what Rad believes about you (inspect / correct)")
+    us.add_argument("user_action", nargs="?", default="show", choices=["show", "set", "add", "forget", "reset"])
+    us.add_argument("user_args", nargs="*")
+    us.set_defaults(fn=cmd_user)
 
     ev = sub.add_parser("evolve", help="directed evolution: rad evolve <direction>")
     ev.add_argument("direction", nargs="*")
@@ -762,9 +842,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     wo = sub.add_parser("world", help="world model — Rad's picture of your world")
     wo.add_argument("world_action", nargs="?", default="show",
-                    choices=["show", "query", "add", "learn", "sync", "cypher"])
+                    choices=["show", "query", "add", "learn", "sync", "cypher", "retract", "confirm", "disputes"])
     wo.add_argument("world_term", nargs="*")
     wo.add_argument("--path", default=None, help="file to mine (learn)")
+    wo.add_argument("--history", action="store_true", help="query: include superseded relations")
     wo.set_defaults(fn=cmd_world)
 
     v = sub.add_parser("version", help="version"); v.set_defaults(fn=cmd_version)
@@ -820,7 +901,7 @@ def cmd_world(args) -> int:
         if not term:
             fail("usage: rad world query <term>")
             return 1
-        hits = w.query(term)
+        hits = w.query(term, include_history=args.history)
         if not hits:
             info("  nothing in the world model matches")
             return 0
@@ -828,7 +909,26 @@ def cmd_world(args) -> int:
             if h["type"] == "entity":
                 print(f"    • {h['name']}  {col.dim(h.get('kind', ''))}")
             else:
-                print(f"    → {h['from']} {col.dim('–' + h['rel'] + '–>')} {h['to']}")
+                st = h.get("status", "current")
+                tag = col.dim(f"{h.get('origin', 'inferred').lower()} c={h.get('confidence', 0.5):.2f}")
+                flag = col.yellow(f" [{st}]") if st != "current" else ""
+                print(f"    → {h['from']} {col.dim('–' + h['rel'] + '–>')} {h['to']}  {tag}{flag}")
+        return 0
+    if args.world_action in ("retract", "confirm"):
+        if len(args.world_term) < 3:
+            fail(f"usage: rad world {args.world_action} <from> <rel> <to…>")
+            return 1
+        a_, rel, b_ = args.world_term[0], args.world_term[1], " ".join(args.world_term[2:])
+        fn = w.retract if args.world_action == "retract" else w.confirm
+        return 0 if (fn(a_, rel, b_) and ok(f"{args.world_action}ed: {a_} –{rel}–> {b_}") is None) else (fail("no such relation") or 1)
+    if args.world_action == "disputes":
+        ds = w.disputes()
+        if not ds:
+            info("  no disputed relations")
+            return 0
+        for r in ds:
+            print(f"  {col.yellow('⚡')} {r['from']} –{r['rel']}–> {r['to']}  {col.dim(r.get('origin', '').lower())}  disputes: {r.get('disputes')}")
+        info("  resolve: rad world confirm <from> <rel> <to> | rad world retract <from> <rel> <to>")
         return 0
     if args.world_action == "add":
         sentence = " ".join(args.world_term)
