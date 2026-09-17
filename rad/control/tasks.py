@@ -42,7 +42,7 @@ ALLOWED = {
     TaskStatus.OBSERVING: {TaskStatus.VERIFYING, TaskStatus.FAILED},
     TaskStatus.VERIFYING: {TaskStatus.COMPLETED, TaskStatus.FAILED},
     TaskStatus.FAILED: {TaskStatus.RETRYING, TaskStatus.BLOCKED, TaskStatus.NEEDS_USER, TaskStatus.CANCELLED},
-    TaskStatus.RETRYING: {TaskStatus.READY, TaskStatus.CANCELLED},
+    TaskStatus.RETRYING: {TaskStatus.READY, TaskStatus.CANCELLED, TaskStatus.BLOCKED},
     TaskStatus.COMPLETED: set(),
     TaskStatus.BLOCKED: {TaskStatus.READY, TaskStatus.CANCELLED},      # human unblocks
     TaskStatus.NEEDS_USER: {TaskStatus.READY, TaskStatus.CANCELLED},   # human answers

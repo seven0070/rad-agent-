@@ -6,6 +6,7 @@ observation, verification and recovery decision is an event.
 from __future__ import annotations
 
 import json
+import threading
 import time
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -35,6 +36,8 @@ BUDGET_EXCEEDED = "BUDGET_EXCEEDED"
 CHECKPOINT = "CHECKPOINT"
 NEEDS_USER = "NEEDS_USER"
 ARTIFACT_CREATED = "ARTIFACT_CREATED"
+TRANSCRIPT = "TRANSCRIPT"
+REPLAY = "REPLAY"
 
 
 @dataclass
@@ -62,6 +65,7 @@ class EventLog:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self._seq = self._last_seq()
         self._subscribers: List[Any] = []
+        self._lock = threading.Lock()
 
     def _last_seq(self) -> int:
         if not self.path.exists():
@@ -80,10 +84,11 @@ class EventLog:
         self._subscribers.append(fn)
 
     def emit(self, kind: str, objective_id: str = "", task_id: str = "", **data: Any) -> Event:
-        self._seq += 1
-        ev = Event(kind=kind, objective_id=objective_id, task_id=task_id, data=data, seq=self._seq)
-        with open(self.path, "a", encoding="utf-8") as f:
-            f.write(ev.to_json() + "\n")
+        with self._lock:
+            self._seq += 1
+            ev = Event(kind=kind, objective_id=objective_id, task_id=task_id, data=data, seq=self._seq)
+            with open(self.path, "a", encoding="utf-8") as f:
+                f.write(ev.to_json() + "\n")
         for fn in self._subscribers:
             try:
                 fn(ev)

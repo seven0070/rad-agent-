@@ -8,6 +8,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import threading
 import time
 import uuid
 from dataclasses import asdict, dataclass, field
@@ -79,6 +80,7 @@ class Observer:
         self.dir = objective_dir / "observations"
         self.dir.mkdir(parents=True, exist_ok=True)
         self.artifacts_path = objective_dir / "artifacts.json"
+        self._lock = threading.RLock()
 
     # ------------------------------------------------------------ observe
     @staticmethod
@@ -156,6 +158,10 @@ class Observer:
 
     def register_artifact(self, objective_id: str, task_id: str, type_: str, location: str,
                           creator: str, metadata: Optional[Dict[str, Any]] = None) -> Optional[Artifact]:
+        with self._lock:
+            return self._register_artifact(objective_id, task_id, type_, location, creator, metadata)
+
+    def _register_artifact(self, objective_id, task_id, type_, location, creator, metadata) -> Optional[Artifact]:
         reg = self.artifacts()
         sha, size = "", 0
         if type_ == "file":
@@ -178,7 +184,8 @@ class Observer:
         return art
 
     def mark_verified(self, art_id: str, result: Dict[str, Any]) -> None:
-        reg = self.artifacts()
-        if art_id in reg:
-            reg[art_id]["verification"] = result
-            _write_json(self.artifacts_path, reg)
+        with self._lock:
+            reg = self.artifacts()
+            if art_id in reg:
+                reg[art_id]["verification"] = result
+                _write_json(self.artifacts_path, reg)

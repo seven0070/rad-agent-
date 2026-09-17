@@ -11,7 +11,9 @@ crash continues where it stopped.
 from __future__ import annotations
 
 import re
+import threading
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
@@ -165,12 +167,33 @@ class Controller:
         verifier = Verifier(self.home.workspace(), observer, llm=self._brain())
         recovery = RecoveryEngine()
         repairs: Dict[str, int] = {}
-        session = self._make_session(obj)
-        self._wrap_tools(session, obj, observer, log)
+        lock = threading.RLock()
+        parallel = max(1, int(self.home.cfg.get("objective_parallel", 1) or 1))
+        if not obj.auto:
+            parallel = 1                      # confirmations are interactive → never interleave
         started = time.time()
+        base_seconds = obj.usage.seconds      # cumulative across resumes
         ran = 0
+        sessions: List[Any] = []
+
+        def tick() -> None:
+            obj.usage.seconds = base_seconds + (time.time() - started)
+
+        def one(task: Task) -> None:
+            session = self._make_session(obj)
+            sessions.append(session)
+            self._wrap_tools(session, obj, observer, log, lock)
+            try:
+                self._run_task(obj, graph, task, session, observer, verifier, recovery, repairs, log, lock)
+            finally:
+                try:
+                    session.close()
+                except Exception:
+                    pass
+
         try:
             while True:
+                tick()
                 over = obj.over_budget()
                 if over:
                     log.emit(E.BUDGET_EXCEEDED, obj.id, reason=over)
@@ -189,30 +212,36 @@ class Controller:
                 if max_tasks is not None and ran >= max_tasks:
                     self._checkpoint(obj, graph, log)
                     return obj
-                task = ready[0]
-                ran += 1
-                self._run_task(obj, graph, task, session, observer, verifier, recovery, repairs, log)
-                obj.usage.seconds = time.time() - started + obj.usage.seconds * 0  # per-run wallclock
+                batch = ready[:parallel]
+                if max_tasks is not None:
+                    batch = batch[:max(1, max_tasks - ran)]
+                ran += len(batch)
+                if len(batch) == 1:
+                    one(batch[0])
+                else:
+                    log.emit(E.TASK_STATUS, obj.id, status="parallel", tasks=[t.id for t in batch])
+                    with ThreadPoolExecutor(max_workers=len(batch), thread_name_prefix="rad-task") as pool:
+                        futs = [pool.submit(one, t) for t in batch]
+                        for f in as_completed(futs):
+                            f.result()        # re-raise BudgetExceeded etc. in the driver
+                tick()
                 self._checkpoint(obj, graph, log)
-                # doom propagation: tasks whose required deps can never finish
                 for t in graph.tasks.values():
                     if t.status in TaskStatus.OPEN and graph.deps_doomed(t):
                         t.transition(TaskStatus.BLOCKED, "a required dependency failed permanently")
                         log.emit(E.TASK_STATUS, obj.id, t.id, status=t.status, note=t.note)
         except BudgetExceeded as e:
             log.emit(E.BUDGET_EXCEEDED, obj.id, reason=str(e))
+            tick()
             return self._finish(obj, graph, log, ObjectiveStatus.NEEDS_USER, f"stopped: {e}")
-        finally:
-            try:
-                session.close()
-            except Exception:
-                pass
 
-        # objective-level verification
+        tick()
         return self._verify_objective(obj, graph, verifier, observer, log)
 
     def _run_task(self, obj: Objective, graph: TaskGraph, task: Task, session, observer: Observer,
-                  verifier: Verifier, recovery: RecoveryEngine, repairs: Dict[str, int], log: EventLog) -> None:
+                  verifier: Verifier, recovery: RecoveryEngine, repairs: Dict[str, int], log: EventLog,
+                  lock: Optional[threading.RLock] = None) -> None:
+        lock = lock or threading.RLock()
         if task.status == TaskStatus.PENDING:
             task.transition(TaskStatus.READY)
         if task.status == TaskStatus.RETRYING:
@@ -225,15 +254,20 @@ class Controller:
         session._rad_current_task = task.id  # type: ignore[attr-defined]
         error = ""
         reply = ""
+        prompt = self._task_prompt(obj, graph, task, hint)
         try:
-            obj.usage.model_calls += 1
-            log.emit(E.MODEL_CALLED, obj.id, task.id, purpose="execute")
-            reply = session.think(self._task_prompt(obj, graph, task, hint)) or ""
+            with lock:
+                obj.usage.model_calls += 1
+            log.emit(E.MODEL_CALLED, obj.id, task.id, purpose="execute", attempt=task.attempts)
+            reply = session.think(prompt) or ""
         except BudgetExceeded:
             raise
         except Exception as e:
             error = str(e)
         task.reply = reply[-4000:]
+        # transcript for replay: exact prompt + reply + provider (never inferred later)
+        log.emit(E.TRANSCRIPT, obj.id, task.id, attempt=task.attempts, prompt=prompt, reply=reply[-12000:],
+                 provider=getattr(session, "last_provider", ""), error=error[:500])
 
         # explicit signals from the model (advisory only — verification decides)
         nm = NEEDS_USER_RE.search(reply)
@@ -249,7 +283,8 @@ class Controller:
         if error:
             task.transition(TaskStatus.FAILED, error[:300])
             log.emit(E.TASK_FAILED, obj.id, task.id, error=error[:500])
-            self._recover(obj, graph, task, observer, recovery, repairs, log, error=error)
+            with lock:
+                self._recover(obj, graph, task, observer, recovery, repairs, log, error=error)
             return
 
         task.transition(TaskStatus.OBSERVING)
@@ -273,7 +308,8 @@ class Controller:
 
         task.transition(TaskStatus.FAILED, f"verification {ver['status']}: {ver['summary'][:200]}")
         log.emit(E.TASK_FAILED, obj.id, task.id, verification=ver["status"], summary=ver["summary"][:400])
-        self._recover(obj, graph, task, observer, recovery, repairs, log, verification=ver)
+        with lock:
+            self._recover(obj, graph, task, observer, recovery, repairs, log, verification=ver)
 
     def _recover(self, obj: Objective, graph: TaskGraph, task: Task, observer: Observer,
                  recovery: RecoveryEngine, repairs: Dict[str, int], log: EventLog,
@@ -399,17 +435,20 @@ class Controller:
                      "If you need information only the user has: 'NEEDS_USER: <question>'.")
         return "\n".join(lines)
 
-    def _wrap_tools(self, session, obj: Objective, observer: Observer, log: EventLog) -> None:
+    def _wrap_tools(self, session, obj: Objective, observer: Observer, log: EventLog,
+                    lock: Optional[threading.RLock] = None) -> None:
         """Intercept every tool call the Session makes: budget → execute → observe."""
         original = session.tool_runner
         ctl = self
+        lock = lock or threading.RLock()
 
         def wrapped(name, args, ctx):
-            if obj.budget.tool_calls and obj.usage.tool_calls >= obj.budget.tool_calls:
-                raise BudgetExceeded(f"tool-call budget {obj.budget.tool_calls} exhausted")
-            obj.usage.tool_calls += 1
+            with lock:
+                if obj.budget.tool_calls and obj.usage.tool_calls >= obj.budget.tool_calls:
+                    raise BudgetExceeded(f"tool-call budget {obj.budget.tool_calls} exhausted")
+                obj.usage.tool_calls += 1
+                aid = f"act_{obj.usage.tool_calls}"
             tid = getattr(session, "_rad_current_task", "")
-            aid = f"act_{obj.usage.tool_calls}"
             log.emit(E.TOOL_CALLED, obj.id, tid, action=aid, tool=name, args=args)
             before = observer.snapshot(ctl.home.workspace()) if name == "run_shell" else None
             t0 = time.time()

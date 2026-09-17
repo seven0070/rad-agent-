@@ -246,6 +246,8 @@ rad objective run "Write three facts about X to facts.md, then summarise into su
     --criteria "facts.md has 3 facts" --criteria "summary.txt exists" --auto
 rad objective list | inspect [id] | resume [id] | pause | cancel
 rad trace [id] [--kind TOOL_RESULT] [--json]     # full event trail
+rad replay [id] --verify                          # prompts → tools → results; re-check the world now
+rad why report.md | rad why "<claim>"             # provenance: creator, lineage, evidence (or none)
 rad events                                        # recent events across objectives
 ```
 
@@ -268,7 +270,7 @@ observations/, artifacts.json) — plain files, like everything else.
 rad                          # chat (default)
 rad objective run <goal>     # autonomous: plan → execute → verify → recover (see above)
 rad objective list|inspect|resume|pause|cancel
-rad trace [id] · rad inspect [id] · rad events
+rad trace [id] · rad inspect [id] · rad replay [id] --verify · rad why <x> · rad events
 rad chat --voice --auto --use <p> --free-lock --model <m> --workspace <dir>
 
 rad keys add <provider> <key> | list | rm <provider>

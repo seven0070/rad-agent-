@@ -217,6 +217,93 @@ def cmd_events(args) -> int:
     return 0
 
 
+def cmd_replay(args) -> int:
+    from rad.control.replay import Replay
+    home = RadHome(args.home)
+    ctl = Controller(home)
+    obj = ctl.store.resolve(args.ref or "last")
+    if not obj:
+        fail("no such objective")
+        return 1
+    rp = Replay(ctl.store, obj.id, home.workspace())
+    if args.json:
+        print(json.dumps({"timeline": rp.timeline(), "reverify": rp.reverify() if args.verify else None},
+                         ensure_ascii=False, indent=2, default=str))
+        return 0
+    print(f"  {col.bold(obj.id)}  {_c(obj.status)}  {obj.goal[:90]}\n")
+    for step in rp.timeline():
+        print(f"  ▶ {col.cyan(step['text'][:80])}  {col.dim('attempt ' + str(step['attempt']) + ' · ' + (step['provider'] or '?'))}")
+        if args.prompts:
+            print(col.dim("    prompt: " + step["prompt"][:600].replace("\n", "\n            ")))
+        for t in step["tools"]:
+            st = t["status"] or "?"
+            mark = col.green("✓") if st == "success" else col.red("✗")
+            print(f"    {mark} {t['tool']} {json.dumps(t['args'], ensure_ascii=False)[:100]}  {col.dim(str(t['ms']) + 'ms')}")
+        if step["error"]:
+            print(col.red(f"    error: {step['error'][:160]}"))
+        elif step["reply"]:
+            print("    reply: " + step["reply"].strip().replace("\n", " ")[:200])
+        if step["verification"]:
+            print(f"    verify: {_c(step['verification']['status'])}  {col.dim(step['verification']['summary'][:120])}")
+        if step["recovery"]:
+            r = step["recovery"]
+            print(col.yellow(f"    recover: {r['class']} → {r['strategy']}  {r['reason'][:100]}"))
+        print()
+    if args.verify:
+        rep = rp.reverify()
+        print(col.bold("  re-verification against current workspace:"))
+        for t in rep["tasks"]:
+            flag = "" if t["recorded"] == t["now"] else col.yellow("  (drift)")
+            print(f"    {_c(t['now']):<20} was {t['recorded'] or '-':<11} {t['text'][:70]}{flag}")
+        print(f"    objective now: {_c(rep['objective_now'])}")
+        if rep["drift"]:
+            warn(f"  {len(rep['drift'])} task(s) verified at run time no longer pass — the world changed")
+    return 0
+
+
+def cmd_why(args) -> int:
+    from rad.control.provenance import Provenance
+    home = RadHome(args.home)
+    ctl = Controller(home)
+    obj = ctl.store.resolve(args.objective or "last")
+    if not obj:
+        fail("no such objective")
+        return 1
+    pv = Provenance(ctl.store.dir(obj.id))
+    q = " ".join(args.query).strip()
+    if not q:
+        fail("usage: rad why <claim or artifact path> [--objective id]")
+        return 1
+    art = pv.artifact(q)
+    if art:
+        a = art["artifact"]
+        print(f"  {col.bold(a['location'])}  v{a['version']}  {a.get('size', 0)}B  sha256 {a['sha256'][:12]}…")
+        print(f"    created by {col.magenta(a['creator'])} in task {art['task']['id']} "
+              f"(attempt {art['task']['attempt']}): {art['task']['text'][:70]}")
+        if art["action"]:
+            print(f"    action {art['action']['action_id']}: {json.dumps(art['action']['args'], ensure_ascii=False)[:140]}")
+        if len(art["versions"]) > 1:
+            print("    lineage: " + " ← ".join(f"v{v['version']}({v['sha256'][:8]})" for v in art["versions"]))
+        if art["verification"]:
+            print(f"    verification: {'✓' if art['verification'].get('ok') else '✗'} {art['verification'].get('detail', '')[:80]}")
+        ev = art["evidence"]
+        print(f"    evidence consulted before creation: {len(ev)}")
+        for e in ev[:8]:
+            trust = col.green("trusted") if e.get("trusted") else col.yellow("untrusted-web")
+            print(f"      - [{trust}] {e['tool']} {str(e['source'])[:90]}")
+        return 0
+    res = pv.why(q)
+    print(f"  claim: {col.bold(q)}\n  verdict: {_c(res['verdict'].upper()) if res['verdict'] != 'weak' else col.yellow('WEAK')}")
+    if not res["support"]:
+        info("  no recorded observation supports this — RAD has no evidence for it")
+        return 0
+    for s_ in res["support"]:
+        trust = col.green("trusted") if s_["trusted"] else col.yellow("untrusted-web")
+        print(f"    {s_['score']:.2f} [{trust}] {s_['tool']} {s_['source'][:80]}  {col.dim(s_['observation'])}")
+        print(col.dim(f"         …{s_['excerpt'][:200]}…"))
+    return 0
+
+
 # ---------------------------------------------------------------- parser hookup
 
 def add_parsers(sub) -> None:
@@ -244,6 +331,16 @@ def add_parsers(sub) -> None:
     ins.set_defaults(fn=lambda a: cmd_objective(argparse.Namespace(
         home=a.home, obj_action="inspect", obj_args=[a.ref], criteria=None, constraint=None, auto=False,
         active=False, max_tasks=None, max_tools=None, max_retries=None, minutes=None)))
+
+    rp = sub.add_parser("replay", help="replay an objective: prompts, tool calls, results; --verify re-checks now")
+    rp.add_argument("ref", nargs="?", default="last")
+    rp.add_argument("--verify", action="store_true"); rp.add_argument("--prompts", action="store_true")
+    rp.add_argument("--json", action="store_true")
+    rp.set_defaults(fn=cmd_replay)
+
+    wy = sub.add_parser("why", help="provenance: rad why <claim | artifact path>")
+    wy.add_argument("query", nargs="*"); wy.add_argument("--objective", default=None)
+    wy.set_defaults(fn=cmd_why)
 
     evp = sub.add_parser("events", help="recent control-plane events across objectives")
     evp.add_argument("-n", type=int, default=40)

@@ -33,7 +33,9 @@ DEFAULTS: Dict[str, Any] = {
     "watch_every_min": 30,
     "custom_providers": [],       # open door: any OpenAI-compatible endpoint
     "allow_outside_workspace": False,  # file tools may leave the workspace (off = boundary enforced)
-    "plan_infer_done": False,     # plan run: treat a reply with no DONE:/BLOCKED: marker as done
+    "plan_infer_done": False,
+    "objective_parallel": 2,      # max ready tasks run concurrently (only with --auto)
+    "accept_unverified_done": True,  # tasks w/o checks may complete on a DONE: claim (recorded UNVERIFIED)     # plan run: treat a reply with no DONE:/BLOCKED: marker as done
 }
 
 

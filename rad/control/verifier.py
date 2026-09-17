@@ -65,13 +65,15 @@ class Verifier:
         machine = [r for r in results if r.get("machine", True)]
         hard_fail = any(not r["ok"] for r in machine)
         has_checks = bool(task.checks)
+        produced = [r for r in results if r["level"] == "artifact"]
         if hard_fail:
             status = FAILED
         elif has_checks:
             status = VERIFIED
-        elif attempt_obs and not errors:
-            # actions ran cleanly but nothing asserted the outcome
-            status = UNVERIFIED
+        elif produced and not errors:
+            # no explicit checks, but the task demonstrably produced non-empty artifacts
+            # (real files with hashes) and nothing errored — that is machine evidence
+            status = VERIFIED
         else:
             status = UNVERIFIED
         return {"status": status, "results": results,

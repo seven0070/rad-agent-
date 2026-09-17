@@ -14,7 +14,7 @@ from rad.control.graph import TaskGraph
 from rad.control.objectives import Objective
 from rad.control.tasks import Check, Task
 
-PLAN_PROMPT = """You are the planner of an autonomous agent. Decompose the goal into 2-8 concrete tasks.
+PLAN_PROMPT = """You are the planner of an autonomous agent. Decompose the goal into 2-12 concrete tasks.
 Each task must be independently executable with tools (shell, read/write files in the workspace, web search/fetch).
 For EVERY task give machine-checkable checks that prove it was done. Prefer checks over trust.
 
@@ -98,7 +98,7 @@ class Planner:
         items = d.get("tasks") or []
         idmap: Dict[str, str] = {}
         tasks: List[Task] = []
-        for it in items[:8]:
+        for it in items[:12]:
             text = str(it.get("text", "")).strip()
             if not text:
                 continue

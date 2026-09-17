@@ -59,7 +59,23 @@ Checkpoint after every task: `objective.json`, `tasks.json`, `CHECKPOINT` event.
 moves tasks left in RUNNING/OBSERVING/VERIFYING back to RETRYING, reopens NEEDS_USER/BLOCKED
 tasks, and continues. Completed tasks are never re-run.
 
+## Parallelism (Phase 3)
+Ready tasks with satisfied dependencies run concurrently up to `objective_parallel`
+(default 2) — **only with `--auto`**, since confirmations are interactive. Each task gets
+its own `Session`; budget counters, the event log and the artifact registry are
+lock-protected. Set `objective_parallel: 1` for strictly sequential runs.
+
+## Replay & provenance (Phase 3)
+* Every attempt records a `TRANSCRIPT` event: exact prompt, reply, provider, error.
+* `rad replay [id] [--prompts] [--verify]` reconstructs each attempt (prompt → tools →
+  results → verification → recovery). `--verify` re-runs all checks against the *current*
+  workspace and flags **drift** (verified then, failing now).
+* `rad why <artifact>` — creator action, task/attempt, sha256 lineage across versions,
+  and the evidence (files read / pages fetched) consulted in that task *before* creation.
+* `rad why <claim>` — token-overlap search over recorded observations; `UNSUPPORTED`
+  means RAD produced the claim without consulting anything (i.e. from model priors).
+  Web sources are labelled `untrusted-web`. No model is involved in answering.
+
 ## Not yet (later phases)
-Parallel execution of ready tasks (graph supports it; executor is sequential) · provenance
-chains for claims · capability-based permissions · sandbox · SQLite store · replay of model
-decisions (events record prompts' purpose but not full prompts yet).
+Capability-based permissions · sandbox · SQLite store · deterministic re-execution of
+side effects (replay is inspect + re-verify, not re-run).
