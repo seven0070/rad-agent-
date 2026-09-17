@@ -377,3 +377,6 @@ SWE-bench / AgentBench bootstrap data wired to the corpus miner.
 ## License
 
 See [LICENSE](LICENSE).
+
+## Measuring the agent
+`rad lab run --suite smoke` runs whole objectives through the control plane in isolated homes and grades the results on disk (success, honesty, safety, verified-rate). `rad lab compare a b` is the promotion gate. See `docs/LAB.md`; `docs/SECURITY.md` and `docs/AGENTS.md` cover the permission layer and sub-agents.

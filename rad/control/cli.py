@@ -417,6 +417,53 @@ def cmd_audit(args) -> int:
     return 0
 
 
+def cmd_lab(args) -> int:
+    from rad.lab import Lab, SUITES, scenarios
+    home = RadHome(args.home)
+    lab = Lab(home)
+    a = args.lab_action
+    if a == "list":
+        for sc in scenarios(args.suite or "all"):
+            print(f"  {sc.suite:<11} {sc.id:<20} expect={sc.expect_status:<10} {sc.goal[:70]}")
+        return 0
+    if a == "run":
+        suite = args.suite or "smoke"
+        if suite not in SUITES:
+            fail(f"suite must be one of {sorted(SUITES)}"); return 1
+        from rad.router import RouterState
+        if not RouterState(home).build_chain():
+            fail("no brain available — add a key or start a local engine"); return 1
+        info(f"  running lab suite '{suite}' through the control plane (isolated home + workspace per scenario)…")
+        def prog(r):
+            mark = col.green("PASS") if r.success else col.red("FAIL")
+            print(f"    {mark} {r.id:<20} {r.status:<10} verified={r.verified or '-'} tools={r.usage.get('tool_calls', 0)} {r.seconds}s")
+        rep = lab.run(suite, ids=args.ids or None, label=args.label or "", keep=args.keep, progress=prog)
+        print(Lab.render(rep))
+        return 0
+    if a == "history":
+        for r in lab.history(args.n):
+            when = time.strftime("%m-%d %H:%M", time.localtime(r["at"]))
+            print(f"  {col.dim(when)} {r['label']:<22} {r['suite']:<11} score={r['score']:<5} safety={r['safety']} honesty={r['honesty']} n={r['n']}")
+        return 0
+    if a == "show":
+        r = lab.find(args.lab_args[0]) if args.lab_args else (lab.history(1) or [None])[0]
+        if not r:
+            fail("no such run"); return 1
+        print(Lab.render(r)); return 0
+    if a == "compare":
+        if len(args.lab_args) != 2:
+            fail("usage: rad lab compare <base-label> <cand-label>"); return 1
+        b, c = lab.find(args.lab_args[0]), lab.find(args.lab_args[1])
+        if not b or not c:
+            fail("run label not found (see rad lab history)"); return 1
+        cmp = Lab.compare(b, c)
+        print(json.dumps(cmp, indent=2))
+        g = Lab.gate(b, c)
+        print(("  " + col.green("GATE PASS")) if g["pass"] else ("  " + col.red("GATE FAIL") + ": " + "; ".join(g["reasons"])))
+        return 0 if g["pass"] else 2
+    return 1
+
+
 # ---------------------------------------------------------------- parser hookup
 
 def add_parsers(sub) -> None:
@@ -476,6 +523,15 @@ def add_parsers(sub) -> None:
     au = sub.add_parser("audit", help="permission decisions log")
     au.add_argument("-n", type=int, default=40); au.add_argument("--effect", default=None)
     au.set_defaults(fn=cmd_audit)
+
+    lb = sub.add_parser("lab", help="agent benchmark lab: whole objectives through the control plane, graded on disk")
+    lb.add_argument("lab_action", nargs="?", default="list", choices=["list", "run", "history", "show", "compare"])
+    lb.add_argument("lab_args", nargs="*")
+    lb.add_argument("--suite", default=None, help="smoke | long | adversarial | all")
+    lb.add_argument("--ids", nargs="*", default=None); lb.add_argument("--label", default=None)
+    lb.add_argument("--keep", action="store_true", help="keep temp homes/workspaces for inspection")
+    lb.add_argument("-n", type=int, default=20)
+    lb.set_defaults(fn=cmd_lab)
 
     evp = sub.add_parser("events", help="recent control-plane events across objectives")
     evp.add_argument("-n", type=int, default=40)
