@@ -15,6 +15,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
+from rad.control.codingloop import looks_like_broken_artifact, repair_hint
 from rad.control.observer import Observation
 from rad.control.tasks import Task
 
@@ -137,6 +138,19 @@ class RecoveryEngine:
                                 hint="Previous attempt failed because the environment was missing something. "
                                      "Install/create the prerequisite first, then do the step.")
             return Decision("ask_user", fc, "environment problem persists")
+        if (fc in (FailureClass.VALIDATION, FailureClass.TOOL, FailureClass.UNKNOWN)
+                and looks_like_broken_artifact(failed_checks)
+                and repairs_so_far < self.max_repairs
+                and not _is_repair_task(task)):
+            # Coding/verification loop: invalid JSON or failing tests get a repair
+            # step with the concrete failure, not an unstructured retry (RW-058/062).
+            # Missing-file lies (file_exists) still use retry_with_hint below.
+            # Repair tasks themselves retry/ask_user — they do not spawn repair-of-repair.
+            return Decision("repair", fc,
+                            "machine checks failed on produced artifacts — insert a repair step",
+                            hint=repair_hint(failed_checks),
+                            data={"coding_repair": True,
+                                  "failed_checks": [r.get("kind") for r in failed_checks]})
         if fc == FailureClass.TOOL and can_retry and task.attempts >= 2:
             bad_tool = _dominant_failing_tool(observations)
             if bad_tool:
@@ -173,6 +187,11 @@ class RecoveryEngine:
                 if loc.endswith("/" + path) or loc == path:
                     return path
         return ""
+
+
+def _is_repair_task(task: Task) -> bool:
+    text = task.text or ""
+    return text.startswith("Repair so that") or text.startswith("Repair prerequisite")
 
 
 def _failed_providers(error: str, observations: List[Observation]) -> List[str]:

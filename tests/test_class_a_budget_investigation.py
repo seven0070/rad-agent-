@@ -153,7 +153,12 @@ def test_llm_plan_is_used_when_brain_returns_json(home, ws):
 # ---------------------------------------------------------------- F-20260918-18 — ENVIRONMENT vs VALIDATION
 
 def test_failed_checks_without_env_output_are_validation_not_environment():
-    """RW-059 shape: tests fail 13!=6 / invalid JSON — no env-token in observations."""
+    """RW-059 shape: tests fail 13!=6 / invalid JSON — no env-token in observations.
+
+    F-18: this is not ENVIRONMENT (that claim stays closed). v0.3.0 verified
+    coding loop inserts a repair step with the concrete failure instead of an
+    unstructured retry.
+    """
     t = Task.new("o", "write summary.json")
     t.attempts = 1
     ver = {"status": "FAILED", "results": [
@@ -163,8 +168,10 @@ def test_failed_checks_without_env_output_are_validation_not_environment():
     ob = _ob(t, "AssertionError: 13 != 6\n[exit=1]")
     assert classify(t, [ob], verification=ver) == FailureClass.TOOL
     d = RecoveryEngine().decide(t, [ob], verification=ver, retries_left=3)
-    assert d.strategy == "retry_with_hint"
     assert d.failure_class != FailureClass.ENVIRONMENT
+    assert d.strategy == "repair"
+    assert "json_valid" in d.hint or "invalid JSON" in d.hint
+    assert "13 != 6" in d.hint or "shell_ok" in d.hint
 
 
 def test_missing_file_check_alone_is_validation_not_repair():

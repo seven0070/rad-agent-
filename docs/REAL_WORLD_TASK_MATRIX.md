@@ -1,15 +1,39 @@
 # Real-world task matrix
 
 Factual rows from maturation cycles on disk-checked evidence.
-Architecture frozen. Needle stays experimental / off. Not AGI. No v0.3.0.
-Operating spine: [ROADMAP.md](ROADMAP.md) (adopted 2026-09-18). Gen1 complete on 0.2.3; Gen2 in progress (verified coding loop accepted for v0.3.0; not implemented here). Do not rewrite RW-058–063.
+Architecture frozen. Needle stays experimental / off. Not AGI.
+Operating spine: [ROADMAP.md](ROADMAP.md). Gen1 complete on 0.2.3; Gen2 in progress.
+Verified coding loop is **implemented as v0.3.0** in this change (RW-064). Do not rewrite RW-058–063.
 
 Every `VERIFIED` / `completed` cell is from the control-plane verifier **and** a disk
 check (file exists / contents / hash). A model `DONE:` line is never enough.
 
 Status vocabulary: **PASS** | **FAIL** | **BLOCKED** | **NOT TESTED**.
 
-Post-Cycle 4 production use (package **0.2.3**, no bump) is at the bottom. Cycle 4, Cycle 3, and Cycle 2 follow.
+Gen2 / v0.3.0 (verified coding loop) is at the top. Post-Cycle 4 production use
+(package **0.2.3**, no bump) and Cycles 4–2 follow. RW-058–063 are **not rewritten**.
+
+# Gen2 — v0.3.0 verified coding loop (RW-064)
+
+Lane: Cloud Agent, deterministic/scripted. Live NIM optional (BLOCKED if no key).
+Package **0.2.3 → 0.3.0**. Needle `existing` / off. `max_plan_tasks` **16**.
+Default `Budget.tool_calls` **60**. Control plane unchanged in shape
+(PLAN→PERMISSION→BUDGET→EXECUTE→OBSERVE→VERIFY→RECOVER).
+
+| id | Date | Category | Objective | #tasks | #actions | Tools | Result | Verification | Recovery | Failure class | Notes |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| RW-064 | 2026-09-18 | coding (scripted) — verified coding loop | word_counter-like: `result.json` + `test_word_counter.py`; first write is invalid `{` / words `6`; repair must fix to `words==2` | 1 planned + 1 repair | write → json_valid/shell fail → repair → retry | default **60** unchanged | **PASS** (repair path VERIFIED); persistent-bad **PASS** (not VERIFIED) | repair path **VERIFIED** from disk; persistent `{` / `DONE:` pollution **not** VERIFIED | VALIDATION/TOOL → **repair** with concrete failure (not ENVIRONMENT); missing `file_exists` still retry_with_hint | capability (Gen2) | Tests `test_verified_coding_loop_*`. False DONE **0**. Fallback tasks still have no checks (F-17); coding goals infer *objective* `json_valid` + test `shell_ok`. Needle OFF. Caps unchanged. Live NIM not required. RW-058/062 Class B live facts preserved. |
+
+| metric | value |
+|---|---|
+| Package | **0.3.0** |
+| Theme | Gen2 #1 verified coding loop |
+| Needle | **OFF** (`existing`) |
+| `max_plan_tasks` | **16** unchanged |
+| Default tool budget | **60** unchanged |
+| False completion | **0** |
+| RW-058–063 | preserved (not rewritten) |
+| Live NIM | **BLOCKED** (no `NVIDIA_NIM_API_KEY`) |
 
 # Cycle 2 (post-v0.2.1 → package **0.2.2**)
 

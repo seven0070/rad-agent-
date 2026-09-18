@@ -1,11 +1,83 @@
 # Maturation cycle reports
 
-Architecture frozen. Models propose; RAD decides. Needle stays optional/off. Not v0.3.0.
+Models propose; RAD decides. Needle stays optional/off.
 `max_plan_tasks` default remains **16** unless a measured product need requires a documented config key.
+Default `Budget.tool_calls` remains **60**.
+
+---
+
+# Cycle 5 — Gen2 / v0.3.0 verified coding loop (2026-09-18)
+
+**Date:** 2026-09-18
+**Baseline:** `origin/main` `02ef2f0c` (PR #18 roadmap; package 0.2.3)
+**Package at start:** `0.2.3`
+**This branch:** `cursor/verified-coding-loop-e794` — package **0.3.0**
+**Architecture:** control plane preserved. No AGI/ASI. Needle stays off.
+`docs/ROADMAP.md` is the Gen1–Gen5 operating spine from PR #18; this change implements
+the accepted v0.3.0 verified coding loop and updates that file’s status.
+
+## Product
+
+Verified coding loop: coding/verification-shaped objectives drive
+write → independent disk checks (`json_valid`, pytest/`shell_ok`) → repair
+with the concrete failure until checks pass, or budgets force `needs_user` /
+fail honestly. A model `DONE:` is never completion. `DONE:` pollution paths
+and files whose body is only a `DONE:` claim are not artifacts.
+
+## Why (evidence cited, not rewritten)
+
+- **RW-058 / F-15 family** — text_analyzer under NIM 11B: tools exhausted, incomplete/invalid artifacts, Class B
+- **RW-062 / F-22** — simple word_counter: five files exist but `result.json` invalid `{`; tests FAIL (`6!=2`); pollution `DONE:` fake path; tools 12/12; `needs_user`; false DONE 0
+- Class A F-17 fallback and F-18 ENV misclass stay closed (not the product theme)
+
+## What changed
+
+- `rad/control/codingloop.py` — coding-goal detection, pollution helpers, inferred objective checks, broken-artifact repair hints
+- Recovery: `json_valid` / `json_field` / `json_min_len` / `shell_ok` / `shell_output` failures insert **one** repair step with stderr / expected vs actual (not ENVIRONMENT; missing `file_exists` still `retry_with_hint`)
+- Repair tasks copy the failed task's machine checks and cannot spawn repair-of-repair
+- Planner: coding goals get `json_valid` / test `shell_ok` as *objective_checks* when the LLM/fallback emitted none. Fallback **tasks** still have no checks (F-17)
+- Tools/verifier/observer refuse `DONE:` pollution paths; pollution-only file bodies are not `file_nonempty` evidence
+- Package **0.2.3 → 0.3.0**
+
+## What did not change
+
+- Control plane shape PLAN→PERMISSION→BUDGET→EXECUTE→OBSERVE→VERIFY→RECOVER
+- Needle default `existing` / off
+- `max_plan_tasks` default **16**
+- `Budget.tool_calls` default **60**
+- False completion remains **0**
+- RW-058–063 ledger/matrix rows
+- Live 11B Class B incompleteness is **not** claimed fixed
+
+## Quality gates (actually run)
+
+Isolated homes `/tmp/rad-v030-gate2` (doctor, acceptance) and `/tmp/rad-v030-rw2` (realworld). Re-run after rebase onto `origin/main` `02ef2f0` (PR #18 roadmap).
+
+| gate | result |
+|---|---|
+| `rad version` | **PASS** v0.3.0 |
+| `python3 -m pytest -q` | **PASS** 373 passed in 8.37s |
+| `rad doctor --offline` | **PASS** 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR, verdict READY, exit 0 |
+| `rad acceptance` | **PASS** 50/50 — `/tmp/rad-v030-gate2/acceptance/20260918-130429_gate.json` |
+| `rad realworld` | **PASS** 10/11 + 1 BLOCKED — `/tmp/rad-v030-rw2/realworld/20260918-130429_realworld.json` |
+| Live NIM | **BLOCKED** (no `NVIDIA_NIM_API_KEY` / `NVIDIA_API_KEY`) |
+| Needle default | **PASS** (`existing`) |
+| Caps | **PASS** `max_plan_tasks` 16; `Budget.tool_calls` 60 |
+| False DONE | **PASS** (scripted persistent bad + suite `false_success` / `needs_user` / `no_loop`) |
+
+## NIM status
+
+**BLOCKED.** `NVIDIA_NIM_API_KEY` and `NVIDIA_API_KEY` both absent. Live word_counter-like objective was **not** run. Do not fake live results. Offline reconstruction: `test_verified_coding_loop_*` plus `rad realworld --only coding,false_success`.
+
+## Remaining limitations
+
+1. Live NVIDIA NIM on 11B may still fail Class B (model limitation). This release ships the loop, not a stronger brain.
+2. Default planner cap is **16**. Default tool budget is **60**.
+3. Plan-timeout resilience and budget-aware planning are Gen2 themes 2–3 (later).
 
 ## Roadmap pointer
 
-Operating spine: [ROADMAP.md](ROADMAP.md). **Generation 1 is complete** (v0.2.0–v0.2.3; production baseline **0.2.3**). **Generation 2 is in progress:** the verified coding loop (write → test → repair until disk checks pass) is **accepted** as the first v0.3.0 build target. That build is **not implemented** in the roadmap docs; package stays **0.2.3** until it ships. Gen3–5 are not started. Cycle sections below that record “Evidence for v0.3.0: none” still stand as **control-plane** findings: those rows are not a missing stage; they are the Class B evidence that fed the accepted coding-loop theme.
+Operating spine: [ROADMAP.md](ROADMAP.md). **Generation 1 is complete** (v0.2.0–v0.2.3). **Generation 2 is in progress:** the verified coding loop is **implemented as v0.3.0** in this change. Gen3–5 are not started. Cycle sections below that record “Evidence for v0.3.0: none” still stand as **control-plane** findings: those rows are not a missing stage; they are the Class B evidence that fed the accepted coding-loop theme.
 
 ---
 

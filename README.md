@@ -12,7 +12,7 @@ runs commands with your confirmation, and **teaches itself new skills from a sin
   __ / \  |  _ \/ |      / \
  / _` __ \| |_) | | /\/\ / _ \
  \__,_||_|____/|_|/__/__\_/ \_\
-   v0.2.3 — open door, free first, self-evolving
+   v0.3.0 — open door, free first, self-evolving
 ```
 
 ---
@@ -63,8 +63,8 @@ local engines → free cloud tiers (round-robin) → paid (unless free-lock)
 * Everything is reported: `rad [groq] …`
 * Optional experimental tool router: `RAD_TOOL_ROUTER=needle` lets [Needle](https://github.com/cactus-compute/needle)
   *propose* tool names/args. Default remains `existing`. Needle never executes tools, never
-  bypasses permission/sandbox/budget/verification, and is not a 0.3.0 capability unless
-  measurements say otherwise (`rad needle-eval`).
+  bypasses permission/sandbox/budget/verification, and stays **off** in v0.3.0
+  (`RAD_TOOL_ROUTER=existing`). `rad needle-eval` is the measurement path; it is not a default.
 
 ## Human-inspired memory
 
@@ -236,7 +236,7 @@ rad keys add groq gsk_…      # or: export GROQ_API_KEY=…  (auto-detected)
 rad chat --voice             # talk to it out loud
 ```
 
-## Objectives — the control plane (v0.2)
+## Objectives — the control plane (v0.3)
 
 `rad objective run <goal>` is the autonomous path. Unlike chat or `rad plan run`, RAD
 itself owns the state; the model only proposes.
@@ -248,6 +248,11 @@ Objective → Planner → Task graph (DAG, machine-checkable checks per task)
          → Recovery (retry with feedback · repair step · replan · ask user · abort)
          → Objective verification → COMPLETED | NEEDS_USER | FAILED
 ```
+
+Coding/verification goals drive **write → independent disk checks → repair** until
+`json_valid` / tests pass (or the budget forces `needs_user` / fail honestly). A model
+`DONE:` line is never completion. Needle stays off. Default `max_plan_tasks` remains 16;
+default `Budget.tool_calls` remains 60.
 
 ```
 rad objective run "Write three facts about X to facts.md, then summarise into summary.txt" \
@@ -377,7 +382,7 @@ and how to add a tool, a scenario or a migration.
 
 ## Roadmap
 
-Operating spine (Gen1–Gen5, the build → test → validate → release → use → discover gaps loop): [docs/ROADMAP.md](docs/ROADMAP.md). Gen1 complete on 0.2.3; Gen2 in progress (verified coding loop accepted for v0.3.0, not shipped). The list below is a product-idea backlog, not a generation commitment.
+Operating spine (Gen1–Gen5, the build → test → validate → release → use → discover gaps loop): [docs/ROADMAP.md](docs/ROADMAP.md). Gen1 complete on 0.2.3; Gen2 in progress (verified coding loop **implemented as v0.3.0** in this change). The list below is a product-idea backlog, not a generation commitment.
 
 LoRA fine-tune of Rad's personality into Edge0 weights · expert pruning/distillation for lighter
 35b · web/phone face · remote-MCP tool execution hardening · multi-user sessions ·

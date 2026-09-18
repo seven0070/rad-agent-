@@ -18,6 +18,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from rad.control.codingloop import is_done_pollution_content, is_done_pollution_path
 from rad.home import _write_json
 
 
@@ -175,10 +176,18 @@ class Observer:
         reg = self.artifacts()
         sha, size = "", 0
         if type_ == "file":
+            if is_done_pollution_path(location):
+                return None
             p = Path(location)
             if not p.exists():
                 return None
             data = p.read_bytes()
+            try:
+                text = data.decode("utf-8")
+            except UnicodeDecodeError:
+                text = ""
+            if is_done_pollution_content(text):
+                return None
             sha, size = hashlib.sha256(data).hexdigest(), len(data)
         # lineage: same location → new version with parent link
         parent, version = None, 1

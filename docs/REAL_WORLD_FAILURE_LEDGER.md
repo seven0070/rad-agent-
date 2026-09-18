@@ -2,7 +2,7 @@
 
 Living log of **measured** RAD failures found in live or reconstructed use.
 Architecture is frozen. Needle stays experimental and off by default. This is not AGI/ASI.
-Operating spine: [ROADMAP.md](ROADMAP.md) (adopted 2026-09-18). Gen1 complete on 0.2.3; Gen2 in progress (verified coding loop accepted for v0.3.0; not implemented here). This ledger is evidence. Do not rewrite RW-058–063.
+Operating spine: [ROADMAP.md](ROADMAP.md) (adopted 2026-09-18). Gen1 complete on 0.2.3; Gen2 in progress. Verified coding loop is **implemented as v0.3.0** in this change (F-20260918-24 / RW-064). This ledger is evidence. Do not rewrite RW-058–063.
 
 No secrets belong here: never paste API keys, vault contents, account tokens, or full
 provider payloads. Paths under `/tmp/…` and objective ids are fine.
@@ -792,8 +792,56 @@ python3 -m pytest -q tests/test_f17_fallback_investigation.py
 | Default tool budget | **UNCHANGED** (60) |
 | Needle | **OFF** (`existing`) |
 | False completion | **0** |
-| Evidence for v0.3.0 | **none** |
+| Evidence for v0.3.0 | **none** (this F-17 record). Product-owner Gen2 theme 1 later shipped as v0.3.0 — F-20260918-24 / RW-064. |
 | Recommendation | **Outcome A — continue 0.2.x** |
+
+## Gen2 / v0.3.0 — Verified coding loop (RW-064) — 2026-09-18
+
+Generation 2 capability expansion, **first accepted theme**. Package **0.2.3 → 0.3.0**.
+Control plane preserved (models propose / RAD decides). Needle **OFF**. Caps **not**
+raised (`max_plan_tasks` 16, `Budget.tool_calls` 60). RW-058–063 facts are **not
+rewritten**. Class A investigations F-17 / F-18 / budget→needs_user stay closed.
+
+Product: when an objective is coding/verification-shaped, RAD drives
+**write → run tests/checks → repair** until independent disk checks pass, or
+budgets force `needs_user` / fail honestly. A model `DONE:` is never completion.
+
+### F-20260918-24 — verified coding loop (broken artifacts → repair)
+
+| field | value |
+|---|---|
+| class | **capability** (Gen2 theme 1). Not a re-open of RW-058/062 Class B live 11B incompleteness; not a re-open of F-17/F-18 |
+| status | **shipped in v0.3.0** |
+| found in | product-owner accepted theme after RW-058 / RW-062 Class B (invalid artifacts, failing tests, `DONE:` pollution; false DONE **0**) |
+| fixed in | **v0.3.0** — `rad/control/codingloop.py`; recovery inserts a repair step with concrete check failures (`json_valid`, `shell_ok`, …) instead of unstructured retries; planner infers coding *objective* checks on fallback (fallback *tasks* stay check-less, F-17); `DONE:` pollution paths/content are refused |
+| lane | deterministic / scripted (MUST). Live NIM optional |
+| objective / test | `tests/test_verified_coding_loop.py`; regressions `false_success` / `needs_user` / budget |
+| disk | scripted: wrong `result.json` `{` then repair → valid `{"words": 2}` + tests exit 0 → **VERIFIED**. Persistent `{` / `DONE:` pollution → **not** VERIFIED |
+| expected | coding loop reaches VERIFIED iff disk checks pass; false DONE **0** |
+| actual | scripted repair path **VERIFIED**; persistent bad artifacts **needs_user** / FAILED, not VERIFIED; F-17 fallback task-check contract held; missing `file_exists` still `retry_with_hint` |
+| notes | RW-058 / RW-062 remain Class B live-11B evidence. This PR does not claim those live runs would now pass on 11B. It ships the control-plane loop those rows showed was missing. Needle off. Caps unchanged. |
+
+Reproduction:
+
+```
+python3 -m pytest -q tests/test_verified_coding_loop.py
+# wrong JSON once → repair with "invalid JSON" / "6!=2" → VERIFIED
+# persistent `{` + DONE: claims → not VERIFIED; false DONE 0
+```
+
+| gate | result |
+|---|---|
+| `python3 -m pytest -q` | **373 passed** in 8.37s |
+| `rad doctor --offline` | READY — 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR (`RAD_HOME=/tmp/rad-v030-gate2`) |
+| `rad acceptance` | **50/50 PASSED** (`/tmp/rad-v030-gate2/acceptance/20260918-130429_gate.json`) |
+| `rad realworld` | **10 passed / 1 BLOCKED / 0 failed** (`live_nim` BLOCKED; `/tmp/rad-v030-rw2/realworld/20260918-130429_realworld.json`) |
+| Package | **0.3.0** |
+| RW-058–063 | preserved |
+| 16-task cap | **UNCHANGED** |
+| Default tool budget | **UNCHANGED** (60) |
+| Needle | **OFF** (`existing`) |
+| False completion | **0** |
+| Live NIM | **BLOCKED** (no NVIDIA keys) |
 
 ## How to add a finding
 
