@@ -5,7 +5,7 @@ Architecture frozen. Models propose; RAD decides. Needle stays optional/off. Not
 
 ## Roadmap pointer
 
-Operating spine: [ROADMAP.md](ROADMAP.md). **Generation 1 is complete** (v0.2.0–v0.2.3; production baseline **0.2.3**). **Generation 2 is not started.** Next is Gen2 (v0.3.x capability expansion) only when a Class B theme is accepted from measured Gen1 production use — not because a cycle report exists, and not as a control-plane redesign. Cycle sections below that record “Evidence for v0.3.0: none” still stand: those rows are not a missing control-plane stage.
+Operating spine: [ROADMAP.md](ROADMAP.md). **Generation 1 is complete** (v0.2.0–v0.2.3; production baseline **0.2.3**). **Generation 2 is in progress:** the verified coding loop (write → test → repair until disk checks pass) is **accepted** as the first v0.3.0 build target. That build is **not implemented** in the roadmap docs; package stays **0.2.3** until it ships. Gen3–5 are not started. Cycle sections below that record “Evidence for v0.3.0: none” still stand as **control-plane** findings: those rows are not a missing stage; they are the Class B evidence that fed the accepted coding-loop theme.
 
 ---
 

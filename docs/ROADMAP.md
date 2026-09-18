@@ -5,8 +5,10 @@ It is not a product-idea backlog (that list stays in the README) and it is not a
 redesign the control plane.
 
 **Status (2026-09-18):** Generation 1 is **complete**. Production baseline is **v0.2.3**.
-Generation 2 is **not started**. Package stays **0.2.3**. Needle stays off by default.
-Caps stay where Gen1 locked them.
+Generation 2 is **in progress**. Accepted first build target: **verified coding loop** for
+**v0.3.0** (write → test → repair until disk checks pass). That build is **not implemented
+here** — this file is the plan. Package stays **0.2.3** until v0.3.0 ships. Needle stays
+off by default. Caps stay where Gen1 locked them. Generations 3–5 are **not started**.
 
 ```
 build → test → validate → release → use → discover gaps → build the next version
@@ -24,7 +26,7 @@ Stability with no code change is a valid result.
 | Generation in production | **Gen1 — Foundation — COMPLETE** |
 | Package / tag | **0.2.3** / annotated tag `v0.2.3` @ `d121c3f` |
 | `origin/main` vs the tag | may be ahead with **docs/tests only** (through PR #17) |
-| Generation 2 | **NOT STARTED** (no theme accepted) |
+| Generation 2 | **IN PROGRESS** — accepted theme: verified coding loop → v0.3.0 (not shipped) |
 | Generations 3–5 | **NOT STARTED** |
 | Needle | optional / **off** (`tool_router=existing`; ADR-001) |
 | `max_plan_tasks` | **16** (unchanged) |
@@ -42,14 +44,16 @@ Cycle evidence, not this file: [MATURATION_CYCLE_REPORT.md](MATURATION_CYCLE_REP
 | Gen | Name | Versions | Status |
 |---|---|---|---|
 | **1** | Foundation | v0.2.0, v0.2.1, v0.2.2, **v0.2.3** | **COMPLETE** |
-| **2** | Capability Expansion | v0.3.x | **NOT STARTED** |
+| **2** | Capability Expansion | v0.3.x | **IN PROGRESS** (verified coding loop → v0.3.0) |
 | **3** | Autonomous Agent Maturity | v0.4.x | **NOT STARTED** |
 | **4** | Production Scale | v0.5.x | **NOT STARTED** |
 | **5** | 1.0 | v1.0.0 | **NOT STARTED** |
 
 Enter the next generation only after the previous one has been **released, used, and has
 measured gaps**. Class B rows are the input to that decision. They do not start the
-generation by themselves.
+generation by themselves — a theme must be **accepted**. The verified coding loop is the
+first accepted Gen2 theme. Plan-timeout resilience and budget-aware planning remain
+candidates. Gen3–5 stay closed until Gen2 has been released and used.
 
 ---
 
@@ -73,7 +77,8 @@ build → test → validate → release → use → discover gaps → build the 
 | Invariants hold | Models propose / RAD decides. Needle off by default. Caps unchanged unless a measured product need is documented |
 
 Cycle reports that say “Evidence for v0.3.0: none” mean **no control-plane hole and no
-generation skip**. They do not contradict this roadmap. They also do **not** start Gen2.
+generation skip**. They do not contradict this roadmap. The accepted Gen2 theme is a
+**capability** addition on the existing control plane, not a missing stage.
 
 ### Gates before any release
 
@@ -110,51 +115,73 @@ What Gen1 locked:
 | Completion | `VERIFIED` only via independent machine checks — never the model’s own word |
 
 Gen1 also shipped the evidence loop: ledger, task matrix, maturation reports, `rad realworld`,
-and the A/B/C classification. That loop continues on 0.2.3 until a Gen2 theme is accepted.
+and the A/B/C classification. That loop continues. A Gen2 theme is now accepted; production
+remains **0.2.3** until the v0.3.0 verified-coding-loop build ships.
 
 Remaining 0.2.x work, if any, is **Class A only** (smallest patch + regression, still 0.2.x).
-Class B stays on the ledger. Class C stays BLOCKED. Do not raise caps. Do not enable Needle.
+Class B that is not the accepted theme stays on the ledger. Class C stays BLOCKED. Do not
+raise caps. Do not enable Needle.
 
 ---
 
-## Generation 2 — Capability Expansion — NOT STARTED (v0.3.x)
+## Generation 2 — Capability Expansion — IN PROGRESS (v0.3.x)
 
 Evidence-backed capability additions **on top of** the Gen1 control plane.
 
 - Do **not** redesign the control plane.
 - Do **not** enable Needle by default without a gold-set win (`rad needle-eval`).
 - Do **not** raise `max_plan_tasks` or default tool budget without a measured product need.
-- Do **not** claim Gen2 started because RW-058–062 exist.
+- Do **not** ship v0.3.0 from this roadmap PR. Docs only. Package stays **0.2.3** until the
+  accepted build is implemented and gated.
 
-### Entry criteria
+### Accepted first build target (2026-09-18)
 
-Gen2 starts only when **all** of the following are true:
+| field | value |
+|---|---|
+| Status | **ACCEPTED** — Gen2 **in progress** |
+| Theme | **Verified coding loop** |
+| Version | **v0.3.0** (not shipped; production remains 0.2.3) |
+| Loop | write → run tests → repair until **disk checks** pass |
+| Evidence | RW-058, RW-059, RW-062 (F-20260918-15 / 16 / 19 / 22) |
+| What it is not | Not a control-plane rewrite. Not Needle-as-default. Not a cap raise. Not plan-timeout or budget-aware planning (those stay candidates). |
 
-1. Gen1 invariants still hold on the production baseline (0.2.3 or a later 0.2.x Class A patch).
+Live Gen1 coding runs left invalid `result.json` / `summary.json`, failing tests (`13!=6`,
+`6!=2`), duplicated “tests”, wrong paths, and pollution `DONE:` fake paths. RAD stopped at
+the budget; the verifier did **not** rubber-stamp. False DONE **0**. The accepted 0.3.0
+work is to keep going through write → test → repair until independent disk checks pass,
+without weakening `DONE:` / `VERIFIED`.
+
+This acceptance **is** the written decision that starts Gen2. It does not land product
+code. Implement the loop in a later v0.3.0 change, then run the release gates.
+
+### Entry criteria (how Gen2 opened)
+
+Gen2 starts only when **all** of the following are true. They are true for this theme:
+
+1. Gen1 invariants still hold on the production baseline (0.2.3).
 2. At least one **Class B theme is accepted** as a product theme — an explicit decision, not
-   implied by a `needs_user` / FAIL row.
-3. That theme is grounded in **live Gen1 production evidence** (the F-22 family below), not in
-   a reconstructed offline story and not in a closed non-gate.
-4. Release gates are green (pytest, `rad doctor --offline`, `rad acceptance`, `rad realworld`).
+   implied by a `needs_user` / FAIL row. **Done:** verified coding loop, 2026-09-18.
+3. That theme is grounded in **live Gen1 production evidence** (the F-22 family), not in a
+   reconstructed offline story and not in a closed non-gate.
+4. Release gates are green on the docs baseline (pytest, `rad doctor --offline`,
+   `rad acceptance`, `rad realworld`). Product code for v0.3.0 is still ahead.
 
-Until then: stay on 0.2.x. Record evidence. Do not bump to 0.3.0.
-
-### Candidate themes (from live Class B evidence)
+### Themes (from live Class B evidence)
 
 Grounded in RW-058 / RW-059 / RW-060 / RW-062 and the F-22 family
-(F-20260918-15 / 16 / 19 / 20 / 22). These are **candidates**. None is accepted.
-None is a v0.3.0 design.
+(F-20260918-15 / 16 / 19 / 20 / 22).
 
-| # | theme | what the evidence showed | rows |
-|---|---|---|---|
-| 1 | **Verified coding loop** | Write → run tests → repair until **disk checks** pass. Live runs left invalid `result.json` / `summary.json`, failing tests (`13!=6`, `6!=2`), duplicated “tests”, wrong paths, and pollution `DONE:` fake paths. RAD stopped at the budget; verifier did **not** rubber-stamp. False DONE **0**. | RW-058, RW-059, RW-062 |
-| 2 | **Plan-timeout resilience** | Retry / re-ask for a JSON plan **before** falling back to no-check goal clause-split. RW-062: nvidia plan timeout → `PLAN_CREATED` `source=fallback` → clause-split of the user goal (later shown **not** to be a parser hole). | RW-062 (timeout path); RW-063 closed the Class A reading |
-| 3 | **Budget-aware planning** | Plan that fits the tool budget. RW-059 Case B: doubling tools **12→24** still exhausted the budget and did **not** complete. Default max-tools was **not** raised. | RW-059 vs RW-058; RW-060 / RW-062 also budget-stop |
+| # | theme | status | what the evidence showed | rows |
+|---|---|---|---|---|
+| 1 | **Verified coding loop** | **ACCEPTED** — first v0.3.0 build target | Write → run tests → repair until **disk checks** pass. Live runs left invalid JSON, failing tests, wrong paths, pollution `DONE:` fake paths. | RW-058, RW-059, RW-062 |
+| 2 | **Plan-timeout resilience** | candidate (not accepted) | Retry / re-ask for a JSON plan **before** falling back to no-check goal clause-split. RW-062: nvidia plan timeout → `PLAN_CREATED` `source=fallback`. | RW-062 (timeout path); RW-063 closed the Class A reading |
+| 3 | **Budget-aware planning** | candidate (not accepted) | Plan that fits the tool budget. RW-059 Case B: doubling tools **12→24** still exhausted the budget and did **not** complete. Default max-tools was **not** raised. | RW-059 vs RW-058; RW-060 / RW-062 also budget-stop |
 
 The F-22 family is the same pattern on coding **and** research **and** a simpler
 coding+verification control: 11B + tool budget, success criteria unmet, `needs_user`,
 not VERIFIED. Class B is **not** complexity-limited. It is also **not** a missing
-control-plane stage.
+control-plane stage. Accepting the coding loop does **not** accept the research stub
+(RW-060 / F-20) as a v0.3.0 theme.
 
 ### Closed non-gates (not Gen2 themes)
 
@@ -167,10 +194,12 @@ These were investigated and are **not** product themes for v0.3.x:
 
 Do not reopen those as Gen2 work unless new disk evidence changes the class.
 
-### What would *accept* a theme
+### Accepting a further theme
 
 A short written decision that names the theme, the evidence rows, the invariant that must
-not move, and the first 0.3.x change. Until that exists, Gen2 remains **not started**.
+not move, and the 0.3.x (or later) change. Plan-timeout resilience and budget-aware
+planning still need that. Do not treat this coding-loop acceptance as a blanket v0.3.0
+redesign.
 
 ---
 
