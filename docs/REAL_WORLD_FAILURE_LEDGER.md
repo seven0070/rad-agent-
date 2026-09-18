@@ -832,15 +832,16 @@ python3 -m pytest -q tests/test_verified_coding_loop.py
 | gate | result |
 |---|---|
 | `python3 -m pytest -q` | **373 passed** in 8.62s |
-| `rad doctor --offline` | (recorded with the gate run) |
-| `rad acceptance` | (recorded with the gate run) |
-| `rad realworld` | (recorded with the gate run; `live_nim` may BLOCKED) |
+| `rad doctor --offline` | READY — 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR (`RAD_HOME=/tmp/rad-v030-gate`) |
+| `rad acceptance` | **50/50 PASSED** (`/tmp/rad-v030-gate/acceptance/20260918-130116_gate.json`) |
+| `rad realworld` | **10 passed / 1 BLOCKED / 0 failed** (`live_nim` BLOCKED; `/tmp/rad-v030-rw/realworld/20260918-130121_realworld.json`) |
 | Package | **0.3.0** |
 | RW-058–063 | preserved |
 | 16-task cap | **UNCHANGED** |
 | Default tool budget | **UNCHANGED** (60) |
 | Needle | **OFF** (`existing`) |
 | False completion | **0** |
+| Live NIM | **BLOCKED** (no NVIDIA keys) |
 
 ## How to add a finding
 

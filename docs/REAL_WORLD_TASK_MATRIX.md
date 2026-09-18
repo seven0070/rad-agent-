@@ -33,7 +33,7 @@ Default `Budget.tool_calls` **60**. Control plane unchanged in shape
 | Default tool budget | **60** unchanged |
 | False completion | **0** |
 | RW-058–063 | preserved (not rewritten) |
-| Live NIM | optional; BLOCKED if no `NVIDIA_NIM_API_KEY` |
+| Live NIM | **BLOCKED** (no `NVIDIA_NIM_API_KEY`) |
 
 # Cycle 2 (post-v0.2.1 → package **0.2.2**)
 

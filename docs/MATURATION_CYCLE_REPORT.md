@@ -51,19 +51,23 @@ and files whose body is only a `DONE:` claim are not artifacts.
 
 ## Quality gates (actually run)
 
+Isolated homes `/tmp/rad-v030-gate` (doctor, acceptance) and `/tmp/rad-v030-rw` (realworld).
+
 | gate | result |
 |---|---|
-| `python3 -m pytest -q` | **373 passed** in 8.62s |
-| `rad doctor --offline` | (gate run) |
-| `rad acceptance` | (gate run) |
-| `rad realworld` | (gate run; `live_nim` may BLOCKED) |
+| `rad version` | **PASS** v0.3.0 |
+| `python3 -m pytest -q` | **PASS** 373 passed in 8.62s |
+| `rad doctor --offline` | **PASS** 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR, verdict READY, exit 0 |
+| `rad acceptance` | **PASS** 50/50 — `/tmp/rad-v030-gate/acceptance/20260918-130116_gate.json` |
+| `rad realworld` | **PASS** 10/11 + 1 BLOCKED — `/tmp/rad-v030-rw/realworld/20260918-130121_realworld.json` |
+| Live NIM | **BLOCKED** (no `NVIDIA_NIM_API_KEY` / `NVIDIA_API_KEY`) |
 | Needle default | **PASS** (`existing`) |
-| Caps | **PASS** left at 16 / 60 |
-| False DONE | **PASS** (scripted persistent bad + suite `false_success`) |
+| Caps | **PASS** `max_plan_tasks` 16; `Budget.tool_calls` 60 |
+| False DONE | **PASS** (scripted persistent bad + suite `false_success` / `needs_user` / `no_loop`) |
 
 ## NIM status
 
-Optional. If `NVIDIA_NIM_API_KEY` is absent, live lane is **BLOCKED** — not faked.
+**BLOCKED.** `NVIDIA_NIM_API_KEY` and `NVIDIA_API_KEY` both absent. Live word_counter-like objective was **not** run. Do not fake live results. Offline reconstruction: `test_verified_coding_loop_*` plus `rad realworld --only coding,false_success`.
 
 ## Remaining limitations
 
