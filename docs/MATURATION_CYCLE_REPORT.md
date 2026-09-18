@@ -47,15 +47,15 @@ tools; later file PENDING; `needs_user` @ 12/12).
 
 ## Quality gates (this branch)
 
-Isolated homes `/tmp/rad-e1-gate` (doctor, acceptance) and `/tmp/rad-e1-rw` (realworld). Recorded after pytest.
+Isolated homes `/tmp/rad-e1-gate` (doctor, acceptance) and `/tmp/rad-e1-rw` (realworld).
 
 | gate | result |
 |------|--------|
 | `rad version` | **PASS** v0.4.6 |
-| `python3 -m pytest -q` | pending this cycle |
-| `rad doctor --offline` | pending this cycle |
-| `rad acceptance` | pending this cycle |
-| `rad realworld` | pending this cycle |
+| `python3 -m pytest -q` | **PASS** 530 passed in 9.93s |
+| `rad doctor --offline` | **PASS** 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR, verdict READY, exit 0 |
+| `rad acceptance` | **PASS** 50/50 — `/tmp/rad-e1-gate/acceptance/20260918-174516_gate.json` |
+| `rad realworld` | **PASS** 10/11 + 1 BLOCKED — `/tmp/rad-e1-rw/realworld/20260918-174520_realworld.json` |
 | Needle default | **PASS** (`existing`) |
 | Caps | **PASS** `max_plan_tasks` 16; `Budget.tool_calls` 60 |
 | Package | **0.4.6** |

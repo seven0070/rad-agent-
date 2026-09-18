@@ -1781,6 +1781,19 @@ waits for a written accept.
 | actual | sequential `objective_parallel=1`, `--max-tools` 4: t1 VERIFIED, t2 yielded `RETRYING`, t3 VERIFIED, objective not VERIFIED (missing JSON); chained `depends_on` t3 stays PENDING (E2 not claimed) |
 | notes | Strengthens `CheckpointManager` + `Scheduler`; no new persistence format. Needle OFF. Caps 16/60 unchanged. Path-align / multifile / ASCII-tree / pip/DONE / mkdir File-exists / premature-test preserved. Thrash Class A chase paused. Live 11B text_analyzer@12 **not** claimed PASS |
 
+| gate | result |
+|---|---|
+| `python3 -m pytest -q` | **530 passed** in 9.93s |
+| `rad doctor --offline` | READY — 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR (`RAD_HOME=/tmp/rad-e1-gate`) |
+| `rad acceptance` | **50/50 PASSED** (`/tmp/rad-e1-gate/acceptance/20260918-174516_gate.json`) |
+| `rad realworld` | **10 passed / 1 BLOCKED / 0 failed** (`live_nim` BLOCKED; `/tmp/rad-e1-rw/realworld/20260918-174520_realworld.json`) |
+| Package | **0.4.6** |
+| 16-task cap | **UNCHANGED** |
+| Default tool budget | **UNCHANGED** (60) |
+| Needle | **OFF** (`existing`) |
+| False completion | **0** |
+| Live NIM this patch | **BLOCKED** (no NVIDIA keys) — not a live PASS claim |
+
 ## How to add a finding
 
 1. Reproduce with disk checks (file exists / hash / contents). Quote status + verification, not model prose.

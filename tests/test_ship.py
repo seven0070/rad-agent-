@@ -81,7 +81,7 @@ def test_global_home_flag_works_with_subcommands(home, capsys):
     """`rad --home <dir> <cmd>` used to be rewritten into `rad chat --home …` and fail."""
     rc = main(["--home", str(home.root), "version"])
     out = capsys.readouterr().out
-    assert rc == 0 and "v0.4.5" in out
+    assert rc == 0 and "v0.4.6" in out
 
 
 def test_nvidia_default_model_is_not_eol(tmp_path):
@@ -162,4 +162,4 @@ def test_nvidia_requests_disable_parallel_tool_calls(monkeypatch):
 
 def test_rad_version_cli(capsys):
     assert main(["version"]) == 0
-    assert "v0.4.5" in capsys.readouterr().out
+    assert "v0.4.6" in capsys.readouterr().out
