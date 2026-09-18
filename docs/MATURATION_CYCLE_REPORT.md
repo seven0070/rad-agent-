@@ -6,6 +6,79 @@ Default `Budget.tool_calls` remains **60**.
 
 ---
 
+# Cycle 6 — RW-065 live NIM retest of v0.3.0 + json_valid-on-.py (2026-09-18)
+
+**Date:** 2026-09-18
+**Baseline:** `origin/main` `183ff611` (tag **v0.3.0**, package **0.3.0**)
+**This branch:** `cursor/rw065-json-valid-class-a-364e` — package **0.3.0** (no bump)
+**Architecture:** control plane preserved. Needle stays off. Caps unchanged.
+RW-058–064 are **not rewritten**.
+
+## Product use (live)
+
+Live NVIDIA NIM 11B word_counter on v0.3.0 (`obj_efed5285`, home
+`/tmp/rad_prod_rw065_ab0919b2`, `--max-tasks 4 --max-tools 12`, Needle off).
+
+| item | value |
+|---|---|
+| Verdict | **FAIL** — `needs_user` (tools 12/12). **Not** E2E PASS |
+| vs RW-062 | **improved** — plan source **llm** (not fallback); Gen2 **repair fired**; valid `result.json` `{"words": 2}`; **no DONE pollution** |
+| Disk | `word_counter.py` broken (`TypeError`); `result.json` valid words=2; tests FAIL `NameError`; pollution none |
+| False DONE | **0** |
+| Class | **B** residual (11B/budget). json_valid-on-.py Class A **NOT CONFIRMED** |
+
+## Class A investigation
+
+Question: planner/control plane incorrectly accept or emit `json_valid` on `.py`
+→ false FAILED verify → ENVIRONMENT_FAILURE repair noise?
+
+| # | claim | result |
+|---|---|---|
+| A | json_valid on `.json` | **OK** (valid) / fail (invalid) |
+| B | json_valid on `.py` | fails as not-JSON (honest); isolated recovery **VALIDATION** coding repair, **not** ENVIRONMENT |
+| C | inferred coding checks | `json_valid` only on `.json`; `shell_ok` for tests — never json_valid on `.py` |
+| Emit | RAD emits json_valid on `.py` | **NO** |
+| Accept | LLM json_valid-on-.py kept | **YES** (models propose; no silent remap) |
+| Live ENV | caused by json_valid-on-.py | **NO** — shell `No such file` observations (F-18 designed path) |
+
+**NOT CONFIRMED.** No product patch. Stay **0.3.0**. Tests:
+`tests/test_json_valid_py_investigation.py`. Ledger F-20260918-25 (B) /
+F-20260918-26 (not A).
+
+## What did not change
+
+- Package **0.3.0** (no 0.3.1)
+- Needle default `existing` / off
+- `max_plan_tasks` **16**
+- `Budget.tool_calls` **60**
+- False completion **0**
+- RW-058–064 rows
+- No claim that live 11B word_counter now PASSes
+
+## Quality gates (actually run)
+
+Recorded after pytest / doctor / acceptance / realworld on this branch.
+
+| gate | result |
+|---|---|
+| `rad version` | **0.3.0** (unchanged) |
+| `python3 -m pytest -q` | pending this PR |
+| `rad doctor --offline` | pending this PR |
+| `rad acceptance` | pending this PR |
+| `rad realworld` | pending this PR (`live_nim` may BLOCKED) |
+| Needle default | **OFF** (`existing`) |
+| Caps | **UNCHANGED** |
+| False DONE | **0** |
+| Live NIM this investigation | not re-run; RW-065 facts taken from the operator report |
+
+## Roadmap pointer
+
+Operating spine: [ROADMAP.md](ROADMAP.md). Gen2 theme 1 **used** (RW-065). Residual
+Class B. Class A candidate closed **NOT CONFIRMED**. Plan-timeout and budget-aware
+planning stay candidates.
+
+---
+
 # Cycle 5 — Gen2 / v0.3.0 verified coding loop (2026-09-18)
 
 **Date:** 2026-09-18

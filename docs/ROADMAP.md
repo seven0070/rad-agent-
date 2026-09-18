@@ -4,12 +4,14 @@ This is the **operating spine** for RAD: five generations, one loop, evidence in
 It is not a product-idea backlog (that list stays in the README) and it is not a license to
 redesign the control plane.
 
-**Status (2026-09-18):** Generation 1 is **complete** (production baseline **v0.2.3** until
-this change merges). Generation 2 is **in progress**. First accepted theme — **verified
-coding loop** — is **implemented here as v0.3.0** (write → test → repair until disk checks
-pass). Needle stays off by default. Caps stay where Gen1 locked them. Plan-timeout
-resilience and budget-aware planning remain **candidates**. Generations 3–5 are **not
-started**.
+**Status (2026-09-18):** Generation 1 is **complete**. Generation 2 is **in
+progress**. First accepted theme — **verified coding loop** — shipped as
+**v0.3.0**. That theme has been **used** (RW-065 live NIM 11B word_counter):
+repair fired, valid `result.json`, no DONE pollution, still `needs_user` / FAIL
+under tools=12. Residual **Class B**. json_valid-on-.py Class A candidate
+**NOT CONFIRMED**. Package stays **0.3.0**. Needle stays off. Caps unchanged.
+Plan-timeout resilience and budget-aware planning remain **candidates**.
+Generations 3–5 are **not started**.
 
 ```
 build → test → validate → release → use → discover gaps → build the next version
@@ -24,10 +26,11 @@ Stability with no code change is a valid result.
 
 | item | value |
 |---|---|
-| Generation in production | **Gen1 — Foundation — COMPLETE** (until v0.3.0 is merged / released) |
-| Package / tag on `main` | **0.2.3** / annotated tag `v0.2.3` @ `d121c3f` |
-| This change | package **0.3.0** — verified coding loop |
-| Generation 2 | **IN PROGRESS** — theme 1 (verified coding loop) **implemented** in this v0.3.0 change |
+| Generation in production | **Gen2 starting** — v0.3.0 on `main` (`183ff611` / tag `v0.3.0`); Gen1 baseline remains tagged `v0.2.3` @ `d121c3f` |
+| Package / tag on `main` | **0.3.0** / annotated tag `v0.3.0` @ `183ff611` |
+| This change | docs + investigation only — **stay 0.3.0** (no 0.3.1) |
+| Generation 2 | **IN PROGRESS** — theme 1 **implemented** (v0.3.0) and **used** (RW-065) |
+| Latest use (RW-065) | Live NIM 11B word_counter: FAIL `needs_user`; Gen2 repair YES; residual **Class B**; json_valid-on-.py **NOT CONFIRMED** |
 | Generations 3–5 | **NOT STARTED** |
 | Needle | optional / **off** (`tool_router=existing`; ADR-001) |
 | `max_plan_tasks` | **16** (unchanged) |
@@ -45,7 +48,7 @@ Cycle evidence, not this file: [MATURATION_CYCLE_REPORT.md](MATURATION_CYCLE_REP
 | Gen | Name | Versions | Status |
 |---|---|---|---|
 | **1** | Foundation | v0.2.0, v0.2.1, v0.2.2, **v0.2.3** | **COMPLETE** |
-| **2** | Capability Expansion | v0.3.x | **IN PROGRESS** (verified coding loop → **v0.3.0** in this change) |
+| **2** | Capability Expansion | v0.3.x | **IN PROGRESS** (theme 1 verified coding loop → **v0.3.0**; used RW-065) |
 | **3** | Autonomous Agent Maturity | v0.4.x | **NOT STARTED** |
 | **4** | Production Scale | v0.5.x | **NOT STARTED** |
 | **5** | 1.0 | v1.0.0 | **NOT STARTED** |
@@ -142,7 +145,7 @@ Evidence-backed capability additions **on top of** the Gen1 control plane.
 | Theme | **Verified coding loop** |
 | Version | **v0.3.0** |
 | Loop | write → run tests / checks → repair until **disk checks** pass |
-| Evidence | RW-058, RW-059, RW-062 (F-20260918-15 / 16 / 19 / 22); deterministic RW-064 / F-20260918-24 |
+| Evidence | RW-058, RW-059, RW-062 (F-20260918-15 / 16 / 19 / 22); deterministic RW-064 / F-20260918-24; live use RW-065 / F-20260918-25 |
 | What it is not | Not a control-plane rewrite. Not Needle-as-default. Not a cap raise. Not plan-timeout or budget-aware planning (those stay candidates). Not a claim that live 11B Class B runs now pass. |
 
 Live Gen1 coding runs left invalid `result.json` / `summary.json`, failing tests (`13!=6`,
@@ -175,7 +178,7 @@ Grounded in RW-058 / RW-059 / RW-060 / RW-062 and the F-22 family
 
 | # | theme | status | what the evidence showed | rows |
 |---|---|---|---|---|
-| 1 | **Verified coding loop** | **IMPLEMENTED** — v0.3.0 | Write → run tests → repair until **disk checks** pass. Live runs left invalid JSON, failing tests, wrong paths, pollution `DONE:` fake paths. | RW-058, RW-059, RW-062; RW-064 (scripted) |
+| 1 | **Verified coding loop** | **IMPLEMENTED** — v0.3.0; **used** RW-065 | Write → run tests → repair until **disk checks** pass. Live 11B still `needs_user` under tools=12; loop helps (llm plan, repair, valid JSON, no DONE pollution) and does not clear the bound. | RW-058, RW-059, RW-062; RW-064 (scripted); RW-065 (live use) |
 | 2 | **Plan-timeout resilience** | candidate (not accepted) | Retry / re-ask for a JSON plan **before** falling back to no-check goal clause-split. RW-062: nvidia plan timeout → `PLAN_CREATED` `source=fallback`. | RW-062 (timeout path); RW-063 closed the Class A reading |
 | 3 | **Budget-aware planning** | candidate (not accepted) | Plan that fits the tool budget. RW-059 Case B: doubling tools **12→24** still exhausted the budget and did **not** complete. Default max-tools was **not** raised. | RW-059 vs RW-058; RW-060 / RW-062 also budget-stop |
 
@@ -193,6 +196,7 @@ These were investigated and are **not** product themes for v0.3.x:
 |---|---|---|
 | F-17 | Fallback planner splits newlines / converts model prose into spurious tasks | **NOT CONFIRMED.** PR #14 / RW-061: newline-only goal → 1 fallback task. RW-063: timeout/empty/malformed/non-JSON LLM is discarded; `_fallback` splits `obj.goal` on clause markers, cap `[:7]`. No product patch. No v0.2.4. |
 | F-18 / budget → `needs_user` | Budget exhaustion is a RAD defect | **Path is correct** (PR #14 / RW-061). Unmet checks → `needs_user` + checkpoint; satisfied checks → `VERIFIED`. False DONE **0**. |
+| F-26 / json_valid-on-.py | LLM `json_valid` on `.py` is a RAD hole that causes false FAILED → ENVIRONMENT_FAILURE | **NOT CONFIRMED.** RAD does not emit json_valid on `.py`. Isolated json_valid-on-.py is honest not-JSON + VALIDATION repair. Live RW-065 ENVIRONMENT matches shell `No such file` (F-18 path). No product patch. Stay 0.3.0. |
 
 Do not reopen those as Gen2 work unless new disk evidence changes the class.
 
@@ -237,7 +241,7 @@ acceptable for a public baseline).
 | doc | role |
 |---|---|
 | [MATURATION_CYCLE_REPORT.md](MATURATION_CYCLE_REPORT.md) | Cycle-by-cycle evidence and decisions |
-| [REAL_WORLD_TASK_MATRIX.md](REAL_WORLD_TASK_MATRIX.md) | Disk-checked task rows (do not rewrite RW-058–063) |
+| [REAL_WORLD_TASK_MATRIX.md](REAL_WORLD_TASK_MATRIX.md) | Disk-checked task rows (do not rewrite RW-058–064) |
 | [REAL_WORLD_FAILURE_LEDGER.md](REAL_WORLD_FAILURE_LEDGER.md) | A/B/C findings |
 | [ADR-001-NEEDLE-TOOL-ROUTER.md](ADR-001-NEEDLE-TOOL-ROUTER.md) | Needle stays optional / off |
 | [CONTROL-PLANE.md](CONTROL-PLANE.md) | Shipped control-plane behaviour |

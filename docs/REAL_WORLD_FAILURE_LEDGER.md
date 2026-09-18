@@ -2,7 +2,7 @@
 
 Living log of **measured** RAD failures found in live or reconstructed use.
 Architecture is frozen. Needle stays experimental and off by default. This is not AGI/ASI.
-Operating spine: [ROADMAP.md](ROADMAP.md) (adopted 2026-09-18). Gen1 complete on 0.2.3; Gen2 in progress. Verified coding loop is **implemented as v0.3.0** in this change (F-20260918-24 / RW-064). This ledger is evidence. Do not rewrite RW-058–063.
+Operating spine: [ROADMAP.md](ROADMAP.md) (adopted 2026-09-18). Gen1 complete on 0.2.3; Gen2 in progress. Verified coding loop is **implemented as v0.3.0** (F-20260918-24 / RW-064). Live retest **RW-065**. This ledger is evidence. Do not rewrite RW-058–064.
 
 No secrets belong here: never paste API keys, vault contents, account tokens, or full
 provider payloads. Paths under `/tmp/…` and objective ids are fine.
@@ -842,6 +842,100 @@ python3 -m pytest -q tests/test_verified_coding_loop.py
 | Needle | **OFF** (`existing`) |
 | False completion | **0** |
 | Live NIM | **BLOCKED** (no NVIDIA keys) |
+
+## Live NIM retest of v0.3.0 (RW-065) — 2026-09-18
+
+Operator production follow-up on package **0.3.0** (tag `v0.3.0`, `183ff611`).
+Live NVIDIA NIM word_counter vs RW-062. Needle OFF. Caps **unchanged**.
+False DONE **0**. RW-058–064 rows are **not rewritten**.
+
+Gen2 theme 1 (verified coding loop) **was used**: `PLAN_CREATED` source=`llm`,
+repair inserted, `result.json` valid `{"words": 2}`, no DONE pollution.
+Objective still `needs_user` / FAIL on 11B under `--max-tools 12`. **Not** E2E PASS.
+Primary residual **Class B**. json_valid-on-.py was a Class A *candidate*;
+investigate-first closed it as **NOT CONFIRMED**. Package stays **0.3.0**.
+
+Task log: `docs/REAL_WORLD_TASK_MATRIX.md` RW-065.
+
+### F-20260918-25 — live 11B word_counter on v0.3.0 incomplete (RW-065)
+
+| field | value |
+|---|---|
+| class | **B** primary. json_valid-on-.py suspected A **not confirmed** (F-20260918-26) |
+| status | documented |
+| found in | post-v0.3.0 production use (RW-065), rad v0.3.0, 2026-09-18 IST 18:46:10–18:47:36 |
+| fixed in | — not a RAD hole to patch from this record; 11B + tool-budget limitation on the same simple coding+verification control as RW-062. Gen2 loop **helped** (repair + valid JSON + no DONE pollution) and did **not** clear the bound. **No v0.3.1.** Default max-tools / max-tasks **not** raised |
+| lane | live NVIDIA NIM `meta/llama-3.2-11b-vision-instruct` |
+| objective / test | `obj_efed5285` — word_counter.py + result.json words=2 + test_word_counter.py + tests pass; `--max-tasks 4 --max-tools 12`; Needle `existing` / off |
+| disk | `word_counter.py` present, broken (`s.split().count()` → TypeError); `result.json` **valid** `{"words": 2}`; `test_word_counter.py` present, `count_words()` NameError (no import); DONE pollution **NONE** |
+| expected | v0.3.0 coding loop reaches passing tests + VERIFIED under the same 11B / tools=12 bound as RW-062, or fails honestly without false DONE |
+| actual | status `needs_user` / **FAIL** vs success criteria — **NOT DONE**, **not VERIFIED** complete. Tools 12/12 exhausted; model calls 9/80; retries 1/6; wall ~86s / spent 66.7s. Home `/tmp/rad_prod_rw065_ab0919b2`. `PLAN_CREATED` **source=llm** (4 tasks). First task RETRYING (verification FAILED); result.json task COMPLETED/VERIFIED; tests+run PENDING; Gen2 repair `t_6b2926a5` RUNNING at stop. Tests **FAIL**. False DONE **0** |
+| notes | vs RW-062: **improved control-plane behavior**, still not E2E PASS. **Not Class C**: NIM key present; doctor READY. RAD stopped at the tool budget; verifier did not rubber-stamp. Outcome: stay 0.3.0. Needle off. Cap 16 unchanged. No architecture change. |
+
+Reproduction (redacted):
+
+```
+RAD_HOME=/tmp/rad_prod_rw065_ab0919b2  # rad v0.3.0; nvidia / meta/llama-3.2-11b-vision-instruct
+# --max-tasks 4 --max-tools 12; Needle existing/off
+# obj_efed5285 → needs_user; tools 12/12; PLAN_CREATED source=llm; Gen2 repair YES
+# result.json valid {"words": 2}; tests FAIL NameError; no DONE pollution
+```
+
+### F-20260918-26 — json_valid-on-.py Class A **NOT CONFIRMED**
+
+Investigate-first after RW-065. Question: does the planner/control plane
+incorrectly accept or emit `json_valid` on `.py` (or non-JSON) paths, causing
+false FAILED verification → ENVIRONMENT_FAILURE repair noise?
+
+| field | value |
+|---|---|
+| class | **NONE** (Class A **not proven**). Live RW-065 remains **B** (F-25) |
+| status | **investigated / not Class A** — document only; **no product patch** |
+| found in | RW-065 live plan attached `json_valid path=word_counter.py` (and `test_word_counter.py`) described as “valid Python file”; follow-up on `origin/main` `183ff611` / v0.3.0 |
+| fixed in | — **not a defect vs current contract.** No patch. Package stays **0.3.0**. **No v0.3.1** |
+| lane | scripted planner + verifier + recovery (no NIM). Tests `tests/test_json_valid_py_investigation.py` |
+| objective / test | Scenarios A–C + RW-065 ENVIRONMENT reconstruction + architecture freeze |
+| disk | n/a (deterministic). Does not change RW-065 disk facts |
+| expected | Class A only if RAD *emits* json_valid on `.py`, or if accepting it causes *false* FAILED verify that is then classified ENVIRONMENT |
+| actual | **A.** `json_valid` on `.json` OK / invalid JSON fails. **B.** `json_valid` on valid `.py` fails as not-JSON (honest); isolated recovery is `VALIDATION_FAILURE` + Gen2 coding `repair`, **not** `ENVIRONMENT_FAILURE`. LLM plans that emit json_valid-on-.py are kept (models propose; no silent remap). **C.** `infer_coding_checks` / fallback objective checks attach `json_valid` only to `result.json`, plus `shell_ok` for `test_word_counter.py` — never json_valid on `.py`. **Live ENV:** `classify()` reads observation text, not check kinds; shell `No such file` → ENVIRONMENT → “missing dependency/file” (same designed path as F-18). False DONE **0** |
+| notes | Trace: `PLAN_PROMPT` “json_valid on every .json artifact”; `Planner._checks` accepts any kind the model proposes; `Verifier.run_check` `json_valid` is `json.loads`; `RecoveryEngine.classify` `_ENV` matches tool output (`no such file`) *before* VALIDATION. Live RW-065 also had actions errors (8 actions, 3 errors) from tests run before files existed — that is the ENV token, not the check kind. Remapping json_valid-on-.py to `shell_ok` / py_compile would be a **new** product rule, not a hole in the current contract. Needle OFF. Caps unchanged. |
+
+Investigation table (F-17 / F-21 style):
+
+| # | claim | result |
+|---|---|---|
+| 1 | RAD **emits** `json_valid` on `.py` | **NO.** `infer_coding_checks` / `JSON_PATH_RE` only `.json`. Fallback *tasks* stay check-less (F-17). PLAN_PROMPT asks json_valid on `.json` artifacts |
+| 2 | RAD **accepts** LLM `json_valid` on `.py` | **YES** — models propose; `_checks` does not remap. Evaluation stays “is JSON?” |
+| 3 | That acceptance is a **false** FAILED verification | **NO.** Valid Python is not JSON; verifier `ok: false` is honest. Task never VERIFIED from json_valid-on-.py (false DONE 0) |
+| 4 | json_valid-on-.py **causes** ENVIRONMENT_FAILURE repair noise | **NO.** Isolated json_valid-on-.py → `VALIDATION_FAILURE` + coding repair (“Repair so that machine checks pass”). Live RW-065 `ENVIRONMENT_FAILURE` / “missing dependency/file” matches `_ENV` on shell `No such file` observations (F-18 designed path) |
+| 5 | Coding inferred checks use json_valid for `.py` | **NO** (Scenario C) |
+
+Reproduction (redacted):
+
+```
+python3 -m pytest -q tests/test_json_valid_py_investigation.py
+# json_valid result.json → ok
+# json_valid word_counter.py (valid Python) → invalid JSON; VALIDATION repair not ENV
+# RW-065 goal infer → json_valid only result.json
+# shell "No such file" + json_valid-on-py in payload → ENVIRONMENT (check kind ignored)
+```
+
+| gate | result |
+|---|---|
+| Package | **0.3.0** — no bump; **no v0.3.1** |
+| RW-058–064 | preserved |
+| F-20260918-25 | **Class B** (live 11B incompleteness on v0.3.0) |
+| F-20260918-26 | **investigated / not Class A** |
+| Class A this record | **NO** |
+| Class B this record | **F-20260918-25** |
+| Class C | **none** (NIM key present on the live lane; this investigation is scripted) |
+| Patch required | **NO** |
+| Regression (product) | **NO** (investigation tests lock current correct behavior) |
+| 16-task cap | **UNCHANGED** |
+| Default tool budget | **UNCHANGED** (60) |
+| Needle | **OFF** (`existing`) |
+| False completion | **0** |
+| Recommendation | **stay 0.3.0** |
 
 ## How to add a finding
 
