@@ -526,16 +526,16 @@ RAD_HOME=/tmp/rad_prod_rw059_b48e7b56  # rad v0.2.3; nvidia / meta/llama-3.2-11b
 
 | field | value |
 |---|---|
-| class | A (suspected; **not confirmed** — investigated) |
-| status | **investigated / not Class A** — do **not** claim a product fix; no patch |
-| found in | post-Cycle 4 production use (RW-059 investigation candidates), rad v0.2.3 |
-| fixed in | — **not a defect.** No patch. No v0.2.4. See F-20260918-21 |
-| lane | live production `objective run` (planner path) + deterministic planner unit tests |
-| objective / test | production text_analyzer multiline objective (RW-058 / RW-059); `test_fallback_planner_does_not_split_on_newlines` |
-| disk | n/a — suspected planning defect, not a disk-hash finding |
+| class | A (suspected; **not patched**). Deterministic unit test (PR #14 / RW-061) did **not** confirm a newline split. **RW-062** is additional live evidence. Primary classification of the live run remains **B** |
+| status | **reopened / additional live evidence (RW-062)** — PR #14 closed as **not-confirmed** from a deterministic test; this live fallback run strengthens the suspect. Do **not** claim a product fix; **no patch this PR** |
+| found in | originally RW-059 investigation candidates; **reopened** by RW-062 live NIM, rad v0.2.3, 2026-09-18 IST ~15:41–15:47 |
+| fixed in | — **not patched.** No v0.2.4. PR #14 / F-20260918-21 remains the deterministic investigation; it is **not** a product fix of this suspect |
+| lane | live production `objective run` (RW-062: planner source **fallback** after nvidia plan timeout) + prior deterministic planner unit tests (RW-061) |
+| objective / test | RW-062 Simple Coding + Verification; prior `test_fallback_planner_does_not_split_on_newlines` (PR #14) |
+| disk | n/a for the split itself. RW-062 artifacts: five files exist; `result.json` as-left INVALID `{`; tests FAIL `6!=2`; pollution `DONE:` fake path |
 | expected | one coherent plan for a single multiline objective; no spurious tasks from newline wrapping |
-| actual | **Not reproduced.** `Planner._fallback` splits on clause markers (`and then` / `then` / `;` / `, and` / period+space), **not** on newlines. A production-shaped multiline goal with required-file bullets is **one** fallback task. RW-058/059/060 had a live brain, so the planner source is **llm** (5 planned tasks on RW-058), not fallback. |
-| notes | Parked suspect closed by investigation. Clause-marker split remains by design (`test_planner_fallback_without_brain`). Not a lifecycle or budget-boundary defect. |
+| actual | **PR #14 / RW-061 (deterministic):** `Planner._fallback` splits on clause markers (`and then` / `then` / `;` / `, and` / period+space), **not** on newlines. A production-shaped multiline goal with required-file bullets is **one** fallback task. RW-058/059/060 had a live brain, so the planner source was **llm** (5 planned tasks on RW-058), not fallback. **RW-062 (live):** nvidia plan **timeout** → `PLAN_CREATED` **source=fallback**; **7** newline-split spurious tasks (matches `_fallback` `[:7]` step cap). |
+| notes | Do not treat PR #14 as having fixed F-17. Do not treat RW-062 as a confirmed Class A patch either. This record is additional live evidence only. Clause-marker split remains by design (`test_planner_fallback_without_brain`). Primary RW-062 class is **B** (F-20260918-22). No architecture change. |
 
 ### F-20260918-18 — suspected ENVIRONMENT_FAILURE misclassification burns tool budget
 
@@ -651,7 +651,7 @@ deterministic tests (no live NIM; no model-quality dependence).
 | disk | n/a — controller lifecycle, not a production hash |
 | expected | Class A only if RAD skips verify / wrong needs_user / blocks recovery / wrong fallback when objective checks already pass |
 | actual | Scenario A: checks pass at budget → `COMPLETED` / `VERIFIED` (F-20260918-03 still holds). Scenario B: unmet remaining work → `needs_user` + checkpoint; resume with raised budget continues. Scenario C: unmet / invalid artifacts → `needs_user`, not `VERIFIED`; model `DONE:` ignored. F-17 newline split **not** in `_fallback`. F-18 ENV misclass **not** the RW-058/059/060 path. |
-| notes | Live NIM 11B FAIL on RW-058/059/060 stays **Class B**: tool budget exhausted with success criteria unmet. RAD did not rubber-stamp. False DONE **0**. Default `Budget.tool_calls` remains **60**; `max_plan_tasks` remains **16**; Needle `existing`. |
+| notes | Live NIM 11B FAIL on RW-058/059/060 stays **Class B**: tool budget exhausted with success criteria unmet. RAD did not rubber-stamp. False DONE **0**. Default `Budget.tool_calls` remains **60**; `max_plan_tasks` remains **16**; Needle `existing`. **Later (RW-062):** F-17 reopened with additional live fallback evidence — see F-20260918-22. F-21's deterministic Scenarios A/B/C and F-18 remain as written. Not a product fix. |
 
 Reproduction (redacted):
 
@@ -679,6 +679,63 @@ python -m pytest -q tests/test_class_a_budget_investigation.py
 | 16-task cap | **UNCHANGED** |
 | Default tool budget | **UNCHANGED** (60) |
 | Needle | **OFF** (`existing`) |
+| Evidence for v0.3.0 | **none** |
+| Recommendation | **Outcome A — continue 0.2.x** |
+
+## Simple Coding + Verification control (RW-062) — 2026-09-18
+
+Operator production follow-up on package **0.2.3**. Live **Simple Coding +
+Verification** control (not a rewrite of RW-058–061). Architecture frozen.
+Needle remains default-off. Planner cap left at 16. Default max-tools **not**
+raised. **No 0.2.x bump.** Not AGI. Not v0.3.0.
+Task log: `docs/REAL_WORLD_TASK_MATRIX.md` RW-062.
+
+PR #14 (RW-061 / F-20260918-21) closed F-17 as **not-confirmed** from a
+deterministic newline-only fallback test (live RW-058/059/060 planner source
+was **llm**). RW-062 is additional **live** evidence: nvidia plan timeout →
+`PLAN_CREATED` source=**fallback** → 7 newline-split spurious tasks. That
+**reopens / strengthens** F-17. This PR does **not** claim a product fix and
+does **not** ship a Class A patch.
+
+### F-20260918-22 — live 11B simple coding+verification incomplete (RW-062)
+
+| field | value |
+|---|---|
+| class | **B** primary (F-17 suspected A **strengthened**, **not patched**) |
+| status | documented |
+| found in | post-Cycle 4 production use (RW-062), rad v0.2.3, 2026-09-18 IST ~15:41–15:47 |
+| fixed in | — not a RAD hole to patch from this record; 11B limitation on a simpler coding+verification workload. Same family as F-20260918-04 / F-20260918-15 / F-20260918-16 / F-20260918-19 / F-20260918-20. **No v0.2.4.** Default max-tools / max-tasks **not** raised |
+| lane | live NVIDIA NIM `meta/llama-3.2-11b-vision-instruct` |
+| objective / test | `obj_7a020865` — Simple Coding + Verification; `--max-tasks 4 --max-tools 12`; Needle `existing` / off |
+| disk | five files exist; `result.json` as-left **INVALID** `{`; tests **FAIL** `6!=2`; pollution `DONE:` fake path |
+| expected | simpler coding+verification succeeds (valid `result.json`, tests pass) under a tighter `--max-tasks 4 --max-tools 12` bound; `VERIFIED` only from machine checks |
+| actual | status `needs_user` / **FAIL** vs success criteria — **NOT DONE**, **not VERIFIED** complete. Tools 12/12 exhausted; wall ~383s. Home `/tmp/rad_prod_rw062_6ede431b`. `PLAN_CREATED` **source=fallback** after nvidia plan timeout; **7** newline-split spurious tasks. False DONE **0** |
+| notes | Interpretation: a **simple** workload also fails similarly → Class B is **not** limited to complex objectives (text_analyzer / research). **Not Class C**: NIM key present. F-17 additional live evidence recorded above; **no Class A patch in this PR**. RAD stopped at the tool budget; verifier did not rubber-stamp. Outcome A continues. Needle off. Cap 16 unchanged. No architecture change. |
+
+Reproduction (redacted):
+
+```
+RAD_HOME=/tmp/rad_prod_rw062_6ede431b  # rad v0.2.3; nvidia / meta/llama-3.2-11b-vision-instruct
+# --max-tasks 4 --max-tools 12; Needle existing/off
+# obj_7a020865 → needs_user; tools 12/12; PLAN_CREATED source=fallback after nvidia plan timeout
+# 7 newline-split spurious tasks; result.json INVALID `{`; tests FAIL 6!=2; pollution DONE: fake path
+```
+
+| gate | result |
+|---|---|
+| Package | **0.2.3** — no bump; **no v0.2.4** |
+| RW-058 | preserved (F-20260918-15 Class B; tools 12/12) |
+| RW-059 | preserved (F-20260918-16 / F-20260918-19 Class B; tools 24/24) |
+| RW-060 | preserved (F-20260918-20 Class B; tools 16/16) |
+| RW-061 | preserved (F-20260918-21; deterministic Class A **not proven**; F-18 stays not-confirmed) |
+| F-20260918-17 | **reopened / additional live evidence** (RW-062 fallback after nvidia plan timeout; 7 newline-split spurious tasks). PR #14 deterministic close is **not** a product fix. **No patch this PR** |
+| Class A this record | **none patched** |
+| Class B | **F-20260918-22** (simple coding+verification: invalid `result.json`, tests `6!=2`, pollution `DONE:` fake path, tools 12/12, `needs_user`) |
+| Class C | **none** (NIM key present) |
+| Default max-tools / max-tasks | **unchanged** (RW-062 used `--max-tasks 4 --max-tools 12` for this run only) |
+| Needle | default `existing`; **NOT** turned on |
+| `max_plan_tasks` | **16** unchanged |
+| False completion | **0** |
 | Evidence for v0.3.0 | **none** |
 | Recommendation | **Outcome A — continue 0.2.x** |
 

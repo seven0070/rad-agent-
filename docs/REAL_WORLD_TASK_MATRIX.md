@@ -225,7 +225,9 @@ Cloud Agent VM (no keys). This is a later operator run.
 RW-058 remains historical evidence and is not rewritten. RW-059 is a controlled
 `--max-tools 24` follow-up of the same text_analyzer objective (default max-tools **not**
 raised). RW-060 is a separate research + artifact objective on the same 11B NIM
-lane (not a rewrite of RW-058/059). Default max-tools / max-tasks **not** raised.
+lane (not a rewrite of RW-058/059). RW-061 is the scripted Class A investigation
+(PR #14). RW-062 is a live Simple Coding + Verification control on the same 11B
+NIM lane (not a rewrite of RW-058–061). Default max-tools / max-tasks **not** raised.
 
 ## Production campaign (text_analyzer)
 
@@ -348,5 +350,46 @@ unchanged. Needle `existing` / off. Package stays **0.2.3**.
 | 16-task cap | **UNCHANGED** |
 | Default tool budget | **UNCHANGED** (60) |
 | Needle | **OFF** (`existing`) |
+| Package | **0.2.3** — **no v0.2.4** |
+| Recommendation | **Outcome A — continue 0.2.x** |
+
+## Simple Coding + Verification control (RW-062)
+
+RW-058 / RW-059 / RW-060 / RW-061 rows above are **not rewritten**. RW-062 is a
+live **Simple Coding + Verification** control on the same 11B NIM lane: a simpler
+coding workload than text_analyzer, still with disk-checked files + tests.
+Docs-only. Default max-tools / max-tasks **not** raised. Package stays **0.2.3**.
+No Class A patch. PR #14 (RW-061) closed F-17 as not-confirmed from a
+deterministic test; this live run is additional evidence, not a product fix.
+
+| id | Date | Category | Objective | #tasks | #actions | Tools | Result | Verification | Recovery | Failure class | Notes |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| RW-062 | 2026-09-18 IST ~15:41–15:47 | coding (live NIM) — Simple Coding + Verification control | Simple Coding + Verification; `--max-tasks 4 --max-tools 12`; Needle `existing` / off | `PLAN_CREATED` **source=fallback** after nvidia plan timeout; **7** newline-split spurious tasks | tools 12/12; wall ~383s | 12/12 exhausted | **FAIL** vs success criteria (`needs_user`); **NOT DONE**, **not VERIFIED** complete | FAILED | budget exhausted | **B** primary; F-17 evidence **strengthened** (not patched) | Provider nvidia / `meta/llama-3.2-11b-vision-instruct`. Home `/tmp/rad_prod_rw062_6ede431b`; `obj_7a020865`. Disk: five files exist; `result.json` as-left **INVALID** `{`; tests **FAIL** `6!=2`; pollution `DONE:` fake path. False DONE **0**. **Not Class C** (NIM key present). Simple workload also fails similarly → Class B is **not** limited to complex objectives. Default max-tools / max-tasks **not** raised. No architecture change. **No v0.2.4.** |
+
+### RW-062 vs prior production rows (RW-058–061)
+
+| | RW-058 | RW-059 | RW-060 | RW-061 | RW-062 (this control) |
+|---|---|---|---|---|---|
+| kind | live NIM coding | live NIM coding, extra tools | live NIM research | scripted controller, no model | live NIM **simple** coding + verification |
+| home | `/tmp/rad_prod_text_analyzer_live_a787512c` | `/tmp/rad_prod_rw059_b48e7b56` | `/tmp/rad_prod_rw060_eb0192` | n/a (pytest) | `/tmp/rad_prod_rw062_6ede431b` |
+| objective id | `obj_4e219224` | `obj_e1419520` | `obj_b114afd4` | Scenarios A/B/C | `obj_7a020865` |
+| `--max-tasks` | 8 | 8 | 8 | n/a (injected plans) | **4** (run only; default unchanged) |
+| `--max-tools` | **12** | **24** | **16** | default **60** unchanged | **12** (run only; default unchanged) |
+| Needle | `existing` / off | `existing` / off | `existing` / off | `existing` / off | `existing` / off |
+| wall | ~103s IST ~13:39–13:41 | ~106s IST ~14:02–14:04 | ~110s IST ~14:25–14:27 | n/a | ~383s IST ~15:41–15:47 |
+| planner | llm (5 planned) | llm | llm | injected | **fallback** after nvidia plan timeout; 7 newline-split spurious tasks |
+| tools used | 12/12 exhausted | 24/24 exhausted | 16/16 exhausted | injected counts | 12/12 exhausted |
+| final status | `needs_user` / **FAIL** | `needs_user` / **FAIL** | `needs_user` / **FAIL** | no product run; path proven correct | `needs_user` / **FAIL** |
+| false DONE | **0** | **0** | **0** | **0** | **0** |
+| disk | 4/5 under `text_analyzer/`; `summary.json` **MISSING** | five paths; invalid JSON + wrong counts; tests **FAIL** `13!=6` | pathlib stub; sections 3–9 **FAIL** | n/a | five files exist; `result.json` as-left INVALID `{`; tests **FAIL** `6!=2`; pollution `DONE:` fake path |
+| class | **B** (preserved) | **B** (preserved) | **B** (preserved) | **NONE** — Class A **not proven** (PR #14) | **B** primary; F-17 **reopened** as live evidence (no patch) |
+
+| metric | value |
+|---|---|
+| Pattern | **generalizes further** — complex coding (RW-058/059), research (RW-060), **and simple coding+verification (RW-062)** fail under 11B+tool budget before a passing, verifiable result. Class B is not complexity-limited |
+| F-17 | PR #14 / RW-061: deterministic newline-only goal → 1 fallback task; live RW-058/059/060 were **llm**. **RW-062:** `PLAN_CREATED` source=**fallback**; 7 newline-split spurious tasks → **additional live evidence / reopened**. **No product fix this PR** |
+| Class A this record | **none patched** |
+| Class C | **none** (NIM key present) |
+| Default max-tools / max-tasks | **unchanged** |
 | Package | **0.2.3** — **no v0.2.4** |
 | Recommendation | **Outcome A — continue 0.2.x** |

@@ -441,6 +441,82 @@ Tests: `tests/test_class_a_budget_investigation.py` (17). Full suite **345 passe
 **None.** Closing parked Class A suspects without a control-plane hole is not a
 v0.3.0 gap.
 
+Later (not this investigation): RW-062 live Simple Coding + Verification reopened
+F-17 with additional fallback evidence. See the RW-062 section below. F-21
+Scenarios A/B/C and F-18 remain as written. No product fix.
+
+---
+
+# Simple Coding + Verification — RW-062 (2026-09-18)
+
+**Date:** 2026-09-18 (IST ~15:41–15:47 for RW-062)
+**Baseline:** `origin/main` `aecfbae` (PR #14 / RW-061 Class A investigation; package **0.2.3**)
+**Package:** `0.2.3` — **no bump**. Not v0.2.4. Not v0.3.0.
+**Architecture:** frozen. Needle stays optional/off. `max_plan_tasks` left at **16**.
+Default max-tools **not** raised.
+
+Docs-only record. No RAD code change. RW-058 / RW-059 / RW-060 / RW-061 are
+preserved exactly. No Class A patch. **Outcome A.**
+
+## What was run
+
+Live NIM 11B `rad objective run` of a **Simple Coding + Verification** control
+on v0.2.3. Tighter bound than RW-058: `--max-tasks 4 --max-tools 12`. Needle
+`existing` / off.
+
+- Home `/tmp/rad_prod_rw062_6ede431b`, `obj_7a020865`
+- Provider nvidia / `meta/llama-3.2-11b-vision-instruct` (NIM key present; not Class C)
+- Wall ~383s IST ~15:41–15:47
+- Tools 12/12 exhausted
+- Status `needs_user` / **FAIL** vs success criteria — **NOT DONE**, **not VERIFIED** complete
+- False DONE **0**
+
+Planner: nvidia plan **timeout** → `PLAN_CREATED` **source=fallback**; **7**
+newline-split spurious tasks (matches `_fallback` `[:7]` step cap).
+
+## Disk
+
+- five files exist
+- `result.json` as-left **INVALID** `{`
+- tests **FAIL** `6!=2`
+- pollution `DONE:` fake path
+
+## F-17 vs PR #14
+
+PR #14 / RW-061 closed F-17 as **not-confirmed**: deterministic newline-only
+multiline goal → **1** fallback task; live RW-058/059/060 used the **llm**
+planner. That investigation is **not** a product fix.
+
+RW-062 is the first live row where the planner source is **fallback** (after
+nvidia plan timeout) and **7** newline-split spurious tasks were observed.
+Ledger F-17 is **reopened / additional live evidence**. This PR does **not**
+claim a confirmed Class A defect and does **not** ship a patch.
+
+## Class A / B / C
+
+| class | this record |
+|---|---|
+| **A** | **none patched.** F-17 evidence **strengthened** (live fallback path). Do **not** claim a product fix. No v0.2.4. |
+| **B** | **F-20260918-22** — simple coding+verification: invalid `result.json`, tests `6!=2`, pollution `DONE:` fake path, tools 12/12, `needs_user`. Same family as F-20260918-15 / F-20260918-16 / F-20260918-19 / F-20260918-20. |
+| **C** | none (NIM key present). |
+
+Interpretation: a **simple** workload also fails similarly. Class B is **not**
+limited to complex objectives.
+
+## Decision
+
+- **Outcome A continues** — stay on 0.2.x.
+- Needle stays **off**.
+- Default max-tools / max-tasks **unchanged**.
+- Cap **16** unchanged.
+- **No v0.2.4** (no Class A fix).
+- No architecture change. Not v0.3.0.
+
+## Evidence for v0.3.0
+
+**None.** A third live 11B Class B on a *simpler* coding+verification workload
+is not a missing control-plane stage and does not justify designing v0.3.0.
+
 ---
 
 # Cycle 3 — v0.2.3 (2026-09-18)
