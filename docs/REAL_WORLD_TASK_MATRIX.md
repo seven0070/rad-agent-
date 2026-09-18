@@ -224,7 +224,8 @@ Cloud Agent VM (no keys). This is a later operator run.
 
 RW-058 remains historical evidence and is not rewritten. RW-059 is a controlled
 `--max-tools 24` follow-up of the same text_analyzer objective (default max-tools **not**
-raised).
+raised). RW-060 is a separate research + artifact objective on the same 11B NIM
+lane (not a rewrite of RW-058/059). Default max-tools / max-tasks **not** raised.
 
 ## Production campaign (text_analyzer)
 
@@ -278,4 +279,43 @@ max-tools is **not** raised. Package stays **0.2.3**.
 | Class B remaining | invalid JSON `summary.json`; wrong counts; tests FAIL `13!=6` (F-20260918-19) |
 | Default max-tools | **unchanged** |
 | Package | **0.2.3** — **no v0.2.4** unless a later confirmed Class A fix |
+| Recommendation | **Outcome A — continue 0.2.x** |
+
+## Research + artifact (RW-060)
+
+RW-058 / RW-059 stay as historical text_analyzer evidence above. RW-060 is a
+different production objective (research + written artifact) on the same 11B NIM
+lane. Docs-only. Default max-tools / max-tasks **not** raised. Package stays
+**0.2.3**. Class A candidates from RW-059 remain parked (not this record).
+
+| id | Date | Category | Objective | #tasks | #actions | Tools | Result | Verification | Recovery | Failure class | Notes |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| RW-060 | 2026-09-18 IST ~14:25–14:27 | research (live NIM) | Real-World Research + Artifact — pathlib reference (`pathlib_reference.md` + `pathlib_reference/README.md`); `--max-tasks 8 --max-tools 16`; Needle `existing` / off | max-tasks 8 | tools 16/16; model calls 18/80; wall ~110s | 16/16 exhausted | **FAIL** vs success criteria (`needs_user`); **NOT DONE**, **not VERIFIED** complete | FAILED | budget exhausted | **B** | Provider nvidia / `meta/llama-3.2-11b-vision-instruct`. Home `/tmp/rad_prod_rw060_eb0192`; `obj_b114afd4`. Disk: `pathlib_reference/README.md` **EXISTS** sha256 `48f0d39b…`; `pathlib_reference.md` **EXISTS** but **162 B stub** — sections 3–9 **FAIL**, 0 examples; no docs.python.org fetch. False DONE **0**. **Not Class A**; **not Class C**. Pattern generalizes vs RW-058/059: a research workload also fails under 11B+tool budget before a substantive deliverable. Default max-tools / max-tasks **not** raised. No architecture change. **No v0.2.4.** |
+
+### RW-060 vs text_analyzer runs (RW-058 / RW-059)
+
+| | RW-058 | RW-059 | RW-060 |
+|---|---|---|---|
+| category | coding (live NIM) | coding (live NIM) — controlled tool-budget | research + artifact (live NIM) |
+| home | `/tmp/rad_prod_text_analyzer_live_a787512c` | `/tmp/rad_prod_rw059_b48e7b56` | `/tmp/rad_prod_rw060_eb0192` |
+| objective id | `obj_4e219224` | `obj_e1419520` | `obj_b114afd4` |
+| model | NIM 11B `meta/llama-3.2-11b-vision-instruct` | same | same |
+| `--max-tasks` | 8 | 8 | 8 |
+| `--max-tools` | **12** | **24** (run only; default unchanged) | **16** (run only; default unchanged) |
+| Needle | `existing` / off | `existing` / off | `existing` / off |
+| wall | ~103s IST ~13:39–13:41 | ~106s IST ~14:02–14:04 | ~110s IST ~14:25–14:27 |
+| tools used | 12/12 exhausted | 24/24 exhausted | 16/16 exhausted |
+| model calls | 7/80 | 25/80 | 18/80 |
+| final status | `needs_user` / **FAIL** | `needs_user` / **FAIL** | `needs_user` / **FAIL** |
+| false DONE | **0** | **0** | **0** |
+| disk | 4/5 under `text_analyzer/`; `summary.json` **MISSING** | all five files under `text_analyzer/`; `summary.json` invalid JSON + wrong counts; tests **FAIL** `13!=6` | `pathlib_reference/README.md` EXISTS sha256 `48f0d39b…`; `pathlib_reference.md` EXISTS, **162 B stub**; sections 3–9 **FAIL**; 0 examples; no docs.python.org fetch |
+| class | **B** | **B** (Case B on tool-budget) | **B** (not A, not C) |
+
+| metric | value |
+|---|---|
+| Pattern | **generalizes** — coding (RW-058/059) *and* research (RW-060) fail under 11B+tool budget before a substantive deliverable |
+| Class A this record | **none** (parked F-20260918-17 / F-20260918-18 stay open/investigate; **not this PR**) |
+| Class C | **none** (NIM key present) |
+| Default max-tools / max-tasks | **unchanged** |
+| Package | **0.2.3** — **no v0.2.4** |
 | Recommendation | **Outcome A — continue 0.2.x** |
