@@ -1,21 +1,21 @@
-"""Investigate-first: mkdir File-exists failing a check-passing task (RW-077).
+"""Investigate-first: premature python test invoke → ENVIRONMENT (RW-079).
 
-RW-077 live NIM (v0.4.3): ASCII-tree objective_checks were package-joined
-(theme-1 follow-up live-confirmed). Class A pip-ENVIRONMENT + fake-DONE thrash
-was gone (0× pip, 0× DONE). Residual: first task machine `file_exists` on
-`text_analyzer/` **passed**, but the task **FAILED on actions** because
-`mkdir text_analyzer` returned File exists after `write_file` already created
-the tree. classify → TOOL_FAILURE → retry_with_hint burned tools=12 before
-later package tasks ran.
+RW-079 live NIM (v0.4.4): ASCII-tree objective_checks were package-joined.
+mkdir File-exists Class A path was **not live-hit** (mkdir succeeded). Residual:
+first task machine `file_exists` on `text_analyzer/` **passed**, but the task
+**FAILED on actions** because `python text_analyzer/test_analyzer.py` returned
+CPython `can't open file … No such file` before the test file existed.
+classify → ENVIRONMENT_FAILURE → Repair-prerequisite burned tools=12.
 
-v0.4.1 already made mkdir-already-exists **not ENVIRONMENT**. Question: does
-the verifier still hard-fail the task on that shell error when remaining
-machine directory/file checks would pass (same hole as DONE/pip noise in
-v0.4.3)?
+Question: is running a missing `.py` script a broken host environment (python
+exists; file is agent-authored sequencing), and does the verifier still
+hard-fail the task on that shell error when remaining directory/file checks
+would pass (same hole as DONE/pip/mkdir noise)?
 
 Does not claim live 11B text_analyzer@12 now PASS. Needle OFF. Caps unchanged.
 False DONE 0. F-17 / F-26 preserved. Path-aligned, multifile, ASCII-tree,
-pip/DONE thrash fixes preserved.
+pip/DONE/mkdir fixes preserved. mkdir File-exists unit evidence (RW-078)
+must not regress.
 """
 from __future__ import annotations
 
@@ -25,6 +25,7 @@ from rad.control import events as E
 from rad.control.codingloop import (
     infer_package_dir,
     is_first_task_thrash_noise,
+    is_missing_python_script,
     is_mkdir_already_exists,
     is_pip_requirements_file_missing,
 )
@@ -40,10 +41,22 @@ from rad.toolrouter import resolve_tool_router
 from tests.test_ascii_tree_package_dir import RW073_ASCII_GOAL
 from tests.test_control_plane import ScriptedSession, _ctl, _plan_llm, scripted, ws  # noqa: F401
 from tests.test_first_task_thrash import PIP_REQ_ERR, THREE_LINE_INPUT
+from tests.test_mkdir_already_exists_actions import MKDIR_ERR
 
-MKDIR_ERR = "mkdir: cannot create directory 'text_analyzer': File exists\n[exit=1]"
+PREMATURE_TEST_ERR = (
+    "python3: can't open file 'text_analyzer/test_analyzer.py': "
+    "[Errno 2] No such file or directory\n[exit=2]"
+)
+PREMATURE_TEST_CMD = "python3 text_analyzer/test_analyzer.py"
+NESTED_INPUT_ERR = (
+    "Traceback (most recent call last):\n"
+    "  File \"text_analyzer/analyzer.py\", line 5, in <module>\n"
+    "    data = open('input.txt').read()\n"
+    "FileNotFoundError: [Errno 2] No such file or directory: 'input.txt'\n"
+    "[exit=1]"
+)
 
-RW077_PLAN = {
+RW079_PLAN = {
     "tasks": [
         {
             "id": "t1",
@@ -77,7 +90,7 @@ def _ob(task: Task, out: str, status: str = "error", tool: str = "run_shell",
 
 # ---------------------------------------------------------------- architecture freeze
 
-def test_mkdir_actions_does_not_raise_caps_or_enable_needle(home):
+def test_premature_test_does_not_raise_caps_or_enable_needle(home):
     assert __version__ == "0.4.5"
     assert Budget().tool_calls == 60
     assert int(home.cfg.get("max_plan_tasks", 16) or 16) == 16
@@ -86,75 +99,60 @@ def test_mkdir_actions_does_not_raise_caps_or_enable_needle(home):
     assert resolve_tool_router(home) == "existing"
 
 
-def test_plan_prompt_still_forbids_standalone_mkdir_and_redundant_mkdir():
+def test_plan_prompt_forbids_running_tests_before_writing_them():
     assert "do NOT emit a standalone mkdir" in PLAN_PROMPT
-    assert "write_file creates parent directories" in PLAN_PROMPT
     assert "Do not mkdir a path write_file already created" in PLAN_PROMPT
+    assert "Do not run tests" in PLAN_PROMPT
+    assert "before those test files exist" in PLAN_PROMPT
 
 
 def test_ascii_tree_package_dir_still_infers_text_analyzer():
     assert infer_package_dir(RW073_ASCII_GOAL) == "text_analyzer/"
 
 
-def test_mkdir_already_exists_helper_is_tight():
-    assert is_mkdir_already_exists(MKDIR_ERR, "mkdir text_analyzer")
-    assert is_mkdir_already_exists(
-        "FileExistsError: [Errno 17] File exists: 'text_analyzer'",
-        "python3 -c \"__import__('os').mkdir('text_analyzer')\"")
-    assert is_mkdir_already_exists(
-        "mkdir: cannot create directory 'pkg': File exists", "mkdir -p pkg")
-    assert not is_mkdir_already_exists(
-        "mkdir: cannot create directory '/root/x': Permission denied\n[exit=1]",
-        "mkdir /root/x")
-    assert not is_mkdir_already_exists(
-        "sh: 1: mkdir: command not found", "mkdir text_analyzer")
-    assert not is_mkdir_already_exists(PIP_REQ_ERR, "pip install -r requirements.txt")
-    assert not is_mkdir_already_exists(
+def test_missing_python_script_helper_is_tight():
+    assert is_missing_python_script(PREMATURE_TEST_ERR, PREMATURE_TEST_CMD)
+    assert is_missing_python_script(
+        "python: can't open file '/tmp/ws/test_word_counter.py': "
+        "[Errno 2] No such file or directory",
+        "python test_word_counter.py")
+    assert not is_missing_python_script(
+        "sh: 1: python3: command not found", PREMATURE_TEST_CMD)
+    assert not is_missing_python_script(
+        "ModuleNotFoundError: No module named 'requests'\n[exit=1]",
+        "python3 text_analyzer/analyzer.py")
+    assert not is_missing_python_script(NESTED_INPUT_ERR, "python3 text_analyzer/analyzer.py")
+    assert not is_missing_python_script(
         "cat: summary.json: No such file or directory", "cat summary.json")
+    assert not is_missing_python_script(PIP_REQ_ERR, "pip install -r requirements.txt")
+    assert not is_missing_python_script(MKDIR_ERR, "mkdir text_analyzer")
+    assert is_first_task_thrash_noise("run_shell", PREMATURE_TEST_ERR, PREMATURE_TEST_CMD)
     assert is_first_task_thrash_noise("run_shell", MKDIR_ERR, "mkdir text_analyzer")
-    assert is_first_task_thrash_noise("DONE: wrote input", "unknown tool: DONE")
+    assert is_mkdir_already_exists(MKDIR_ERR, "mkdir text_analyzer")
     assert is_pip_requirements_file_missing(PIP_REQ_ERR, "pip install -r requirements.txt")
 
 
-# ---------------------------------------------------------------- classify: still TOOL, not ENVIRONMENT (v0.4.1 preserved)
+# ---------------------------------------------------------------- classify: premature test is not ENVIRONMENT
 
-def test_mkdir_file_exists_alone_is_tool_not_environment():
+def test_premature_python_test_is_not_environment_repair():
+    """RW-079 shape: python test_*.py can't-open-file must not Repair prerequisite."""
     t = Task.new("o", "Create text_analyzer directory")
     t.attempts = 1
-    obs = [_ob(t, MKDIR_ERR, args={"command": "mkdir text_analyzer"})]
+    obs = [_ob(t, PREMATURE_TEST_ERR, args={"command": PREMATURE_TEST_CMD})]
     ver = {"status": "FAILED", "results": [
         {"ok": False, "kind": "actions", "detail": "8 actions, 1 errors"},
         {"ok": True, "kind": "file_exists", "detail": "text_analyzer exists=True"},
     ]}
+    assert classify(t, obs, verification=ver) != FailureClass.ENVIRONMENT
     assert classify(t, obs, verification=ver) == FailureClass.TOOL
-    assert classify(t, obs, verification=ver) != FailureClass.ENVIRONMENT
-    d = RecoveryEngine().decide(t, obs, verification=ver, repairs_so_far=0, retries_left=3)
-    assert d.failure_class == FailureClass.TOOL
-    assert d.strategy == "retry_with_hint"
-    assert "Repair prerequisite" not in d.reason
-    assert "mkdir" in d.hint.lower() or "write_file" in d.hint.lower()
-
-
-def test_mkdir_already_exists_mixed_noise_still_not_environment():
-    t = Task.new("o", "Create text_analyzer directory")
-    t.attempts = 1
-    obs = [
-        _ob(t, MKDIR_ERR, args={"command": "mkdir text_analyzer"}),
-        _ob(t, "cat: summary.json: No such file or directory",
-            args={"command": "cat summary.json"}),
-    ]
-    ver = {"status": "FAILED", "results": [
-        {"ok": False, "kind": "actions", "detail": "2 actions, 2 errors"},
-        {"ok": False, "kind": "json_valid",
-         "detail": "text_analyzer/summary.json invalid JSON: Expecting value"},
-    ]}
-    assert classify(t, obs, verification=ver) != FailureClass.ENVIRONMENT
     d = RecoveryEngine().decide(t, obs, verification=ver, repairs_so_far=0, retries_left=3)
     assert d.failure_class != FailureClass.ENVIRONMENT
     assert d.strategy != "repair" or d.data.get("coding_repair") is True
+    assert "Repair prerequisite" not in d.reason
+    assert "test" in d.hint.lower() or "python" in d.hint.lower()
 
 
-def test_command_not_found_without_already_exists_stays_environment():
+def test_command_not_found_without_missing_script_stays_environment():
     t = Task.new("o", "run build")
     t.attempts = 1
     ob = _ob(t, "sh: 1: mkreport_xyz: command not found")
@@ -167,15 +165,50 @@ def test_command_not_found_without_already_exists_stays_environment():
     assert d.strategy == "repair"
 
 
-# ---------------------------------------------------------------- verifier: mkdir File-exists is action noise when checks pass
+def test_module_not_found_stays_environment():
+    t = Task.new("o", "run analyzer")
+    t.attempts = 1
+    ob = _ob(t, "ModuleNotFoundError: No module named 'requests'\n[exit=1]")
+    assert classify(t, [ob]) == FailureClass.ENVIRONMENT
 
-def test_verifier_mkdir_file_exists_does_not_fail_passed_dir_check(home, tmp_path):
-    """RW-077 shape: directory check passed; mkdir File-exists must not FAILED."""
-    ws_dir = tmp_path / "ws_rw077_v"
+
+def test_cat_no_such_file_stays_environment_f18():
+    t = Task.new("o", "write summary")
+    t.attempts = 1
+    ob = _ob(t, "cat: summary.json: No such file or directory")
+    ver = {"status": "FAILED", "results": [
+        {"ok": False, "kind": "file_exists", "detail": "summary.json exists=False"},
+    ]}
+    assert classify(t, [ob], verification=ver) == FailureClass.ENVIRONMENT
+
+
+def test_mkdir_already_exists_still_not_environment():
+    t = Task.new("o", "Create text_analyzer directory")
+    t.attempts = 1
+    obs = [_ob(t, MKDIR_ERR, args={"command": "mkdir text_analyzer"})]
+    assert classify(t, obs) == FailureClass.TOOL
+    assert classify(t, obs) != FailureClass.ENVIRONMENT
+
+
+def test_nested_filenotfound_inside_running_script_is_not_missing_script():
+    """analyzer.py opened; missing input.txt is a real action error, not noise."""
+    t = Task.new("o", "Write analyzer.py")
+    t.attempts = 1
+    ob = _ob(t, NESTED_INPUT_ERR, args={"command": "python3 text_analyzer/analyzer.py"})
+    assert not is_missing_python_script(NESTED_INPUT_ERR, "python3 text_analyzer/analyzer.py")
+    # Nested missing input.txt still matches F-18 _ENV (no such file). Not this slice.
+    assert classify(t, [ob]) == FailureClass.ENVIRONMENT
+
+
+# ---------------------------------------------------------------- verifier: premature test is action noise when checks pass
+
+def test_verifier_premature_test_does_not_fail_passed_dir_check(home, tmp_path):
+    """RW-079 shape: directory check passed; premature test invoke must not FAILED."""
+    ws_dir = tmp_path / "ws_rw079_v"
     ws_dir.mkdir()
     (ws_dir / "text_analyzer").mkdir()
     (ws_dir / "text_analyzer" / "input.txt").write_text(THREE_LINE_INPUT, encoding="utf-8")
-    observer = Observer(home.root / "obs_rw077")
+    observer = Observer(home.root / "obs_rw079")
     t = Task.new("o", "Create text_analyzer directory")
     t.checks = [Check("file_exists", {"path": "text_analyzer"})]
     t.started = 1.0
@@ -185,8 +218,8 @@ def test_verifier_mkdir_file_exists_does_not_fail_passed_dir_check(home, tmp_pat
         "wrote 76 chars → text_analyzer/input.txt", 1, ws_dir)
     observer.record(
         "o", t.id, "a2", "run_shell",
-        {"command": "mkdir text_analyzer"},
-        MKDIR_ERR, 1, ws_dir)
+        {"command": PREMATURE_TEST_CMD},
+        PREMATURE_TEST_ERR, 1, ws_dir)
     v = Verifier(ws_dir, observer, home=home)
     result = v.verify_task(t, "DONE: created directory")
     actions = next(r for r in result["results"] if r.get("kind") == "actions")
@@ -197,10 +230,10 @@ def test_verifier_mkdir_file_exists_does_not_fail_passed_dir_check(home, tmp_pat
 
 
 def test_verifier_real_shell_error_still_fails_actions(home, tmp_path):
-    ws_dir = tmp_path / "ws_rw077_real"
+    ws_dir = tmp_path / "ws_rw079_real"
     ws_dir.mkdir()
     (ws_dir / "text_analyzer").mkdir()
-    observer = Observer(home.root / "obs_rw077_real")
+    observer = Observer(home.root / "obs_rw079_real")
     t = Task.new("o", "Create text_analyzer directory")
     t.checks = [Check("file_exists", {"path": "text_analyzer"})]
     t.started = 1.0
@@ -215,14 +248,14 @@ def test_verifier_real_shell_error_still_fails_actions(home, tmp_path):
     assert result["status"] == "FAILED"
 
 
-def test_verifier_mkdir_noise_does_not_verified_failed_json(home, tmp_path):
-    """False DONE 0: mkdir noise must not rubber-stamp a broken artifact."""
-    ws_dir = tmp_path / "ws_rw077_json"
+def test_verifier_premature_test_does_not_verified_failed_json(home, tmp_path):
+    """False DONE 0: premature-test noise must not rubber-stamp a broken artifact."""
+    ws_dir = tmp_path / "ws_rw079_json"
     ws_dir.mkdir()
     pkg = ws_dir / "text_analyzer"
     pkg.mkdir()
     (pkg / "summary.json").write_text("", encoding="utf-8")
-    observer = Observer(home.root / "obs_rw077_json")
+    observer = Observer(home.root / "obs_rw079_json")
     t = Task.new("o", "Write summary.json")
     t.checks = [
         Check("file_exists", {"path": "text_analyzer"}),
@@ -231,8 +264,8 @@ def test_verifier_mkdir_noise_does_not_verified_failed_json(home, tmp_path):
     t.started = 1.0
     observer.record(
         "o", t.id, "a1", "run_shell",
-        {"command": "mkdir text_analyzer"},
-        MKDIR_ERR, 1, ws_dir)
+        {"command": PREMATURE_TEST_CMD},
+        PREMATURE_TEST_ERR, 1, ws_dir)
     v = Verifier(ws_dir, observer, home=home)
     result = v.verify_task(t, "DONE: summary")
     assert result["status"] == "FAILED"
@@ -240,25 +273,45 @@ def test_verifier_mkdir_noise_does_not_verified_failed_json(home, tmp_path):
     assert json_r["ok"] is False
 
 
-# ---------------------------------------------------------------- scripted: mkdir noise must not starve later package task
+def test_verifier_mkdir_file_exists_still_noise(home, tmp_path):
+    """RW-078 must not regress: mkdir File-exists is still action noise."""
+    ws_dir = tmp_path / "ws_rw079_mkdir"
+    ws_dir.mkdir()
+    (ws_dir / "text_analyzer").mkdir()
+    observer = Observer(home.root / "obs_rw079_mkdir")
+    t = Task.new("o", "Create text_analyzer directory")
+    t.checks = [Check("file_exists", {"path": "text_analyzer"})]
+    t.started = 1.0
+    observer.record(
+        "o", t.id, "a1", "run_shell",
+        {"command": "mkdir text_analyzer"},
+        MKDIR_ERR, 1, ws_dir)
+    v = Verifier(ws_dir, observer, home=home)
+    result = v.verify_task(t, "DONE: created directory")
+    actions = next(r for r in result["results"] if r.get("kind") == "actions")
+    assert actions["ok"] is True
+    assert result["status"] == "VERIFIED"
 
-def test_mkdir_file_exists_does_not_starve_later_task(home, tmp_path):
-    """RW-077 shape: write_file creates the tree; mkdir File-exists; later
-    independent package file must still run. No ENVIRONMENT / Repair prerequisite.
+
+# ---------------------------------------------------------------- scripted: premature test must not starve later package task
+
+def test_premature_test_does_not_starve_later_task(home, tmp_path):
+    """RW-079 shape: mkdir succeeds; premature python test; later independent
+    package file must still run. No ENVIRONMENT / Repair prerequisite.
     """
-    ws_dir = tmp_path / "ws_rw077"
+    ws_dir = tmp_path / "ws_rw079"
     ws_dir.mkdir()
     home.update(workspace=str(ws_dir))
     ScriptedSession.script = [
         ([("write_file", {"path": "text_analyzer/input.txt", "content": THREE_LINE_INPUT}),
-          ("run_shell", {"command": "mkdir text_analyzer"})],
+          ("run_shell", {"command": PREMATURE_TEST_CMD})],
          "DONE: created directory"),
         ([("write_file", {"path": "text_analyzer/analyzer.py",
                           "content": "print('ok')\n"})],
          "DONE: wrote analyzer"),
     ]
     ScriptedSession.prompts = []
-    ctl = _ctl(home, ScriptedSession, RW077_PLAN)
+    ctl = _ctl(home, ScriptedSession, RW079_PLAN)
     obj = ctl.run(ctl.create(
         RW073_ASCII_GOAL,
         budget=Budget(tool_calls=12, retries=6),

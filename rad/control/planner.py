@@ -71,6 +71,7 @@ use that prefix (pkg/input.txt not input.txt).
 If the goal is a multi-file package, do NOT emit a standalone mkdir/create-directory task —
 write_file creates parent directories. Prefer fewer tasks that each write and verify.
 Do not mkdir a path write_file already created.
+Do not run tests (python test_*.py / pytest) before those test files exist. Write files first, then run tests.
 For "exact N-line" files include file_line_count.
 
 GOAL: {goal}

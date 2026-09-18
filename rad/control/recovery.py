@@ -18,6 +18,7 @@ from typing import Any, Dict, List, Optional
 from rad.control.codingloop import (
     is_done_protocol_tool,
     is_mkdir_already_exists,
+    is_missing_python_script,
     is_pip_requirements_file_missing,
     looks_like_broken_artifact,
     repair_hint,
@@ -75,8 +76,11 @@ def classify(task: Task, observations: List[Observation], error: str = "",
     # mkdir / create "already exists" is not a missing environment (RW-071). Mixed
     # "File exists" + "no such file" check noise must not insert Repair prerequisite.
     # pip -r missing requirements.txt is not a missing env dependency (RW-075).
+    # python can't-open-file on a .py script the agent has not written yet is
+    # sequencing, not a broken host environment (RW-079).
     if (_ENV.search(text) and not _ALREADY_EXISTS.search(text)
-            and not _pip_requirements_missing(observations, text)):
+            and not _pip_requirements_missing(observations, text)
+            and not _missing_python_script(observations, text)):
         return FailureClass.ENVIRONMENT
     if any(o.status == "error" for o in observations):
         return FailureClass.TOOL          # a concrete tool error is more specific than "checks failed"
@@ -218,6 +222,18 @@ def _pip_requirements_missing(observations: List[Observation], text: str) -> boo
     return False
 
 
+def _missing_python_script(observations: List[Observation], text: str) -> bool:
+    if is_missing_python_script(text, ""):
+        return True
+    for o in observations:
+        if o.status == "success":
+            continue
+        cmd = str((o.args or {}).get("command", ""))
+        if is_missing_python_script(o.output or "", cmd):
+            return True
+    return False
+
+
 def _thrash_hint(observations: List[Observation]) -> str:
     bits: List[str] = []
     if any(is_done_protocol_tool(o.tool) for o in observations if o.status == "error"):
@@ -231,6 +247,10 @@ def _thrash_hint(observations: List[Observation]) -> str:
            for o in observations if o.status != "success"):
         bits.append("Do not mkdir a directory that write_file already created. "
                     "write_file creates parent directories. Continue writing remaining files.")
+    if any(is_missing_python_script(o.output or "", str((o.args or {}).get("command", "")))
+           for o in observations if o.status != "success"):
+        bits.append("Do not run python test_*.py (or other scripts) before writing them. "
+                    "Write the test file first, then run it.")
     return (" " + " ".join(bits)) if bits else ""
 
 

@@ -51,10 +51,11 @@ class Verifier:
         attempt_obs = [o for o in obs if o.at >= (task.started or 0)]
         errors = [o for o in attempt_obs if o.status == "error"]
         blocked = [o for o in attempt_obs if o.status in ("blocked", "declined")]
-        # RW-075 / RW-077: invented DONE tools, pip -r missing requirements.txt,
-        # and mkdir/create already-exists are approach noise. They still record
-        # as errors (budget/honesty) but must not fail a task whose explicit
-        # machine checks can still pass.
+        # RW-075 / RW-077 / RW-079: invented DONE tools, pip -r missing
+        # requirements.txt, mkdir/create already-exists, and premature
+        # python …/test_*.py (interpreter can't open the script) are approach
+        # noise. They still record as errors (budget/honesty) but must not fail
+        # a task whose explicit machine checks can still pass.
         contract_errors = [
             o for o in errors
             if not is_first_task_thrash_noise(

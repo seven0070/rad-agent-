@@ -6,6 +6,141 @@ Default `Budget.tool_calls` remains **60**.
 
 ---
 
+# Cycle 15 — RW-079 live v0.4.4 retest + Gen3 theme 3 slice D premature-test ENVIRONMENT / v0.4.5 (2026-09-18)
+
+**Date:** 2026-09-18
+**Baseline:** `origin/main` `acb61997` (tag **v0.4.4**, package **0.4.4**)
+**Package at start:** `0.4.4`
+**This branch:** `cursor/rw079-premature-test-env-bc5d` — package **0.4.5**
+**Architecture:** control plane preserved. Needle stays off. Caps unchanged.
+RW-058–078 are **not rewritten**. F-17 / F-18 / F-21 / F-26 stay closed.
+
+## Part A — live use (RW-079)
+
+Live NVIDIA NIM 11B text_analyzer on v0.4.4 (`obj_a0781a42`, home
+`/tmp/rad_prod_rw079_803109d5`, `--max-tasks 8 --max-tools 12`, Needle off).
+Authoritative facts from the operator report. This agent did not re-run NIM.
+
+| item | value |
+|------|--------|
+| Verdict | **FAIL** — `needs_user` (tools 12/12). **Not** E2E PASS |
+| vs RW-077 | Theme 1 **Y**. Theme 2 **Y**. pip/DONE still **0**. mkdir File-exists **not live-hit** (mkdir succeeded). Same Class B stop. Residual thrash → premature `python …/test_analyzer.py` ENVIRONMENT_FAILURE → repair |
+| Disk | 3-line `input.txt` sha256 `bf69eb73…`; package `summary.json` **valid JSON, wrong counts**; tests wrong oracles (`words==9` / `chars==51` vs 13 / 76); README 166 B |
+| Repair | ENVIRONMENT_FAILURE → `repair` (premature test No-such-file while directory checks already passed). **Not** mkdir File-exists |
+| False DONE | **0** |
+| Class | **B** residual (11B/budget). mkdir File-exists Class A **live: N**. Premature-test ENVIRONMENT is Class A (Part C) |
+
+## Part B — investigate-first (premature-test ENVIRONMENT)
+
+Question: should premature `python …/test_*.py` No-such-file be ENVIRONMENT
+“missing dependency/file” repair, and should that shell error fail a task
+whose explicit directory `file_exists` already passed?
+
+| probe | result |
+|---|---|
+| classify premature `python3 …/test_analyzer.py` can't-open-file | Pre-patch: `_ENV` matches `no such file` → **ENVIRONMENT_FAILURE** → Repair prerequisite. Matches live RW-079 |
+| Recovery | `repair` (“missing dependency/file”) when verifier reports FAILED |
+| Pre-patch verifier | directory `file_exists` **passed**; actions **FAILED** (1 premature-test error among write_file successes) → overall **FAILED**. `is_first_task_thrash_noise` did **not** cover python can't-open-file (only DONE + pip-missing-req + mkdir File-exists) |
+| Genuine `command not found` / `ModuleNotFoundError` | Still ENVIRONMENT (F-18). Must stay |
+| `cat: summary.json: No such file` | Still ENVIRONMENT (F-18 designed path). Must stay |
+| Nested `FileNotFoundError` inside a running script | Not this signal (`can't open file '….py'` only). Must stay a real error |
+| mkdir File-exists | Still TOOL, still action noise (v0.4.4 / RW-078). Must not regress |
+| empty/invalid `summary.json` | Still not VERIFIED (false DONE **0**) |
+| Live RW-079 remaining | wrong summary counts, weak tests, tools 12/12 — **Class B** residual |
+
+**Class A confirmed** for premature-test ENVIRONMENT. Running a missing
+script is sequencing/model error, not a broken host environment (python
+exists; the file is agent-authored). Same family as v0.4.3 pip `-r`
+file-not-found ENVIRONMENT and v0.4.4 mkdir/DONE action-noise. Live 11B
+quality stays Class B. Prompt-only 11B quality is **not** the patch.
+Multi-step checkpoint stays planned.
+
+## Part C — product (slice D)
+
+Smallest recovery/verifier patch: skip ENVIRONMENT when CPython cannot
+open a `.py` script argument; treat that observation as first-task thrash
+noise on the actions check so explicit file/dir checks can still VERIFIED.
+PLAN_PROMPT: do not run tests before writing them. Check *kinds* unchanged
+(F-26). Fallback *tasks* stay check-less (F-17). Genuine `command not found`
+/ `ModuleNotFoundError` still ENVIRONMENT (F-18). mkdir File-exists still
+action noise (v0.4.4). Label: **Gen3 theme 3 slice D**.
+
+Does **not** raise `Budget.tool_calls` (60) or `max_plan_tasks` (16). Does
+**not** claim live 11B text_analyzer@12 now PASS.
+
+## What changed
+
+- Product: `rad/control/codingloop.py`, `rad/control/recovery.py`,
+  `rad/control/verifier.py`, `rad/control/planner.py`
+- Tests: `tests/test_premature_test_env.py`
+- Docs: ROADMAP Gen3 theme 3 slice D **implemented**; ledger F-41 / F-42;
+  matrix RW-079 / RW-080; this cycle
+- Package **0.4.4 → 0.4.5**
+
+## What did not change
+
+- Needle default `existing` / off
+- `max_plan_tasks` default **16**
+- `Budget.tool_calls` default **60**
+- False completion remains **0**
+- RW-058–078 ledger/matrix rows
+- Control plane shape PLAN→PERMISSION→BUDGET→EXECUTE→OBSERVE→VERIFY→RECOVER
+- F-17 / F-18 / F-21 / F-26 closed; A1 budget→needs_user **not reopened**
+- Live 11B text_analyzer **not** claimed PASS
+- Path-aligned checks (v0.4.0), multi-file contracts (v0.4.1), ASCII-tree
+  package_dir (v0.4.2), pip/DONE thrash (v0.4.3), mkdir File-exists (v0.4.4)
+  preserved
+- Multi-step checkpoint **not** built
+
+## Class A / B / C (this cycle)
+
+| class | this record |
+|---|---|
+| **A** | **F-20260918-42** — premature python test No-such-file classified ENVIRONMENT. Patched. |
+| **B** | **F-20260918-41** — RW-079 live 11B incompleteness (wrong summary counts, weak tests, tools=12). |
+| **C** | none proven. `live_nim` may BLOCKED. |
+
+## Quality gates (this branch)
+
+Isolated homes `/tmp/rad-v045-gate` (doctor, acceptance) and `/tmp/rad-v045-rw` (realworld).
+
+| gate | result |
+|------|--------|
+| `rad version` | **pending** |
+| `python3 -m pytest -q` | **pending** |
+| `rad doctor --offline` | **pending** |
+| `rad acceptance` | **pending** |
+| `rad realworld` | **pending** |
+| Needle default | **PASS** (`existing`) — asserted in tests |
+| Caps | **PASS** `max_plan_tasks` 16; `Budget.tool_calls` 60 — asserted in tests |
+| False DONE | **PASS** (scripted 0) — asserted in tests |
+| Package | **0.4.5** |
+| Live NIM this patch | not re-run; RW-079 facts from the operator report. Suite `live_nim` **BLOCKED** (no keys here) |
+
+## Remaining limitations
+
+1. Live NVIDIA NIM on 11B may still fail Class B (model / budget) on
+   text_analyzer@12. This release stops premature python test invoke from
+   classifying ENVIRONMENT and from failing a check-passing task; it does
+   not make 11B complete the package under tools=12.
+2. Default planner cap is **16**. Default tool budget is **60**.
+3. Multi-step checkpoint remains a Gen3 theme 3 planned slice (not this patch).
+4. mkdir File-exists Class A remains unit-confirmed (RW-078) and was **not
+   live-hit** on RW-079.
+
+## Roadmap pointer
+
+Operating spine: [ROADMAP.md](ROADMAP.md). **Generation 1 is complete**
+(v0.2.0–v0.2.3). **Generation 2 is complete** (v0.3.0–v0.3.2). **Generation 3
+is in progress:** path-aligned checks **v0.4.0** (used RW-071 / RW-073 /
+RW-075 / RW-077 / RW-079); multi-file contracts **v0.4.1** (used RW-073 / RW-075 /
+RW-077 / RW-079); theme 3 **planned / scoped**, slice A **v0.4.2** (used RW-075 /
+RW-077 / RW-079), slice B **v0.4.3** (used RW-077 / RW-079), slice C **v0.4.4**,
+slice D **implemented as v0.4.5**.
+Gen4–5 are not started.
+
+---
+
 # Cycle 14 — RW-077 live v0.4.3 retest + Gen3 theme 3 slice C mkdir already-exists action noise / v0.4.4 (2026-09-18)
 
 **Date:** 2026-09-18
