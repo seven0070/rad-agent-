@@ -1,16 +1,20 @@
 # Real-world task matrix
 
-Factual rows from the post-v0.2.1 maturation cycle on this branch (package **0.2.2**).
+Factual rows from maturation cycles on disk-checked evidence.
 Architecture frozen. Needle stays experimental / off. Not AGI. No v0.3.0.
 
 Every `VERIFIED` / `completed` cell is from the control-plane verifier **and** a disk
 check (file exists / contents / hash). A model `DONE:` line is never enough.
 
+Status vocabulary: **PASS** | **FAIL** | **BLOCKED** | **NOT TESTED**.
+
+Cycle 3 (package **0.2.3**) is at the bottom. Cycle 2 (package **0.2.2**) follows.
+
+# Cycle 2 (post-v0.2.1 → package **0.2.2**)
+
 Lane: Cloud Agent VM, **no** `NVIDIA_NIM_API_KEY` / `NVIDIA_API_KEY`.
 Baseline: `origin/main` `f7160c14cc5e9905a5c2e0689bbcc2465a20b45c` (Merge PR #7).
 Release tag `v0.2.1` → `705954010b4835f8d6bfc445f49bafb80add5dee`.
-
-Status vocabulary: **PASS** | **FAIL** | **BLOCKED** | **NOT TESTED**.
 
 ## Scripted `rad realworld` suite
 
@@ -70,3 +74,54 @@ Sequential `write_file` through the real control plane. Disk-verified each index
 | Needle | **NOT TESTED** as default (stays `existing` / off) |
 
 Do not add rows without a disk check or an honest BLOCKED/NOT TESTED mark.
+
+---
+
+# Cycle 3 (post-v0.2.2 → package **0.2.3**)
+
+Lane: Cloud Agent VM, **no** `NVIDIA_NIM_API_KEY` / `NVIDIA_API_KEY`.
+Baseline: `origin/main` `8d9e196aa730c7bfeae7e501f44004078f080b61` (PR #8 / Release `v0.2.2`).
+Needle stays experimental / off. Not AGI. No v0.3.0. Planner cap left at 16.
+
+Evidence: `/tmp/rad-c3-evidence/campaign.json`. Control-plane verifier **and** a disk check for every `VERIFIED` cell.
+
+## Production campaign (genuine useful work)
+
+| id | Date | Category | Objective | #tasks | #actions | Tools | Result | Verification | Recovery | Failure class | Notes |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| RW-024 | 2026-09-18 | coding | `pkg/avg.py` `mean_by_region` + `tests/check_avg.py` | 2 | 2 | write_file, run_shell | **PASS** | VERIFIED | none | — | `pkg/avg.py` sha256 `111ed94abb1bce8f`; tests hash `616a5feda63b6489` unchanged; stdout `ALL TESTS PASSED` |
+| RW-025 | 2026-09-18 | research | two lab notebooks → `compare.json` with sourced pH conflict | 2 | 3 | read_file, write_file | **PASS** | VERIFIED | none | A (F-20260918-11) | `compare.json` sha256 `3b8f1e6a8b43a214`; both 6.8 and 8.1 sourced. Pre-fix `json_valid` grader `unknown grader`; post-fix `ok` |
+| RW-026 | 2026-09-18 | filesystem | sort inbox into `docs/` + `data/` + index; jail | 3 | 4 | run_shell, write_file | **PASS** | VERIFIED | none | — | `data/index.txt` sha256 `2e6256058b614820`; `../escape.txt` absent |
+| RW-027 | 2026-09-18 | multi-step | `app.log` → `counts.json` (error=3) → `summary.md` | 2 | 4 | read_file, write_file | **PASS** | VERIFIED | none | — | `counts.json` sha256 `25e1d36b1f2772ea`; `summary.md` sha256 `343bf41f1bf64c71` |
+| RW-028 | 2026-09-18 | recovery | write `config/settings.json` with injected `write_file` fault | 1 | 2 | write_file | **PASS** | VERIFIED | 1 tool error, 2 recoveries | A (F-20260918-11) | sha256 `2b3a56a5f55ff76f`; pre-fix `json_valid` grader unknown; post-fix `ok` |
+| RW-035 | 2026-09-18 | recovery | `DONE:` without writing `proof.txt` | 1 | 0 | (none) | **PASS** | (not VERIFIED) | retry then escalate | — | status `needs_user`; file **absent** |
+| RW-036 | 2026-09-18 | recovery | crash after `pipe/p1.txt`, restore, resume p2–p3 | 3 | crash+resume | write_file | **PASS** | VERIFIED | checkpoint restore | — | hashes `5509d3b83b2db7d3` / `a652f5bf7a9c5936` / `6153dd17d3a9573f` |
+| RW-037 | 2026-09-18 | live NIM | live `objective run` | 0 | 0 | — | **BLOCKED** | — | — | **C** | both NVIDIA env vars absent |
+| RW-038 | 2026-09-18 | coding | `inventory.json` object; advertised `json_min_len{n=2}` + `json_valid` | 1 | 1 | write_file | **PASS** (post-fix) | VERIFIED | none | **A** (F-20260918-11) | sha256 `31d4c9f7af644d06`. Pre-fix: verifier ok, grader `json_min_len` list-only + `json_valid` unknown. Post-fix: graders agree |
+| RW-039 | 2026-09-18 | needle | default router | 0 | 0 | — | **PASS** | n/a | — | — | `RAD_TOOL_ROUTER` unset; `resolve_tool_router` = `existing`. Router **NOT TESTED** |
+
+## Action ramp (1 → 3 → 5 → 10 → 20)
+
+Sequential inventory SKU `write_file` through the real control plane. Disk-verified each index file.
+
+| id | Date | Category | Objective | #tasks | #actions | Tools | Result | Verification | Recovery | Failure class | Notes |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| RW-029 | 2026-09-18 | multi-step | 1 SKU file | 1 | 1 | write_file | **PASS** | VERIFIED | none | — | `inv/s01.txt` sha256 `2da4679aa46b0db3` |
+| RW-030 | 2026-09-18 | multi-step | 3 SKU files | 3 | 3 | write_file | **PASS** | VERIFIED | none | — | `inv/s03.txt` sha256 `8db9ba36bc13ec3a` |
+| RW-031 | 2026-09-18 | multi-step | 5 SKU files | 5 | 5 | write_file | **PASS** | VERIFIED | none | — | `inv/s05.txt` sha256 `907e3cb7bc73ebc2` |
+| RW-032 | 2026-09-18 | multi-step | 10 SKU files | 10 | 10 | write_file | **PASS** | VERIFIED | none | — | `inv/s10.txt` sha256 `db9b15433ec51d25` |
+| RW-033 | 2026-09-18 | filesystem | 20 writes in **one** planned task | 1 | 20 | write_file | **PASS** | VERIFIED | none | — | 20/20; `inv/s20.txt` sha256 `14e88a9299fed78c` |
+| RW-034 | 2026-09-18 | multi-step | 20 **planned tasks** / 20 writes | 16 | 16 | write_file | **FAIL** (expected cap) | FAILED | none | — | 16/20 files (`s01`–`s16`); `s17`–`s20` absent. `max_plan_tasks` default **16**. Not raised |
+
+## Cycle 3 metrics (honest)
+
+| metric | value |
+|---|---|
+| Suite runnable PASS | 10/10 (plus 1 BLOCKED live NIM) |
+| Campaign PASS / FAIL / BLOCKED | **14 / 1 / 1** (the FAIL is RW-034 expected cap) |
+| False completion (VERIFIED without the artifact) | **0** |
+| Independent grader false negatives (pre-fix json_valid / json_min_len) | **Class A; fixed** — post-fix RW-025 / RW-028 / RW-038 / suite research graders all `ok` |
+| 20 sequential *actions* | **VERIFIED** (RW-033) |
+| 20 sequential *planned tasks* at default cap | **FAILED** at 16 (RW-034) — documented limit |
+| Live NIM | **BLOCKED** |
+| Needle | **NOT TESTED** as default (stays `existing` / off) |
