@@ -314,9 +314,10 @@ class Controller:
                 tick()
                 over = budgets.check()
                 if over:
-                    log.emit(E.BUDGET_EXCEEDED, obj.id, reason=over.reason)
-                    return self._finish(obj, graph, log, ObjectiveStatus.NEEDS_USER,
-                                        f"stopped: {over.reason}", observer=observer)
+                    stopped = self._on_budget(obj, graph, log, over.reason, observer, verifier)
+                    if stopped is not None:
+                        return stopped
+                    break
                 if obj.status == ObjectiveStatus.PAUSED:
                     self.checkpoints.save(obj, graph, "paused")
                     return obj
@@ -353,10 +354,10 @@ class Controller:
                     self.checkpoints.save(obj, graph, "task limit")
                     return obj
         except BudgetExceeded as e:
-            log.emit(E.BUDGET_EXCEEDED, obj.id, reason=str(e))
             tick()
-            return self._finish(obj, graph, log, ObjectiveStatus.NEEDS_USER, f"stopped: {e}",
-                                observer=observer)
+            stopped = self._on_budget(obj, graph, log, str(e), observer, verifier)
+            if stopped is not None:
+                return stopped
         finally:
             for s in sessions:
                 try:
@@ -655,6 +656,91 @@ class Controller:
                 return "writer"
             return "reviewer"
         return ""
+
+    # ------------------------------------------------------------ budget vs. already-done work
+    def _on_budget(self, obj: Objective, graph: TaskGraph, log: EventLog, reason: str,
+                   observer: Observer, verifier: Verifier) -> Optional[Objective]:
+        """Budget exhausted: never rubber-stamp DONE, but do not ignore already-met checks.
+
+        If the graph is already complete, or remaining work is already proven by machine
+        checks (including objective_checks), fall through to `_verify_objective`.
+        Otherwise NEEDS_USER — same as before. Model claims are not consulted here.
+        """
+        log.emit(E.BUDGET_EXCEEDED, obj.id, reason=reason)
+        if graph.is_complete():
+            return None
+        closed = self._close_already_satisfied(obj, graph, verifier, observer, log)
+        if closed:
+            log.emit(E.TASK_STATUS, obj.id, status="already_verified_on_budget", closed=closed)
+        if graph.is_complete():
+            return None
+        if self._objective_already_satisfied(obj, verifier):
+            self._supersede_open(obj, graph, log,
+                                 "objective machine checks already satisfied (budget exhausted)")
+            return None
+        return self._finish(obj, graph, log, ObjectiveStatus.NEEDS_USER,
+                            f"stopped: {reason}", observer=observer)
+
+    def _close_already_satisfied(self, obj: Objective, graph: TaskGraph, verifier: Verifier,
+                                 observer: Observer, log: EventLog) -> List[str]:
+        """Complete OPEN tasks whose machine checks already pass — no model call, no DONE claim."""
+        closed: List[str] = []
+        for task in list(graph.tasks.values()):
+            if task.status not in (TaskStatus.PENDING, TaskStatus.READY, TaskStatus.RETRYING):
+                continue
+            if not task.checks:
+                continue
+            ver = verifier.verify_task(task, reply="")
+            machine = [r for r in ver.get("results") or [] if r.get("machine", True) and r.get("level") == "check"]
+            if ver.get("status") != VERIFIED or not machine or any(not r.get("ok") for r in machine):
+                continue
+            self._walk_to_completed(task, ver, "already satisfied by machine checks")
+            log.emit(E.TASK_COMPLETED, obj.id, task.id, verified=True, skipped_model=True)
+            closed.append(task.id)
+        return closed
+
+    def _objective_already_satisfied(self, obj: Objective, verifier: Verifier) -> bool:
+        raw = (obj.verification or {}).get("objective_checks") or []
+        if not raw:
+            return False
+        checks = [Check.from_dict(c) for c in raw]
+        results = [verifier.run_check(c) for c in checks]
+        machine = [r for r in results if r.get("machine", True)]
+        return bool(machine) and all(bool(r.get("ok")) for r in machine)
+
+    def _supersede_open(self, obj: Objective, graph: TaskGraph, log: EventLog, reason: str) -> None:
+        for t in graph.tasks.values():
+            if t.status in (TaskStatus.COMPLETED, TaskStatus.CANCELLED):
+                continue
+            try:
+                if t.status == TaskStatus.OBSERVING:
+                    t.transition(TaskStatus.FAILED, reason)
+                if t.status == TaskStatus.VERIFYING:
+                    t.transition(TaskStatus.FAILED, reason)
+                t.transition(TaskStatus.CANCELLED, reason)
+                t.active = False
+                log.emit(E.TASK_STATUS, obj.id, t.id, status=TaskStatus.CANCELLED,
+                         superseded=True, reason=reason)
+            except Exception:
+                continue
+
+    @staticmethod
+    def _walk_to_completed(task: Task, ver: Dict[str, Any], note: str) -> None:
+        if task.status == TaskStatus.PENDING:
+            task.transition(TaskStatus.READY, note)
+        if task.status == TaskStatus.RETRYING:
+            task.transition(TaskStatus.READY, note)
+        if task.status == TaskStatus.READY:
+            task.transition(TaskStatus.RUNNING, note)
+        if task.status == TaskStatus.RUNNING:
+            task.transition(TaskStatus.OBSERVING, note)
+        if task.status == TaskStatus.OBSERVING:
+            task.transition(TaskStatus.VERIFYING, note)
+        task.verification = ver
+        if task.status == TaskStatus.VERIFYING:
+            task.transition(TaskStatus.COMPLETED, note)
+        elif task.status == TaskStatus.FAILED:
+            task.transition(TaskStatus.COMPLETED, note)
 
     # ------------------------------------------------------------ objective verification
     def _verify_objective(self, obj: Objective, graph: TaskGraph, verifier: Verifier,

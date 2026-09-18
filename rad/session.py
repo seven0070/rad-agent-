@@ -19,6 +19,7 @@ from rad.home import RadHome
 from rad.memory import Memory
 from rad.router import RouterState
 from rad.tools import TOOLS, TOOL_PROTOCOL_NOTE, ToolCtx, run_tool
+from rad.toolrouter import chat_with_tools
 from rad.ui import ask, col, fail, info, ok, warn
 
 MAX_WORKING = 24          # messages kept in working memory
@@ -117,11 +118,17 @@ class Session:
         tools = self._all_tools()
         final_text = ""
         self.last_usage = {"in": 0, "out": 0, "rounds": 0, "max_tokens": 0}
+        self.last_tool_router: Dict[str, Any] = {"kind": "existing", "fallback": ""}
         for _round in range(int(self.home.cfg.get("max_tool_rounds", 8))):
-            res = self.router.chat(messages, tools=tools,
-                                   stream_cb=None if self.quiet else print_live,
-                                   model_override=self._force_model,
-                                   requirements=self.requirements)
+            res, trace = chat_with_tools(
+                self.home,
+                lambda msgs, tools=None, **kw: self.router.chat(
+                    msgs, tools=tools,
+                    stream_cb=None if self.quiet else print_live,
+                    model_override=self._force_model,
+                    requirements=self.requirements, **kw),
+                messages, tools=tools, engine=getattr(self, "_needle_engine", None))
+            self.last_tool_router = trace
             self.last_usage["in"] += int((res.usage or {}).get("in", 0) or 0)
             self.last_usage["out"] += int((res.usage or {}).get("out", 0) or 0)
             self.last_usage["rounds"] += 1

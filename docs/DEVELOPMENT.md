@@ -16,7 +16,8 @@ rad/
   memory.py         working/episodic/semantic/procedural memory + origins/confidence
   usermodel.py, world.py            user model, world model (facts/assumptions)
   agents.py         agent registry, runtime, blackboard, lifecycle, scheduler, bus, evaluator
-  router.py, modelselect.py, providers.py   routing, requirements, profiles, selection
+  router.py, modelselect.py, providers.py, toolrouter.py   routing, optional Needle proposer
+
   lab.py, lab_banks.py, longhorizon.py      benchmarks (900 scenarios, long-horizon metrics)
   evaluation.py, regression.py, realworld.py, acceptance.py   measurement and the gate
   browser.py, background.py, skills.py, mcp.py, storage.py, doctor.py, api.py, evolution.py,
@@ -28,10 +29,12 @@ docs/               this documentation set
 ## Running the tests
 
 ```bash
-python -m pytest -q                 # everything (~8s, no network, no keys; currently 299 tests)
+python -m pytest -q                 # everything (~8s, no network, no keys)
 python -m pytest -q tests/test_policy.py -k hard
-rad regression --quick              # security + agent groups + a live benchmark sample
+rad regression --quick              # security + agent groups + 4 scenarios
 rad acceptance                      # the 50-item gate, with per-item evidence
+rad realworld                       # research/coding/filesystem/multi-step/failure/honesty
+rad needle-eval                     # optional Needle measurements (BLOCKED if engine missing)
 ```
 
 The suite is expected to pass **offline**. A test that needs the network, a key or a model is a bug

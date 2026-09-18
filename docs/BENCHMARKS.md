@@ -8,7 +8,8 @@ real verification) and all of them are graded on **what is on disk**, never on w
 | capability battery | `rad benchmark` | how well does the current brain handle math/logic/code/tools/JSON/style? |
 | agent lab | `rad lab run --suite bank:<category>` | can RAD finish whole objectives, safely and honestly? |
 | long horizon | `rad benchmark long` | can RAD run 20–50 action objectives without losing the thread? |
-| whole goals | `rad realworld` | research, coding, multi-agent and failure-recovery end to end |
+| whole goals | `rad realworld` | research, coding, filesystem, multi-step, failure, honesty, optional live NIM |
+| needle (optional) | `rad needle-eval` | existing vs Needle tool-router; missing engine is BLOCKED, never faked |
 | regression | `rad regression` | did anything get worse since last time? |
 | acceptance | `rad acceptance` | is every architectural requirement still satisfied? |
 
@@ -58,7 +59,7 @@ rate, human-intervention rate, tool-failure rate, retries, cost, latency, **fals
 ## 4. Whole-goal acceptance tests — `rad realworld`
 
 ```bash
-rad realworld                    # all four, ~1s offline
+rad realworld                    # research, coding, filesystem, honesty, … (~1s offline)
 rad realworld --only research,coding --json
 ```
 

@@ -125,7 +125,7 @@ and it is how this repository decides whether the architecture is actually finis
   `rad realworld` measure how well RAD performs; the gate proves the *system* is wired
   correctly and does not lie about its own state (false-completion must stay 0).
 * It is not a substitute for the test suite: `python -m pytest -q` covers units and edge
-  cases (288 tests, offline); the gate covers end-to-end behaviour and re-runs on every change.
+  cases (326 tests, offline); the gate covers end-to-end behaviour and re-runs on every change.
 * It does not need a model provider or a network: the same run works on a laptop with no keys.
   Provider-dependent items report honestly when no key is present instead of pretending.
 

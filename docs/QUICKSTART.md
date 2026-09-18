@@ -11,7 +11,7 @@ dependencies**.
 git clone https://github.com/seven0070/rad-agent-.git && cd rad-agent-
 python3 -m venv .venv && . .venv/bin/activate
 pip install -e .
-rad version          # prints 0.2.0
+rad version          # prints 0.2.1
 ```
 
 On Debian/Ubuntu, `python3 -m venv` needs the `python3-venv` package

@@ -14,7 +14,8 @@ from rad.control.graph import TaskGraph
 from rad.control.objectives import Objective
 from rad.control.tasks import Check, Task
 
-PLAN_PROMPT = """You are the planner of an autonomous agent. Decompose the goal into 2-16 concrete tasks.
+PLAN_PROMPT = """You are the planner of an autonomous agent. Decompose the goal into the smallest set of concrete tasks that covers the success criteria (typically 2-6; never more than 16).
+A single-file write or one-command goal is 1-3 tasks. Do not invent extra review, backup, polish, README, or documentation tasks unless the criteria require them.
 Each task must be independently executable with tools (shell, read/write files in the workspace, web search/fetch).
 For EVERY task give machine-checkable checks that prove it was done. Prefer checks over trust.
 

@@ -37,11 +37,12 @@ rejected with a reason instead of being written (`rad doctor` re-checks the whol
 | `evolution_require_approval` | `false` | evolution candidates need explicit approval before promotion |
 | `evolution_suite` | `"smoke"` | benchmark suite used to gate an evolution candidate |
 | `allow_api_fix` | `false` | allow `GET /v1/doctor?fix=1` to repair state |
-| `api_port` | `7331` | default port for `rad serve` |
+| `tool_router` | `"existing"` | `existing` (default) or `needle` — optional experimental tool-call proposer. Needle never executes tools and never bypasses permission/sandbox/budget/verification. Env `RAD_TOOL_ROUTER` wins. |
 
 ## Environment variables
 
 * `RAD_HOME` — state directory (beats the default `~/.rad`).
+* `RAD_TOOL_ROUTER` — `existing` (default) or `needle`. Optional experimental adapter; missing Needle falls back to existing.
 * Provider keys — `GROQ_API_KEY`, `CEREBRAS_API_KEY`, `GEMINI_API_KEY`, `NVIDIA_API_KEY`,
   `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `OPENROUTER_API_KEY`, `MISTRAL_API_KEY`, … are
   auto-detected. Precedence: RAD's vault (`rad keys add`) → environment → `.env`.

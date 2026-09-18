@@ -12,7 +12,7 @@ runs commands with your confirmation, and **teaches itself new skills from a sin
   __ / \  |  _ \/ |      / \
  / _` __ \| |_) | | /\/\ / _ \
  \__,_||_|____/|_|/__/__\_/ \_\
-   v0.2.0 — open door, free first, self-evolving
+   v0.2.1 — open door, free first, self-evolving
 ```
 
 ---
@@ -61,6 +61,10 @@ local engines → free cloud tiers (round-robin) → paid (unless free-lock)
 * `rad use <provider>` pins one; **free-lock mode** makes paid spend impossible;
   `rad cost` shows exactly what any paid fallback cost.
 * Everything is reported: `rad [groq] …`
+* Optional experimental tool router: `RAD_TOOL_ROUTER=needle` lets [Needle](https://github.com/cactus-compute/needle)
+  *propose* tool names/args. Default remains `existing`. Needle never executes tools, never
+  bypasses permission/sandbox/budget/verification, and is not a 0.3.0 capability unless
+  measurements say otherwise (`rad needle-eval`).
 
 ## Human-inspired memory
 
@@ -384,10 +388,11 @@ See [LICENSE](LICENSE).
 
 ## Measuring the agent
 900 graded scenarios (9 categories × 100) plus long-horizon, model-evaluation, regression and
-four whole-goal acceptance tests — all offline, all graded on disk state, never on what a model
-claims. `rad lab run --suite bank --sample 20`, `rad benchmark long --sample 6`, `rad realworld`,
-`rad regression`, `rad acceptance`. Success, honesty (no over-claiming), safety (no canary touched),
-verified-rate, recovery rate, retries, cost and false-completion rate are all reported.
+real-world tests (research, coding, filesystem, multi-step, failure, honesty, optional live NIM) —
+all graded on disk state, never on what a model claims. `rad lab run --suite bank --sample 20`,
+`rad benchmark long --sample 6`, `rad realworld`, `rad needle-eval`, `rad regression`, `rad acceptance`.
+Success, honesty (no over-claiming), safety (no canary touched), verified-rate, recovery rate,
+retries, cost and false-completion rate are all reported.
 See [docs/BENCHMARKS.md](docs/BENCHMARKS.md) and [docs/ACCEPTANCE.md](docs/ACCEPTANCE.md).
 
 ## Autonomy: the control plane (v2)
@@ -426,7 +431,7 @@ understand → success criteria → plan → task graph → execute → observe 
 [BENCHMARKS](docs/BENCHMARKS.md) · [EVOLUTION](docs/EVOLUTION.md) · [API](docs/API.md) ·
 [OPERATIONS](docs/OPERATIONS.md) · [TROUBLESHOOTING](docs/TROUBLESHOOTING.md) ·
 [MIGRATION](docs/MIGRATION.md) · [DEVELOPMENT](docs/DEVELOPMENT.md) · [ACCEPTANCE](docs/ACCEPTANCE.md) ·
-[AUDIT-2026-09](docs/AUDIT-2026-09.md).
+[AUDIT-2026-09](docs/AUDIT-2026-09.md) · [ADR-001 Needle tool-router](docs/ADR-001-NEEDLE-TOOL-ROUTER.md).
 
 Every document describes shipped behaviour: `docs/CLI.md` is generated from the argument parser and
 the acceptance gate fails if the docs mention a command that does not exist.

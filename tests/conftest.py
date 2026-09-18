@@ -13,6 +13,7 @@ def _isolate_provider_env(monkeypatch):
     for k in list(os.environ):
         if k.endswith("_API_KEY") or k.endswith("_NIM_API_KEY"):
             monkeypatch.delenv(k, raising=False)
+    monkeypatch.delenv("RAD_TOOL_ROUTER", raising=False)
 
 
 @pytest.fixture()
