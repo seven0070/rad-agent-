@@ -4,13 +4,15 @@ This is the **operating spine** for RAD: five generations, one loop, evidence in
 It is not a product-idea backlog (that list stays in the README) and it is not a license to
 redesign the control plane.
 
-**Status (2026-09-18):** Generation 1 is **complete**. Generation 2 is **in
-progress**. Theme 1 — **verified coding loop** — shipped as **v0.3.0** and
-**used** (RW-065). Theme 2 — **plan-timeout resilience** — shipped as **v0.3.1**
-and **used** (live RW-066 **PASS**). Theme 3 — **budget-aware planning** — is
-**implemented as v0.3.2** in this change. Needle stays off. Caps unchanged.
-Generations 3–5 are **not started**. This patch does **not** claim all Class B
-coding is solved.
+**Status (2026-09-18):** Generation 1 is **complete**. Generation 2 is
+**complete** (v0.3.0–v0.3.2). Theme 1 — **verified coding loop** — shipped as
+**v0.3.0** and **used** (RW-065; RW-068). Theme 2 — **plan-timeout
+resilience** — shipped as **v0.3.1** and **used** (live RW-066 **PASS**;
+RW-068 llm/1). Theme 3 — **budget-aware planning** — shipped as **v0.3.2**.
+v0.3.2 use campaign is **done** (RW-068 **PASS**, RW-069 **FAIL**). Needle
+stays off. Caps unchanged. Generation 3 is **planned / scoped** (not started
+as a build). Generations 4–5 are **not started**. This patch does **not**
+implement v0.4.0 and does **not** bump the package.
 
 ```
 build → test → validate → release → use → discover gaps → build the next version
@@ -25,12 +27,13 @@ Stability with no code change is a valid result.
 
 | item | value |
 |---|---|
-| Generation in production | **Gen2** — v0.3.1 on `main` (`50d98e26` / tag `v0.3.1`); this change is **v0.3.2**; Gen1 baseline remains tagged `v0.2.3` @ `d121c3f` |
-| Package / tag on `main` | **0.3.1** / annotated tag `v0.3.1` @ `50d98e26` (this branch bumps the package to **0.3.2**) |
-| This change | **v0.3.2** — budget-aware planning (Gen2 theme 3) |
-| Generation 2 | **IN PROGRESS** — theme 1 **implemented** (v0.3.0) and **used** (RW-065); theme 2 **implemented** (v0.3.1) and **used** (live RW-066 PASS); theme 3 **implemented** (v0.3.2) |
-| Latest use (RW-066) | Live NIM 11B word_counter: **PASS** `completed` / VERIFIED; plan fallback attempts=2; Gen2 repair YES; residual **Class B** (11B@12) |
-| Generations 3–5 | **NOT STARTED** |
+| Generation in production | **Gen2 complete** — v0.3.2 on `main` (`387776dc` / tag `v0.3.2`); Gen1 baseline remains tagged `v0.2.3` @ `d121c3f` |
+| Package / tag on `main` | **0.3.2** / annotated tag `v0.3.2` @ `387776dc` (this branch does **not** bump) |
+| This change | **docs** — record RW-068 **PASS** + RW-069 **FAIL**; scope Gen3 v0.4.x. **No product code. No v0.4.0.** |
+| Generation 2 | **COMPLETE** — theme 1 **v0.3.0** (used RW-065 / RW-068); theme 2 **v0.3.1** (used live RW-066 / RW-068); theme 3 **v0.3.2** (scripted RW-067; used in this campaign) |
+| Latest use (RW-068 / RW-069) | Live NIM 11B: word_counter **PASS** `completed` / VERIFIED (plan **llm/1**); text_analyzer **FAIL** `needs_user` (Class B @ tools=12) |
+| Generation 3 | **PLANNED / SCOPED** — not started as a build; first v0.4.0 theme not yet accepted |
+| Generations 4–5 | **NOT STARTED** |
 | Needle | optional / **off** (`tool_router=existing`; ADR-001) |
 | `max_plan_tasks` | **16** (unchanged) |
 | Default `Budget.tool_calls` | **60** (unchanged) |
@@ -48,18 +51,16 @@ Cycle evidence, not this file: [MATURATION_CYCLE_REPORT.md](MATURATION_CYCLE_REP
 | Gen | Name | Versions | Status |
 |---|---|---|---|
 | **1** | Foundation | v0.2.0, v0.2.1, v0.2.2, **v0.2.3** | **COMPLETE** |
-| **2** | Capability Expansion | v0.3.x | **IN PROGRESS** (theme 1 → **v0.3.0**; theme 2 → **v0.3.1** used RW-066; theme 3 budget-aware planning → **v0.3.2**) |
-| **3** | Autonomous Agent Maturity | v0.4.x | **NOT STARTED** |
+| **2** | Capability Expansion | v0.3.x | **COMPLETE** (theme 1 → **v0.3.0**; theme 2 → **v0.3.1** used RW-066/068; theme 3 → **v0.3.2**; use campaign RW-068 PASS / RW-069 FAIL) |
+| **3** | Autonomous Agent Maturity | v0.4.x | **PLANNED / SCOPED** (not started as a build) |
 | **4** | Production Scale | v0.5.x | **NOT STARTED** |
 | **5** | 1.0 | v1.0.0 | **NOT STARTED** |
 
 Enter the next generation only after the previous one has been **released, used, and has
 measured gaps**. Class B rows are the input to that decision. They do not start the
-generation by themselves — a theme must be **accepted**. The verified coding loop is the
-first accepted Gen2 theme and the first v0.3.0 build. Plan-timeout resilience is the
-second accepted theme (**v0.3.1**, used live RW-066). Budget-aware planning is the
-third accepted theme (**v0.3.2**). Gen3–5 stay
-closed until Gen2 has been released and used.
+generation by themselves — a theme must be **accepted**. Gen2 themes 1–3 shipped and
+were used (v0.3.2 campaign). Gen3 stays **unbuilt** until Sanath accepts a first
+v0.4.0 theme. Gen4–5 stay closed until Gen3 has been released and used.
 
 ---
 
@@ -130,7 +131,7 @@ enable Needle.
 
 ---
 
-## Generation 2 — Capability Expansion — IN PROGRESS (v0.3.x)
+## Generation 2 — Capability Expansion — COMPLETE (v0.3.x)
 
 Evidence-backed capability additions **on top of** the Gen1 control plane.
 
@@ -182,11 +183,11 @@ controller meters model calls on task execution, as before).
 
 | field | value |
 |---|---|
-| Status | **IMPLEMENTED** in this change (package **0.3.2**) |
+| Status | **IMPLEMENTED** (package **0.3.2**) |
 | Theme | **Budget-aware planning** |
 | Version | **v0.3.2** |
 | Loop | remaining tool budget → plan prompt; fat graph (over 2-tools/task fit **and** >3 tasks) → **one bounded retry** with a cheaper JSON plan → select the cheaper graph; fat fallback → compact. LLM graphs not silently compacted (F-21) |
-| Evidence | RW-059 Case B (12→24 tools still exhausted); RW-065 / live RW-066 tools 12/12; deterministic RW-067 / F-20260918-29 |
+| Evidence | RW-059 Case B (12→24 tools still exhausted); RW-065 / live RW-066 tools 12/12; deterministic RW-067 / F-20260918-29; live use RW-068 / RW-069 |
 | What it is not | Not a control-plane rewrite. Not Needle-as-default. Not a cap raise. Not an executor thrash limiter (RW-059 19× write_file stays Class B). Not a claim that live 11B Class B coding is solved. Not a re-open of F-17 / F-26. |
 
 When remaining `Budget.tool_calls` / `--max-tools` is known, RAD asks for a plan
@@ -216,9 +217,9 @@ Grounded in RW-058 / RW-059 / RW-060 / RW-062 and the F-22 family
 
 | # | theme | status | what the evidence showed | rows |
 |---|---|---|---|---|
-| 1 | **Verified coding loop** | **IMPLEMENTED** — v0.3.0; **used** RW-065 | Write → run tests → repair until **disk checks** pass. Live 11B still Class B under tools=12; loop helps and does not clear every bound. | RW-058, RW-059, RW-062; RW-064 (scripted); RW-065 (live use) |
-| 2 | **Plan-timeout resilience** | **IMPLEMENTED** — v0.3.1; **used** live RW-066 | Retry / re-ask for a JSON plan **before** falling back to no-check goal clause-split. Live RW-066: `attempts=2` then `source=fallback`; objective still VERIFIED. F-17 fallback contract preserved. | RW-062 (timeout path); RW-063 closed the Class A reading; scripted RW-066 (F-27); live RW-066 (F-28) |
-| 3 | **Budget-aware planning** | **IMPLEMENTED** — v0.3.2 | Plan that fits the tool budget. RW-059 Case B: doubling tools **12→24** still exhausted the budget and did **not** complete. Default max-tools was **not** raised. | RW-059 vs RW-058; RW-060 / RW-062 / RW-065 / live RW-066 also budget-stop; RW-067 (scripted) |
+| 1 | **Verified coding loop** | **IMPLEMENTED** — v0.3.0; **used** RW-065 / RW-068 | Write → run tests → repair until **disk checks** pass. Live 11B word_counter is **PASS** on v0.3.2 (RW-068). Multi-file still Class B under tools=12. | RW-058, RW-059, RW-062; RW-064 (scripted); RW-065 / RW-068 (live use) |
+| 2 | **Plan-timeout resilience** | **IMPLEMENTED** — v0.3.1; **used** live RW-066 / RW-068 | Retry / re-ask for a JSON plan **before** falling back to no-check goal clause-split. Live RW-066: `attempts=2` then `source=fallback`. Live RW-068: `llm` attempts **1**. F-17 fallback contract preserved. | RW-062 (timeout path); RW-063 closed the Class A reading; scripted RW-066 (F-27); live RW-066 (F-28); RW-068 |
+| 3 | **Budget-aware planning** | **IMPLEMENTED** — v0.3.2; **used** this campaign | Plan that fits the tool budget. RW-059 Case B: doubling tools **12→24** still exhausted the budget and did **not** complete. Default max-tools was **not** raised. RW-069 still FAIL at tools=12. | RW-059 vs RW-058; RW-060 / RW-062 / RW-065 / live RW-066 also budget-stop; RW-067 (scripted); RW-068 / RW-069 (live use) |
 
 The F-22 family is the same pattern on coding **and** research **and** a simpler
 coding+verification control: 11B + tool budget, success criteria unmet, `needs_user`,
@@ -240,18 +241,79 @@ Do not reopen those as Gen2 work unless new disk evidence changes the class.
 
 ### Accepting a further theme
 
-A short written decision that names the theme, the evidence rows, the invariant that must
-not move, and the 0.3.x (or later) change. Do not treat this budget-aware
-implementation as a blanket v0.3.x redesign.
+Gen2 themes 1–3 are **complete**. Remaining measured gaps are **Gen3
+candidates**, not further 0.3.x work, unless a **proven Class A** appears on
+0.3.2 (patch on the current minor line). Do not treat v0.3.2 as a blanket
+redesign, and do not start v0.4.0 without an accepted first theme.
 
 ---
 
-## Generation 3 — Autonomous Agent Maturity — NOT STARTED (v0.4.x)
+## Generation 3 — Autonomous Agent Maturity — PLANNED / SCOPED (v0.4.x)
 
 More reliable multi-step execution, recovery, planning, and long-horizon work.
 
-Enter **only after Gen2 has been released and used**, and only for gaps that Gen2 use
-discovers. Do not pre-design Gen3 from Gen1 Class B rows. Do not skip Gen2.
+**Status:** **planned / scoped** from the v0.3.2 use campaign (RW-068 **PASS**,
+RW-069 **FAIL**). **Not started** as a build. Package stays **0.3.2**. This
+patch does **not** implement v0.4.0.
+
+Do not pre-design Gen3 from Gen1 Class B rows alone. Do not skip Gen2 (Gen2 is
+now complete). Do not treat a FAIL row as an automatic architecture rewrite.
+
+### Entry criteria (how Gen3 may open)
+
+Gen3 **build** starts only when **all** of the following are true:
+
+1. **Gen2 complete (0.3.0–0.3.2) — DONE.** Verified coding loop (v0.3.0),
+   plan-timeout resilience (v0.3.1), budget-aware planning (v0.3.2) shipped.
+   v0.3.2 use campaign recorded (RW-068 **PASS**, RW-069 **FAIL**).
+2. Sanath **accepts a first v0.4.0 theme** — an explicit decision, not implied
+   by a `needs_user` / FAIL row.
+3. That theme is grounded in **measured Gen2-use gaps** (this campaign), not in
+   a reconstructed offline story and not in a closed non-gate.
+4. **Class A only when proven.** Class B is **not** an automatic architecture
+   rewrite.
+5. Needle stays **OFF**. Caps (`max_plan_tasks` **16**, default
+   `Budget.tool_calls` **60**) unchanged unless a proven product need is
+   documented.
+6. Operating loop unchanged:
+   `build → test → validate → release → use → discover gaps`.
+
+Release gates must still be green (pytest, `rad doctor --offline`,
+`rad acceptance`, `rad realworld`). `live_nim` may be BLOCKED.
+
+### Themes (evidence-backed; priority order)
+
+Grounded in RW-068 / RW-069 and the residual RW-058 / RW-059 family
+(F-20260918-15 / 16 / 19 / 31). Simple coding **PASS** on v0.3.2 is **not** a
+Gen3 hole (B3).
+
+| # | theme | status | what the evidence showed | rows |
+|---|---|---|---|---|
+| 1 | **Path-aligned checks / package layout** | **candidate** (A2 watch; not proven Class A) | Task checks required workspace-root `input.txt` while first successful writes were under `text_analyzer/` → VALIDATION_FAILURE → retry flattened files to root → layout thrash. Candidate if reproducible as planner/check emission bug (not just 11B). | RW-069; related path confusion on RW-058 |
+| 2 | **Multi-file coding under tight budgets** | **candidate** (Class B) | `text_analyzer` @ tools=**12** still FAIL: wrong 1-line input (sha256 `9bf9660f…` vs expected 3-line `bf69eb73…`), missing package `summary.json`, weak tests, layout thrash. Optional **tools=24** baseline later (not run this campaign) to separate budget starvation from planning/repair quality. Efficiency / stronger artifact contracts. | RW-069; RW-058 / RW-059 family (F-15 / F-16 / F-19) |
+| 3 | **Longer-horizon / multi-step reliability** | **later** | Roadmap Gen3 intent (more reliable multi-step execution, recovery, planning, long-horizon work). Enter **only after** themes 1–2 have measured wins. | — |
+
+### Closed / not automatic Gen3 work
+
+These are **not** a license to start v0.4.0 from this docs change:
+
+| id | claim | result |
+|---|---|---|
+| A1 | Reopen budget→`needs_user` as Class A | **Do not reopen** without new proof. RW-069 exhausted 12 tools with incomplete work; same honest stop as historical Class B investigations (F-21). |
+| A2 | Check path vs write path (root vs package dir) | **Watch / candidate theme 1.** Not confirmed as a control-plane defect. Do not patch as Class A from this record. |
+| A3 | DONE pollution refuse | **Already works.** RW-068 tool refused a `DONE:` path. Keep regression coverage; not a v0.4.0 theme. |
+| B3 | Simple verified coding loop | **Stable PASS** on v0.3.2 (RW-068 llm plan@1). Not a Gen3 hole. |
+| F-17 / F-18 / F-21 / F-26 | Prior closed non-gates | **Stay closed** unless new disk evidence changes the class. |
+
+Ship blocker from this campaign: **none** proven Class A. Residual is **Class B**
+capacity/quality (multi-file under the historical 12-tool bound).
+
+### Accepting the first v0.4.0 theme
+
+A short written decision that names the theme, the evidence rows (RW-069 and
+kin), the invariant that must not move (Needle off; caps unchanged unless
+proven; models propose / RAD decides; false DONE **0**), and the 0.4.x change.
+Until that decision exists, Gen3 remains **scoped only**.
 
 ---
 
@@ -278,7 +340,7 @@ acceptable for a public baseline).
 | doc | role |
 |---|---|
 | [MATURATION_CYCLE_REPORT.md](MATURATION_CYCLE_REPORT.md) | Cycle-by-cycle evidence and decisions |
-| [REAL_WORLD_TASK_MATRIX.md](REAL_WORLD_TASK_MATRIX.md) | Disk-checked task rows (do not rewrite RW-058–065) |
+| [REAL_WORLD_TASK_MATRIX.md](REAL_WORLD_TASK_MATRIX.md) | Disk-checked task rows (do not rewrite RW-058–067) |
 | [REAL_WORLD_FAILURE_LEDGER.md](REAL_WORLD_FAILURE_LEDGER.md) | A/B/C findings |
 | [ADR-001-NEEDLE-TOOL-ROUTER.md](ADR-001-NEEDLE-TOOL-ROUTER.md) | Needle stays optional / off |
 | [CONTROL-PLANE.md](CONTROL-PLANE.md) | Shipped control-plane behaviour |

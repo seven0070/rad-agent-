@@ -2,7 +2,7 @@
 
 Living log of **measured** RAD failures found in live or reconstructed use.
 Architecture is frozen. Needle stays experimental and off by default. This is not AGI/ASI.
-Operating spine: [ROADMAP.md](ROADMAP.md) (adopted 2026-09-18). Gen1 complete on 0.2.3; Gen2 in progress. Verified coding loop is **implemented as v0.3.0** (F-20260918-24 / RW-064). Live retest **RW-065**. Plan-timeout resilience is **implemented as v0.3.1** (F-20260918-27 / scripted RW-066) and **used** (live RW-066 / F-20260918-28). Budget-aware planning is **implemented as v0.3.2** (F-20260918-29 / RW-067). This ledger is evidence. Do not rewrite RW-058–065. Scripted RW-066 (F-27) is preserved.
+Operating spine: [ROADMAP.md](ROADMAP.md) (adopted 2026-09-18). Gen1 complete on 0.2.3; **Gen2 complete** on 0.3.0–0.3.2. Verified coding loop is **implemented as v0.3.0** (F-20260918-24 / RW-064). Live retest **RW-065**. Plan-timeout resilience is **implemented as v0.3.1** (F-20260918-27 / scripted RW-066) and **used** (live RW-066 / F-20260918-28). Budget-aware planning is **implemented as v0.3.2** (F-20260918-29 / RW-067). Live NIM use of v0.3.2 is **RW-068 PASS** (F-20260918-30) and **RW-069 FAIL** (F-20260918-31). This ledger is evidence. Do not rewrite RW-058–067. Scripted RW-066 (F-27) is preserved.
 
 No secrets belong here: never paste API keys, vault contents, account tokens, or full
 provider payloads. Paths under `/tmp/…` and objective ids are fine.
@@ -1097,6 +1097,79 @@ python3 -m pytest -q tests/test_budget_aware_planning.py tests/test_plan_timeout
 | Needle | **OFF** (`existing`) |
 | False completion | **0** |
 | Live NIM this patch | **BLOCKED** if no NVIDIA keys — not a live PASS claim for theme 3 |
+
+## Live NIM use of v0.3.2 (RW-068 / RW-069) — 2026-09-18
+
+Operator production `rad objective run` on package **0.3.2** (tag `v0.3.2`,
+`387776dc`). Needle **OFF**. Caps **not** raised. Package stays **0.3.2**.
+**No v0.4.0.** RW-058–067 facts are **not rewritten**. F-17 / F-18 / F-21 / F-26
+stay closed. A1 (budget→needs_user as Class A) is **not reopened**. A2
+(check path vs write path) is a **watch / Gen3 candidate**, not a proven defect.
+
+Authoritative facts: operator campaign `obj_794fb0b3` /
+`/tmp/rad_prod_rw068_09177c89` and `obj_1d8cc7ed` /
+`/tmp/rad_prod_rw069_89512dd9`. This agent did not re-run NIM.
+
+### F-20260918-30 — live 11B word_counter on v0.3.2 **PASS** (RW-068)
+
+| field | value |
+|---|---|
+| class | **B** residual (11B@12 tools exhausted mid-repair). Themes 1–2 **used**. Not a re-open of F-17 / F-26. Not false DONE |
+| status | **recorded** — live **PASS** (`completed` / **VERIFIED**); valid `result.json` words=2; host tests OK |
+| found in | post-v0.3.2 production use (RW-068), rad v0.3.2, 2026-09-18 IST 19:46:33–19:48:01 |
+| fixed in | — not a product patch from this record. Planning path improved vs live RW-066 (`llm` attempts **1** vs `fallback` attempts **2**). Package stays **0.3.2**. **No v0.4.0** |
+| lane | live production `objective run` (NIM 11B) |
+| objective / test | RW-066-shaped word_counter; `obj_794fb0b3`; `--auto --max-tasks 4 --max-tools 12`; Needle `existing` / off |
+| disk | `word_counter.py` YES (`split()` / `len(words)` → 2 for `hello world`); `result.json` valid `{"words": 2}`; `test_word_counter.py` YES; host `python3 -m unittest test_word_counter.py` **OK** (1 test); DONE-named files **NONE** |
+| expected | Record live use of v0.3.2 on the word_counter control. Do not invent disk facts. False DONE **0** |
+| actual | Status **`completed`**; objective **VERIFIED**. `PLAN_CREATED` **source=llm** **attempts=1** (4 tasks with per-task checks). Gen2 **repair YES** (`ENVIRONMENT_FAILURE` → `repair`). First task verify FAILED (actions errors + mis-applied `json_valid` on `.py`); budget exhausted mid-repair; leftover tasks CANCELLED because objective checks already satisfied. Tools **12/12**. Model calls 9/80. Wall ~88s / spent 51.2s. Process exit 0. Agent attempted `write_file` path `DONE: …`; **tool refused**. False DONE **0** |
+| notes | vs RW-066: **better plan path** (llm@1 vs fallback@2); same end VERIFIED. Simple verified coding loop is **stable PASS** on v0.3.2 (B3). A3 DONE-pollution refuse **already works**. Caps unchanged. Needle OFF. Do not raise max-tools to “fix” residual 12/12. |
+
+Reproduction (redacted; live NIM; operator home):
+
+```
+RAD_HOME=/tmp/rad_prod_rw068_09177c89 rad objective run "<word_counter goal>" --auto --max-tasks 4 --max-tools 12
+# obj_794fb0b3 → completed / VERIFIED; PLAN_CREATED source=llm attempts=1
+# result.json valid {"words": 2}; host tests OK; no DONE pollution; false DONE 0
+```
+
+### F-20260918-31 — live 11B text_analyzer on v0.3.2 **FAIL** (RW-069)
+
+| field | value |
+|---|---|
+| class | **B** (same family as F-20260918-15 / F-20260918-16 / F-20260918-19). A2 path-vs-write **watch**, **not proven Class A** |
+| status | documented — live **FAIL** (`needs_user`; not VERIFIED). Artifacts incomplete / incorrect |
+| found in | post-v0.3.2 production use (RW-069), rad v0.3.2, 2026-09-18 IST 19:48:29–19:51:22 |
+| fixed in | — not a RAD hole to patch from this record; 11B + tools=12 multi-file limitation. **No v0.4.0.** Default max-tools / max-tasks **not** raised |
+| lane | live NVIDIA NIM `meta/llama-3.2-11b-vision-instruct` |
+| objective / test | `obj_1d8cc7ed` — production `text_analyzer/` layout; exact 3-line input; stdlib; `--max-tasks 8 --max-tools 12`; Needle `existing` / off. 24-tool follow-up **not run** |
+| disk | RAD-at-stop: `text_analyzer/analyzer.py` YES (buggy `str.split('\\s+')`; writes `chars` not `characters`); `text_analyzer/input.txt` YES **wrong 1-line**; `text_analyzer/summary.json` **NO**; `text_analyzer/test_analyzer.py` YES (weak `assertGreater`); `text_analyzer/README.md` YES; workspace-root `input.txt` / `README.md` / `summary.json` YES (retry thrash). input.txt sha256 actual `9bf9660fcac9d5a1cd5906dd8a8d42e4a9aedaa25847d6412ad53abf517d41aa` ≠ expected 3-line `bf69eb737ca6f3949b5626701cb8472a2fc683e6b05e3101744eccd49dab629b` (no trailing NL) / `5c376e468fe70a63e0d5341908cc7b1b283b7508458fd988d3f4f79a54ea3ec6` (trailing NL). Root `summary.json` `{"lines": 13, "words": 13, "characters": 76}` — valid JSON, counts do **not** match a correct 3-line analysis |
+| expected | required layout under `text_analyzer/`; exact 3-line input; package `summary.json`; tests that assert exact counts; `VERIFIED` only from machine checks |
+| actual | status `needs_user` / **FAIL** vs success criteria — **NOT DONE**, **not VERIFIED** complete. `PLAN_CREATED` **source=llm** **attempts=1**. Recovery **retry_with_hint** (`VALIDATION_FAILURE`) — not Gen2 `repair` insert. Tools **12/12** exhausted. Spent 117.3s; wall ~173s; process exit 2. False DONE **0**. Host post-run unittest under `text_analyzer/` reported OK only because tests are non-assertive and created `summary.json` as a side effect — **do not treat as campaign PASS** |
+| notes | Failure mode: (1) planner checks pointed at workspace-root `input.txt` while first writes were under `text_analyzer/` → VALIDATION_FAILURE; (2) retry flattened files to workspace root; still wrong newline structure (spaces instead of newlines between the three sentences); (3) tool budget 12 exhausted before package completion; (4) optional mid-call `DONE:`-named path write observed in console; no DONE pollution file remained on disk. Planning healthier than historical RW-058-family thrash; **artifact quality still Class B fail**. A1: do **not** reopen budget→needs_user as Class A without new proof. B2: optional tools=24 follow-up warranted later as a Gen3 baseline (not run here). Caps unchanged. Needle OFF. No architecture change. |
+
+Reproduction (redacted; live NIM; operator home):
+
+```
+RAD_HOME=/tmp/rad_prod_rw069_89512dd9 rad objective run "<text_analyzer goal>" --auto --max-tasks 8 --max-tools 12
+# obj_1d8cc7ed → needs_user; tools 12/12; PLAN_CREATED source=llm attempts=1
+# retry_with_hint VALIDATION_FAILURE; input.txt sha256 9bf9660f… (1-line); package summary.json missing
+```
+
+| gate | result |
+|---|---|
+| Live run RW-068 | **PASS** (operator campaign; this agent did not re-run NIM) |
+| Live run RW-069 | **FAIL** `needs_user` / not VERIFIED (operator campaign) |
+| Package | **0.3.2** — no bump; **no v0.4.0** |
+| RW-058–067 | preserved |
+| F-20260918-30 | **PASS** + Class B residual (tools 12/12 mid-repair) |
+| F-20260918-31 | **Class B** (text_analyzer@12 still fail) |
+| Class A this record | **NO** (A2 watch only; A1 not reopened; A3 refuse already works) |
+| 16-task cap | **UNCHANGED** |
+| Default tool budget | **UNCHANGED** (60); these runs used `--max-tools 12` only |
+| Needle | **OFF** (`existing`) |
+| False completion | **0** |
+| Recommendation | Record RW-068 **PASS** + RW-069 **FAIL**. Gen2 complete enough to **scope** Gen3; do not implement v0.4.0 until a first theme is accepted. |
 
 ## How to add a finding
 
