@@ -202,6 +202,12 @@ def _run_grader(ws: Path, g: Dict[str, Any]) -> Dict[str, Any]:
         if kind == "file_lines":
             got = [ln.rstrip() for ln in p.read_text(encoding="utf-8").splitlines() if ln.strip()] if p.exists() else []
             return {"kind": kind, "ok": got == a["lines"], "detail": f"{a['path']} lines {got}"}
+        if kind == "file_line_count":
+            raw = p.read_text(encoding="utf-8") if p and p.exists() else ""
+            n = len(raw.splitlines())
+            want = int(a.get("n", 1))
+            return {"kind": kind, "ok": bool(p and p.exists() and n == want),
+                    "detail": f"{a.get('path')} lines={n} want={want}"}
         if kind == "file_contains":
             txt = p.read_text(encoding="utf-8") if p.exists() else ""
             return {"kind": kind, "ok": a["text"] in txt, "detail": f"{a['path']} contains {a['text']!r}: {a['text'] in txt}"}

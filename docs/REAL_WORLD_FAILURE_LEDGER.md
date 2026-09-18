@@ -2,7 +2,7 @@
 
 Living log of **measured** RAD failures found in live or reconstructed use.
 Architecture is frozen. Needle stays experimental and off by default. This is not AGI/ASI.
-Operating spine: [ROADMAP.md](ROADMAP.md) (adopted 2026-09-18). Gen1 complete on 0.2.3; **Gen2 complete** on 0.3.0–0.3.2. Verified coding loop is **implemented as v0.3.0** (F-20260918-24 / RW-064). Live retest **RW-065**. Plan-timeout resilience is **implemented as v0.3.1** (F-20260918-27 / scripted RW-066) and **used** (live RW-066 / F-20260918-28). Budget-aware planning is **implemented as v0.3.2** (F-20260918-29 / RW-067). Live NIM use of v0.3.2 is **RW-068 PASS** (F-20260918-30) and **RW-069 FAIL** (F-20260918-31). Path-aligned checks are **implemented as v0.4.0** (F-20260918-32 / RW-070). This ledger is evidence. Do not rewrite RW-058–069. Scripted RW-066 (F-27) is preserved.
+Operating spine: [ROADMAP.md](ROADMAP.md) (adopted 2026-09-18). Gen1 complete on 0.2.3; **Gen2 complete** on 0.3.0–0.3.2. Verified coding loop is **implemented as v0.3.0** (F-20260918-24 / RW-064). Live retest **RW-065**. Plan-timeout resilience is **implemented as v0.3.1** (F-20260918-27 / scripted RW-066) and **used** (live RW-066 / F-20260918-28). Budget-aware planning is **implemented as v0.3.2** (F-20260918-29 / RW-067). Live NIM use of v0.3.2 is **RW-068 PASS** (F-20260918-30) and **RW-069 FAIL** (F-20260918-31). Path-aligned checks are **implemented as v0.4.0** (F-20260918-32 / RW-070). Live NIM retest of v0.4.0 is **RW-071 FAIL** (F-20260918-33; theme 1 live-confirmed). Multi-file contracts under tight budgets are **implemented as v0.4.1** (F-20260918-34 / RW-072). This ledger is evidence. Do not rewrite RW-058–070. Scripted RW-066 (F-27) is preserved.
 
 No secrets belong here: never paste API keys, vault contents, account tokens, or full
 provider payloads. Paths under `/tmp/…` and objective ids are fine.
@@ -1219,6 +1219,87 @@ python3 -m pytest -q tests/test_path_aligned_checks.py
 | Needle | **OFF** (`existing`) |
 | False completion | **0** |
 | Live NIM this patch | **BLOCKED** (no NVIDIA keys) — not a live PASS claim for RW-069 |
+
+## Live NIM retest of v0.4.0 (RW-071) — 2026-09-18
+
+Operator production `rad objective run` on package **0.4.0** (tag `v0.4.0`,
+`a8aac8ae`). Needle **OFF**. Caps **not** raised. RW-058–070 facts are **not
+rewritten**. F-17 / F-18 / F-21 / F-26 stay closed. A1 (budget→needs_user as
+Class A) is **not reopened**. Theme 1 path-alignment is **live-confirmed**.
+
+Authoritative facts: operator report `obj_d662224b` /
+`/tmp/rad_prod_rw071_7811425c`. This agent did not re-run NIM.
+
+### F-20260918-33 — live 11B text_analyzer on v0.4.0 **FAIL** (RW-071)
+
+| field | value |
+|---|---|
+| class | **B** (same family as F-20260918-15 / 16 / 19 / 31). Theme 1 path-alignment **live-confirmed** (not Class A regression) |
+| status | documented — live **FAIL** (`needs_user`; not VERIFIED). Theme 1 **Y**. Residual Class B |
+| found in | post-v0.4.0 production use (RW-071), rad v0.4.0, 2026-09-18 IST 20:18:41–20:20:53 |
+| fixed in | — live 11B artifact quality **not** claimed fixed. Theme 2 control-plane patch is **v0.4.1** (F-20260918-34). Default max-tools / max-tasks **not** raised |
+| lane | live NVIDIA NIM `meta/llama-3.2-11b-vision-instruct` |
+| objective / test | `obj_d662224b` — production `text_analyzer/` layout; exact 3-line input; stdlib; `--max-tasks 8 --max-tools 12`; Needle `existing` / off |
+| disk | workspace root **only** `text_analyzer/` (no root pollution). `text_analyzer/input.txt` YES **wrong 1-line** sha256 `9bf9660fcac9d5a1cd5906dd8a8d42e4a9aedaa25847d6412ad53abf517d41aa` ≠ expected 3-line `bf69eb737ca6f3949b5626701cb8472a2fc683e6b05e3101744eccd49dab629b`. Package `summary.json` **present, 0 bytes, invalid JSON**. `analyzer.py` stdlib (never ran as `__main__`). `test_analyzer.py` unittest `1 != 3`. README present |
+| expected | required layout under `text_analyzer/`; exact 3-line input; non-empty valid package `summary.json`; tests that assert exact counts; `VERIFIED` only from machine checks; path-aligned checks |
+| actual | status `needs_user` / **FAIL** vs success criteria — **NOT DONE**, **not VERIFIED** complete. `PLAN_CREATED` **source=llm** **attempts=1** (6 tasks). Path-aligned checks **Y**. Recovery **ENVIRONMENT_FAILURE** → `repair` (“Repair prerequisite”) on mkdir-already-exists + empty `summary.json` among action/shell check noise; repair rewrote files, did not fill empty summary. Tools **12/12** (`write_file` 11, `run_shell` 1). Model calls 9/80. Retries 1/6. Wall ~95s reported / ~132s. Process exit 2. False DONE **0** |
+| notes | vs RW-069: theme-1 path-misalignment **closed** (checks under `text_analyzer/`; no root pollution). Same Class B stop: wrong 1-line input `9bf9660f…`, empty/invalid package `summary.json`, tools exhausted mid-repair. Create input.txt auto-completed on weak exists/min-bytes/contains-first-sentence checks — not a full objective false DONE. Caps unchanged. Needle OFF. |
+
+Reproduction (redacted; live NIM; operator home):
+
+```
+RAD_HOME=/tmp/rad_prod_rw071_7811425c rad objective run "<text_analyzer goal>" --auto --max-tasks 8 --max-tools 12
+# obj_d662224b → needs_user; tools 12/12; PLAN_CREATED source=llm attempts=1
+# path-alignment Y; input.txt sha256 9bf9660f… (1-line); package summary.json empty
+```
+
+## Gen3 / v0.4.1 — Multi-file contracts under tight budgets (RW-072) — 2026-09-18
+
+Generation 3 autonomous-agent maturity, **second accepted theme**. Package
+**0.4.0 → 0.4.1**. Control plane preserved (models propose / RAD decides). Needle
+**OFF**. Caps **not** raised (`max_plan_tasks` 16, `Budget.tool_calls` 60).
+RW-058–071 facts are **not rewritten**. F-17 / F-18 / F-21 / F-26 stay closed.
+A1 (budget→needs_user as Class A) is **not reopened**.
+
+Product: coding/package goals merge omitted `json_valid` / `file_line_count` /
+test `shell_ok` into objective checks so weak `file_exists` artifacts cannot
+become VERIFIED; mkdir/create **already exists** is not ENVIRONMENT (no Repair
+prerequisite thrash). The verifier still evaluates stored paths honestly. A
+model `DONE:` is never completion. Does **not** claim live 11B text_analyzer@12
+now PASS.
+
+### F-20260918-34 — multi-file contracts / already-exists not ENVIRONMENT
+
+| field | value |
+|---|---|
+| class | **A** (weak LLM `file_exists` objective checks could pass an empty `summary.json` / 1-line input; mkdir already-exists mixed with no-such-file noise classified ENVIRONMENT and burned tools on Repair prerequisite). Capability (Gen3 theme 2). Not a re-open of RW-071 live 11B artifact quality |
+| status | **shipped in v0.4.1** |
+| found in | RW-071 / F-20260918-33 (v0.4.0 live 11B text_analyzer); investigate-first on `a8aac8ae` |
+| fixed in | **v0.4.1** — `merge_coding_checks` + `file_line_count` in `rad/control/codingloop.py` / `verifier.py`; `_ALREADY_EXISTS` skip in `classify()` (`rad/control/recovery.py`); PLAN_PROMPT no standalone mkdir. Check *kinds* not remapped (F-26). Fallback *tasks* stay check-less (F-17). Genuine `command not found` still ENVIRONMENT |
+| lane | deterministic / scripted (MUST). Live NIM not re-run |
+| objective / test | `tests/test_multifile_tight_budget.py`; RW-072 |
+| disk | scripted: 1-line input + empty `summary.json` + weak LLM `file_exists` → objective **not VERIFIED** (`json_valid` + `file_line_count` + `shell_ok`). mkdir File-exists + cat no-such-file + empty JSON → **not** ENVIRONMENT / not Repair prerequisite. 3-line + valid JSON + tests still **VERIFIED**. No workspace-root pollution |
+| expected | Weak artifacts fail earlier with useful structure; already-exists does not spend remaining tools on ENVIRONMENT mkdir repair; false DONE **0**; path-aligned checks preserved |
+| actual | infer/merge adds package `json_valid` / exact-3-line `file_line_count` / test `shell_ok`; already-exists mixed noise is TOOL/VALIDATION coding repair; F-18 command-not-found ENVIRONMENT preserved; word_counter root paths unchanged |
+| notes | Live RW-071 remains Class B on 11B quality and tools=12. This PR does **not** claim that live 11B text_analyzer would now PASS. A1 not reopened. Needle off. Caps unchanged. |
+
+Reproduction:
+
+```
+python3 -m pytest -q tests/test_multifile_tight_budget.py
+# weak 1-line + empty JSON → not VERIFIED; already-exists ≠ ENVIRONMENT; false DONE 0
+```
+
+| gate | result |
+|---|---|
+| `python3 -m pytest -q` | **(this branch — recorded after gates)** |
+| Package | **0.4.1** |
+| RW-058–071 | preserved |
+| 16-task cap | **UNCHANGED** |
+| Default tool budget | **UNCHANGED** (60) |
+| Needle | **OFF** (`existing`) |
+| False completion | **0** |
+| Live NIM this patch | **BLOCKED** (no NVIDIA keys) — not a live PASS claim for RW-071 |
 
 ## How to add a finding
 

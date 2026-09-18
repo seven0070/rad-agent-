@@ -157,7 +157,7 @@ def _ver(ws, home) -> Verifier:
 # ---------------------------------------------------------------- architecture freeze
 
 def test_path_aligned_checks_does_not_raise_caps_or_enable_needle(home):
-    assert __version__ == "0.4.0"
+    assert __version__ == "0.4.1"
     assert Budget().tool_calls == 60
     assert int(home.cfg.get("max_plan_tasks", 16) or 16) == 16
     assert Planner(None, str(home.workspace())).max_tasks == 16
@@ -339,7 +339,9 @@ def test_scenario_d_scripted_root_checks_with_package_writes_verify_without_thra
         ([("write_file", {"path": "text_analyzer/input.txt",
                           "content": "Line one\nLine two\nLine three\n"}),
           ("write_file", {"path": "text_analyzer/summary.json",
-                          "content": '{"lines": 3, "words": 6, "characters": 29}'})],
+                          "content": '{"lines": 3, "words": 6, "characters": 29}'}),
+          ("write_file", {"path": "text_analyzer/test_analyzer.py",
+                          "content": "print('ok')\n"})],
          "DONE: wrote package files"),
     ]
     ScriptedSession.prompts = []

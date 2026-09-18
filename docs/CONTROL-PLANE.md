@@ -11,9 +11,9 @@ done, nothing checks, nothing survives a crash. The control plane inverts that:
 | `objectives.py` | `Objective` (goal, criteria, budget/usage, status) + `ObjectiveStore` (disk) |
 | `tasks.py` | `Task` with explicit state machine, `Check` (machine-verifiable condition) |
 | `graph.py` | `TaskGraph` DAG: ready-set, doom propagation, optional branches, cycle check |
-| `planner.py` | LLM → task graph *with checks*; bounded retry (default 1) on timeout/empty/malformed JSON *before* fallback; fat plans retried/selected to fit remaining tool budget; deterministic fallback without a brain (goal clause-split, no checks — F-17; compacted when still fat); coding goals infer `json_valid` / test `shell_ok` as *objective* checks (fallback *tasks* stay check-less); package-layout goals get check paths joined to the named directory (RW-069) |
+| `planner.py` | LLM → task graph *with checks*; bounded retry (default 1) on timeout/empty/malformed JSON *before* fallback; fat plans retried/selected to fit remaining tool budget; deterministic fallback without a brain (goal clause-split, no checks — F-17; compacted when still fat); coding goals infer `json_valid` / test `shell_ok` / exact `file_line_count` as *objective* checks and merge them into LLM plans that omitted them (fallback *tasks* stay check-less); package-layout goals get check paths joined to the named directory (RW-069) |
 | `budgetplan.py` | budget-aware planning helpers: remaining tools, 2-tools/task estimate, fat vs small (F-21), fallback compact |
-| `codingloop.py` | verified coding loop helpers: coding-goal detection, DONE: pollution, broken-artifact repair hints, package-dir path alignment |
+| `codingloop.py` | verified coding loop helpers: coding-goal detection, DONE: pollution, broken-artifact repair hints, package-dir path alignment, merge of omitted json/line-count/test contracts |
 | `controller.py` | lifecycle: create / plan / run / resume / pause / cancel; the drive loop |
 | `observer.py` | `Observation` per tool call, `Artifact` registry (sha256, versions, lineage) |
 | `verifier.py` | tool → checks → artifacts → objective; result is `VERIFIED` / `FAILED` / `UNVERIFIED` |
@@ -52,7 +52,7 @@ Illegal transitions raise. Every transition is on `task.history` and in the even
 | AUTH / PERMISSION | ask_user |
 | MODEL ("no brain") | ask_user; other model errors → retry (router falls back) |
 | TRANSIENT / NETWORK | retry while attempts remain |
-| ENVIRONMENT (not found / no module) | insert a **repair task** once, then retry_with_hint, then ask_user |
+| ENVIRONMENT (not found / no module) | insert a **repair task** once, then retry_with_hint, then ask_user. `mkdir` / create **already exists** is **not** ENVIRONMENT (RW-071) — mixed File-exists + no-such-file noise uses TOOL/VALIDATION so remaining tools are not spent on Repair-prerequisite thrash |
 | VALIDATION / TOOL with **broken artifacts** (`json_valid`, `json_field`, `json_min_len`, `shell_ok`, `shell_output`) | insert a **repair task** once with the concrete failure (stderr / invalid JSON / expected vs actual), then retry_with_hint → replan once → ask_user. Models propose; RAD decides. A `DONE:` line is never an artifact path. |
 | VALIDATION / TOOL / UNKNOWN (missing file, `file_exists` fail, other) | retry_with_hint (explicit failed-check feedback) → replan once → ask_user |
 

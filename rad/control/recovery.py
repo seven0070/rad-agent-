@@ -51,6 +51,7 @@ _NET = re.compile(r"network:|timed? ?out|connection (reset|refused)|temporar|HTT
 _AUTH = re.compile(r"HTTP 401|HTTP 403|unauthori[sz]ed|invalid api key|forbidden", re.I)
 _PERM = re.compile(r"blocked by safety policy|user declined|permission denied|outside the workspace", re.I)
 _ENV = re.compile(r"command not found|: not found|no such file|not installed|ModuleNotFoundError|No module named|ENOENT", re.I)
+_ALREADY_EXISTS = re.compile(r"already exists|FileExistsError|\bFile exists\b", re.I)
 _MODEL = re.compile(r"all providers failed|no brain available|brain error|no model selected", re.I)
 
 
@@ -65,7 +66,9 @@ def classify(task: Task, observations: List[Observation], error: str = "",
         return FailureClass.PERMISSION
     if _NET.search(text):
         return FailureClass.NETWORK if "network" in text.lower() or "connection" in text.lower() else FailureClass.TRANSIENT
-    if _ENV.search(text):
+    # mkdir / create "already exists" is not a missing environment (RW-071). Mixed
+    # "File exists" + "no such file" check noise must not insert Repair prerequisite.
+    if _ENV.search(text) and not _ALREADY_EXISTS.search(text):
         return FailureClass.ENVIRONMENT
     if any(o.status == "error" for o in observations):
         return FailureClass.TOOL          # a concrete tool error is more specific than "checks failed"

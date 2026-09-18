@@ -219,6 +219,16 @@ class Verifier:
                 p = self._p(a["path"])
                 n = p.stat().st_size if p.exists() else -1
                 return {**base, "ok": n >= int(a.get("n", 1)), "detail": f"{p} size={n} min={a.get('n', 1)}"}
+            if c.kind == "file_line_count":
+                p = self._p(a["path"])
+                if not p.exists():
+                    return {**base, "ok": False, "detail": f"{p} missing"}
+                raw = p.read_text(encoding="utf-8", errors="replace")
+                if is_done_pollution_content(raw):
+                    return {**base, "ok": False, "detail": f"{p} is a DONE: pollution file, not the artifact"}
+                n = len(raw.splitlines())
+                want = int(a.get("n", 1))
+                return {**base, "ok": n == want, "detail": f"{p} lines={n} want={want}"}
             if c.kind == "file_contains":
                 p = self._p(a["path"])
                 txt = p.read_text(encoding="utf-8", errors="replace") if p.exists() else ""
