@@ -3,6 +3,11 @@
 LLM-backed when a brain is online; deterministic fallback otherwise (the
 fallback produces one task per clause and no checks, which the Verifier will
 correctly report as UNVERIFIED rather than pretending).
+
+A transient LLM plan failure (timeout, empty, malformed, non-JSON, empty graph)
+is retried a bounded number of times for a structured JSON plan *before*
+falling back. Fallback still splits `obj.goal` only (F-17); it never parses
+model prose.
 """
 from __future__ import annotations
 
@@ -14,6 +19,9 @@ from rad.control.codingloop import infer_coding_checks
 from rad.control.graph import TaskGraph
 from rad.control.objectives import Objective
 from rad.control.tasks import Check, Task
+
+DEFAULT_PLAN_RETRIES = 1   # one retry after the first failure (2 attempts)
+MAX_PLAN_RETRIES = 3       # hard cap — never an unbounded plan loop
 
 PLAN_PROMPT = """You are the planner of an autonomous agent. Decompose the goal into the smallest set of concrete tasks that covers the success criteria (typically 2-6; never more than 16).
 A single-file write or one-command goal is 1-3 tasks. Do not invent extra review, backup, polish, README, or documentation tasks unless the criteria require them.
@@ -44,6 +52,11 @@ Reply ONLY with JSON:
   "objective_checks":[{{"kind":"file_min_bytes","args":{{"path":"report.md","n":500}},"description":"report is substantial"}}]}}
 """
 
+PLAN_RETRY_NUDGE = (
+    "\n\nYour previous reply was not usable (timeout, empty, or not JSON). "
+    "Reply ONLY with the JSON object. No prose, no markdown fences."
+)
+
 REPLAN_PROMPT = """You are replanning part of an autonomous agent's work after failures.
 GOAL: {goal}
 COMPLETED TASKS:
@@ -60,34 +73,55 @@ Only reference ids of the new tasks or COMPLETED task ids in depends_on. Reply O
 """
 
 
+def _bound_retries(n: Any) -> int:
+    try:
+        v = int(DEFAULT_PLAN_RETRIES if n is None else n)
+    except (TypeError, ValueError):
+        v = DEFAULT_PLAN_RETRIES
+    return max(0, min(MAX_PLAN_RETRIES, v))
+
+
 class Planner:
     def __init__(self, llm: Optional[Callable[[str], str]], workspace: str,
-                 max_tasks: int = 16) -> None:
+                 max_tasks: int = 16, retries: int = DEFAULT_PLAN_RETRIES) -> None:
         self.llm = llm
         self.workspace = workspace
         self.max_tasks = max(1, int(max_tasks or 16))   # runaway-plan guard (configurable)
+        self.retries = _bound_retries(retries)
 
     # ------------------------------------------------------------ plan
     def plan(self, obj: Objective) -> Dict[str, Any]:
-        """Return {"graph": TaskGraph, "objective_checks": [Check], "source": "llm"|"fallback"}."""
+        """Return {"graph": TaskGraph, "objective_checks": [Check], "source": "llm"|"fallback",
+        "attempts": int}.
+
+        `retries` is extra tries after the first failure (default 1 → 2 attempts).
+        Planning LLM calls are not charged to Budget.model_calls (the controller
+        meters model calls on task execution, not on plan()).
+        """
+        attempts = 0
         if self.llm:
-            try:
-                raw = self.llm(PLAN_PROMPT.format(
-                    goal=obj.goal,
-                    criteria="\n".join(f"- {c}" for c in obj.success_criteria) or "- (none given: infer sensible ones)",
-                    constraints="\n".join(f"- {c}" for c in obj.constraints) or "- none",
-                    workspace=self.workspace))
-                d = _json_obj(raw)
-                g, oc = self._graph_from(obj.id, d)
-                if g.tasks:
-                    if not oc:
-                        oc = infer_coding_checks(obj.goal, obj.success_criteria)
-                    return {"graph": g, "objective_checks": oc, "source": "llm"}
-            except Exception:
-                pass
+            prompt = PLAN_PROMPT.format(
+                goal=obj.goal,
+                criteria="\n".join(f"- {c}" for c in obj.success_criteria) or "- (none given: infer sensible ones)",
+                constraints="\n".join(f"- {c}" for c in obj.constraints) or "- none",
+                workspace=self.workspace)
+            for i in range(1 + self.retries):
+                attempts += 1
+                try:
+                    raw = self.llm(prompt if i == 0 else prompt + PLAN_RETRY_NUDGE)
+                    d = _json_obj(raw)
+                    g, oc = self._graph_from(obj.id, d)
+                    if g.tasks:
+                        if not oc:
+                            oc = infer_coding_checks(obj.goal, obj.success_criteria)
+                        return {"graph": g, "objective_checks": oc, "source": "llm",
+                                "attempts": attempts}
+                except Exception:
+                    pass
         return {"graph": self._fallback(obj),
                 "objective_checks": infer_coding_checks(obj.goal, obj.success_criteria),
-                "source": "fallback"}
+                "source": "fallback",
+                "attempts": attempts}
 
     def replan(self, obj: Objective, graph: TaskGraph, failed: Task, why: str) -> Optional[List[Task]]:
         if not self.llm:

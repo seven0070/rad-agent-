@@ -5,19 +5,17 @@ It is not a product-idea backlog (that list stays in the README) and it is not a
 redesign the control plane.
 
 **Status (2026-09-18):** Generation 1 is **complete**. Generation 2 is **in
-progress**. First accepted theme — **verified coding loop** — shipped as
-**v0.3.0**. That theme has been **used** (RW-065 live NIM 11B word_counter):
-repair fired, valid `result.json`, no DONE pollution, still `needs_user` / FAIL
-under tools=12. Residual **Class B**. json_valid-on-.py Class A candidate
-**NOT CONFIRMED**. Package stays **0.3.0**. Needle stays off. Caps unchanged.
-Plan-timeout resilience and budget-aware planning remain **candidates**.
-Generations 3–5 are **not started**.
+progress**. Theme 1 — **verified coding loop** — shipped as **v0.3.0** and
+**used** (RW-065). Theme 2 — **plan-timeout resilience** — is **implemented as
+v0.3.1** in this change. Needle stays off. Caps unchanged. Budget-aware
+planning remains a **candidate**. Generations 3–5 are **not started**. This
+patch does **not** claim RW-062 / RW-065 live 11B would now PASS.
 
 ```
 build → test → validate → release → use → discover gaps → build the next version
 ```
 
-Never skip a generation. Never invent a `v0.3.0` feature without an evidence row.
+Never skip a generation. Never invent a `v0.3.x` feature without an evidence row.
 Stability with no code change is a valid result.
 
 ---
@@ -26,15 +24,16 @@ Stability with no code change is a valid result.
 
 | item | value |
 |---|---|
-| Generation in production | **Gen2 starting** — v0.3.0 on `main` (`183ff611` / tag `v0.3.0`); Gen1 baseline remains tagged `v0.2.3` @ `d121c3f` |
-| Package / tag on `main` | **0.3.0** / annotated tag `v0.3.0` @ `183ff611` |
-| This change | docs + investigation only — **stay 0.3.0** (no 0.3.1) |
-| Generation 2 | **IN PROGRESS** — theme 1 **implemented** (v0.3.0) and **used** (RW-065) |
+| Generation in production | **Gen2** — v0.3.0 coding loop on `main` (`183ff611` / tag `v0.3.0`); this change is **v0.3.1**; Gen1 baseline remains tagged `v0.2.3` @ `d121c3f` |
+| Package / tag on `main` | **0.3.0** / annotated tag `v0.3.0` @ `183ff611` (this branch bumps the package to **0.3.1**) |
+| This change | **v0.3.1** — plan-timeout resilience (Gen2 theme 2) |
+| Generation 2 | **IN PROGRESS** — theme 1 **implemented** (v0.3.0) and **used** (RW-065); theme 2 **implemented** (v0.3.1) |
 | Latest use (RW-065) | Live NIM 11B word_counter: FAIL `needs_user`; Gen2 repair YES; residual **Class B**; json_valid-on-.py **NOT CONFIRMED** |
 | Generations 3–5 | **NOT STARTED** |
 | Needle | optional / **off** (`tool_router=existing`; ADR-001) |
 | `max_plan_tasks` | **16** (unchanged) |
 | Default `Budget.tool_calls` | **60** (unchanged) |
+| Default plan retries | **1** (hard cap 3) |
 | False `DONE:` → `VERIFIED` | **0** (invariant) |
 
 Cycle evidence, not this file: [MATURATION_CYCLE_REPORT.md](MATURATION_CYCLE_REPORT.md),
@@ -48,7 +47,7 @@ Cycle evidence, not this file: [MATURATION_CYCLE_REPORT.md](MATURATION_CYCLE_REP
 | Gen | Name | Versions | Status |
 |---|---|---|---|
 | **1** | Foundation | v0.2.0, v0.2.1, v0.2.2, **v0.2.3** | **COMPLETE** |
-| **2** | Capability Expansion | v0.3.x | **IN PROGRESS** (theme 1 verified coding loop → **v0.3.0**; used RW-065) |
+| **2** | Capability Expansion | v0.3.x | **IN PROGRESS** (theme 1 → **v0.3.0**; theme 2 plan-timeout resilience → **v0.3.1**; used RW-065) |
 | **3** | Autonomous Agent Maturity | v0.4.x | **NOT STARTED** |
 | **4** | Production Scale | v0.5.x | **NOT STARTED** |
 | **5** | 1.0 | v1.0.0 | **NOT STARTED** |
@@ -56,9 +55,9 @@ Cycle evidence, not this file: [MATURATION_CYCLE_REPORT.md](MATURATION_CYCLE_REP
 Enter the next generation only after the previous one has been **released, used, and has
 measured gaps**. Class B rows are the input to that decision. They do not start the
 generation by themselves — a theme must be **accepted**. The verified coding loop is the
-first accepted Gen2 theme and the first v0.3.0 build. Plan-timeout resilience and
-budget-aware planning remain candidates. Gen3–5 stay closed until Gen2 has been released
-and used.
+first accepted Gen2 theme and the first v0.3.0 build. Plan-timeout resilience is the
+second accepted theme (**v0.3.1**). Budget-aware planning remains a candidate. Gen3–5 stay
+closed until Gen2 has been released and used.
 
 ---
 
@@ -146,7 +145,7 @@ Evidence-backed capability additions **on top of** the Gen1 control plane.
 | Version | **v0.3.0** |
 | Loop | write → run tests / checks → repair until **disk checks** pass |
 | Evidence | RW-058, RW-059, RW-062 (F-20260918-15 / 16 / 19 / 22); deterministic RW-064 / F-20260918-24; live use RW-065 / F-20260918-25 |
-| What it is not | Not a control-plane rewrite. Not Needle-as-default. Not a cap raise. Not plan-timeout or budget-aware planning (those stay candidates). Not a claim that live 11B Class B runs now pass. |
+| What it is not | Not a control-plane rewrite. Not Needle-as-default. Not a cap raise. Not plan-timeout (that is v0.3.1) or budget-aware planning (still a candidate). Not a claim that live 11B Class B runs now pass. |
 
 Live Gen1 coding runs left invalid `result.json` / `summary.json`, failing tests (`13!=6`,
 `6!=2`), duplicated “tests”, wrong paths, and pollution `DONE:` fake paths. RAD stopped at
@@ -158,6 +157,24 @@ A model `DONE:` is never completion. `DONE:` pollution paths are refused. Fallba
 stay check-less (F-17); coding goals infer *objective* `json_valid` / test `shell_ok`.
 Broken artifacts (`json_valid`, failing tests) insert one repair step with the concrete
 failure; missing `file_exists` still `retry_with_hint`.
+
+### Accepted second build — plan-timeout resilience (v0.3.1)
+
+| field | value |
+|---|---|
+| Status | **IMPLEMENTED** in this change (package **0.3.1**) |
+| Theme | **Plan-timeout resilience** |
+| Version | **v0.3.1** |
+| Loop | timeout / empty / malformed / non-JSON plan → **one bounded retry** for structured JSON with checks → else `_fallback(obj)` |
+| Evidence | RW-062 (nvidia plan timeout → `source=fallback`); RW-063 / F-17 (fallback is goal clause-split, not model-prose parse); deterministic RW-066 / F-20260918-27 |
+| What it is not | Not a rewrite of F-17. Not Needle-as-default. Not a cap raise. Not budget-aware planning (theme 3, later). Not a claim that live 11B RW-062 / RW-065 now PASS. |
+
+When the LLM planner times out or returns empty/malformed/non-JSON once, RAD retries
+(default **1**, hard cap **3**) with a “Reply ONLY with JSON” nudge for a structured plan
+that keeps machine checks. Exhausted retries still `_fallback(obj)`: goal-only clause
+split, cap 7, no checks (F-17 unchanged). First-try valid JSON is unchanged (one attempt,
+`source=llm`). Planning LLM calls are **not** charged to `Budget.model_calls` (the
+controller meters model calls on task execution, as before).
 
 ### Entry criteria (how Gen2 opened)
 
@@ -179,7 +196,7 @@ Grounded in RW-058 / RW-059 / RW-060 / RW-062 and the F-22 family
 | # | theme | status | what the evidence showed | rows |
 |---|---|---|---|---|
 | 1 | **Verified coding loop** | **IMPLEMENTED** — v0.3.0; **used** RW-065 | Write → run tests → repair until **disk checks** pass. Live 11B still `needs_user` under tools=12; loop helps (llm plan, repair, valid JSON, no DONE pollution) and does not clear the bound. | RW-058, RW-059, RW-062; RW-064 (scripted); RW-065 (live use) |
-| 2 | **Plan-timeout resilience** | candidate (not accepted) | Retry / re-ask for a JSON plan **before** falling back to no-check goal clause-split. RW-062: nvidia plan timeout → `PLAN_CREATED` `source=fallback`. | RW-062 (timeout path); RW-063 closed the Class A reading |
+| 2 | **Plan-timeout resilience** | **IMPLEMENTED** — v0.3.1 | Retry / re-ask for a JSON plan **before** falling back to no-check goal clause-split. RW-062: nvidia plan timeout → `PLAN_CREATED` `source=fallback`. F-17 fallback contract preserved. | RW-062 (timeout path); RW-063 closed the Class A reading; RW-066 (scripted) |
 | 3 | **Budget-aware planning** | candidate (not accepted) | Plan that fits the tool budget. RW-059 Case B: doubling tools **12→24** still exhausted the budget and did **not** complete. Default max-tools was **not** raised. | RW-059 vs RW-058; RW-060 / RW-062 also budget-stop |
 
 The F-22 family is the same pattern on coding **and** research **and** a simpler
@@ -203,9 +220,8 @@ Do not reopen those as Gen2 work unless new disk evidence changes the class.
 ### Accepting a further theme
 
 A short written decision that names the theme, the evidence rows, the invariant that must
-not move, and the 0.3.x (or later) change. Plan-timeout resilience and budget-aware
-planning still need that. Do not treat this coding-loop implementation as a blanket v0.3.x
-redesign.
+not move, and the 0.3.x (or later) change. Budget-aware planning still needs that. Do not
+treat this plan-timeout implementation as a blanket v0.3.x redesign.
 
 ---
 

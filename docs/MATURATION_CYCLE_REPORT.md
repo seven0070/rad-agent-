@@ -6,6 +6,79 @@ Default `Budget.tool_calls` remains **60**.
 
 ---
 
+# Cycle 7 — Gen2 / v0.3.1 plan-timeout resilience (2026-09-18)
+
+**Date:** 2026-09-18
+**Baseline:** `origin/main` `76376a86` (PR #20 merge; package **0.3.0**)
+**Package at start:** `0.3.0`
+**This branch:** `cursor/plan-timeout-resilience-b79b` — package **0.3.1**
+**Architecture:** control plane preserved. Needle stays off. Caps unchanged.
+RW-058–065 are **not rewritten**.
+
+## Product
+
+Plan-timeout resilience: a transient LLM plan failure (timeout, empty, malformed,
+non-JSON, empty task graph) is retried once (default; hard cap 3) with a
+JSON-only nudge **before** `_fallback(obj)`. A recovered plan keeps machine
+checks (`source=llm`). Exhausted retries still split `obj.goal` only (F-17:
+cap 7, no checks). First-try valid JSON is unchanged (one attempt). A model
+`DONE:` is never completion.
+
+## Why (evidence cited, not rewritten)
+
+- **RW-062 / F-22** — nvidia plan timeout → `PLAN_CREATED` `source=fallback` → 7 no-check clause tasks
+- **RW-063 / F-17** — fallback is goal clause-split, not model-prose parse (Class A NOT CONFIRMED; contract preserved)
+- Theme 2 accepted to reduce how often a *transient* plan failure hits bare fallback
+
+## What changed
+
+- `Planner.plan` bounded retry (`DEFAULT_PLAN_RETRIES=1`, `MAX_PLAN_RETRIES=3`) + `PLAN_RETRY_NUDGE`
+- `PLAN_CREATED` records `attempts`
+- `plan_retries` readable from `home.cfg` (not in DEFAULTS; same pattern as `max_plan_tasks`)
+- Tests `tests/test_plan_timeout_resilience.py`
+- Package **0.3.0 → 0.3.1**
+
+## What did not change
+
+- F-17 `_fallback(obj)` (goal only, cap 7, no checks; never parses model `raw`)
+- Control plane shape PLAN→PERMISSION→BUDGET→EXECUTE→OBSERVE→VERIFY→RECOVER
+- Needle default `existing` / off
+- `max_plan_tasks` default **16**
+- `Budget.tool_calls` default **60**
+- False completion remains **0**
+- RW-058–065 ledger/matrix rows
+- Live 11B Class B incompleteness is **not** claimed fixed
+- Budget-aware planning (theme 3) not started
+- Planning LLM calls still not charged to `Budget.model_calls` (execution metering unchanged)
+
+## Quality gates (actually run)
+
+Isolated homes recorded after the gate run on this branch.
+
+| gate | result |
+|---|---|
+| `rad version` | **PASS** v0.3.1 |
+| `python3 -m pytest -q` | recorded after gates |
+| `rad doctor --offline` | recorded after gates |
+| `rad acceptance` | recorded after gates |
+| `rad realworld` | recorded after gates (`live_nim` may BLOCKED) |
+| Live NIM | **BLOCKED** (no `NVIDIA_NIM_API_KEY` / `NVIDIA_API_KEY`) |
+| Needle default | **PASS** (`existing`) |
+| Caps | **PASS** `max_plan_tasks` 16; `Budget.tool_calls` 60 |
+| False DONE | **PASS** (scripted fallback after retries not VERIFIED) |
+
+## Remaining limitations
+
+1. Live NVIDIA NIM on 11B may still fail Class B (model / budget). This release retries a transient plan failure; it does not make 11B complete coding under tools=12.
+2. Default planner cap is **16**. Default tool budget is **60**. Default plan retries is **1**.
+3. Budget-aware planning is Gen2 theme 3 (later).
+
+## Roadmap pointer
+
+Operating spine: [ROADMAP.md](ROADMAP.md). **Generation 1 is complete** (v0.2.0–v0.2.3). **Generation 2 is in progress:** verified coding loop **v0.3.0**; plan-timeout resilience **v0.3.1**. Gen3–5 are not started.
+
+---
+
 # Cycle 6 — RW-065 live NIM retest of v0.3.0 + json_valid-on-.py (2026-09-18)
 
 **Date:** 2026-09-18
