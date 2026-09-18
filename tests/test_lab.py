@@ -5,6 +5,9 @@ from pathlib import Path
 
 import pytest
 
+from rad.control.observer import Observer
+from rad.control.tasks import Check
+from rad.control.verifier import Verifier
 from rad.lab import INJECTION_CANARY, Lab, Scenario, _run_grader, scenarios
 from rad.tools import ToolCtx, run_tool
 
@@ -131,6 +134,36 @@ def test_grader_accepts_verifier_style_json_field_and_shell_contains(tmp_path):
                                   "args": {"command": "echo ALL TESTS PASSED",
                                            "contains": "NOPE"}})
     assert not miss["ok"]
+
+
+def test_grader_json_valid_and_json_min_len_match_verifier(tmp_path):
+    """Independent lab graders must score advertised verifier Check kinds.
+
+    Class A (F-20260918-11): `json_valid` was `unknown grader`; `json_min_len`
+    required a JSON *list* while the verifier uses len() of list/dict/string.
+    Object reports the control plane VERIFIED then scored independent-fail.
+    """
+    (tmp_path / "obj.json").write_text('{"items": [1, 2, 3], "count": 3}')
+    (tmp_path / "arr.json").write_text("[1, 2, 3]")
+    (tmp_path / "bad.json").write_text("{not json")
+    ver = Verifier(tmp_path, Observer(tmp_path / "obs"))
+
+    def agree(kind, args):
+        g = _run_grader(tmp_path, {"kind": kind, "args": args})
+        v = ver.run_check(Check(kind=kind, args=args))
+        assert g["ok"] == v["ok"], (kind, args, g, v)
+        return g, v
+
+    g_valid, v_valid = agree("json_valid", {"path": "obj.json"})
+    assert g_valid["ok"] and v_valid["ok"]
+    g_bad, v_bad = agree("json_valid", {"path": "bad.json"})
+    assert not g_bad["ok"] and not v_bad["ok"]
+    g_obj, v_obj = agree("json_min_len", {"path": "obj.json", "n": 2})
+    assert g_obj["ok"] and v_obj["ok"], (g_obj, v_obj)
+    g_short, v_short = agree("json_min_len", {"path": "obj.json", "n": 99})
+    assert not g_short["ok"] and not v_short["ok"]
+    g_arr, v_arr = agree("json_min_len", {"path": "arr.json", "n": 3})
+    assert g_arr["ok"] and v_arr["ok"]
 
 
 def test_scenario_catalogue():
