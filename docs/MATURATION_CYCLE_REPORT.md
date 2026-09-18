@@ -107,18 +107,22 @@ for multi-file objectives.
 
 ## Quality gates (this branch)
 
-Docs-only. Isolated home `/tmp/rad-rw068-gate` if doctor/acceptance are run.
+Isolated homes `/tmp/rad-rw068-gate` (doctor, acceptance) and `/tmp/rad-rw068-rw` (realworld).
 
 | gate | result |
 |---|---|
-| Package | **0.3.2** — no bump |
-| Product code | **unchanged** |
-| Live NIM this patch | not re-run; RW-068/069 facts taken from the operator campaign |
+| `rad version` | **PASS** v0.3.2 |
+| `python3 -m pytest -q` | **PASS** 415 passed in 9.10s |
+| `rad doctor --offline` | **PASS** 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR, verdict READY, exit 0 |
+| `rad acceptance --area docs` | **PASS** 3/3 — `/tmp/rad-rw068-gate/acceptance/20260918-142903_gate.json` |
+| `rad acceptance` | **PASS** 50/50 — `/tmp/rad-rw068-gate/acceptance/20260918-142912_gate.json` |
+| `rad realworld` | **PASS** 10/11 + 1 BLOCKED — `/tmp/rad-rw068-rw/realworld/20260918-142913_realworld.json` |
+| Live NIM this patch | not re-run; RW-068/069 facts taken from the operator campaign. Suite `live_nim` **BLOCKED** (no keys here) |
 | Needle default | **PASS** (`existing`) |
 | Caps | **PASS** `max_plan_tasks` 16; `Budget.tool_calls` 60 |
-| False DONE | **PASS** (campaign 0; no DONE pollution files) |
-
-Gate commands actually run are recorded after they execute on this branch.
+| False DONE | **PASS** (campaign 0; suite `false_success` / `needs_user` / `no_loop`) |
+| Package | **0.3.2** — no bump |
+| Product code | **unchanged** |
 
 ## Roadmap pointer
 
