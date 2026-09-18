@@ -428,6 +428,69 @@ Same condition as F-20260918-07 / F-20260918-10 / F-20260918-12. Offline reconst
 | G | Proven architectural gap? | **NO** |
 | H | v0.3.0 justified? | **NO** |
 
+## Production use (post-Cycle 4) — 2026-09-18
+
+Operator production `rad objective run` on package **0.2.3**. Not a Cycle 4 Cloud Agent gate.
+Architecture frozen. Needle remains default-off. Planner cap left at 16. **No 0.2.x bump.**
+Not AGI. Not v0.3.0. Task log: `docs/REAL_WORLD_TASK_MATRIX.md` production rows RW-058a / RW-058.
+
+### F-20260918-14 — production text_analyzer with no brain
+
+| field | value |
+|---|---|
+| class | C |
+| status | **BLOCKED** |
+| found in | post-Cycle 4 production use (RW-058a), rad v0.2.3 |
+| fixed in | — not a RAD hole; same missing-brain family as F-20260918-08 / F-20260918-13 |
+| lane | live production `objective run` (no NVIDIA/other keys / no local engine) |
+| objective / test | `obj_442301c7` — production text_analyzer (earlier attempt) |
+| disk | workspace empty (no artifacts written) |
+| expected | escalate; do not fake `VERIFIED` / `DONE` |
+| actual | `MODEL_FAILURE`; status **BLOCKED**. Home `/tmp/rad_prod_text_analyzer_f3cc7950`. Tasks 7 planned / 1 attempted / 0 completed; tools 0/12. False DONE **0** |
+| notes | Production instance of the no-key / no-engine condition. Distinct from Cycle 4 F-20260918-13 (Cloud Agent gate, live lane not run) only as a recorded operator attempt that planned tasks then blocked. Class C closed for the follow-up live-NIM attempt (RW-058). |
+
+Reproduction (redacted):
+
+```
+RAD_HOME=/tmp/rad_prod_text_analyzer_f3cc7950  # rad v0.2.3; no NVIDIA/other keys; no local engine
+# MODEL_FAILURE; workspace empty; 7 planned / 1 attempted / 0 completed; tools 0/12
+```
+
+### F-20260918-15 — live 11B production text_analyzer incomplete layout
+
+| field | value |
+|---|---|
+| class | B |
+| status | documented (bounded mitigation only; user chose stop; no resume) |
+| found in | post-Cycle 4 production use (RW-058), rad v0.2.3, 2026-09-18 IST ~13:39–13:41 |
+| fixed in | — not a RAD hole; 11B limitation. Same family as F-20260918-04. **No v0.2.4.** |
+| lane | live NVIDIA NIM `meta/llama-3.2-11b-vision-instruct` (NIM key present) |
+| objective / test | `obj_4e219224` — create `text_analyzer/{analyzer.py,input.txt,summary.json,test_analyzer.py,README.md}`; exact 3-line input; stdlib; `--max-tasks 8 --max-tools 12` |
+| disk | `text_analyzer/input.txt` **PASS** sha256 `bf69eb737ca6f3949b5626701cb8472a2fc683e6b05e3101744eccd49dab629b`; `analyzer.py` computes counts; `test_analyzer.py` byte-identical to `analyzer.py` (0 tests); README present; `text_analyzer/summary.json` **MISSING**; workspace-root `summary.json` had correct counts `{lines:3,words:13,characters:76}` (wrong path); layout pollution at workspace root |
+| expected | required layout under `text_analyzer/`; success criteria met; `VERIFIED` only from machine checks |
+| actual | status `needs_user` / **FAIL** vs success criteria — **NOT DONE**, **not VERIFIED** complete. Plan 5 tasks; 1 attempted (verification FAILED, 2 attempts), 4 PENDING. Tools 12/12 exhausted; model calls 7/80; wall ~103s. Home `/tmp/rad_prod_text_analyzer_live_a787512c` |
+| notes | Tool spam / incomplete layout / duplicated "tests" / path confusion on 11B. **Not Class A**: RAD correctly stopped at the tool budget; false DONE **0**; verifier did not rubber-stamp. Bounded `--max-tasks 8 --max-tools 12`. Outcome A continues. Needle off. Cap 16 unchanged. No architecture change. |
+
+Reproduction (redacted):
+
+```
+RAD_HOME=/tmp/rad_prod_text_analyzer_live_a787512c  # rad v0.2.3; nvidia / meta/llama-3.2-11b-vision-instruct
+# --max-tasks 8 --max-tools 12
+# obj_4e219224 → needs_user; tools 12/12; text_analyzer/summary.json missing
+```
+
+| gate | result |
+|---|---|
+| Package | **0.2.3** — no bump; **no v0.2.4** |
+| Class A | **none** |
+| Class B | **F-20260918-15** (RW-058) live 11B production incompleteness |
+| Class C | **F-20260918-14** (RW-058a) no-brain `MODEL_FAILURE`; Class C closed for RW-058 |
+| False completion | **0** |
+| Needle | default `existing`; **NOT** turned on |
+| `max_plan_tasks` | **16** unchanged (run used `--max-tasks 8`) |
+| Evidence for v0.3.0 | **none** |
+| Recommendation | **Outcome A — continue 0.2.x** |
+
 ## How to add a finding
 
 1. Reproduce with disk checks (file exists / hash / contents). Quote status + verification, not model prose.
