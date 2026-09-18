@@ -208,8 +208,19 @@ def test_http_requires_token_and_serves(home, server):
     with pytest.raises(urllib.error.HTTPError) as ei:
         urllib.request.urlopen(req, timeout=5)
     assert ei.value.code == 400
-    log = (home.root / "logs" / "api.jsonl").read_text().splitlines()
-    assert len(log) >= 6 and all("body" not in json.loads(l) for l in log)
+    # the request log is written per request; give the server a moment under load
+    import time as _t
+    log: list = []
+    for _ in range(40):
+        try:
+            log = (home.root / "logs" / "api.jsonl").read_text().splitlines()
+        except FileNotFoundError:
+            log = []
+        if len(log) >= 6:
+            break
+        _t.sleep(0.05)
+    assert len(log) >= 6, f"expected every request to be logged, got {len(log)}"
+    assert all("body" not in json.loads(l) for l in log)
     assert oct((home.root / "api.token").stat().st_mode & 0o777) == "0o600"
     from rad.api import token_for
     new = token_for(home, rotate=True)
