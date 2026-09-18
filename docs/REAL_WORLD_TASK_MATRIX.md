@@ -8,7 +8,7 @@ check (file exists / contents / hash). A model `DONE:` line is never enough.
 
 Status vocabulary: **PASS** | **FAIL** | **BLOCKED** | **NOT TESTED**.
 
-Cycle 3 (package **0.2.3**) is at the bottom. Cycle 2 (package **0.2.2**) follows.
+Cycle 4 (package **0.2.3**, no bump) is at the bottom. Cycle 3 and Cycle 2 follow.
 
 # Cycle 2 (post-v0.2.1 → package **0.2.2**)
 
@@ -125,3 +125,67 @@ Sequential inventory SKU `write_file` through the real control plane. Disk-verif
 | 20 sequential *planned tasks* at default cap | **FAILED** at 16 (RW-034) — documented limit |
 | Live NIM | **BLOCKED** |
 | Needle | **NOT TESTED** as default (stays `existing` / off) |
+
+---
+
+# Cycle 4 (post-v0.2.3 release verification → package **0.2.3**, no bump)
+
+Lane: Cloud Agent VM, **no** `NVIDIA_NIM_API_KEY` / `NVIDIA_API_KEY`.
+Baseline: `origin/main` `d121c3f8875cb01e816bb5f7df66e62ee26e1eba` (Merge PR #9 / GitHub Release `v0.2.3`).
+**Release: PASS** — tag `v0.2.3` peels to that SHA; `pyproject.toml` / `rad.__version__` = `0.2.3`; release URL live. Not re-cut. Not retagged. Not v0.3.0.
+Needle stays experimental / off. Planner cap left at **16**.
+
+Evidence: `/tmp/rad-c4-evidence/campaign.json`. Control-plane verifier **and** a disk check for every `VERIFIED` cell.
+
+## Production campaign (genuine useful work)
+
+| id | Date | Category | Objective | #tasks | #actions | Tools | Result | Verification | Recovery | Failure class | Notes |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| RW-040 | 2026-09-18 | coding | `pkg/tally.py` `tally_by_sku` + `tests/check_tally.py` | 2 | 2 | write_file, run_shell | **PASS** | VERIFIED | none | — | `pkg/tally.py` sha256 `5e3aedff9a7dec82`; tests hash `aae8b0ad78917a3d` unchanged; stdout `ALL TESTS PASSED` |
+| RW-041 | 2026-09-18 | research | two warehouse counts → `stock.json` with sourced on-hand conflict | 2 | 3 | read_file, run_shell | **PASS** | VERIFIED | none | — | `stock.json` sha256 `14911ec4fb461f3c`; both 120 and 87 sourced; `conflicts` present; `json_valid` / `json_min_len` graders `ok` |
+| RW-042 | 2026-09-18 | filesystem | sort `inbox/` into `archive/notes/` + `archive/tables/` + manifest; jail | 2 | 3 | run_shell, write_file | **PASS** | VERIFIED | none | — | `archive/manifest.txt` sha256 `bdd78a6b815e36e1`; `../escape.txt` absent |
+| RW-043 | 2026-09-18 | multi-step | `access.log` → `status.json` (errors=3) → `digest.md` | 2 | 3 | read_file, run_shell | **PASS** | VERIFIED | none | — | `status.json` sha256 `bbbaa1a0d9ee991c`; `digest.md` sha256 `3a443b870c3810dd` |
+| RW-044 | 2026-09-18 | recovery | write `config/limits.json` with injected `write_file` fault | 1 | 2 | write_file | **PASS** | VERIFIED | 1 tool error, 2 recoveries | — | sha256 `f96a9e62d8b15f53`; retry-aware script; graders `ok` |
+| RW-045 | 2026-09-18 | recovery | `DONE:` without writing `receipt.txt` | 1 | 0 | (none) | **PASS** | (not VERIFIED) | retry then escalate | — | status `needs_user`; file **absent** |
+| RW-046 | 2026-09-18 | recovery | crash after `stage/s1.txt`, restore, resume s2–s3 | 3 | crash+resume | write_file | **PASS** | VERIFIED | checkpoint restore | — | hashes `5509d3b83b2db7d3` / `a652f5bf7a9c5936` / `6153dd17d3a9573f` |
+| RW-047 | 2026-09-18 | live NIM | live `objective run` | 0 | 0 | — | **BLOCKED** | — | — | **C** | both NVIDIA env vars absent |
+| RW-048 | 2026-09-18 | needle | default router | 0 | 0 | — | **PASS** | n/a | — | — | `RAD_TOOL_ROUTER` unset; `resolve_tool_router` = `existing`. Router **NOT TESTED** |
+| RW-057 | 2026-09-18 | coding | lab grader vs verifier parity on advertised disk check kinds | 0 | 0 | — | **PASS** | n/a | — | — | `file_exists` / `file_min_bytes` / `file_contains` / `json_*` / `shell_*` all agree. No new Class A |
+
+## Action ramp (1 → 3 → 5 → 10 → 20)
+
+Sequential lot-SKU `write_file` through the real control plane. Disk-verified each index file.
+
+| id | Date | Category | Objective | #tasks | #actions | Tools | Result | Verification | Recovery | Failure class | Notes |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| RW-049 | 2026-09-18 | multi-step | 1 lot file | 1 | 1 | write_file | **PASS** | VERIFIED | none | — | `lot/l01.txt` sha256 `589763d29bd18d85` |
+| RW-050 | 2026-09-18 | multi-step | 3 lot files | 3 | 3 | write_file | **PASS** | VERIFIED | none | — | `lot/l03.txt` sha256 `ff2178359cc8e165` |
+| RW-051 | 2026-09-18 | multi-step | 5 lot files | 5 | 5 | write_file | **PASS** | VERIFIED | none | — | `lot/l05.txt` sha256 `77a02b0c67fbd5ac` |
+| RW-052 | 2026-09-18 | multi-step | 10 lot files | 10 | 10 | write_file | **PASS** | VERIFIED | none | — | `lot/l10.txt` sha256 `d8434e146b2020bb` |
+| RW-053 | 2026-09-18 | filesystem | 20 writes in **one** planned task | 1 | 20 | write_file | **PASS** | VERIFIED | none | — | 20/20; `lot/l20.txt` sha256 `94b5d8fbf6758812` |
+| RW-054 | 2026-09-18 | multi-step | 20 **planned tasks** / 20 writes | 16 | 16 | write_file | **FAIL** (expected cap) | FAILED | none | — | 16/20 files (`l01`–`l16`); `l17`–`l20` absent. `max_plan_tasks` default **16**. Not raised |
+
+## `max_plan_tasks=16` evidence-test
+
+| id | Date | Category | Objective | #tasks | #actions | Tools | Result | Verification | Recovery | Failure class | Notes |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| RW-055 | 2026-09-18 | multi-step | 16-bin warehouse labels (exactly the cap) | 16 | 16 | write_file | **PASS** | VERIFIED | none | — | 16/16; `bins/b16.txt` sha256 `201ffddc49fb2261`. Cap is **not** a blocker at exactly 16 |
+| RW-056 | 2026-09-18 | multi-step | 17-bin warehouse labels (one past the cap) | 16 | 16 | write_file | **FAIL** (expected cap) | FAILED | none | — | 16/17; `bins/b17.txt` **absent**. Planner silently kept `items[:16]`. Useful work blocked only as one-file-per-task; bundling (RW-053) writes 20 files under 1 task |
+
+Cap hit this cycle: **2/18** campaign rows (RW-054, RW-056). Coding / research / filesystem / multi-step / recovery used 1–3 tasks and never hit it. Decision: **leave at 16**. See Cycle 4 report.
+
+## Cycle 4 metrics (honest)
+
+| metric | value |
+|---|---|
+| GitHub Release `v0.2.3` | **PASS** (already live on `d121c3f`; not re-cut) |
+| Suite runnable PASS | 10/10 (plus 1 BLOCKED live NIM) |
+| Campaign PASS / FAIL / BLOCKED | **15 / 2 / 1** (the FAILs are RW-054 and RW-056 expected cap) |
+| False completion (VERIFIED without the artifact) | **0** |
+| New Class A | **none** — grader/verifier advertised disk kinds still agree (RW-057) |
+| 20 sequential *actions* | **VERIFIED** (RW-053) |
+| 16 sequential planned tasks | **VERIFIED** (RW-055) |
+| 17 / 20 sequential planned tasks at default cap | **FAILED** at 16 (RW-056 / RW-054) — documented limit |
+| Live NIM | **BLOCKED** |
+| Needle | **NOT TESTED** as default (stays `existing` / off) |
+| Package / architecture | **0.2.3** frozen; **not v0.3.0** |
