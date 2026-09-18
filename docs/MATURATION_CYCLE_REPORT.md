@@ -106,11 +106,11 @@ Isolated homes `/tmp/rad-v045-gate` (doctor, acceptance) and `/tmp/rad-v045-rw` 
 
 | gate | result |
 |------|--------|
-| `rad version` | **pending** |
-| `python3 -m pytest -q` | **pending** |
-| `rad doctor --offline` | **pending** |
-| `rad acceptance` | **pending** |
-| `rad realworld` | **pending** |
+| `rad version` | **PASS** v0.4.5 |
+| `python3 -m pytest -q` | **PASS** 500 passed in 10.64s |
+| `rad doctor --offline` | **PASS** 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR, verdict READY, exit 0 |
+| `rad acceptance` | **PASS** 50/50 — `/tmp/rad-v045-gate/acceptance/20260918-165029_gate.json` |
+| `rad realworld` | **PASS** 10/11 + 1 BLOCKED — `/tmp/rad-v045-rw/realworld/20260918-165030_realworld.json` |
 | Needle default | **PASS** (`existing`) — asserted in tests |
 | Caps | **PASS** `max_plan_tasks` 16; `Budget.tool_calls` 60 — asserted in tests |
 | False DONE | **PASS** (scripted 0) — asserted in tests |

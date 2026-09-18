@@ -1643,10 +1643,10 @@ python3 -m pytest -q tests/test_premature_test_env.py
 
 | gate | result |
 |---|---|
-| `python3 -m pytest -q` | **pending this branch** |
-| `rad doctor --offline` | **pending this branch** |
-| `rad acceptance` | **pending this branch** |
-| `rad realworld` | **pending this branch** |
+| `python3 -m pytest -q` | **500 passed** in 10.64s |
+| `rad doctor --offline` | READY — 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR (`RAD_HOME=/tmp/rad-v045-gate`) |
+| `rad acceptance` | **50/50 PASSED** (`/tmp/rad-v045-gate/acceptance/20260918-165029_gate.json`) |
+| `rad realworld` | **10 passed / 1 BLOCKED / 0 failed** (`live_nim` BLOCKED; `/tmp/rad-v045-rw/realworld/20260918-165030_realworld.json`) |
 | Package | **0.4.5** |
 | RW-058–079 | preserved |
 | 16-task cap | **UNCHANGED** |
