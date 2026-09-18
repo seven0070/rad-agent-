@@ -1467,10 +1467,10 @@ python3 -m pytest -q tests/test_first_task_thrash.py
 
 | gate | result |
 |---|---|
-| `python3 -m pytest -q` | *(recorded after gates)* |
-| `rad doctor --offline` | *(recorded after gates)* |
-| `rad acceptance` | *(recorded after gates)* |
-| `rad realworld` | *(recorded after gates)* |
+| `python3 -m pytest -q` | **472 passed** in 11.30s |
+| `rad doctor --offline` | READY — 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR (`RAD_HOME=/tmp/rad-v043-gate`) |
+| `rad acceptance` | **50/50 PASSED** (`/tmp/rad-v043-gate/acceptance/20260918-160450_gate.json`) |
+| `rad realworld` | **10 passed / 1 BLOCKED / 0 failed** (`live_nim` BLOCKED; `/tmp/rad-v043-rw/realworld/20260918-160457_realworld.json`) |
 | Package | **0.4.3** |
 | RW-058–075 | preserved |
 | 16-task cap | **UNCHANGED** |
