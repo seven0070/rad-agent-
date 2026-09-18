@@ -6,6 +6,130 @@ Default `Budget.tool_calls` remains **60**.
 
 ---
 
+# Cycle 13 — RW-075 live v0.4.2 retest + Gen3 theme 3 slice B first-task thrash / v0.4.3 (2026-09-18)
+
+**Date:** 2026-09-18
+**Baseline:** `origin/main` `feb8a4ec` (tag **v0.4.2**, package **0.4.2**)
+**Package at start:** `0.4.2`
+**This branch:** `cursor/rw075-first-task-thrash-3a1c` — package **0.4.3**
+**Architecture:** control plane preserved. Needle stays off. Caps unchanged.
+RW-058–074 are **not rewritten**. F-17 / F-18 / F-21 / F-26 stay closed.
+
+## Part A — live use (RW-075)
+
+Live NVIDIA NIM 11B text_analyzer on v0.4.2 (`obj_476d5f0e`, home
+`/tmp/rad_prod_rw075_c2d7abdd`, `--max-tasks 8 --max-tools 12`, Needle off).
+Authoritative facts from the operator report. This agent did not re-run NIM.
+
+| item | value |
+|------|--------|
+| Verdict | **FAIL** — `needs_user` (tools 12/12). **Not** E2E PASS |
+| vs RW-073 | Theme 1 **Y** (disk/tasks **and** obj-checks package-joined; no root pollution). Theme 2 **Y**. Same Class B stop. Recovery flipped PERMISSION → ENVIRONMENT (pip) |
+| Disk | 3-line `input.txt` sha256 `bf69eb73…`; package `summary.json` **missing**; tests wrong oracles (`words==6` / `characters==31` vs 13 / 76) |
+| Repair | ENVIRONMENT → Repair prerequisite (4× `pip install -r` missing `requirements.txt`); then TOOL unknown `DONE:`. Budget gone before analyzer/summary tasks |
+| False DONE | **0** |
+| Class | **B** residual (11B/budget). ASCII-tree obj-check join **live-confirmed**. First-task pip/DONE is Class A (Part C) |
+
+## Part B — investigate-first (first-task thrash)
+
+Question: should missing `requirements.txt` from `pip install -r` be
+ENVIRONMENT “missing dependency” repair, and should an invented tool named
+`DONE` fail a task whose machine checks already passed?
+
+| probe | result |
+|---|---|
+| `pip install -r text_analyzer/requirements.txt` file-not-found | Pre-patch: `_ENV` matches `No such file` → ENVIRONMENT → Repair prerequisite. Same family as RW-071 mkdir already-exists |
+| Genuine `command not found` / `ModuleNotFoundError` | Still ENVIRONMENT (F-18). Must stay |
+| mkdir already-exists mixed noise | Still **not** ENVIRONMENT (v0.4.1) |
+| `cat: summary.json: No such file` | Still ENVIRONMENT (F-18 designed path) |
+| Unknown tool `DONE` / `DONE: …` | Already errors (`unknown tool`); false DONE **0**. Pre-patch: actions check fails even when `file_line_count` passed → first task FAILED → later tasks starve |
+| Live RW-075 remaining | missing `summary.json`, weak tests, tools 12/12 — **Class B** residual |
+
+**Class A confirmed** for first-task thrash. RAD should not treat
+stdlib-only pip-missing-requirements as an environment prerequisite, and
+should not fail a check-passing task on a protocol DONE tool. Live 11B
+quality stays Class B. Prompt-only 11B quality is **not** the patch.
+Multi-step checkpoint stays planned.
+
+## Part C — product (slice B)
+
+Smallest recovery/verifier patch: skip ENVIRONMENT when pip could not open
+the requirements file; ignore invented DONE tools and pip-requirements noise
+on the actions check so explicit file/json/shell checks can still VERIFIED.
+PLAN_PROMPT: no pip-requirements for stdlib-only; DONE is not a tool.
+Check *kinds* unchanged (F-26). Fallback *tasks* stay check-less (F-17).
+Label: **Gen3 theme 3 slice B**.
+
+Does **not** raise `Budget.tool_calls` (60) or `max_plan_tasks` (16). Does
+**not** claim live 11B text_analyzer@12 now PASS.
+
+## What changed
+
+- Product: `rad/control/codingloop.py`, `rad/control/recovery.py`,
+  `rad/control/verifier.py`, `rad/control/planner.py`, `rad/tools.py`
+- Tests: `tests/test_first_task_thrash.py`
+- Docs: ROADMAP Gen3 theme 3 slice B **implemented**; ledger F-37 / F-38;
+  matrix RW-075 / RW-076; this cycle
+- Package **0.4.2 → 0.4.3**
+
+## What did not change
+
+- Needle default `existing` / off
+- `max_plan_tasks` default **16**
+- `Budget.tool_calls` default **60**
+- False completion remains **0**
+- RW-058–074 ledger/matrix rows
+- Control plane shape PLAN→PERMISSION→BUDGET→EXECUTE→OBSERVE→VERIFY→RECOVER
+- F-17 / F-18 / F-21 / F-26 closed; A1 budget→needs_user **not reopened**
+- Live 11B text_analyzer **not** claimed PASS
+- Path-aligned checks (v0.4.0), multi-file contracts (v0.4.1), ASCII-tree
+  package_dir (v0.4.2) preserved
+- Multi-step checkpoint **not** built
+
+## Class A / B / C (this cycle)
+
+| class | this record |
+|---|---|
+| **A** | **F-20260918-38** — first-task thrash (pip-missing-requirements ENVIRONMENT + DONE-as-tool). Patched. |
+| **B** | **F-20260918-37** — RW-075 live 11B incompleteness (missing summary.json, weak tests, tools=12). |
+| **C** | none proven. `live_nim` may BLOCKED. |
+
+## Quality gates (this branch)
+
+Isolated homes `/tmp/rad-v043-gate` (doctor, acceptance) and `/tmp/rad-v043-rw` (realworld).
+
+| gate | result |
+|------|--------|
+| `rad version` | **PASS** v0.4.3 |
+| `python3 -m pytest -q` | **PASS** 472 passed in 11.30s |
+| `rad doctor --offline` | **PASS** 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR, verdict READY, exit 0 |
+| `rad acceptance` | **PASS** 50/50 — `/tmp/rad-v043-gate/acceptance/20260918-160450_gate.json` |
+| `rad realworld` | **PASS** 10/11 + 1 BLOCKED — `/tmp/rad-v043-rw/realworld/20260918-160457_realworld.json` |
+| Needle default | **PASS** (`existing`) — asserted in tests |
+| Caps | **PASS** `max_plan_tasks` 16; `Budget.tool_calls` 60 — asserted in tests |
+| False DONE | **PASS** (scripted 0) — asserted in tests |
+| Package | **0.4.3** |
+| Live NIM this patch | not re-run; RW-075 facts from the operator report. Suite `live_nim` **BLOCKED** (no keys here) |
+
+## Remaining limitations
+
+1. Live NVIDIA NIM on 11B may still fail Class B (model / budget) on
+   text_analyzer@12. This release stops first-task pip/DONE thrash; it does
+   not make 11B complete the package under tools=12.
+2. Default planner cap is **16**. Default tool budget is **60**.
+3. Multi-step checkpoint remains a Gen3 theme 3 planned slice (not this patch).
+
+## Roadmap pointer
+
+Operating spine: [ROADMAP.md](ROADMAP.md). **Generation 1 is complete**
+(v0.2.0–v0.2.3). **Generation 2 is complete** (v0.3.0–v0.3.2). **Generation 3
+is in progress:** path-aligned checks **v0.4.0** (used RW-071 / RW-073 /
+RW-075); multi-file contracts **v0.4.1** (used RW-073 / RW-075); theme 3
+**planned / scoped**, slice A **v0.4.2** (used RW-075), slice B **implemented
+as v0.4.3**. Gen4–5 are not started.
+
+---
+
 # Cycle 12 — RW-073 live v0.4.1 retest + Gen3 theme 3 scoped + ASCII-tree package_dir / v0.4.2 (2026-09-18)
 
 **Date:** 2026-09-18

@@ -18,7 +18,11 @@ import subprocess
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
-from rad.control.codingloop import is_done_pollution_content, is_done_pollution_path
+from rad.control.codingloop import (
+    is_done_pollution_content,
+    is_done_pollution_path,
+    is_first_task_thrash_noise,
+)
 from rad.control.observer import Observation, Observer
 from rad.control.tasks import Check, Task
 
@@ -47,8 +51,17 @@ class Verifier:
         attempt_obs = [o for o in obs if o.at >= (task.started or 0)]
         errors = [o for o in attempt_obs if o.status == "error"]
         blocked = [o for o in attempt_obs if o.status in ("blocked", "declined")]
+        # RW-075: invented DONE tools and pip -r missing requirements.txt are
+        # approach noise. They still record as errors (budget/honesty) but must
+        # not fail a task whose explicit machine checks can still pass.
+        contract_errors = [
+            o for o in errors
+            if not is_first_task_thrash_noise(
+                o.tool, o.output or "", str((o.args or {}).get("command", "")),
+            )
+        ]
         results.append({"level": "tool", "kind": "actions",
-                        "ok": not errors,
+                        "ok": not contract_errors,
                         "detail": f"{len(attempt_obs)} actions, {len(errors)} errors, {len(blocked)} blocked/declined"})
 
         # level 2 — explicit checks

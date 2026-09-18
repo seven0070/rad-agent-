@@ -12,16 +12,80 @@ NIM retest of v0.4.0 is **RW-071** (FAIL; theme 1 live-confirmed). Multi-file
 contracts under tight budgets are **implemented as v0.4.1** (RW-072). Live
 NIM retest of v0.4.1 is **RW-073** (FAIL; theme 1/2 live-confirmed; ASCII-tree
 obj-checks bare). ASCII-tree `package_dir` is **implemented as v0.4.2**
-(RW-074; theme-1 follow-up / Gen3 theme 3 slice A). Do not rewrite
-RW-058–072. Scripted theme-2 RW-066 (F-27) is preserved.
+(RW-074; theme-1 follow-up / Gen3 theme 3 slice A). Live NIM retest of v0.4.2
+is **RW-075** (FAIL; ASCII-tree obj-checks **package-joined** live-confirmed).
+First-task thrash is **implemented as v0.4.3** (RW-076; Gen3 theme 3 slice B).
+Do not rewrite RW-058–074. Scripted theme-2 RW-066 (F-27) is preserved.
 
 Every `VERIFIED` / `completed` cell is from the control-plane verifier **and** a disk
 check (file exists / contents / hash). A model `DONE:` line is never enough.
 
 Status vocabulary: **PASS** | **FAIL** | **BLOCKED** | **NOT TESTED**.
 
-Live NIM retest of v0.4.1 (RW-073) is at the top, then scripted v0.4.2
-(RW-074), then RW-071 / RW-072. RW-058–072 are **not rewritten**.
+Live NIM retest of v0.4.2 (RW-075) is at the top, then scripted v0.4.3
+(RW-076), then RW-073 / RW-074. RW-058–074 are **not rewritten**.
+
+# Live NIM retest of v0.4.2 (RW-075)
+
+Lane: operator production `rad objective run` on **v0.4.2** (tag `v0.4.2`,
+`feb8a4ec`). Needle `existing` / off. `max_plan_tasks` **16**. Default
+`Budget.tool_calls` **60** (this run used `--max-tasks 8 --max-tools 12`).
+RW-058–074 are **not rewritten**. **Not** an end-to-end PASS. Package **0.4.2**
+on the live run; this change bumps to **0.4.3** for first-task thrash
+(does **not** claim live 11B text_analyzer@12 now PASS).
+
+Authoritative live facts: operator report for `obj_476d5f0e` /
+`/tmp/rad_prod_rw075_c2d7abdd`.
+
+| id | Date | Category | Objective | #tasks | #actions | Tools | Result | Verification | Recovery | Failure class | Notes |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| RW-075 | 2026-09-18 IST 21:20:12–21:21:38 | coding (live NIM) — v0.4.2 text_analyzer retest vs RW-073 | production ASCII-tree `text_analyzer/` layout (analyzer.py, **exact 3-line** input.txt, summary.json, test_analyzer.py, README.md); stdlib; real tests; `--max-tasks 8 --max-tools 12`; Needle `existing` / off | `PLAN_CREATED` **source=llm** **attempts=1** (4 tasks, `fit=true`, `compacted=false`, `estimated_tools=8`); first task RETRYING (waiting on repair); analyzer/tests PENDING; README COMPLETED; repair RUNNING at stop | tools 12/12 (`write_file`×6, `run_shell`×4 pip fails, fake `DONE`×2); model calls 12/80; retries 2/6; wall ~87s / spent ≈53.6s; process exit 2 | 12/12 exhausted | **FAIL** vs success criteria (`needs_user`); **NOT DONE**, **not VERIFIED** complete | First task machine checks **passed** (`file_line_count` + `file_contains` under `text_analyzer/`); overall FAILED on **actions** (4 shell errors, then fake `DONE` tool errors on repair). Objective checks **all package-joined** under `text_analyzer/` (8 checks; 0 bare) | Attempt 1 **ENVIRONMENT_FAILURE** → `repair` (4× `pip install -r …requirements.txt` file-not-found → “missing dependency/file”). Attempt 2 **TOOL_FAILURE** → `retry_with_hint` (unknown tool `DONE: …`) | **B** residual (11B/budget / first-task thrash). Theme 1 ASCII-tree obj-checks **Y** (Class A **live-confirmed**). Theme 2 **Y**. New/residual ENVIRONMENT misclass on missing `requirements.txt` is Class A (F-38 / v0.4.3) | Provider nvidia / `meta/llama-3.2-11b-vision-instruct`. Home `/tmp/rad_prod_rw075_c2d7abdd`; `obj_476d5f0e`. Disk: workspace root **only** `text_analyzer/` (no root pollution). `input.txt` **PASS** 3-line sha256 `bf69eb737ca6f3949b5626701cb8472a2fc683e6b05e3101744eccd49dab629b`. Package `summary.json` **missing**. `analyzer.py` stdlib. `test_analyzer.py` unittest **wrong oracles** (`words==6` / `characters==31` vs 13 / 76). README 247 B. False DONE **0**. Caps unchanged. Needle OFF. |
+
+### RW-075 vs RW-073 (same 11B / tools=12 control)
+
+| | RW-073 (v0.4.1) | RW-075 (v0.4.2) |
+|---|---|---|
+| home | `/tmp/rad_prod_rw073_46da6971` | `/tmp/rad_prod_rw075_c2d7abdd` |
+| objective id | `obj_d8bd898a` | `obj_476d5f0e` |
+| package | 0.4.1 | **0.4.2** |
+| `--max-tasks` / `--max-tools` | 8 / 12 | 8 / 12 |
+| Needle | `existing` / off | `existing` / off |
+| PLAN source | **llm** attempts **2** (4 tasks) | **llm** attempts **1** (**4 tasks**) |
+| Path-alignment (disk/tasks) | **Y** | **Y** |
+| Objective checks | contracts merged but inferred paths **bare** | **all package-joined** `text_analyzer/…` (0 bare) |
+| mkdir / ENVIRONMENT thrash | **N** — PERMISSION after `rm -rf` block | **Y** — ENVIRONMENT on pip/`requirements.txt` → Repair prerequisite |
+| Root pollution | NO | NO |
+| `input.txt` | correct 3-line `bf69eb73…` | **same** correct 3-line `bf69eb73…` |
+| Package `summary.json` | missing | **missing** |
+| tools | 12/12 | 12/12 |
+| false DONE | **0** | **0** |
+| Theme 1 | PASS signal (disk/tasks); obj-checks bare | **PASS signal (disk/tasks/obj-checks)** |
+| Theme 2 | contracts + mkdir-class **live** | contracts hold; pip ENVIRONMENT is a new misclass |
+| Residual class | B | **B** (+ pip ENVIRONMENT Class A → v0.4.3) |
+
+| metric | value |
+|---|---|
+| Package (live run) | **0.4.2** (tag `v0.4.2` / `feb8a4ec`) |
+| Theme 1 (path-aligned checks) | **Y** on disk + task checks **and** merged objective_checks (ASCII-tree `package_dir` **live-confirmed**) |
+| Theme 2 (multi-file contracts) | **Y** — `json_valid` / `file_line_count` / `shell_ok` package-joined; correct 3-line input |
+| Residual | **Class B** — missing `summary.json`, weak tests, tools 12/12 on pip + fake `DONE` before later package tasks |
+| Class A ASCII-tree package_dir | **live-confirmed** (bare residual **closed**). Did **not** cause this live stop (budget cut before objective gate) |
+| Class A first-task thrash | **confirmed** (deterministic); patched as v0.4.3. pip-missing-requirements was ENVIRONMENT repair; DONE-as-tool failed a check-passing task |
+| RW-058–074 | preserved (not rewritten) |
+| Default max-tools / max-tasks | **unchanged** (this run used `--max-tasks 8 --max-tools 12` only) |
+| Needle | **OFF** (`existing`) |
+| False completion | **0** |
+| Recommendation | Record **FAIL**. ASCII-tree join **holds**. Do not claim live 11B@12 PASS. Theme 3 slice B ships as v0.4.3 (first-task thrash). Multi-step checkpoint stays planned. |
+
+# Gen3 — v0.4.3 first-task thrash (RW-076)
+
+Lane: deterministic / scripted on **v0.4.3**. Needle `existing` / off.
+`max_plan_tasks` **16**. Default `Budget.tool_calls` **60**. RW-058–075 are
+**not rewritten**. Package **0.4.2 → 0.4.3**. Live NIM not re-run.
+
+| id | Date | Category | Objective | #tasks | #actions | Tools | Result | Verification | Recovery | Failure class | Notes |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| RW-076 | 2026-09-18 | coding (scripted) — first-task thrash | RW-075 shape: ASCII-tree `text_analyzer/`; first task writes 3-line `input.txt` then `pip install -r` missing requirements + unknown tool `DONE:`; later task writes `analyzer.py` | 2 planned (LLM) | write input + pip fail + DONE tool, then write analyzer | default **60** unchanged | **PASS** (pip-missing-requirements **not** ENVIRONMENT; no Repair prerequisite; first task VERIFIED from file checks; later task runs; missing-artifact DONE is **not** VERIFIED) | first-task file checks **VERIFIED** despite pip/DONE noise; objective not rubber-stamped when files absent; no workspace-root pollution | pip -r missing file → TOOL/VALIDATION **not** Repair prerequisite; invented DONE is protocol noise when checks passed | **A** (Gen3 theme 3 slice B; live 11B quality stays **B**) | Tests `test_first_task_thrash_*`. False DONE **0**. F-17 / F-26 preserved. Path-aligned, multifile, ASCII-tree preserved. Needle OFF. Caps unchanged. Live NIM not required. RW-075 Class B live facts preserved. |
 
 # Live NIM retest of v0.4.1 (RW-073)
 

@@ -24,7 +24,7 @@ from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-from rad.control.codingloop import is_done_pollution_path
+from rad.control.codingloop import is_done_pollution_path, is_done_protocol_tool
 from rad.home import RadHome
 from rad.ui import col
 
@@ -676,6 +676,9 @@ def _run_tool(name: str, args: Dict[str, Any], ctx: ToolCtx) -> str:
                 _gate(ctx, cap, res, f"  mcp {name}({json.dumps(args)[:120]}) [{cap}]", tool=name)
             return ctx.mcp_call(skill, tool, args)
 
+        if is_done_protocol_tool(name):
+            return (f"unknown tool: {name} — DONE is not a tool. "
+                    "Write remaining files with write_file, then reply with DONE: <what you did>.")
         return f"unknown tool: {name}"
 
 
