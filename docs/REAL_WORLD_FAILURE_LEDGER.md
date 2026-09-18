@@ -526,31 +526,31 @@ RAD_HOME=/tmp/rad_prod_rw059_b48e7b56  # rad v0.2.3; nvidia / meta/llama-3.2-11b
 
 | field | value |
 |---|---|
-| class | A (suspected; **not confirmed**) |
-| status | **open / investigate** — do **not** claim fixed |
+| class | A (suspected; **not confirmed** — investigated) |
+| status | **investigated / not Class A** — do **not** claim a product fix; no patch |
 | found in | post-Cycle 4 production use (RW-059 investigation candidates), rad v0.2.3 |
-| fixed in | — **not patched this PR.** No v0.2.4 unless a later confirmed Class A fix |
-| lane | live production `objective run` (planner path) |
-| objective / test | production text_analyzer multiline objective (RW-058 / RW-059) |
+| fixed in | — **not a defect.** No patch. No v0.2.4. See F-20260918-21 |
+| lane | live production `objective run` (planner path) + deterministic planner unit tests |
+| objective / test | production text_analyzer multiline objective (RW-058 / RW-059); `test_fallback_planner_does_not_split_on_newlines` |
 | disk | n/a — suspected planning defect, not a disk-hash finding |
 | expected | one coherent plan for a single multiline objective; no spurious tasks from newline wrapping |
-| actual | suspected: fallback planner splitting multiline objective newlines into spurious tasks, burning plan/tool budget |
-| notes | Investigation item only. Do not treat this row as a proven Class A or as a shipped fix. Architecture frozen until a confirmed reproduction + smallest patch. |
+| actual | **Not reproduced.** `Planner._fallback` splits on clause markers (`and then` / `then` / `;` / `, and` / period+space), **not** on newlines. A production-shaped multiline goal with required-file bullets is **one** fallback task. RW-058/059/060 had a live brain, so the planner source is **llm** (5 planned tasks on RW-058), not fallback. |
+| notes | Parked suspect closed by investigation. Clause-marker split remains by design (`test_planner_fallback_without_brain`). Not a lifecycle or budget-boundary defect. |
 
 ### F-20260918-18 — suspected ENVIRONMENT_FAILURE misclassification burns tool budget
 
 | field | value |
 |---|---|
-| class | A (suspected; **not confirmed**) |
-| status | **open / investigate** — do **not** claim fixed |
+| class | A (suspected; **not confirmed** — investigated) |
+| status | **investigated / not Class A** — do **not** claim a product fix; no patch |
 | found in | post-Cycle 4 production use (RW-059 investigation candidates), rad v0.2.3 |
-| fixed in | — **not patched this PR.** No v0.2.4 unless a later confirmed Class A fix |
-| lane | live production `objective run` (recovery classify) |
-| objective / test | production text_analyzer (RW-058 / RW-059) |
+| fixed in | — **not a defect.** No patch. No v0.2.4. See F-20260918-21 |
+| lane | live production `objective run` (recovery classify) + deterministic classify/recovery tests |
+| objective / test | production text_analyzer (RW-058 / RW-059); `test_failed_checks_without_env_output_are_validation_not_environment` |
 | disk | n/a — suspected recovery-classification defect, not a disk-hash finding |
 | expected | missing/failed work classified so recovery does not spend the tool budget on mis-tagged environment repairs |
-| actual | suspected: recovery `ENVIRONMENT_FAILURE` misclassification burning tool budget (retry/repair loops) |
-| notes | Investigation item only. Both RW-058 and RW-059 exhausted `--max-tools`. Do not treat this row as a proven Class A or as a shipped fix. Architecture frozen until a confirmed reproduction + smallest patch. |
+| actual | **Not reproduced as a lifecycle defect.** Failed checks with no env-token in observations classify **VALIDATION** or **TOOL** → `retry_with_hint`, not repair. RW-058 shape (verification FAILED, 2 attempts, 4 PENDING, no extra repair task) matches VALIDATION retry. RW-059 `13!=6` / invalid JSON is VALIDATION/TOOL. Genuine `command not found` is ENVIRONMENT → one repair **by design** (`test_environment_failure_inserts_repair_task`); repair still requires machine checks to VERIFIED. |
+| notes | Parked suspect closed by investigation. `_ENV` matching observation text before VALIDATION is the designed missing-binary path, not a skip-verify / false-DONE hole. Changing that order would break intended ENVIRONMENT repair. |
 
 ### F-20260918-19 — 11B invalid JSON summary and wrong counts on RW-059
 
@@ -626,6 +626,59 @@ RAD_HOME=/tmp/rad_prod_rw060_eb0192  # rad v0.2.3; nvidia / meta/llama-3.2-11b-v
 | Default max-tools / max-tasks | **unchanged** (RW-060 used `--max-tasks 8 --max-tools 16` for this run only) |
 | Needle | default `existing`; **NOT** turned on |
 | `max_plan_tasks` | **16** unchanged |
+| Evidence for v0.3.0 | **none** |
+| Recommendation | **Outcome A — continue 0.2.x** |
+
+## Class A investigation — budget exhaustion → needs_user (2026-09-18)
+
+Operator-directed investigate-first on package **0.2.3** after RW-058 / RW-059 / RW-060
+all ended `needs_user` with false DONE **0**. Architecture frozen. Needle remains
+default-off. Planner cap left at 16. Default max-tools **not** raised.
+Parked suspects F-20260918-17 / F-20260918-18 investigated with code trace +
+deterministic tests (no live NIM; no model-quality dependence).
+**No control-plane patch. No 0.2.x bump.** Not AGI. Not v0.3.0.
+
+### F-20260918-21 — budget→needs_user path investigated; Class A not proven
+
+| field | value |
+|---|---|
+| class | **NONE** (live rows remain **B**; parked A suspects **not confirmed**) |
+| status | documented |
+| found in | post-RW-060 Class A investigation, rad v0.2.3, commit of this record |
+| fixed in | — **no patch.** No v0.2.4 |
+| lane | deterministic pytest (scripted sessions inject tool counts) + code trace of `_drive` / `_on_budget` |
+| objective / test | `tests/test_class_a_budget_investigation.py` Scenarios A/B/C; F-17/F-18 unit tests |
+| disk | n/a — controller lifecycle, not a production hash |
+| expected | Class A only if RAD skips verify / wrong needs_user / blocks recovery / wrong fallback when objective checks already pass |
+| actual | Scenario A: checks pass at budget → `COMPLETED` / `VERIFIED` (F-20260918-03 still holds). Scenario B: unmet remaining work → `needs_user` + checkpoint; resume with raised budget continues. Scenario C: unmet / invalid artifacts → `needs_user`, not `VERIFIED`; model `DONE:` ignored. F-17 newline split **not** in `_fallback`. F-18 ENV misclass **not** the RW-058/059/060 path. |
+| notes | Live NIM 11B FAIL on RW-058/059/060 stays **Class B**: tool budget exhausted with success criteria unmet. RAD did not rubber-stamp. False DONE **0**. Default `Budget.tool_calls` remains **60**; `max_plan_tasks` remains **16**; Needle `existing`. |
+
+Reproduction (redacted):
+
+```
+python -m pytest -q tests/test_class_a_budget_investigation.py
+# 17 passed — Scenarios A/B/C + F-17/F-18; no live NIM
+```
+
+| gate | result |
+|---|---|
+| Package | **0.2.3** — no bump; **no v0.2.4** |
+| RW-058 | preserved (F-20260918-15 Class B; tools 12/12) |
+| RW-059 | preserved (F-20260918-16 / F-20260918-19 Class B; tools 24/24) |
+| RW-060 | preserved (F-20260918-20 Class B; tools 16/16) |
+| Parked F-20260918-17 | **investigated / not Class A** (newline split not in fallback; live path was llm) |
+| Parked F-20260918-18 | **investigated / not Class A** (VALIDATION/TOOL on unmet checks; ENV repair is designed missing-binary path) |
+| RAD defect demonstrated | **NO** |
+| Classification | **B** for the live 11B FAIL rows; investigation itself **NONE** |
+| Patch required | **NO** |
+| `python -m pytest -q` | **345 passed** (328 prior + 17 investigation) |
+| `rad doctor --offline` | READY, 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR |
+| `rad acceptance` | **50/50 PASSED** |
+| `rad realworld` | **10 passed / 1 BLOCKED / 0 failed** (`live_nim` BLOCKED — no NVIDIA keys on this VM) |
+| False completion | **0** |
+| 16-task cap | **UNCHANGED** |
+| Default tool budget | **UNCHANGED** (60) |
+| Needle | **OFF** (`existing`) |
 | Evidence for v0.3.0 | **none** |
 | Recommendation | **Outcome A — continue 0.2.x** |
 

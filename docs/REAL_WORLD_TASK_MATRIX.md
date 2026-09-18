@@ -319,3 +319,34 @@ lane. Docs-only. Default max-tools / max-tasks **not** raised. Package stays
 | Default max-tools / max-tasks | **unchanged** |
 | Package | **0.2.3** — **no v0.2.4** |
 | Recommendation | **Outcome A — continue 0.2.x** |
+
+## Class A investigation (budget exhaustion → needs_user)
+
+RW-058 / RW-059 / RW-060 rows above are **not rewritten**. This is a deterministic
+control-plane investigation of those `needs_user` outcomes (parked F-20260918-17 /
+F-20260918-18). No live NIM. No default max-tools / max-tasks raise. Cap **16**
+unchanged. Needle `existing` / off. Package stays **0.2.3**.
+
+| id | Date | Category | Objective | #tasks | #actions | Tools | Result | Verification | Recovery | Failure class | Notes |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| RW-061 | 2026-09-18 | investigation (scripted; no NIM) | Class A probe of tool-budget → `needs_user` on v0.2.3 (`a40a544`); Scenarios A/B/C + F-17/F-18 | n/a (injected plans) | injected tool counts | default **60** unchanged (not a live `--max-tools`) | **no RAD defect**; live RW-058/059/060 remain **FAIL** Class B | Scenario A `VERIFIED`; B/C `needs_user` when checks unmet | B: checkpoint + resume continues; C: not recoverable without more budget/work | **NONE** (suspects not confirmed) | Tests `tests/test_class_a_budget_investigation.py` **17 passed**; full pytest **345 passed**; `rad doctor --offline` READY; `rad acceptance` 50/50; `rad realworld` 10 passed / 1 BLOCKED (`live_nim`). False DONE **0**. F-17 newline split **not** in fallback. F-18 ENV misclass **not** the live path. **No patch. No v0.2.4.** Architecture frozen. |
+
+### Investigation vs live 11B rows
+
+| | RW-058 | RW-059 | RW-060 | RW-061 (this investigation) |
+|---|---|---|---|---|
+| kind | live NIM coding | live NIM coding, extra tools | live NIM research | scripted controller, no model |
+| status | `needs_user` / FAIL | `needs_user` / FAIL | `needs_user` / FAIL | no product run; path proven correct |
+| false DONE | **0** | **0** | **0** | **0** |
+| class | **B** (preserved) | **B** (preserved) | **B** (preserved) | **NONE** — Class A **not proven** |
+| F-17 / F-18 | parked | parked | parked | **investigated / not Class A** |
+
+| metric | value |
+|---|---|
+| RAD defect demonstrated | **NO** |
+| Patch required | **NO** |
+| 16-task cap | **UNCHANGED** |
+| Default tool budget | **UNCHANGED** (60) |
+| Needle | **OFF** (`existing`) |
+| Package | **0.2.3** — **no v0.2.4** |
+| Recommendation | **Outcome A — continue 0.2.x** |
