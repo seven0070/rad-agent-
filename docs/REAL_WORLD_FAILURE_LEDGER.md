@@ -526,16 +526,16 @@ RAD_HOME=/tmp/rad_prod_rw059_b48e7b56  # rad v0.2.3; nvidia / meta/llama-3.2-11b
 
 | field | value |
 |---|---|
-| class | A (suspected; **not patched**). Deterministic unit test (PR #14 / RW-061) did **not** confirm a newline split. **RW-062** is additional live evidence. Primary classification of the live run remains **B** |
-| status | **reopened / additional live evidence (RW-062)** — PR #14 closed as **not-confirmed** from a deterministic test; this live fallback run strengthens the suspect. Do **not** claim a product fix; **no patch this PR** |
-| found in | originally RW-059 investigation candidates; **reopened** by RW-062 live NIM, rad v0.2.3, 2026-09-18 IST ~15:41–15:47 |
-| fixed in | — **not patched.** No v0.2.4. PR #14 / F-20260918-21 remains the deterministic investigation; it is **not** a product fix of this suspect |
-| lane | live production `objective run` (RW-062: planner source **fallback** after nvidia plan timeout) + prior deterministic planner unit tests (RW-061) |
-| objective / test | RW-062 Simple Coding + Verification; prior `test_fallback_planner_does_not_split_on_newlines` (PR #14) |
-| disk | n/a for the split itself. RW-062 artifacts: five files exist; `result.json` as-left INVALID `{`; tests FAIL `6!=2`; pollution `DONE:` fake path |
-| expected | one coherent plan for a single multiline objective; no spurious tasks from newline wrapping |
-| actual | **PR #14 / RW-061 (deterministic):** `Planner._fallback` splits on clause markers (`and then` / `then` / `;` / `, and` / period+space), **not** on newlines. A production-shaped multiline goal with required-file bullets is **one** fallback task. RW-058/059/060 had a live brain, so the planner source was **llm** (5 planned tasks on RW-058), not fallback. **RW-062 (live):** nvidia plan **timeout** → `PLAN_CREATED` **source=fallback**; **7** newline-split spurious tasks (matches `_fallback` `[:7]` step cap). |
-| notes | Do not treat PR #14 as having fixed F-17. Do not treat RW-062 as a confirmed Class A patch either. This record is additional live evidence only. Clause-marker split remains by design (`test_planner_fallback_without_brain`). Primary RW-062 class is **B** (F-20260918-22). No architecture change. |
+| class | A (suspected; **not confirmed**; **not patched**). Primary classification of live RW-062 remains **B** (F-20260918-22) |
+| status | **investigated / not Class A** — timeout/prose claim **NOT CONFIRMED**. PR #14 newline-only close remains true. RW-062's 7 tasks are clause-split of the *user goal* after LLM exception, not conversion of model output. No product patch. No v0.2.4 |
+| found in | originally RW-059 investigation candidates; live path first seen on RW-062 (nvidia plan timeout → `source=fallback`); closed by F-20260918-23 (scripted; no NIM) |
+| fixed in | — **not a defect.** No patch. No v0.2.4. See F-20260918-23 |
+| lane | live production `objective run` (RW-062) + deterministic planner/controller tests (RW-061 / RW-063) |
+| objective / test | RW-062 Simple Coding + Verification; `tests/test_f17_fallback_investigation.py`; prior `test_fallback_planner_does_not_split_on_newlines` (PR #14) |
+| disk | n/a for the split itself. RW-062 artifacts unchanged: five files exist; `result.json` as-left INVALID `{`; tests FAIL `6!=2`; pollution `DONE:` fake path |
+| expected | one coherent plan for a single multiline objective; no spurious tasks from newline wrapping; timeout must not turn model prose into tasks |
+| actual | **PR #14 / RW-061:** newline-only goal → **1** fallback task (still true). **Timeout path (`Planner.plan`):** LLM exception / empty / malformed / non-JSON prose is discarded; `_fallback(obj)` splits `obj.goal` only. One-sentence goal + seven-line model prose → **1** task (the goal). **RW-062 live 7 tasks:** matches period/clause split of a seven-sentence *user goal* hitting `_fallback` `[:7]` — not `\n` split, not model-output parse. Ordinary prose with periods becomes N clause tasks **by contract** (`one task per clause`). Numbered `1. 2. 3.` also splits on `\.(?=\s|$)`. |
+| notes | Intended LLM output is JSON with checks (`PLAN_PROMPT` “Reply ONLY with JSON”). Fallback is the no-brain / parse-failure path: clause markers, max 7, no checks (Verifier UNVERIFIED). That is not a parser contract violation. RW-062 stays Class B. False DONE **0**. Cap 16 and default max-tools **UNCHANGED**. Needle OFF. |
 
 ### F-20260918-18 — suspected ENVIRONMENT_FAILURE misclassification burns tool budget
 
@@ -728,13 +728,64 @@ RAD_HOME=/tmp/rad_prod_rw062_6ede431b  # rad v0.2.3; nvidia / meta/llama-3.2-11b
 | RW-059 | preserved (F-20260918-16 / F-20260918-19 Class B; tools 24/24) |
 | RW-060 | preserved (F-20260918-20 Class B; tools 16/16) |
 | RW-061 | preserved (F-20260918-21; deterministic Class A **not proven**; F-18 stays not-confirmed) |
-| F-20260918-17 | **reopened / additional live evidence** (RW-062 fallback after nvidia plan timeout; 7 newline-split spurious tasks). PR #14 deterministic close is **not** a product fix. **No patch this PR** |
+| F-20260918-17 | **reopened here as live evidence** (timeout → fallback; 7 tasks). **Later (F-20260918-23 / RW-063):** **not Class A** — timeout does not parse model output; 7 = goal clause split. **No patch this PR** |
 | Class A this record | **none patched** |
 | Class B | **F-20260918-22** (simple coding+verification: invalid `result.json`, tests `6!=2`, pollution `DONE:` fake path, tools 12/12, `needs_user`) |
 | Class C | **none** (NIM key present) |
 | Default max-tools / max-tasks | **unchanged** (RW-062 used `--max-tasks 4 --max-tools 12` for this run only) |
 | Needle | default `existing`; **NOT** turned on |
 | `max_plan_tasks` | **16** unchanged |
+| False completion | **0** |
+| Evidence for v0.3.0 | **none** |
+| Recommendation | **Outcome A — continue 0.2.x** |
+
+## F-17 timeout / prose investigation (RW-063) — 2026-09-18
+
+Investigate-first after PR #15 merged RW-062 (`d15af713`). Package **0.2.3**.
+Needle OFF. Cap 16 and default max-tools **UNCHANGED**. **No v0.2.4.**
+RW-058 / RW-059 / RW-060 / RW-061 / RW-062 rows are **not rewritten**.
+No planner/controller product patch.
+
+Question: when the LLM planner fails or times out, does fallback convert
+ambiguous model output into executable tasks?
+
+### F-20260918-23 — F-17 timeout/prose fallback **NOT CONFIRMED**
+
+| field | value |
+|---|---|
+| class | **NONE** (Class A **not proven**). Live RW-062 remains **B** |
+| status | **investigated / not Class A** — document only; **no product patch** |
+| found in | F-17 follow-up on `origin/main` `d15af713` (PR #15 / RW-062), rad v0.2.3, 2026-09-18 |
+| fixed in | — **not a defect.** No patch. Package stays **0.2.3**. **No v0.2.4** |
+| lane | scripted planner + controller (no NIM). Tests `tests/test_f17_fallback_investigation.py` |
+| objective / test | Scenarios A–D + timeout/prose/malformed feeds; PR #14 newline regression kept |
+| disk | n/a (deterministic). Does not change RW-062 disk facts |
+| expected | Class A only if fallback parses model output or splits on newlines against contract |
+| actual | **Scenario A** valid JSON plan → `source=llm`, 2 tasks, checks kept. **Scenario B** timeout + seven-sentence goal → `source=fallback`, **7** clause tasks, no checks (`[:7]`). **Scenario C** timeout + ordinary prose goal → 3 clause tasks from the *goal*; seven-line model prose is discarded. **Scenario D** malformed / empty LLM → fallback on goal, capped at 7, not 16, not uncontrolled. One-sentence goal + timeout + seven-line model prose → **1** task. Newline-only goal → **1** task (PR #14). Objective not `VERIFIED` without machine checks. False DONE **0** |
+| notes | Trace: `Controller.plan` → `Planner.plan` → `self.llm(PLAN_PROMPT)` → `_json_obj` → `_graph_from` (source=llm) **or** `except` / empty graph → `_fallback(obj)` (source=fallback). `_fallback` never receives `raw`. RW-062 “newline-split” is a mislabel of the documented period/clause split of `obj.goal`. Tool/budget impact: fallback can emit up to 7 no-check tasks; `--max-tasks 4` is a drive stop (4 of 7 attempted), not a planner cap. Default `Budget.tool_calls` **60**. `max_plan_tasks` **16**. Needle `existing`. |
+
+Reproduction (redacted):
+
+```
+python3 -m pytest -q tests/test_f17_fallback_investigation.py
+# timeout LLM + one-sentence goal → source=fallback, 1 task (goal text)
+# timeout LLM + 7 period sentences → source=fallback, 7 tasks ([:7] cap)
+# newline-only (no periods) → 1 task
+```
+
+| gate | result |
+|---|---|
+| Package | **0.2.3** — no bump; **no v0.2.4** |
+| RW-058–062 | preserved (live Class B rows + PR #14 investigation) |
+| F-20260918-17 | **investigated / not Class A** (timeout does not parse model output; 7 = goal clause split) |
+| Class A this record | **NO** |
+| Class B this record | none new (RW-062 / F-22 stays B) |
+| Class C | n/a (no live NIM this investigation) |
+| Patch required | **NO** |
+| Regression (product) | **NO** (investigation tests lock current correct behavior) |
+| 16-task cap | **UNCHANGED** |
+| Default tool budget | **UNCHANGED** (60) |
+| Needle | **OFF** (`existing`) |
 | False completion | **0** |
 | Evidence for v0.3.0 | **none** |
 | Recommendation | **Outcome A — continue 0.2.x** |
