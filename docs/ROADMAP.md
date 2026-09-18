@@ -18,10 +18,12 @@ v0.4.1** and **live-confirmed** (RW-073 contracts + mkdir class). Theme 3 —
 (ASCII-tree `package_dir`) is **implemented as v0.4.2** and **used** (RW-075);
 slice B (first-task thrash) is **implemented as v0.4.3** and **used**
 (RW-077); slice C (mkdir already-exists action noise) is **implemented as
-v0.4.4** (unit RW-078; **not live-hit** on RW-079); slice D (premature-test
-ENVIRONMENT) is **implemented as v0.4.5**. Needle stays off. Caps unchanged.
-This patch does **not** claim live 11B RW-079 would now PASS. Generations 4–5
-are **not started**.
+v0.4.4** (**live-confirmed** RW-081); slice D (premature-test
+ENVIRONMENT) is **implemented as v0.4.5** and **used** (RW-081; premature-test
+path **not live-hit**; mkdir File-exists **live Y**). Pip thrash + root
+pollution Class A is **NOT CONFIRMED** (RW-082). Stay **0.4.5**. Needle stays off.
+Caps unchanged. This patch does **not** claim live 11B RW-081 would now PASS.
+Generations 4–5 are **not started**.
 
 ```
 build → test → validate → release → use → discover gaps → build the next version
@@ -36,12 +38,12 @@ Stability with no code change is a valid result.
 
 | item | value |
 |---|---|
-| Generation in production | **Gen3 in progress** — this change is **v0.4.5**; v0.4.4 is tagged `v0.4.4` @ `acb61997`; v0.4.3 is tagged `v0.4.3` @ `99099b8a`; v0.4.2 is tagged `v0.4.2` @ `feb8a4ec`; v0.4.1 is tagged `v0.4.1` @ `387bd83a`; v0.4.0 is tagged `v0.4.0` @ `a8aac8ae`; Gen2 complete on `387776dc` / tag `v0.3.2`; Gen1 baseline remains tagged `v0.2.3` @ `d121c3f` |
-| Package / tag on `main` | **0.4.4** / annotated tag `v0.4.4` @ `acb61997` (this branch bumps the package to **0.4.5**) |
-| This change | **v0.4.5** — premature-test ENVIRONMENT (Gen3 theme 3 slice D) + RW-079 record |
+| Generation in production | **Gen3 in progress** — **v0.4.5**; tagged `v0.4.5` @ `32e9fe87`; v0.4.4 is tagged `v0.4.4` @ `acb61997`; v0.4.3 is tagged `v0.4.3` @ `99099b8a`; v0.4.2 is tagged `v0.4.2` @ `feb8a4ec`; v0.4.1 is tagged `v0.4.1` @ `387bd83a`; v0.4.0 is tagged `v0.4.0` @ `a8aac8ae`; Gen2 complete on `387776dc` / tag `v0.3.2`; Gen1 baseline remains tagged `v0.2.3` @ `d121c3f` |
+| Package / tag on `main` | **0.4.5** / annotated tag `v0.4.5` @ `32e9fe87` (this branch stays **0.4.5** — no bump) |
+| This change | **RW-081 record** + pip/root-pollution Class A **NOT CONFIRMED** (investigation tests; stay 0.4.5) |
 | Generation 2 | **COMPLETE** — theme 1 **v0.3.0** (used RW-065 / RW-068); theme 2 **v0.3.1** (used live RW-066 / RW-068); theme 3 **v0.3.2** (scripted RW-067; used RW-068 / RW-069) |
-| Latest use (RW-079) | Live NIM 11B text_analyzer on v0.4.4: **FAIL** `needs_user` @ 12/12; theme 1 **Y**; theme 2 **Y**; mkdir File-exists Class A **not live-hit**; residual **Class B** (wrong summary counts, wrong test oracles, premature-test ENVIRONMENT repair under tools=12) |
-| Generation 3 | **IN PROGRESS** — theme 1 **implemented** (v0.4.0) **used** (RW-071 / RW-073 / RW-075 / RW-077 / RW-079); theme 2 **implemented** (v0.4.1) **used** (RW-073 / RW-075 / RW-077 / RW-079); theme 3 **planned / scoped**, slice A **v0.4.2** **used** (RW-075 / RW-077 / RW-079), slice B **v0.4.3** **used** (RW-077 / RW-079), slice C **v0.4.4** (unit RW-078; not live-hit RW-079), slice D **v0.4.5** |
+| Latest use (RW-081) | Live NIM 11B text_analyzer on v0.4.5: **FAIL** `needs_user` @ 12/12; theme 1 **Y**; theme 2 **Y**; mkdir File-exists Class A **live Y**; premature-test ENVIRONMENT **not live-hit**; residual **Class B** (pip/echo thrash, root `analyzer.py` pollution, empty `summary.json`, SyntaxError test under tools=12) |
+| Generation 3 | **IN PROGRESS** — theme 1 **implemented** (v0.4.0) **used** (RW-071 / RW-073 / RW-075 / RW-077 / RW-079 / RW-081); theme 2 **implemented** (v0.4.1) **used** (RW-073 / RW-075 / RW-077 / RW-079 / RW-081); theme 3 **planned / scoped**, slice A **v0.4.2** **used** (RW-075 / RW-077 / RW-079 / RW-081), slice B **v0.4.3** **used** (RW-077 / RW-079 / RW-081), slice C **v0.4.4** **used** (RW-081 mkdir live Y), slice D **v0.4.5** **used** (RW-081; premature-test path not live-hit) |
 | Generations 4–5 | **NOT STARTED** |
 | Needle | optional / **off** (`tool_router=existing`; ADR-001) |
 | `max_plan_tasks` | **16** (unchanged) |
@@ -61,7 +63,7 @@ Cycle evidence, not this file: [MATURATION_CYCLE_REPORT.md](MATURATION_CYCLE_REP
 |---|---|---|---|
 | **1** | Foundation | v0.2.0, v0.2.1, v0.2.2, **v0.2.3** | **COMPLETE** |
 | **2** | Capability Expansion | v0.3.x | **COMPLETE** (theme 1 → **v0.3.0**; theme 2 → **v0.3.1** used RW-066/068; theme 3 → **v0.3.2**; use campaign RW-068 PASS / RW-069 FAIL) |
-| **3** | Autonomous Agent Maturity | v0.4.x | **IN PROGRESS** (theme 1 → **v0.4.0** used RW-071 / RW-073 / RW-075 / RW-077 / RW-079; theme 2 → **v0.4.1** used RW-073 / RW-075 / RW-077 / RW-079; theme 3 planned / scoped, slice A → **v0.4.2** used RW-075 / RW-077 / RW-079, slice B → **v0.4.3** used RW-077 / RW-079, slice C → **v0.4.4**, slice D → **v0.4.5**) |
+| **3** | Autonomous Agent Maturity | v0.4.x | **IN PROGRESS** (theme 1 → **v0.4.0** used RW-071 / RW-073 / RW-075 / RW-077 / RW-079 / RW-081; theme 2 → **v0.4.1** used RW-073 / RW-075 / RW-077 / RW-079 / RW-081; theme 3 planned / scoped, slice A → **v0.4.2** used RW-075 / RW-077 / RW-079 / RW-081, slice B → **v0.4.3** used RW-077 / RW-079 / RW-081, slice C → **v0.4.4** used RW-081, slice D → **v0.4.5** used RW-081) |
 | **4** | Production Scale | v0.5.x | **NOT STARTED** |
 | **5** | 1.0 | v1.0.0 | **NOT STARTED** |
 
@@ -69,13 +71,13 @@ Enter the next generation only after the previous one has been **released, used,
 measured gaps**. Class B rows are the input to that decision. They do not start the
 generation by themselves — a theme must be **accepted**. Gen2 themes 1–3 shipped and
 were used (v0.3.2 campaign). Gen3 theme 1 is **accepted and implemented**
-(v0.4.0) and **used** (RW-071 / RW-073 / RW-075 / RW-077 / RW-079). Gen3 theme 2 is **accepted and
-implemented** (v0.4.1) and **used** (RW-073 / RW-075 / RW-077 / RW-079). Gen3 theme 3 is **planned /
+(v0.4.0) and **used** (RW-071 / RW-073 / RW-075 / RW-077 / RW-079 / RW-081). Gen3 theme 2 is **accepted and
+implemented** (v0.4.1) and **used** (RW-073 / RW-075 / RW-077 / RW-079 / RW-081). Gen3 theme 3 is **planned /
 scoped**; slice A (ASCII-tree `package_dir`) is **implemented** (v0.4.2) and
-**used** (RW-075 / RW-077 / RW-079); slice B (first-task thrash) is **implemented** (v0.4.3)
-and **used** (RW-077 / RW-079); slice C (mkdir already-exists action noise) is
-**implemented** (v0.4.4); slice D (premature-test ENVIRONMENT) is **implemented**
-(v0.4.5).
+**used** (RW-075 / RW-077 / RW-079 / RW-081); slice B (first-task thrash) is **implemented** (v0.4.3)
+and **used** (RW-077 / RW-079 / RW-081); slice C (mkdir already-exists action noise) is
+**implemented** (v0.4.4) and **used** (RW-081 mkdir live Y); slice D (premature-test ENVIRONMENT) is **implemented**
+(v0.4.5) and **used** (RW-081; premature-test path not live-hit).
 Gen4–5 stay closed until Gen3 has been released and used.
 
 ---
@@ -270,16 +272,17 @@ More reliable multi-step execution, recovery, planning, and long-horizon work.
 
 **Status:** **in progress.** Theme 1 — **path-aligned checks / package layout** —
 is **implemented as v0.4.0** and **live-confirmed** (RW-071; RW-073 disk/tasks;
-RW-075 obj-checks). Theme 2 — **multi-file coding under tight budgets** — is
-**implemented as v0.4.1** and **live-confirmed** (RW-073). Theme 3 —
+RW-075 obj-checks; RW-081). Theme 2 — **multi-file coding under tight budgets** — is
+**implemented as v0.4.1** and **live-confirmed** (RW-073; RW-081). Theme 3 —
 **longer-horizon / multi-step reliability** — is **planned / scoped**. Slice A
 (ASCII-tree `package_dir`) is **implemented as v0.4.2** and **used** (RW-075 /
-RW-077 / RW-079). Slice B (first-task thrash) is **implemented as v0.4.3** and **used**
-(RW-077 / RW-079). Slice C (mkdir already-exists action noise) is **implemented as
-v0.4.4** (unit RW-078; **not live-hit** on RW-079). Slice D (premature-test
-ENVIRONMENT) is **implemented as v0.4.5**. Package **0.4.4 → 0.4.5**. Live RW-079
-Class B (wrong summary counts, wrong test oracles, 11B under tools=12) is **not**
-claimed fixed.
+RW-077 / RW-079 / RW-081). Slice B (first-task thrash) is **implemented as v0.4.3** and **used**
+(RW-077 / RW-079 / RW-081). Slice C (mkdir already-exists action noise) is **implemented as
+v0.4.4** and **live-confirmed** (RW-081). Slice D (premature-test
+ENVIRONMENT) is **implemented as v0.4.5** and **used** (RW-081; premature-test
+path **not live-hit**). Package stays **0.4.5**. Live RW-081
+Class B (pip/echo thrash, root `analyzer.py` pollution, empty `summary.json`, SyntaxError test) is **not**
+claimed fixed. Pip/root-pollution Class A is **NOT CONFIRMED** (RW-082).
 
 Do not pre-design Gen3 from Gen1 Class B rows alone. Do not skip Gen2 (Gen2 is
 now complete). Do not treat a FAIL row as an automatic architecture rewrite.
@@ -352,41 +355,38 @@ verifier still evaluates the stored path honestly.
 
 | field | value |
 |---|---|
-| Status | **PLANNED / SCOPED**. Slice A **IMPLEMENTED** as v0.4.2. Slice B **IMPLEMENTED** as v0.4.3. Slice C **IMPLEMENTED** as v0.4.4. Slice D **IMPLEMENTED** in this change (package **0.4.5**) |
+| Status | **PLANNED / SCOPED**. Slice A **IMPLEMENTED** as v0.4.2. Slice B **IMPLEMENTED** as v0.4.3. Slice C **IMPLEMENTED** as v0.4.4 (**used** RW-081). Slice D **IMPLEMENTED** as v0.4.5 (**used** RW-081; premature-test path not live-hit) |
 | Theme | **Longer-horizon / multi-step reliability** |
-| Version | Theme 3 itself is **not** a full v0.4.x redesign. Slice A is **v0.4.2**. Slice B is **v0.4.3**. Slice C is **v0.4.4**. Slice D is **v0.4.5** |
-| Loop (slice D) | premature `python …/test_*.py` (interpreter cannot open a `.py` script the agent has not written) is not ENVIRONMENT and does not fail a task whose explicit directory/file checks passed |
-| Evidence | RW-079 / F-20260918-41 (live FAIL; mkdir File-exists not live-hit; premature-test ENVIRONMENT repair on passed directory checks); deterministic RW-080 / F-20260918-42 |
-| What it is not | Not a control-plane rewrite. Not Needle-as-default. Not a cap raise. Not a claim that live 11B RW-079 now PASS. Not multi-step checkpoint redesign. Not a remap of check *kinds* (F-26). Fallback *tasks* stay check-less (F-17). mkdir File-exists action noise (v0.4.4) is preserved. |
+| Version | Theme 3 itself is **not** a full v0.4.x redesign. Slice A is **v0.4.2**. Slice B is **v0.4.3**. Slice C is **v0.4.4**. Slice D is **v0.4.5**. This cycle stays **0.4.5** |
+| Loop (slice D, preserved) | premature `python …/test_*.py` (interpreter cannot open a `.py` script the agent has not written) is not ENVIRONMENT and does not fail a task whose explicit directory/file checks passed |
+| Evidence | RW-081 / F-20260918-43 (live FAIL; mkdir File-exists **live Y**; premature-test ENVIRONMENT **not live-hit**; pip/echo + root pollution residual); deterministic RW-082 / F-20260918-44 (**NOT CONFIRMED**) |
+| What it is not | Not a control-plane rewrite. Not Needle-as-default. Not a cap raise. Not a claim that live 11B RW-081 now PASS. Not multi-step checkpoint redesign. Not a remap of check *kinds* (F-26). Fallback *tasks* stay check-less (F-17). Not a PLAN_PROMPT-only bump for pip/root writes. |
 
 **Entry rule:** themes 1–2 are measured (done). Slice A shipped as v0.4.2
-(ASCII-tree `package_dir`; **used** RW-075 / RW-077 / RW-079). Slice B shipped as v0.4.3
-(first-task pip/DONE thrash; **used** RW-077 / RW-079). Slice C shipped as v0.4.4
-(mkdir already-exists action noise; unit RW-078; **not live-hit** on RW-079).
-Slice D is accepted because investigate-first **confirmed Class A**: premature
-`python …/test_*.py` No-such-file is still ENVIRONMENT repair that fails a task
-whose directory `file_exists` already passed (same family as v0.4.3 pip-ENVIRONMENT
-and v0.4.4 mkdir action noise). Remaining candidate sub-theme stays **planned**,
-not built:
+(ASCII-tree `package_dir`; **used** RW-075 / RW-077 / RW-079 / RW-081). Slice B shipped as v0.4.3
+(first-task pip/DONE thrash; **used** RW-077 / RW-079 / RW-081). Slice C shipped as v0.4.4
+(mkdir already-exists action noise; **live-confirmed** RW-081). Slice D shipped as v0.4.5
+(premature-test ENVIRONMENT; **used** RW-081, path **not live-hit**). Remaining candidate
+sub-theme stays **planned**, not built:
 
 1. Multi-step checkpoint so later files still get attempts when an early task
    burns retries (not this patch).
 
 Do **not** invent a long-horizon redesign from Class B budget/quality rows.
-Label slice D honestly: **premature-test ENVIRONMENT** (classify + verifier), shipped
-under Gen3 theme 3 slice D / v0.4.5.
+Pip thrash + root `echo > analyzer.py` pollution on RW-081 is **NOT CONFIRMED**
+as Class A (RW-082) — stay **0.4.5**.
 
 ### Themes (evidence-backed; priority order)
 
-Grounded in RW-068 / RW-069 / RW-071 / RW-073 / RW-075 / RW-077 / RW-079 and the residual RW-058 / RW-059
-family (F-20260918-15 / 16 / 19 / 31 / 33 / 35 / 37 / 39 / 41). Simple coding **PASS** on
+Grounded in RW-068 / RW-069 / RW-071 / RW-073 / RW-075 / RW-077 / RW-079 / RW-081 and the residual RW-058 / RW-059
+family (F-20260918-15 / 16 / 19 / 31 / 33 / 35 / 37 / 39 / 41 / 43). Simple coding **PASS** on
 v0.3.2 is **not** a Gen3 hole (B3).
 
 | # | theme | status | what the evidence showed | rows |
 |---|---|---|---|---|
-| 1 | **Path-aligned checks / package layout** | **IMPLEMENTED** — v0.4.0; **used** RW-071 / RW-073 / RW-075 / RW-077 / RW-079 | Task checks required workspace-root `input.txt` while first successful writes were under `text_analyzer/` → VALIDATION_FAILURE → retry flattened files to root → layout thrash. Confirmed as planner/infer emission + LLM-check acceptance (not just 11B). Live RW-079: path-alignment **Y** on disk/tasks **and** objective_checks (ASCII-tree join live). | RW-069; RW-070 (scripted); RW-071 / RW-073 / RW-075 / RW-077 / RW-079 (live use); RW-074 (scripted ASCII-tree); related path confusion on RW-058 |
-| 2 | **Multi-file coding under tight budgets** | **IMPLEMENTED** — v0.4.1; **used** RW-073 / RW-075 / RW-077 / RW-079 | `text_analyzer` @ tools=**12** still FAIL on live 11B. RW-079: contracts **package-joined**; correct 3-line `bf69eb73…`; mkdir succeeded (File-exists not live). Residual: wrong summary counts, weak tests, premature-test ENVIRONMENT. Does not raise default max-tools. | RW-071; RW-072 (scripted); RW-073 / RW-075 / RW-077 / RW-079 (live use); RW-069; RW-058 / RW-059 family (F-15 / F-16 / F-19) |
-| 3 | **Longer-horizon / multi-step reliability** | **PLANNED / SCOPED** — slice A **v0.4.2** **used** RW-075 / RW-077 / RW-079; slice B **v0.4.3** **used** RW-077 / RW-079; slice C **v0.4.4**; slice D **IMPLEMENTED** as v0.4.5 | RW-079 burns 12 tools on first-task premature `python …/test_*.py` ENVIRONMENT repair before later package tasks complete as tasks. Slice D: missing-script invoke is not ENVIRONMENT and does not fail a check-passing task. Remaining: multi-step checkpoint. No long-horizon redesign. | RW-079; RW-080 (scripted slice D); RW-077; RW-078 (scripted slice C); RW-075; RW-076 (scripted slice B); RW-074 (scripted slice A) |
+| 1 | **Path-aligned checks / package layout** | **IMPLEMENTED** — v0.4.0; **used** RW-071 / RW-073 / RW-075 / RW-077 / RW-079 / RW-081 | Task checks required workspace-root `input.txt` while first successful writes were under `text_analyzer/` → VALIDATION_FAILURE → retry flattened files to root → layout thrash. Confirmed as planner/infer emission + LLM-check acceptance (not just 11B). Live RW-081: path-alignment **Y** on disk/tasks **and** objective_checks (ASCII-tree join live). Root `echo > analyzer.py` leftover is Class B, not check-path flattening. | RW-069; RW-070 (scripted); RW-071 / RW-073 / RW-075 / RW-077 / RW-079 / RW-081 (live use); RW-074 (scripted ASCII-tree); related path confusion on RW-058 |
+| 2 | **Multi-file coding under tight budgets** | **IMPLEMENTED** — v0.4.1; **used** RW-073 / RW-075 / RW-077 / RW-079 / RW-081 | `text_analyzer` @ tools=**12** still FAIL on live 11B. RW-081: contracts **package-joined**; correct 3-line `bf69eb73…`; mkdir File-exists **live Y**. Residual: empty `summary.json`, SyntaxError test, pip/echo budget. Does not raise default max-tools. | RW-071; RW-072 (scripted); RW-073 / RW-075 / RW-077 / RW-079 / RW-081 (live use); RW-069; RW-058 / RW-059 family (F-15 / F-16 / F-19) |
+| 3 | **Longer-horizon / multi-step reliability** | **PLANNED / SCOPED** — slice A **v0.4.2** **used** RW-075 / RW-077 / RW-079 / RW-081; slice B **v0.4.3** **used** RW-077 / RW-079 / RW-081; slice C **v0.4.4** **used** RW-081; slice D **v0.4.5** **used** RW-081 (premature-test path not live-hit) | RW-081 burns remaining tools on second-task pip/echo after first task VERIFIED (mkdir noise). Slice C **live Y**. Slice D not live-hit. Pip/root-pollution Class A **NOT CONFIRMED**. Remaining: multi-step checkpoint. No long-horizon redesign. | RW-081; RW-082 (scripted NOT CONFIRMED); RW-079; RW-080 (scripted slice D); RW-077; RW-078 (scripted slice C); RW-075; RW-076 (scripted slice B); RW-074 (scripted slice A) |
 
 ### Closed / not automatic Gen3 work
 
@@ -394,20 +394,21 @@ These are **not** a license to raise caps or enable Needle from this change:
 
 | id | claim | result |
 |---|---|---|
-| A1 | Reopen budget→`needs_user` as Class A | **Do not reopen** without new proof. RW-069 / RW-073 / RW-075 / RW-077 / RW-079 exhausted 12 tools with incomplete work; same honest stop as historical Class B investigations (F-21). |
-| A2 | Check path vs write path (root vs package dir) | **Class A confirmed** as v0.4.0. **Live-confirmed** on RW-071 / RW-073 / RW-075 / RW-077 / RW-079 disk+task checks (path-alignment Y; no root pollution). Live 11B artifact quality remains Class B. |
-| A4 | ASCII-tree `infer_package_dir` miss | **Class A confirmed** as v0.4.2 (theme-1 follow-up / theme 3 slice A). **Live-confirmed** on RW-075 / RW-077 / RW-079 (objective_checks all package-joined; 0 bare). |
-| A5 | First-task thrash (pip-missing-requirements ENVIRONMENT + DONE-as-tool) | **Class A confirmed** as v0.4.3 (theme 3 slice B). **Live-consistent** on RW-077 / RW-079 (0× pip, 0× fake DONE). |
-| A6 | mkdir File-exists failing a check-passing task | **Class A confirmed** as v0.4.4 (theme 3 slice C). Unit RW-078. **Not live-hit** on RW-079 (mkdir succeeded). Do not regress. |
-| A7 | Premature `python …/test_*.py` No-such-file → ENVIRONMENT | **Class A confirmed** as v0.4.5 (theme 3 slice D). RW-079: directory `file_exists` passed; premature test invoke failed actions → ENVIRONMENT repair burned tools=12. Patched. |
-| A3 | DONE pollution refuse | **Already works** for `DONE:` *paths*. RW-079 invented-tool `DONE` **0**; slice B still stops it from failing check-passing tasks. |
+| A1 | Reopen budget→`needs_user` as Class A | **Do not reopen** without new proof. RW-069 / RW-073 / RW-075 / RW-077 / RW-079 / RW-081 exhausted 12 tools with incomplete work; same honest stop as historical Class B investigations (F-21). |
+| A2 | Check path vs write path (root vs package dir) | **Class A confirmed** as v0.4.0. **Live-confirmed** on RW-071 / RW-073 / RW-075 / RW-077 / RW-079 / RW-081 disk+task **checks** (path-alignment Y). RW-081 has extra root `echo > analyzer.py` leftover — that is model action pollution (F-44 **NOT CONFIRMED**), not RAD flattening files to satisfy root checks. Live 11B artifact quality remains Class B. |
+| A4 | ASCII-tree `infer_package_dir` miss | **Class A confirmed** as v0.4.2 (theme-1 follow-up / theme 3 slice A). **Live-confirmed** on RW-075 / RW-077 / RW-079 / RW-081 (objective_checks all package-joined; 0 bare). |
+| A5 | First-task thrash (pip-missing-requirements ENVIRONMENT + DONE-as-tool) | **Class A confirmed** as v0.4.3 (theme 3 slice B). **Live-consistent** on RW-077 / RW-079 / RW-081 (0 invented DONE; pip `-r` attempted on RW-081 without ENVIRONMENT repair). Do not re-litigate. |
+| A6 | mkdir File-exists failing a check-passing task | **Class A confirmed** as v0.4.4 (theme 3 slice C). Unit RW-078. **Live-confirmed** on RW-081 (task VERIFIED despite File-exists action error). Do not regress. |
+| A7 | Premature `python …/test_*.py` No-such-file → ENVIRONMENT | **Class A confirmed** as v0.4.5 (theme 3 slice D). Unit RW-080. **Not live-hit** on RW-081 (no early python test; 0 ENVIRONMENT repair). Do not regress. |
+| A8 | Pip thrash + root `echo > analyzer.py` pollution under known `package_dir` | **NOT CONFIRMED.** Checks already join to `package_dir`. Actions are model-proposed (no write/redirect remap). Root file does not satisfy package checks (false DONE 0). Joining echo redirects would clobber a good package file. PLAN_PROMPT already forbids pip for stdlib-only; ingest-reject still charges tools. Stay **0.4.5**. See RW-082 / F-44. |
+| A3 | DONE pollution refuse | **Already works** for `DONE:` *paths*. RW-081 invented-tool `DONE` **0**; slice B still stops it from failing check-passing tasks. |
 | B3 | Simple verified coding loop | **Stable PASS** on v0.3.2 (RW-068 llm plan@1). Not a Gen3 hole. |
-| F-17 / F-18 / F-21 / F-26 | Prior closed non-gates | **Stay closed.** Slice D does not add checks to fallback *tasks* (F-17) and does not remap check *kinds* (F-26). Genuine `command not found` / `ModuleNotFoundError` stay ENVIRONMENT (F-18). `cat` no-such-file stays ENVIRONMENT. mkdir already-exists still **not** ENVIRONMENT (v0.4.1). |
+| F-17 / F-18 / F-21 / F-26 | Prior closed non-gates | **Stay closed.** This cycle does not add checks to fallback *tasks* (F-17) and does not remap check *kinds* (F-26). Genuine `command not found` / `ModuleNotFoundError` stay ENVIRONMENT (F-18). `cat` no-such-file stays ENVIRONMENT. mkdir already-exists still **not** ENVIRONMENT (v0.4.1). |
 
-This patch is **not** a claim that live 11B text_analyzer now completes under
+This cycle is **not** a claim that live 11B text_analyzer now completes under
 tools=12. Residual is **Class B** capacity/quality (11B under the historical
-12-tool bound; RW-079 wrong summary counts, wrong test oracles). Slice D
-only closes the premature-test ENVIRONMENT / actions hole.
+12-tool bound; RW-081 pip/echo thrash, empty `summary.json`, SyntaxError test,
+root leftover). Theme-3 measured win: mkdir File-exists action-noise **live Y**.
 
 ### Accepting a further v0.4.x theme
 
@@ -415,10 +416,12 @@ A short written decision that names the theme, the evidence rows, the invariant
 that must not move (Needle off; caps unchanged unless proven; models propose /
 RAD decides; false DONE **0**), and the 0.4.x change. Theme 2 is implemented
 (v0.4.1). Theme 3 is **planned / scoped**; slice A shipped (v0.4.2) and used
-(RW-075 / RW-077 / RW-079); slice B shipped (v0.4.3) and used (RW-077 / RW-079);
-slice C shipped (v0.4.4); slice D shipped (v0.4.5). Remaining theme-3 slice
+(RW-075 / RW-077 / RW-079 / RW-081); slice B shipped (v0.4.3) and used (RW-077 / RW-079 / RW-081);
+slice C shipped (v0.4.4) and used (RW-081); slice D shipped (v0.4.5) and used (RW-081;
+premature-test path not live-hit). Remaining theme-3 slice
 (multi-step checkpoint) still needs that decision — do not invent a long-horizon
-redesign from Class B budget rows.
+redesign from Class B budget rows. Pip/root-pollution on RW-081 is **NOT CONFIRMED**
+as Class A — stay **0.4.5**.
 
 ---
 

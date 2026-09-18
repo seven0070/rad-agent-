@@ -2,7 +2,7 @@
 
 Living log of **measured** RAD failures found in live or reconstructed use.
 Architecture is frozen. Needle stays experimental and off by default. This is not AGI/ASI.
-Operating spine: [ROADMAP.md](ROADMAP.md) (adopted 2026-09-18). Gen1 complete on 0.2.3; **Gen2 complete** on 0.3.0–0.3.2. Verified coding loop is **implemented as v0.3.0** (F-20260918-24 / RW-064). Live retest **RW-065**. Plan-timeout resilience is **implemented as v0.3.1** (F-20260918-27 / scripted RW-066) and **used** (live RW-066 / F-20260918-28). Budget-aware planning is **implemented as v0.3.2** (F-20260918-29 / RW-067). Live NIM use of v0.3.2 is **RW-068 PASS** (F-20260918-30) and **RW-069 FAIL** (F-20260918-31). Path-aligned checks are **implemented as v0.4.0** (F-20260918-32 / RW-070). Live NIM retest of v0.4.0 is **RW-071 FAIL** (F-20260918-33; theme 1 live-confirmed). Multi-file contracts under tight budgets are **implemented as v0.4.1** (F-20260918-34 / RW-072). Live NIM retest of v0.4.1 is **RW-073 FAIL** (F-20260918-35; theme 1/2 live-confirmed). ASCII-tree `package_dir` is **implemented as v0.4.2** (F-20260918-36 / RW-074). Live NIM retest of v0.4.2 is **RW-075 FAIL** (F-20260918-37; ASCII-tree obj-checks live-confirmed). First-task thrash is **implemented as v0.4.3** (F-20260918-38 / RW-076). Live NIM retest of v0.4.3 is **RW-077 FAIL** (F-20260918-39; pip/DONE Class A **live-consistent**; mkdir File-exists action noise is F-40). mkdir already-exists action noise is **implemented as v0.4.4** (F-20260918-40 / RW-078). Live NIM retest of v0.4.4 is **RW-079 FAIL** (F-20260918-41; mkdir File-exists **not live-hit**; premature-test ENVIRONMENT is F-42). Premature-test ENVIRONMENT is **implemented as v0.4.5** (F-20260918-42 / RW-080). This ledger is evidence. Do not rewrite RW-058–078. Scripted RW-066 (F-27) is preserved.
+Operating spine: [ROADMAP.md](ROADMAP.md) (adopted 2026-09-18). Gen1 complete on 0.2.3; **Gen2 complete** on 0.3.0–0.3.2. Verified coding loop is **implemented as v0.3.0** (F-20260918-24 / RW-064). Live retest **RW-065**. Plan-timeout resilience is **implemented as v0.3.1** (F-20260918-27 / scripted RW-066) and **used** (live RW-066 / F-20260918-28). Budget-aware planning is **implemented as v0.3.2** (F-20260918-29 / RW-067). Live NIM use of v0.3.2 is **RW-068 PASS** (F-20260918-30) and **RW-069 FAIL** (F-20260918-31). Path-aligned checks are **implemented as v0.4.0** (F-20260918-32 / RW-070). Live NIM retest of v0.4.0 is **RW-071 FAIL** (F-20260918-33; theme 1 live-confirmed). Multi-file contracts under tight budgets are **implemented as v0.4.1** (F-20260918-34 / RW-072). Live NIM retest of v0.4.1 is **RW-073 FAIL** (F-20260918-35; theme 1/2 live-confirmed). ASCII-tree `package_dir` is **implemented as v0.4.2** (F-20260918-36 / RW-074). Live NIM retest of v0.4.2 is **RW-075 FAIL** (F-20260918-37; ASCII-tree obj-checks live-confirmed). First-task thrash is **implemented as v0.4.3** (F-20260918-38 / RW-076). Live NIM retest of v0.4.3 is **RW-077 FAIL** (F-20260918-39; pip/DONE Class A **live-consistent**; mkdir File-exists action noise is F-40). mkdir already-exists action noise is **implemented as v0.4.4** (F-20260918-40 / RW-078). Live NIM retest of v0.4.4 is **RW-079 FAIL** (F-20260918-41; mkdir File-exists **not live-hit**; premature-test ENVIRONMENT is F-42). Premature-test ENVIRONMENT is **implemented as v0.4.5** (F-20260918-42 / RW-080). Live NIM retest of v0.4.5 is **RW-081 FAIL** (F-20260918-43; mkdir File-exists **live Y**; premature-test ENVIRONMENT **not live-hit**; pip/echo + root pollution residual). Pip thrash + root `analyzer.py` pollution Class A is **NOT CONFIRMED** (F-20260918-44 / scripted RW-082). Package stays **0.4.5**. This ledger is evidence. Do not rewrite RW-058–080. Scripted RW-066 (F-27) is preserved.
 
 No secrets belong here: never paste API keys, vault contents, account tokens, or full
 provider payloads. Paths under `/tmp/…` and objective ids are fine.
@@ -1654,6 +1654,84 @@ python3 -m pytest -q tests/test_premature_test_env.py
 | Needle | **OFF** (`existing`) |
 | False completion | **0** |
 | Live NIM this patch | **BLOCKED** (no NVIDIA keys) — not a live PASS claim for RW-079 |
+
+## Live NIM retest of v0.4.5 (RW-081) — 2026-09-18
+
+Operator production `rad objective run` on package **0.4.5** (tag `v0.4.5`,
+`32e9fe87`). Needle **OFF**. Caps **not** raised. RW-058–080 facts are **not
+rewritten**. F-17 / F-18 / F-21 / F-26 stay closed. A1 (budget→needs_user as
+Class A) is **not reopened**. v0.4.4 mkdir File-exists Class A is **live-confirmed**.
+v0.4.5 premature-test ENVIRONMENT Class A is **not live-hit**. Pip thrash +
+root pollution Class A is **NOT CONFIRMED** (F-44). Package stays **0.4.5**.
+
+Authoritative facts: operator report `obj_b6d32fcc` /
+`/tmp/rad_prod_rw081_5a76b128`. This agent did not re-run NIM.
+
+### F-20260918-43 — live 11B text_analyzer on v0.4.5 **FAIL** (RW-081)
+
+| field | value |
+|---|---|
+| class | **B** (same family as F-20260918-15 / 16 / 19 / 31 / 33 / 35 / 37 / 39 / 41). Theme 1 ASCII-tree obj-checks **Y**. mkdir File-exists Class A **live: Y**. Premature-test ENVIRONMENT Class A **live: N**. Pip/echo + root pollution Class A is F-44 **NOT CONFIRMED**, not a new control-plane hole |
+| status | documented — live **FAIL** (`needs_user`; not VERIFIED). Theme 1 **Y**. Theme 2 **Y**. Residual Class B. Package stays **0.4.5** |
+| found in | post-v0.4.5 production use (RW-081), rad v0.4.5, 2026-09-18 IST 22:28:43–22:30:12 |
+| fixed in | — live 11B artifact quality **not** claimed fixed. Pip/root-pollution **not** patched (F-44 NOT CONFIRMED). Default max-tools / max-tasks **not** raised |
+| lane | live NVIDIA NIM `meta/llama-3.2-11b-vision-instruct` |
+| objective / test | `obj_b6d32fcc` — production ASCII-tree `text_analyzer/` layout; exact 3-line input; stdlib; `--max-tasks 8 --max-tools 12`; Needle `existing` / off |
+| disk | workspace root `text_analyzer/` **and** stray **`analyzer.py`** (root pollution from `echo … > analyzer.py`). `text_analyzer/input.txt` YES **correct 3-line** sha256 `bf69eb737ca6f3949b5626701cb8472a2fc683e6b05e3101744eccd49dab629b`. Package `summary.json` **present `{}` valid, empty** (true counts lines=3, words=13, chars=76). Package `analyzer.py` stdlib (420 B, written in task 1). `test_analyzer.py` **SyntaxError** (`def test_analyzer):`) + wrong oracles (`words==9`, `chars==41`). README 393 B. Root `analyzer.py` 490 B echo stub |
+| expected | required layout under `text_analyzer/`; exact 3-line input; non-empty valid package `summary.json` with correct counts; tests that assert exact counts; `VERIFIED` only from machine checks; path-aligned task **and** inferred objective checks; no false DONE |
+| actual | status `needs_user` / **FAIL** vs success criteria — **NOT DONE**, **not VERIFIED** complete. `PLAN_CREATED` **source=llm** **attempts=2** (4 tasks, **no repair**, `fit=true`, `compacted=false`, `estimated_tools=8`). Path-aligned task checks **Y**. Objective checks **all package-joined** (3 checks; 0 bare: `json_valid text_analyzer/summary.json`, `shell_ok python3 text_analyzer/test_analyzer.py`, `file_line_count text_analyzer/input.txt` n=3). First task **VERIFIED** despite mkdir File-exists (actions ok=true; 8 actions, 1 error). Second task **RUNNING** at stop (pip upgrade / `echo > analyzer.py` / `pip install -r` error / pip jsonschema; never reached verify). Recovery **none** (retries=0). Tools **12/12** (`write_file`×6, `run_shell`×6; **0** invented DONE; pip `-r` **attempted**×1 error, **no** ENVIRONMENT→repair). Model calls 9/80. Retries 0/6. Wall ~89s / spent ≈41.5s. Process exit 2. False DONE **0** |
+| notes | vs RW-079: still FAIL `needs_user` @ 12/12; package-joined / `bf69eb73…` / 0 invented DONE held; ENVIRONMENT repair **gone**; mkdir File-exists **live Y** (first live confirm in this series); premature-test ENVIRONMENT **not exercised**; residual shifted to pip/echo budget burn + root pollution + empty summary + SyntaxError test. Caps unchanged. Needle OFF. |
+
+Reproduction (redacted; live NIM; operator home):
+
+```
+RAD_HOME=/tmp/rad_prod_rw081_5a76b128 rad objective run "<ASCII-tree text_analyzer goal>" --auto --max-tasks 8 --max-tools 12
+# obj_b6d32fcc → needs_user; tools 12/12; PLAN_CREATED source=llm attempts=2
+# objective_checks package-joined; input.txt sha256 bf69eb73… (3-line); summary.json {}; root analyzer.py pollution
+```
+
+## Investigation — pip thrash + root pollution Class A **NOT CONFIRMED** (RW-082) — 2026-09-18
+
+Investigate-first on `32e9fe87` / v0.4.5. No product patch. Package stays
+**0.4.5**. Needle **OFF**. Caps **not** raised. RW-058–081 facts are **not
+rewritten**. F-17 / F-18 / F-21 / F-26 stay closed. Do not re-litigate v0.4.3
+pip-missing-requirements ENVIRONMENT (task never reached verify this run).
+
+### F-20260918-44 — pip thrash + root `analyzer.py` pollution Class A **NOT CONFIRMED**
+
+| field | value |
+|---|---|
+| class | **not A** — model/budget quality on a working product path (Class **B** residual of F-43). RAD already joins *checks* to `package_dir` (theme 1 / v0.4.2). Executor/tools do **not** remap `write_file` / `echo >` action paths (models propose). Root `analyzer.py` does **not** satisfy `text_analyzer/analyzer.py` checks (false DONE **0**). Root leftover does **not** fail a passed package check. Joining echo redirects into `package_dir` would overwrite a good package file with the broken stub. PLAN_PROMPT already forbids pip for stdlib-only; v0.4.3 already treats pip `-r` file-not-found as not ENVIRONMENT / action-noise. Rejecting pip at ingest still charges `Budget.tool_calls`. Cosmetic PLAN_PROMPT-only is not a bump |
+| status | **investigated / not Class A** — **NOT CONFIRMED**. No product patch. No v0.4.6 |
+| found in | RW-081 / F-20260918-43 (v0.4.5 live 11B text_analyzer); investigate-first on `32e9fe87` |
+| fixed in | — |
+| lane | deterministic / scripted (MUST). Live NIM not re-run |
+| objective / test | `tests/test_pip_root_pollution_investigation.py`; RW-082 |
+| disk | scripted: package `analyzer.py` unchanged when `echo > analyzer.py` lands at workspace root; root-only write does **not** VERIFIED package checks; mkdir File-exists still VERIFIED; pip `-r` still not ENVIRONMENT; empty `{}` + missing `json_field` still FAILED; fallback *tasks* still check-less (F-17) |
+| expected | A control-plane hole that emits/accepts root writes as satisfying package checks, or that classifies pip thrash as ENVIRONMENT repair, or a verifier hole that wastes budget / rubber-stamps |
+| actual | Checks stay package-joined. Actions stay model-proposed (no path remap). Root pollution is leftover disk, not a false DONE and not a failed package contract. Pip `-r` missing is still TOOL / action-noise when verify runs; live RW-081 never reached verify (budget stop). Successful pip is a real tool call, not a classifier hole |
+| notes | Theme-3 measured win this live run: mkdir File-exists action-noise **live Y** (v0.4.4). Premature-test ENVIRONMENT **not live-hit** (v0.4.5 unit RW-080 remains). Multi-step checkpoint stays planned. Needle off. Caps unchanged. Live 11B text_analyzer@12 **not** claimed PASS |
+
+Reproduction:
+
+```
+python3 -m pytest -q tests/test_pip_root_pollution_investigation.py
+# root write ≠ package VERIFIED; echo redirect not joined; pip -r ≠ ENVIRONMENT; false DONE 0
+```
+
+| gate | result |
+|---|---|
+| `python3 -m pytest -q` | **519 passed** in 11.05s |
+| `rad doctor --offline` | READY — 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR (`RAD_HOME=/tmp/rad-rw081-gate`) |
+| `rad acceptance` | **50/50 PASSED** (`/tmp/rad-rw081-gate/acceptance/20260918-171326_gate.json`) |
+| `rad realworld` | **10 passed / 1 BLOCKED / 0 failed** (`live_nim` BLOCKED; `/tmp/rad-rw081-rw/realworld/20260918-171327_realworld.json`) |
+| Package | **0.4.5** (no bump) |
+| RW-058–080 | preserved |
+| 16-task cap | **UNCHANGED** |
+| Default tool budget | **UNCHANGED** (60) |
+| Needle | **OFF** (`existing`) |
+| False completion | **0** |
+| Live NIM this patch | **BLOCKED** (no NVIDIA keys) — not a live PASS claim for RW-081 |
 
 ## How to add a finding
 

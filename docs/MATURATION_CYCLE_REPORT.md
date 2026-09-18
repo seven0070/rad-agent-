@@ -6,6 +6,121 @@ Default `Budget.tool_calls` remains **60**.
 
 ---
 
+# Cycle 16 — RW-081 live v0.4.5 retest + pip/root-pollution Class A **NOT CONFIRMED** (2026-09-18)
+
+**Date:** 2026-09-18
+**Baseline:** `origin/main` `32e9fe87` (tag **v0.4.5**, package **0.4.5**)
+**Package at start:** `0.4.5`
+**This branch:** `cursor/rw081-pip-root-pollution-4319` — package **0.4.5** (no bump)
+**Architecture:** control plane preserved. Needle stays off. Caps unchanged.
+RW-058–080 are **not rewritten**. F-17 / F-18 / F-21 / F-26 stay closed.
+
+## Part A — live use (RW-081)
+
+Live NVIDIA NIM 11B text_analyzer on v0.4.5 (`obj_b6d32fcc`, home
+`/tmp/rad_prod_rw081_5a76b128`, `--max-tasks 8 --max-tools 12`, Needle off).
+Authoritative facts from the operator report. This agent did not re-run NIM.
+
+| item | value |
+|------|--------|
+| Verdict | **FAIL** — `needs_user` (tools 12/12). **Not** E2E PASS |
+| vs RW-079 | Still FAIL. Package-joined / `bf69eb73…` / 0 invented DONE held. ENVIRONMENT repair **gone**. mkdir File-exists **live Y**. Premature-test ENVIRONMENT **not live-hit**. Residual → pip/echo + root pollution |
+| Disk | 3-line `input.txt` sha256 `bf69eb73…`; package `summary.json` **`{}` valid, empty**; tests **SyntaxError**; README 393 B; **root `analyzer.py`** from `echo >` |
+| Repair | **none** (retries=0). First task VERIFIED despite mkdir File-exists. Second task never verified (budget) |
+| False DONE | **0** |
+| Class | **B** residual (11B/budget). mkdir File-exists Class A **live: Y**. Premature-test ENVIRONMENT **live: N**. Pip/root-pollution Class A **NOT CONFIRMED** |
+
+## Part B — investigate-first (pip thrash + root pollution)
+
+Question: with known `package_dir`, does RAD emit/accept root writes that
+disagree with package checks, is there a verifier/recovery hole, and is pip
+thrash under stdlib-only goals a control-plane defect beyond PLAN_PROMPT +
+v0.4.3?
+
+| probe | result |
+|---|---|
+| `infer_package_dir` / inferred + LLM objective checks | Still **`text_analyzer/`**; all joined (0 bare). Theme 1 / slice A hold |
+| `align_shell_command` on `echo … > analyzer.py` / `pip install -r` | **Unchanged** — only bare `test_*.py` in *check* commands is rewritten |
+| `write_file("analyzer.py")` / `echo > analyzer.py` | Lands at **workspace root**. Executor does not remap action paths (models propose) |
+| Root `analyzer.py` vs check `text_analyzer/analyzer.py` | **FAILED** — does not satisfy. False DONE **0** |
+| Package file present + root echo leftover | Package check **VERIFIED**; package content **unchanged**; leftover is extra disk |
+| Hypothetical join of echo redirect into `package_dir` | Would **overwrite** a good package `analyzer.py` with the broken stub. Anti-patch |
+| pip `-r` file-not-found classify | Still **not ENVIRONMENT** (v0.4.3). Live RW-081 never reached verify |
+| Successful `pip install jsonschema` | Not ENVIRONMENT; not action-noise. Real tool call; ingest-reject still charges budget |
+| PLAN_PROMPT | Already **must not pip install** for stdlib-only (v0.4.3). Cosmetic prompt-only is not a bump |
+| mkdir File-exists | Still action-noise; **live Y** this run |
+| Premature `python …/test_*.py` | Helper still holds; **not live-hit** |
+| empty `{}` + missing `json_field` | Still **not VERIFIED** |
+| Live RW-081 remaining | pip/echo budget, empty summary, SyntaxError test, root leftover — **Class B** |
+
+**NOT CONFIRMED.** No product patch. Stay **0.4.5**. Tests:
+`tests/test_pip_root_pollution_investigation.py`. Ledger F-20260918-43 (B) /
+F-20260918-44 (not A). Theme-3 measured win: mkdir File-exists **live Y**.
+
+## What did not change
+
+- Package **0.4.5** (no 0.4.6)
+- Needle default `existing` / off
+- `max_plan_tasks` default **16**
+- `Budget.tool_calls` default **60**
+- False completion remains **0**
+- RW-058–080 ledger/matrix rows
+- Control plane shape PLAN→PERMISSION→BUDGET→EXECUTE→OBSERVE→VERIFY→RECOVER
+- F-17 / F-18 / F-21 / F-26 closed; A1 budget→needs_user **not reopened**
+- Live 11B text_analyzer **not** claimed PASS
+- Path-aligned checks (v0.4.0), multi-file contracts (v0.4.1), ASCII-tree
+  package_dir (v0.4.2), pip/DONE thrash (v0.4.3), mkdir File-exists (v0.4.4),
+  premature-test ENVIRONMENT (v0.4.5) preserved
+- Multi-step checkpoint **not** built
+- No PLAN_PROMPT-only bump; no action-path remap
+
+## Class A / B / C (this cycle)
+
+| class | this record |
+|---|---|
+| **A** | **none proven.** F-20260918-44 pip/root-pollution **NOT CONFIRMED**. |
+| **B** | **F-20260918-43** — RW-081 live 11B incompleteness (pip/echo budget, empty summary, SyntaxError test, root leftover). |
+| **C** | none proven. `live_nim` may BLOCKED. |
+
+## Quality gates (this branch)
+
+Isolated homes `/tmp/rad-rw081-gate` (doctor, acceptance) and `/tmp/rad-rw081-rw` (realworld).
+
+| gate | result |
+|------|--------|
+| `rad version` | **PASS** v0.4.5 |
+| `python3 -m pytest -q` | **PASS** 519 passed in 11.05s |
+| `rad doctor --offline` | **PASS** 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR, verdict READY, exit 0 |
+| `rad acceptance` | **PASS** 50/50 — `/tmp/rad-rw081-gate/acceptance/20260918-171326_gate.json` |
+| `rad realworld` | **PASS** 10/11 + 1 BLOCKED — `/tmp/rad-rw081-rw/realworld/20260918-171327_realworld.json` |
+| Needle default | **PASS** (`existing`) — asserted in tests |
+| Caps | **PASS** `max_plan_tasks` 16; `Budget.tool_calls` 60 — asserted in tests |
+| False DONE | **PASS** (scripted 0) — asserted in tests |
+| Package | **0.4.5** |
+| Live NIM this patch | not re-run; RW-081 facts from the operator report. Suite `live_nim` **BLOCKED** (no keys here) |
+
+## Remaining limitations
+
+1. Live NVIDIA NIM on 11B may still fail Class B (model / budget) on
+   text_analyzer@12. This cycle records that mkdir File-exists action-noise is
+   live, and that pip/echo + root pollution is not a new control-plane hole.
+2. Default planner cap is **16**. Default tool budget is **60**.
+3. Multi-step checkpoint remains a Gen3 theme 3 planned slice (not this patch).
+4. Premature-test ENVIRONMENT Class A remains unit-confirmed (RW-080) and was
+   **not live-hit** on RW-081.
+
+## Roadmap pointer
+
+Operating spine: [ROADMAP.md](ROADMAP.md). **Generation 1 is complete**
+(v0.2.0–v0.2.3). **Generation 2 is complete** (v0.3.0–v0.3.2). **Generation 3
+is in progress:** path-aligned checks **v0.4.0** (used through RW-081);
+multi-file contracts **v0.4.1** (used through RW-081); theme 3 **planned /
+scoped**, slice A **v0.4.2**, slice B **v0.4.3**, slice C **v0.4.4** (**live
+Y** RW-081), slice D **v0.4.5** (used RW-081; premature-test path not live-hit).
+Stay **0.4.5**. Gen4–5 are not started.
+
+---
+
 # Cycle 15 — RW-079 live v0.4.4 retest + Gen3 theme 3 slice D premature-test ENVIRONMENT / v0.4.5 (2026-09-18)
 
 **Date:** 2026-09-18
