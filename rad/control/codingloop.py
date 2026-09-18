@@ -13,7 +13,10 @@ contracts so weak artifacts cannot become VERIFIED (RW-071 / Gen3 theme 2).
 Fallback *tasks* stay check-less (F-17). First-task thrash (RW-075): a missing
 `requirements.txt` from `pip install -r` is not an environment prerequisite, and
 an invented tool named `DONE` / `DONE: …` is a protocol mistake, not a failed
-contract (Gen3 theme 3 slice B).
+contract (Gen3 theme 3 slice B). mkdir / create **already exists** after
+`write_file` created the tree is the same family of action noise (RW-077 /
+Gen3 theme 3 slice C) — it must not fail a task whose directory/file checks
+passed.
 """
 from __future__ import annotations
 
@@ -42,6 +45,12 @@ _PIP_REQ_ERR = re.compile(
 )
 _PIP_INSTALL_R = re.compile(r"\bpip(?:3)?\b(?:\s+\S+)*\s+install\s+-r\b", re.I)
 _COMMAND_NOT_FOUND = re.compile(r"command not found", re.I)
+_ALREADY_EXISTS = re.compile(r"already exists|FileExistsError|\bFile exists\b", re.I)
+_MKDIR_LIKE = re.compile(
+    r"\b(?:mkdir|md)\b|os\.mkdir|Path\([^)]*\)\.mkdir|\.mkdir\(",
+    re.I,
+)
+_PERM_DENIED = re.compile(r"permission denied|EACCES", re.I)
 # "under pkg/" (slash required so "under the …" is not a package name)
 _PKG_UNDER_RE = re.compile(
     r"\bunder\s+(?:the\s+)?(?:directory\s+|dir\s+|package\s+|folder\s+)?([A-Za-z_][\w.-]*)/",
@@ -110,11 +119,29 @@ def is_pip_requirements_file_missing(output: str = "", command: str = "") -> boo
     return False
 
 
+def is_mkdir_already_exists(output: str = "", command: str = "") -> bool:
+    """True when mkdir/create failed because the path already exists (RW-077).
+
+    write_file creates parent directories; a later `mkdir pkg` File-exists is
+    not a failed directory contract when explicit file_exists/dir_exists checks
+    can still pass. Permission denied and command-not-found stay real errors.
+    """
+    out = output or ""
+    cmd = command or ""
+    if _COMMAND_NOT_FOUND.search(out) or _PERM_DENIED.search(out):
+        return False
+    if not _ALREADY_EXISTS.search(out):
+        return False
+    return bool(_MKDIR_LIKE.search(cmd) or _MKDIR_LIKE.search(out))
+
+
 def is_first_task_thrash_noise(tool: str, output: str = "", command: str = "") -> bool:
     """Approach noise that must not fail a task whose machine checks passed."""
     if is_done_protocol_tool(tool):
         return True
-    return is_pip_requirements_file_missing(output, command)
+    if is_pip_requirements_file_missing(output, command):
+        return True
+    return is_mkdir_already_exists(output, command)
 
 
 def looks_like_broken_artifact(failed_checks: Iterable[Dict[str, Any]]) -> bool:
@@ -135,7 +162,7 @@ def repair_hint(failed_checks: Iterable[Dict[str, Any]]) -> str:
         + ". Fix the actual files/tests on disk. Do not write a path named DONE: "
           "and do not replace the artifact with a DONE: line. "
           "Do not call a tool named DONE. Do not pip install -r a missing requirements.txt "
-          "for stdlib-only coding."
+          "for stdlib-only coding. Do not mkdir a path write_file already created."
     )
 
 

@@ -17,6 +17,7 @@ from typing import Any, Dict, List, Optional
 
 from rad.control.codingloop import (
     is_done_protocol_tool,
+    is_mkdir_already_exists,
     is_pip_requirements_file_missing,
     looks_like_broken_artifact,
     repair_hint,
@@ -226,6 +227,10 @@ def _thrash_hint(observations: List[Observation]) -> str:
            for o in observations if o.status != "success"):
         bits.append("Do not pip install -r a missing requirements.txt for stdlib-only coding. "
                     "Use the workspace files; do not invent a requirements file.")
+    if any(is_mkdir_already_exists(o.output or "", str((o.args or {}).get("command", "")))
+           for o in observations if o.status != "success"):
+        bits.append("Do not mkdir a directory that write_file already created. "
+                    "write_file creates parent directories. Continue writing remaining files.")
     return (" " + " ".join(bits)) if bits else ""
 
 

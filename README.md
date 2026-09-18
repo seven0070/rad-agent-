@@ -12,7 +12,7 @@ runs commands with your confirmation, and **teaches itself new skills from a sin
   __ / \  |  _ \/ |      / \
  / _` __ \| |_) | | /\/\ / _ \
  \__,_||_|____/|_|/__/__\_/ \_\
-   v0.4.3 — open door, free first, self-evolving
+   v0.4.4 — open door, free first, self-evolving
 ```
 
 ---
@@ -63,7 +63,7 @@ local engines → free cloud tiers (round-robin) → paid (unless free-lock)
 * Everything is reported: `rad [groq] …`
 * Optional experimental tool router: `RAD_TOOL_ROUTER=needle` lets [Needle](https://github.com/cactus-compute/needle)
   *propose* tool names/args. Default remains `existing`. Needle never executes tools, never
-  bypasses permission/sandbox/budget/verification, and stays **off** in v0.4.3
+  bypasses permission/sandbox/budget/verification, and stays **off** in v0.4.4
   (`RAD_TOOL_ROUTER=existing`). `rad needle-eval` is the measurement path; it is not a default.
 
 ## Human-inspired memory
@@ -385,7 +385,7 @@ and how to add a tool, a scenario or a migration.
 
 ## Roadmap
 
-Operating spine (Gen1–Gen5, the build → test → validate → release → use → discover gaps loop): [docs/ROADMAP.md](docs/ROADMAP.md). Gen1 complete on 0.2.3; Gen2 complete on 0.3.0–0.3.2; Gen3 in progress (path-aligned checks **v0.4.0**; multi-file contracts **v0.4.1**; ASCII-tree package_dir **v0.4.2**; first-task thrash **v0.4.3**). The list below is a product-idea backlog, not a generation commitment.
+Operating spine (Gen1–Gen5, the build → test → validate → release → use → discover gaps loop): [docs/ROADMAP.md](docs/ROADMAP.md). Gen1 complete on 0.2.3; Gen2 complete on 0.3.0–0.3.2; Gen3 in progress (path-aligned checks **v0.4.0**; multi-file contracts **v0.4.1**; ASCII-tree package_dir **v0.4.2**; first-task thrash **v0.4.3**; mkdir already-exists action noise **v0.4.4**). The list below is a product-idea backlog, not a generation commitment.
 
 LoRA fine-tune of Rad's personality into Edge0 weights · expert pruning/distillation for lighter
 35b · web/phone face · remote-MCP tool execution hardening · multi-user sessions ·
