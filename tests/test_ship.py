@@ -83,6 +83,33 @@ def test_global_home_flag_works_with_subcommands(home, capsys):
     assert rc == 0 and "v0.2.0" in out
 
 
+def test_nvidia_default_model_is_not_eol(tmp_path):
+    """NIM retired meta/llama-3.3-70b-instruct (HTTP 410, 2026-08-26). The builtin default
+    must be a model that still exists so `rad keys add nvidia` works without a pin."""
+    from rad.providers import all_specs
+    spec = next(s for s in all_specs(RadHome(str(tmp_path / "h"))) if s.name == "nvidia")
+    assert spec.default_model != "meta/llama-3.3-70b-instruct"
+    assert spec.default_model.startswith("meta/")
+    assert spec.vision_model
+
+
+def test_openai_tool_calls_use_nested_function_shape():
+    """NVIDIA NIM rejects flat `{id,name,arguments}` tool_calls (HTTP 400)."""
+    from rad.providers import _openai_message
+    m = _openai_message({"role": "assistant", "content": "", "tool_calls": [
+        {"id": "c1", "name": "write_file", "arguments": {"path": "a.txt", "content": "x"}},
+    ]})
+    tc = m["tool_calls"][0]
+    assert tc["type"] == "function" and tc["id"] == "c1"
+    assert tc["function"]["name"] == "write_file"
+    assert json.loads(tc["function"]["arguments"]) == {"path": "a.txt", "content": "x"}
+    already = _openai_message({"role": "assistant", "tool_calls": [{
+        "id": "c2", "type": "function",
+        "function": {"name": "read_file", "arguments": {"path": "b.txt"}},
+    }]})
+    assert json.loads(already["tool_calls"][0]["function"]["arguments"])["path"] == "b.txt"
+
+
 def test_rad_version_cli(capsys):
     assert main(["version"]) == 0
     assert "v0.2.0" in capsys.readouterr().out

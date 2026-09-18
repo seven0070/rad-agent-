@@ -6,6 +6,15 @@ import pytest
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
+@pytest.fixture(autouse=True)
+def _isolate_provider_env(monkeypatch):
+    """Tests must stay offline: a developer (or this agent) with keys in the process
+    env must not make doctor/router see a live brain or spend money."""
+    for k in list(os.environ):
+        if k.endswith("_API_KEY") or k.endswith("_NIM_API_KEY"):
+            monkeypatch.delenv(k, raising=False)
+
+
 @pytest.fixture()
 def home(tmp_path, monkeypatch):
     """A throw-away RAD home with its own workspace.

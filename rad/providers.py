@@ -146,7 +146,8 @@ def _builtin_specs(home: RadHome) -> List[ProviderSpec]:
                      tier="free", supports_vision=True, desc="OpenRouter free models"),
         ProviderSpec("nvidia", "openai", "https://integrate.api.nvidia.com/v1",
                      ("NVIDIA_NIM_API_KEY", "NVIDIA_API_KEY"),
-                     default_model="meta/llama-3.3-70b-instruct",
+                     # llama-3.3-70b-instruct reached NIM EOL on 2026-08-26 (HTTP 410).
+                     default_model="meta/llama-3.2-11b-vision-instruct",
                      vision_model="meta/llama-3.2-11b-vision-instruct",
                      tier="free", supports_vision=True, max_tokens=2048,
                      desc="NVIDIA NIM (free-credit models)"),
@@ -259,6 +260,42 @@ def probe_local(spec: ProviderSpec) -> Tuple[bool, List[str]]:
 
 # ---------------------------------------------------------------- chat: openai-compat
 
+def _openai_message(m: Dict[str, Any]) -> Dict[str, Any]:
+    """Shape a chat message for OpenAI-compatible /chat/completions.
+
+    RAD's session stores tool calls as `{id,name,arguments}`. NVIDIA NIM (and strict
+    OpenAI validators) require `{id,type:function,function:{name,arguments}}` with
+    `arguments` as a JSON string. Sending the flat shape yields HTTP 400.
+    """
+    out = dict(m)
+    tcs = out.get("tool_calls")
+    if not tcs:
+        return out
+    wire = []
+    for tc in tcs:
+        if not isinstance(tc, dict):
+            continue
+        if "function" in tc:
+            item = dict(tc)
+            item.setdefault("type", "function")
+            fn = dict(item.get("function") or {})
+            args = fn.get("arguments", {})
+            if not isinstance(args, str):
+                fn["arguments"] = json.dumps(args or {})
+            item["function"] = fn
+            wire.append(item)
+            continue
+        args = tc.get("arguments", {})
+        if not isinstance(args, str):
+            args = json.dumps(args or {})
+        wire.append({"id": tc.get("id") or "", "type": "function",
+                     "function": {"name": tc.get("name") or "", "arguments": args}})
+    out["tool_calls"] = wire
+    if out.get("content") is None:
+        out["content"] = ""
+    return out
+
+
 def _chat_openai(spec: ProviderSpec, key: Optional[str], messages: List[Dict[str, Any]],
                  model: str, tools: Optional[List[Dict[str, Any]]], stream_cb: Optional[Callable[[str], None]],
                  temperature: float, timeout: float, max_tokens: int) -> ChatResult:
@@ -267,7 +304,8 @@ def _chat_openai(spec: ProviderSpec, key: Optional[str], messages: List[Dict[str
         # NIM quirk: some endpoints force SSE unless Accept: application/json is set
         headers.setdefault("Accept", "application/json")
     body: Dict[str, Any] = {
-        "model": model, "messages": messages, "temperature": temperature,
+        "model": model, "messages": [_openai_message(m) for m in messages],
+        "temperature": temperature,
         "stream": stream_cb is not None,
     }
     if max_tokens:
@@ -277,7 +315,14 @@ def _chat_openai(spec: ProviderSpec, key: Optional[str], messages: List[Dict[str
     status, _, resp = _post_json(spec.base_url + "/chat/completions", body, headers, timeout,
                                  stream=stream_cb is not None)
     if status != 200:
-        raise ProviderError(f"{spec.name}: HTTP {status} {_read_error_body(resp if isinstance(resp, bytes) else b'')}",
+        err = _read_error_body(resp if isinstance(resp, bytes) else b"")
+        # NIM retires models with HTTP 410. Retry the still-listed vision/default fallback
+        # once so a stale pin of llama-3.3-70b-instruct (EOL 2026-08-26) still works.
+        if (spec.name == "nvidia" and status == 410 and spec.vision_model
+                and model != spec.vision_model):
+            return _chat_openai(spec, key, messages, spec.vision_model, tools, stream_cb,
+                                temperature, timeout, max_tokens)
+        raise ProviderError(f"{spec.name}: HTTP {status} {err}",
                             status=status, retryable=_retryable(status))
     res = ChatResult(provider=spec.name, model=model)
     if stream_cb is None:

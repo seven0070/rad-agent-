@@ -44,8 +44,8 @@ rad install edge0        # Mac only — clones + guides setup
 On other machines the engine socket takes Ollama / LM Studio / vLLM instead — same interface.
 
 **NVIDIA NIM** (build.nvidia.com) is a first-class free-tier brain:
-`rad keys add nvidia <nvapi-…>` — default model `meta/llama-3.3-70b-instruct`
-(free-credit), vision via `meta/llama-3.2-11b-vision-instruct`.
+`rad keys add nvidia <nvapi-…>` — default model `meta/llama-3.2-11b-vision-instruct`
+(NIM free-credit; `meta/llama-3.3-70b-instruct` reached end-of-life on 2026-08-26).
 
 ## Routing (free-first, auto-fallback)
 

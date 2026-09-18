@@ -24,7 +24,8 @@ Talking to a model needs **one** of:
 
 ```bash
 rad keys add groq gsk_…                 # free-tier cloud
-# or:  export GROQ_API_KEY=…
+# or:  rad keys add nvidia <nvapi-…>     # NVIDIA NIM (default: llama-3.2-11b-vision-instruct)
+# or:  export GROQ_API_KEY=… / NVIDIA_NIM_API_KEY=…
 # or:  rad keys add openai sk-…
 # or:  ollama serve && ollama pull llama3.2   # local, no key
 rad providers                            # what RAD can see
