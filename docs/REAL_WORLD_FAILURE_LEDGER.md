@@ -259,6 +259,64 @@ Needle remains default-off. Not AGI. Not v0.3.0.
 
 `rad realworld` honesty cases: `false_success`, `needs_user`, `no_loop` all ended `needs_user` and were **not** `VERIFIED`.
 
+## This maturation run (2026-09-18, cycle 2 — v0.2.2)
+
+Environment: Cloud Agent VM, **no** `NVIDIA_NIM_API_KEY` / `NVIDIA_API_KEY`.
+`origin/main` tip `f7160c14cc5e9905a5c2e0689bbcc2465a20b45c` (Merge PR #7). Package **0.2.1**
+at start; this cycle ships **0.2.2** for one Class A grader fix. Needle remains default-off.
+Not AGI. Not v0.3.0. Task log: `docs/REAL_WORLD_TASK_MATRIX.md`.
+
+### F-20260918-09 — lab grader rejected verifier-style Check args
+
+| field | value |
+|---|---|
+| class | A |
+| status | fixed |
+| found in | 0.2.1 `f7160c1` / this cycle's campaign (RW-020, RW-021) |
+| fixed in | **v0.2.2** — `_run_grader` accepts `key`/`contains` as well as legacy `field`+`equals` / `expect` |
+| lane | scripted realworld + extra campaign |
+| objective / test | `test_grader_accepts_verifier_style_json_field_and_shell_contains`; `rad realworld --only research,coding` |
+| disk | `cmp.json` / `report.json` had `conflicts`; `python3 check.py` printed `ALL TESTS PASSED` |
+| expected | independent lab grader agrees with the control-plane verifier on the same Check dict |
+| actual | `json_field{key}` → `grader error: 'field'`; `shell_output{contains}` → `grader error: 'expect'`; both `ok: false` |
+| notes | Control plane still VERIFIED from machine checks. The *independent* grader used by `Lab` / realworld `graders=` false-negatived correct artifacts. DONE semantics were not involved. Legacy lab `{expect}` / `{field,equals}` still pass. |
+
+Reproduction (redacted):
+
+```
+_run_grader(ws, {"kind":"json_field","args":{"path":"report.json","key":"conflicts"}})
+# before: {"ok": false, "detail": "grader error: 'field'"}
+_run_grader(ws, {"kind":"shell_output","args":{"command":"echo ALL TESTS PASSED","contains":"ALL TESTS PASSED"}})
+# before: {"ok": false, "detail": "grader error: 'expect'"}
+```
+
+### F-20260918-10 — live NIM Class A retest (cycle 2)
+
+| field | value |
+|---|---|
+| class | C |
+| status | **BLOCKED** |
+| found in | this cycle (RW-011, RW-023) |
+| lane | live NVIDIA NIM |
+| expected | with `NVIDIA_NIM_API_KEY` / `NVIDIA_API_KEY`: budget-boundary + artifact-exists → VERIFIED; artifact-missing → not VERIFIED |
+| actual | both env vars **absent** — live lane not run |
+
+Same condition as F-20260918-07. Offline reconstruction still `rad realworld --only overdecompose,false_success`.
+
+| gate | result |
+|---|---|
+| `rad version` | **v0.2.2** (after the Class A bump) |
+| `python -m pytest -q` | see `docs/MATURATION_CYCLE_REPORT.md` (actually run on this branch) |
+| `rad doctor --offline` | see maturation report |
+| `rad acceptance` | see maturation report |
+| `rad realworld` | **10 passed / 1 BLOCKED / 0 failed** on the 0.2.1 baseline; re-run after the grader fix |
+| Live NIM Class A | **BLOCKED** |
+| Action ramp 1/3/5/10 tasks | **VERIFIED** on disk |
+| 20 sequential actions (one task) | **VERIFIED** (20/20 files) |
+| 20 sequential planned tasks | **FAILED** at default `max_plan_tasks=16` (16 files written; s17–s20 absent) — documented limit, not patched |
+| New Class A this run | **F-20260918-09** — 0.2.2 grader fix |
+| Needle | default `existing`; **NOT** turned on |
+
 ## How to add a finding
 
 1. Reproduce with disk checks (file exists / hash / contents). Quote status + verification, not model prose.

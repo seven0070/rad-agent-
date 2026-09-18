@@ -209,10 +209,26 @@ def _run_grader(ws: Path, g: Dict[str, Any]) -> Dict[str, Any]:
             txt = p.read_text(encoding="utf-8") if p.exists() else ""
             return {"kind": kind, "ok": a["text"] not in txt, "detail": f"{a['path']} excludes {a['text']!r}"}
         if kind == "json_field":
-            got = json.loads(p.read_text(encoding="utf-8")) if p.exists() else None
-            for part in str(a["field"]).split("."):
-                got = got.get(part) if isinstance(got, dict) else None
-            return {"kind": kind, "ok": got == a["equals"], "detail": f"{a['path']}:{a['field']} = {got!r}"}
+            # Accept both lab-legacy {field, equals} and verifier-style {key, [equals], [truthy]}.
+            # Real-world scenarios attach the same Check args the control plane uses; a KeyError
+            # here used to false-negative an artifact the verifier had already VERIFIED.
+            doc = json.loads(p.read_text(encoding="utf-8")) if p.exists() else None
+            if doc is None:
+                return {"kind": kind, "ok": False, "detail": f"{a.get('path')} missing or unreadable"}
+            key = str(a.get("key", a.get("field", "")))
+            node = doc
+            for part in key.split("."):
+                if isinstance(node, dict) and part in node:
+                    node = node[part]
+                elif isinstance(node, list) and part.isdigit() and int(part) < len(node):
+                    node = node[int(part)]
+                else:
+                    return {"kind": kind, "ok": False, "detail": f"{a.get('path')}: key {key!r} not found"}
+            if "equals" in a:
+                ok = node == a["equals"]
+                return {"kind": kind, "ok": ok, "detail": f"{a.get('path')}:{key} == {a['equals']!r}: {ok}"}
+            ok = bool(node) if a.get("truthy", True) else True
+            return {"kind": kind, "ok": ok, "detail": f"{a.get('path')}:{key} = {str(node)[:80]}"}
         if kind == "json_min_len":
             got = json.loads(p.read_text(encoding="utf-8")) if p.exists() else {}
             field = a.get("field", "")
@@ -231,7 +247,8 @@ def _run_grader(ws: Path, g: Dict[str, Any]) -> Dict[str, Any]:
             import subprocess
             r = subprocess.run(["sh", "-c", a["command"]], cwd=str(ws), capture_output=True, text=True, timeout=60)
             out = (r.stdout or "").strip()
-            ok = r.returncode == 0 and (kind == "shell_ok" or a["expect"] in out)
+            needle = a.get("contains", a.get("expect", ""))
+            ok = r.returncode == 0 and (kind == "shell_ok" or str(needle) in out)
             return {"kind": kind, "ok": ok, "detail": f"exit={r.returncode} out={out[:100]!r}"}
         return {"kind": kind, "ok": False, "detail": "unknown grader"}
     except Exception as e:
