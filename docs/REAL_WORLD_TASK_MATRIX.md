@@ -15,15 +15,80 @@ obj-checks bare). ASCII-tree `package_dir` is **implemented as v0.4.2**
 (RW-074; theme-1 follow-up / Gen3 theme 3 slice A). Live NIM retest of v0.4.2
 is **RW-075** (FAIL; ASCII-tree obj-checks **package-joined** live-confirmed).
 First-task thrash is **implemented as v0.4.3** (RW-076; Gen3 theme 3 slice B).
-Do not rewrite RW-058–074. Scripted theme-2 RW-066 (F-27) is preserved.
+Live NIM retest of v0.4.3 is **RW-077** (FAIL; pip/DONE Class A **live-consistent**;
+mkdir File-exists action noise confirmed Class A). mkdir already-exists action
+noise is **implemented as v0.4.4** (RW-078; Gen3 theme 3 slice C).
+Do not rewrite RW-058–076. Scripted theme-2 RW-066 (F-27) is preserved.
 
 Every `VERIFIED` / `completed` cell is from the control-plane verifier **and** a disk
 check (file exists / contents / hash). A model `DONE:` line is never enough.
 
 Status vocabulary: **PASS** | **FAIL** | **BLOCKED** | **NOT TESTED**.
 
-Live NIM retest of v0.4.2 (RW-075) is at the top, then scripted v0.4.3
-(RW-076), then RW-073 / RW-074. RW-058–074 are **not rewritten**.
+Live NIM retest of v0.4.3 (RW-077) is at the top, then scripted v0.4.4
+(RW-078), then RW-075 / RW-076. RW-058–076 are **not rewritten**.
+
+# Live NIM retest of v0.4.3 (RW-077)
+
+Lane: operator production `rad objective run` on **v0.4.3** (tag `v0.4.3`,
+`99099b8a`). Needle `existing` / off. `max_plan_tasks` **16**. Default
+`Budget.tool_calls` **60** (this run used `--max-tasks 8 --max-tools 12`).
+RW-058–076 are **not rewritten**. **Not** an end-to-end PASS. Package **0.4.3**
+on the live run; this change bumps to **0.4.4** for mkdir already-exists
+action noise (does **not** claim live 11B text_analyzer@12 now PASS).
+
+Authoritative live facts: operator report for `obj_3da359c5` /
+`/tmp/rad_prod_rw077_0a8393f8`.
+
+| id | Date | Category | Objective | #tasks | #actions | Tools | Result | Verification | Recovery | Failure class | Notes |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| RW-077 | 2026-09-18 IST 21:45:54–21:47:37 | coding (live NIM) — v0.4.3 text_analyzer retest vs RW-075 | production ASCII-tree `text_analyzer/` layout (analyzer.py, **exact 3-line** input.txt, summary.json, test_analyzer.py, README.md); stdlib; real tests; `--max-tasks 8 --max-tools 12`; Needle `existing` / off | `PLAN_CREATED` **source=llm** **attempts=1** (5 tasks, `fit=true`, `compacted=false`, `estimated_tools=10`); t_00a0b182 Create directory **RUNNING** at stop (retry); Write input.txt **COMPLETED**; analyzer / test / README **PENDING** | tools 12/12 (`write_file`×4, `run_shell`×8 — **0** pip, **0** fake `DONE`); model calls 9/80; retries 1/6; wall ~103s / spent ≈55.9s; process exit 2 | 12/12 exhausted | **FAIL** vs success criteria (`needs_user`); **NOT DONE**, **not VERIFIED** complete | First task machine `file_exists` directory **passed**; overall **FAILED** on **actions** (8 actions / 1 error: `mkdir text_analyzer` File exists after `write_file` already created the tree). Objective checks **all package-joined** under `text_analyzer/` (4 checks; 0 bare) | Attempt 1 **TOOL_FAILURE** → `retry_with_hint` (mkdir File exists). **Not** ENVIRONMENT. **No** Repair-prerequisite insert | **B** residual (11B/budget / first-task mkdir thrash). Theme 1 ASCII-tree obj-checks **Y**. Theme 2 **Y**. v0.4.3 pip/DONE Class A **live-consistent** (absent). mkdir File-exists failing a check-passing task is Class A (F-40 / v0.4.4) | Provider nvidia / `meta/llama-3.2-11b-vision-instruct`. Home `/tmp/rad_prod_rw077_0a8393f8`; `obj_3da359c5`. Disk: workspace root **only** `text_analyzer/` (no root pollution). `input.txt` **PASS** 3-line sha256 `bf69eb737ca6f3949b5626701cb8472a2fc683e6b05e3101744eccd49dab629b`. Package `summary.json` **present but empty/invalid** (0 bytes). `analyzer.py` stdlib. `test_analyzer.py` unittest **wrong oracles** (`words==6` / `chars==31` vs 13 / 76). README 16 B (`# text_analyzer`). False DONE **0**. Caps unchanged. Needle OFF. |
+
+### RW-077 vs RW-075 (same 11B / tools=12 control)
+
+| | RW-075 (v0.4.2) | RW-077 (v0.4.3) |
+|---|---|---|
+| home | `/tmp/rad_prod_rw075_c2d7abdd` | `/tmp/rad_prod_rw077_0a8393f8` |
+| objective id | `obj_476d5f0e` | `obj_3da359c5` |
+| package | 0.4.2 | **0.4.3** |
+| `--max-tasks` / `--max-tools` | 8 / 12 | 8 / 12 |
+| Needle | `existing` / off | `existing` / off |
+| PLAN source | **llm** attempts **1** (4 tasks) | **llm** attempts **1** (**5 tasks**) |
+| Path-alignment (disk/tasks) | **Y** | **Y** |
+| Objective checks | **all package-joined** `text_analyzer/…` (0 bare) | **all package-joined** `text_analyzer/…` (0 bare) |
+| mkdir / ENVIRONMENT thrash | **Y** — ENVIRONMENT on pip/`requirements.txt` → Repair prerequisite | **N** — TOOL_FAILURE only (mkdir File exists); **no** ENVIRONMENT; **no** Repair-prerequisite |
+| Root pollution | NO | NO |
+| `input.txt` | correct 3-line `bf69eb73…` | **same** correct 3-line `bf69eb73…` |
+| Package `summary.json` | missing | **present but empty/invalid** |
+| tools | 12/12 (`write_file`×6, pip×4, fake DONE×2) | 12/12 (`write_file`×4, `run_shell`×8; **0** pip, **0** fake DONE) |
+| false DONE | **0** | **0** |
+| Theme 1 | PASS signal (disk/tasks/obj-checks) | **PASS signal (disk/tasks/obj-checks)** |
+| Theme 2 | contracts hold; pip ENVIRONMENT misclass | contracts hold; pip/DONE Class A **gone** |
+| Residual class | B (+ pip ENVIRONMENT Class A → v0.4.3) | **B** (+ mkdir File-exists actions Class A → v0.4.4) |
+
+| metric | value |
+|---|---|
+| Package (live run) | **0.4.3** (tag `v0.4.3` / `99099b8a`) |
+| Theme 1 (path-aligned checks) | **Y** on disk + task checks **and** merged objective_checks (ASCII-tree `package_dir` **still Y**) |
+| Theme 2 (multi-file contracts) | **Y** — package-joined checks; correct 3-line input; mkdir not ENVIRONMENT |
+| Residual | **Class B** — empty/invalid `summary.json`, weak tests, thin README, tools 12/12 on first-task mkdir retry before later package tasks |
+| Class A pip/DONE first-task thrash | **live-consistent** (absent this run). 0× pip; 0× fake DONE; 0× ENVIRONMENT |
+| Class A mkdir File-exists actions | **confirmed** (deterministic); patched as v0.4.4. Directory `file_exists` passed; actions FAILED; TOOL_FAILURE retry burned tools=12 |
+| RW-058–076 | preserved (not rewritten) |
+| Default max-tools / max-tasks | **unchanged** (this run used `--max-tasks 8 --max-tools 12` only) |
+| Needle | **OFF** (`existing`) |
+| False completion | **0** |
+| Recommendation | Record **FAIL**. v0.4.3 pip/DONE fix **holds**. Do not claim live 11B@12 PASS. Theme 3 slice C ships as v0.4.4 (mkdir already-exists action noise). Multi-step checkpoint stays planned. |
+
+# Gen3 — v0.4.4 mkdir already-exists action noise (RW-078)
+
+Lane: deterministic / scripted on **v0.4.4**. Needle `existing` / off.
+`max_plan_tasks` **16**. Default `Budget.tool_calls` **60**. RW-058–077 are
+**not rewritten**. Package **0.4.3 → 0.4.4**. Live NIM not re-run.
+
+| id | Date | Category | Objective | #tasks | #actions | Tools | Result | Verification | Recovery | Failure class | Notes |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| RW-078 | 2026-09-18 | coding (scripted) — mkdir already-exists action noise | RW-077 shape: ASCII-tree `text_analyzer/`; first task `write_file` creates the tree then `mkdir text_analyzer` File exists; later task writes `analyzer.py` | 2 planned (LLM) | write input + mkdir fail, then write analyzer | default **60** unchanged | **PASS** (mkdir File-exists **not** ENVIRONMENT; no Repair prerequisite; first task VERIFIED from directory check; later task runs; empty JSON still **not** VERIFIED) | first-task directory check **VERIFIED** despite mkdir File-exists noise; objective not rubber-stamped when JSON invalid; no workspace-root pollution | mkdir File exists → TOOL **not** Repair prerequisite; treated as action noise when checks passed | **A** (Gen3 theme 3 slice C; live 11B quality stays **B**) | Tests `test_mkdir_already_exists_actions.py`. False DONE **0**. F-17 / F-26 preserved. Path-aligned, multifile, ASCII-tree, pip/DONE thrash preserved. Needle OFF. Caps unchanged. Live NIM not required. RW-077 Class B live facts preserved. |
 
 # Live NIM retest of v0.4.2 (RW-075)
 
