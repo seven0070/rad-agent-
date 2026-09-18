@@ -17,16 +17,83 @@ is **RW-075** (FAIL; ASCII-tree obj-checks **package-joined** live-confirmed).
 First-task thrash is **implemented as v0.4.3** (RW-076; Gen3 theme 3 slice B).
 Live NIM retest of v0.4.3 is **RW-077** (FAIL; pip/DONE Class A **live-consistent**;
 mkdir File-exists action noise confirmed Class A). mkdir already-exists action
-noise is **implemented as v0.4.4** (RW-078; Gen3 theme 3 slice C).
-Do not rewrite RW-058–076. Scripted theme-2 RW-066 (F-27) is preserved.
+noise is **implemented as v0.4.4** (RW-078; Gen3 theme 3 slice C). Live NIM retest
+of v0.4.4 is **RW-079** (FAIL; mkdir File-exists **not live-hit**; premature-test
+ENVIRONMENT confirmed Class A). Premature-test ENVIRONMENT is **implemented as
+v0.4.5** (RW-080; Gen3 theme 3 slice D).
+Do not rewrite RW-058–078. Scripted theme-2 RW-066 (F-27) is preserved.
 
 Every `VERIFIED` / `completed` cell is from the control-plane verifier **and** a disk
 check (file exists / contents / hash). A model `DONE:` line is never enough.
 
 Status vocabulary: **PASS** | **FAIL** | **BLOCKED** | **NOT TESTED**.
 
-Live NIM retest of v0.4.3 (RW-077) is at the top, then scripted v0.4.4
-(RW-078), then RW-075 / RW-076. RW-058–076 are **not rewritten**.
+Live NIM retest of v0.4.4 (RW-079) is at the top, then scripted v0.4.5
+(RW-080), then RW-077 / RW-078. RW-058–078 are **not rewritten**.
+
+# Live NIM retest of v0.4.4 (RW-079)
+
+Lane: operator production `rad objective run` on **v0.4.4** (tag `v0.4.4`,
+`acb61997`). Needle `existing` / off. `max_plan_tasks` **16**. Default
+`Budget.tool_calls` **60** (this run used `--max-tasks 8 --max-tools 12`).
+RW-058–078 are **not rewritten**. **Not** an end-to-end PASS. Package **0.4.4**
+on the live run; this change bumps to **0.4.5** for premature-test ENVIRONMENT
+(does **not** claim live 11B text_analyzer@12 now PASS).
+
+Authoritative live facts: operator report for `obj_a0781a42` /
+`/tmp/rad_prod_rw079_803109d5`.
+
+| id | Date | Category | Objective | #tasks | #actions | Tools | Result | Verification | Recovery | Failure class | Notes |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| RW-079 | 2026-09-18 IST 22:07:24–22:09:09 | coding (live NIM) — v0.4.4 text_analyzer retest vs RW-077 | production ASCII-tree `text_analyzer/` layout (analyzer.py, **exact 3-line** input.txt, summary.json, test_analyzer.py, README.md); stdlib; real tests; `--max-tasks 8 --max-tools 12`; Needle `existing` / off | `PLAN_CREATED` **source=llm** **attempts=1** (5 tasks + 1 repair, `fit=true`, `compacted=false`, `estimated_tools=10`); t_452be0d3 Create directory **RETRYING** (waiting on repair); Write input.txt **COMPLETED**; analyzer / test **PENDING**; README **COMPLETED**; repair t_eae607b4 **RUNNING** at stop | tools 12/12 (`write_file`×6, `run_shell`×6 — **0** pip, **0** invented `DONE`); model calls 9/80; retries 1/6; wall ~105s / spent ≈67.2s; process exit 2 | 12/12 exhausted | **FAIL** vs success criteria (`needs_user`); **NOT DONE**, **not VERIFIED** complete | First task machine `file_exists` directory **passed**; all produced artifacts nonempty **passed**; overall **FAILED** on **actions** (8 actions / 1 error: premature `python text_analyzer/test_analyzer.py` No such file). **Not** mkdir File-exists. Objective checks **all package-joined** under `text_analyzer/` (6 checks; 0 bare) | Attempt 1 **ENVIRONMENT_FAILURE** → `repair` (premature test No-such-file). **Not** mkdir File-exists; **not** pip-requirements | **B** residual (11B/budget / first-task + ENVIRONMENT repair). Theme 1 ASCII-tree obj-checks **Y**. Theme 2 **Y**. mkdir File-exists Class A **live: N**. Premature-test ENVIRONMENT is Class A (F-42 / v0.4.5) | Provider nvidia / `meta/llama-3.2-11b-vision-instruct`. Home `/tmp/rad_prod_rw079_803109d5`; `obj_a0781a42`. Disk: workspace root **only** `text_analyzer/` (no root pollution). `input.txt` **PASS** 3-line sha256 `bf69eb737ca6f3949b5626701cb8472a2fc683e6b05e3101744eccd49dab629b`. Package `summary.json` **valid JSON, wrong counts** (`lines=3, words=7, characters=39` vs true 3 / 13 / 76). `analyzer.py` stdlib. `test_analyzer.py` **wrong oracles** (`words==9` / `chars==51`). README 166 B. False DONE **0**. Caps unchanged. Needle OFF. |
+
+### RW-079 vs RW-077 (same 11B / tools=12 control)
+
+| | RW-077 (v0.4.3) | RW-079 (v0.4.4) |
+|---|---|---|
+| home | `/tmp/rad_prod_rw077_0a8393f8` | `/tmp/rad_prod_rw079_803109d5` |
+| objective id | `obj_3da359c5` | `obj_a0781a42` |
+| package | 0.4.3 | **0.4.4** |
+| `--max-tasks` / `--max-tools` | 8 / 12 | 8 / 12 |
+| Needle | `existing` / off | `existing` / off |
+| PLAN source | **llm** attempts **1** (5 tasks) | **llm** attempts **1** (5 tasks + **repair**) |
+| Path-alignment (disk/tasks) | **Y** | **Y** |
+| Objective checks | **all package-joined** `text_analyzer/…` (0 bare) | **all package-joined** `text_analyzer/…` (0 bare) |
+| mkdir File-exists | **Y** — TOOL_FAILURE retry | **N** — mkdir **succeeded** (path not exercised) |
+| Recovery | TOOL_FAILURE → retry_with_hint | **ENVIRONMENT_FAILURE** → **repair** (premature test) |
+| Root pollution | NO | NO |
+| `input.txt` | correct 3-line `bf69eb73…` | **same** correct 3-line `bf69eb73…` |
+| Package `summary.json` | present but empty/invalid | **valid JSON, wrong counts** |
+| tools | 12/12 (`write_file`×4, `run_shell`×8; **0** pip, **0** fake DONE) | 12/12 (`write_file`×6, `run_shell`×6; **0** pip, **0** invented DONE) |
+| false DONE | **0** | **0** |
+| Theme 1 | PASS signal (disk/tasks/obj-checks) | **PASS signal (disk/tasks/obj-checks)** |
+| Theme 2 | contracts hold; pip/DONE Class A **gone** | contracts hold; pip/DONE still **0** |
+| Residual class | **B** (+ mkdir File-exists actions Class A → v0.4.4) | **B** (+ premature-test ENVIRONMENT Class A → v0.4.5) |
+
+| metric | value |
+|---|---|
+| Package (live run) | **0.4.4** (tag `v0.4.4` / `acb61997`) |
+| Theme 1 (path-aligned checks) | **Y** on disk + task checks **and** merged objective_checks (ASCII-tree `package_dir` **still Y**) |
+| Theme 2 (multi-file contracts) | **Y** — package-joined checks; correct 3-line input |
+| Residual | **Class B** — wrong summary counts, weak tests, tools 12/12 on first-task + ENVIRONMENT repair before later package tasks completed as tasks |
+| Class A pip/DONE first-task thrash | **live-consistent** (absent this run). 0× pip; 0× invented DONE |
+| Class A mkdir File-exists actions | **not live-hit** (mkdir succeeded). Unit RW-078 remains the evidence. Do not regress |
+| Class A premature-test ENVIRONMENT | **confirmed** (deterministic); patched as v0.4.5. Directory `file_exists` passed; actions FAILED; ENVIRONMENT repair burned tools=12 |
+| RW-058–078 | preserved (not rewritten) |
+| Default max-tools / max-tasks | **unchanged** (this run used `--max-tasks 8 --max-tools 12` only) |
+| Needle | **OFF** (`existing`) |
+| False completion | **0** |
+| Recommendation | Record **FAIL**. v0.4.4 mkdir File-exists **not live-confirmed**. Do not claim live 11B@12 PASS. Theme 3 slice D ships as v0.4.5 (premature-test ENVIRONMENT). Multi-step checkpoint stays planned. |
+
+# Gen3 — v0.4.5 premature-test ENVIRONMENT (RW-080)
+
+Lane: deterministic / scripted on **v0.4.5**. Needle `existing` / off.
+`max_plan_tasks` **16**. Default `Budget.tool_calls` **60**. RW-058–079 are
+**not rewritten**. Package **0.4.4 → 0.4.5**. Live NIM not re-run.
+
+| id | Date | Category | Objective | #tasks | #actions | Tools | Result | Verification | Recovery | Failure class | Notes |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| RW-080 | 2026-09-18 | coding (scripted) — premature-test ENVIRONMENT | RW-079 shape: ASCII-tree `text_analyzer/`; first task `write_file` creates the tree then `python3 text_analyzer/test_analyzer.py` can't-open-file; later task writes `analyzer.py` | 2 planned (LLM) | write input + premature test fail, then write analyzer | default **60** unchanged | **PASS** (premature python test **not** ENVIRONMENT; no Repair prerequisite; first task VERIFIED from directory check; later task runs; empty JSON still **not** VERIFIED) | first-task directory check **VERIFIED** despite premature-test noise; objective not rubber-stamped when JSON invalid; no workspace-root pollution | python can't-open-file → TOOL **not** Repair prerequisite; treated as action noise when checks passed | **A** (Gen3 theme 3 slice D; live 11B quality stays **B**) | Tests `test_premature_test_env.py`. False DONE **0**. F-17 / F-26 preserved. Path-aligned, multifile, ASCII-tree, pip/DONE, mkdir File-exists preserved. Needle OFF. Caps unchanged. Live NIM not required. RW-079 Class B live facts preserved. |
 
 # Live NIM retest of v0.4.3 (RW-077)
 

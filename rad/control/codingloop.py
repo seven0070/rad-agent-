@@ -16,7 +16,9 @@ an invented tool named `DONE` / `DONE: …` is a protocol mistake, not a failed
 contract (Gen3 theme 3 slice B). mkdir / create **already exists** after
 `write_file` created the tree is the same family of action noise (RW-077 /
 Gen3 theme 3 slice C) — it must not fail a task whose directory/file checks
-passed.
+passed. Premature `python …/test_*.py` (interpreter cannot open a `.py` script
+the agent has not written yet) is sequencing, not a broken host environment
+(RW-079 / Gen3 theme 3 slice D).
 """
 from __future__ import annotations
 
@@ -51,6 +53,12 @@ _MKDIR_LIKE = re.compile(
     re.I,
 )
 _PERM_DENIED = re.compile(r"permission denied|EACCES", re.I)
+_MODULE_NOT_FOUND = re.compile(r"ModuleNotFoundError|No module named", re.I)
+# CPython: python3: can't open file 'pkg/test_foo.py': [Errno 2] No such file …
+_PYTHON_CANT_OPEN_SCRIPT = re.compile(
+    r"can't open file\s+['\"][^'\"]+\.py['\"]",
+    re.I,
+)
 # "under pkg/" (slash required so "under the …" is not a package name)
 _PKG_UNDER_RE = re.compile(
     r"\bunder\s+(?:the\s+)?(?:directory\s+|dir\s+|package\s+|folder\s+)?([A-Za-z_][\w.-]*)/",
@@ -119,6 +127,28 @@ def is_pip_requirements_file_missing(output: str = "", command: str = "") -> boo
     return False
 
 
+def is_missing_python_script(output: str = "", command: str = "") -> bool:
+    """True when the Python interpreter could not open a `.py` script argument.
+
+    Running `python pkg/test_foo.py` before the agent wrote that file is
+    sequencing / model error, not a missing host dependency (RW-079). The
+    python binary exists; the file is agent-authored. `python: command not
+    found` and `ModuleNotFoundError` stay genuine ENVIRONMENT (F-18). Nested
+    `FileNotFoundError` from inside a running script (missing `input.txt`)
+    is not this signal — CPython only emits `can't open file '….py'` when
+    the script argument itself cannot be opened.
+    """
+    out = output or ""
+    cmd = command or ""
+    if _COMMAND_NOT_FOUND.search(out) or _MODULE_NOT_FOUND.search(out):
+        return False
+    if not _PYTHON_CANT_OPEN_SCRIPT.search(out):
+        return False
+    if cmd and not re.search(r"\bpython\d*(?:\.\d+)?\b", cmd, re.I):
+        return False
+    return True
+
+
 def is_mkdir_already_exists(output: str = "", command: str = "") -> bool:
     """True when mkdir/create failed because the path already exists (RW-077).
 
@@ -141,6 +171,8 @@ def is_first_task_thrash_noise(tool: str, output: str = "", command: str = "") -
         return True
     if is_pip_requirements_file_missing(output, command):
         return True
+    if is_missing_python_script(output, command):
+        return True
     return is_mkdir_already_exists(output, command)
 
 
@@ -162,7 +194,8 @@ def repair_hint(failed_checks: Iterable[Dict[str, Any]]) -> str:
         + ". Fix the actual files/tests on disk. Do not write a path named DONE: "
           "and do not replace the artifact with a DONE: line. "
           "Do not call a tool named DONE. Do not pip install -r a missing requirements.txt "
-          "for stdlib-only coding. Do not mkdir a path write_file already created."
+          "for stdlib-only coding. Do not mkdir a path write_file already created. "
+          "Do not run python test_*.py before the test file exists."
     )
 
 

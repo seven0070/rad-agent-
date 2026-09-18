@@ -121,7 +121,7 @@ def _ver(ws, home) -> Verifier:
 # ---------------------------------------------------------------- architecture freeze
 
 def test_json_valid_py_investigation_does_not_raise_caps_or_enable_needle(home):
-    assert __version__ == "0.4.4"
+    assert __version__ == "0.4.5"
     assert Budget().tool_calls == 60
     assert int(home.cfg.get("max_plan_tasks", 16) or 16) == 16
     assert Planner(None, str(home.workspace())).max_tasks == 16
@@ -278,9 +278,11 @@ def test_scenario_c_fallback_objective_checks_match_infer(tmp_path):
 def test_rw065_env_class_is_no_such_file_shell_errors_not_json_valid_kind():
     """Live RW-065: actions errors from shell before files existed.
 
-    classify() reads observation text, not check kinds. 'No such file' →
-    ENVIRONMENT → repair 'missing dependency/file'. Same designed path as
-    F-18. json_valid-on-py in the verification payload does not change that.
+    classify() reads observation text, not check kinds. json_valid-on-py in
+    the verification payload does not drive ENVIRONMENT (F-26). Historically
+    CPython `can't open file 'test_*.py'` matched _ENV (F-18 path). v0.4.5
+    reclassifies that premature script invoke as TOOL (RW-079 / F-42); the
+    json_valid fail still yields coding repair, not Repair-prerequisite.
     """
     t = Task.new("o", "Create word_counter.py with word counting function")
     t.attempts = 1
@@ -294,11 +296,11 @@ def test_rw065_env_class_is_no_such_file_shell_errors_not_json_valid_kind():
         {"ok": False, "kind": "json_valid",
          "detail": "word_counter.py invalid JSON: Expecting value"},
     ]}
-    assert classify(t, [ob], verification=ver) == FailureClass.ENVIRONMENT
+    assert classify(t, [ob], verification=ver) != FailureClass.ENVIRONMENT
     d = RecoveryEngine().decide(t, [ob], verification=ver, repairs_so_far=0, retries_left=3)
-    assert d.failure_class == FailureClass.ENVIRONMENT
+    assert d.failure_class != FailureClass.ENVIRONMENT
     assert d.strategy == "repair"
-    assert "missing dependency/file" in d.reason
+    assert d.data.get("coding_repair") is True
 
 
 def test_json_valid_on_py_without_env_token_does_not_match_rw065_live_class():
