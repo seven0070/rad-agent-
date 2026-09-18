@@ -2,20 +2,110 @@
 
 Factual rows from maturation cycles on disk-checked evidence.
 Architecture frozen. Needle stays experimental / off. Not AGI.
-Operating spine: [ROADMAP.md](ROADMAP.md). Gen1 complete on 0.2.3; Gen2 in progress.
-Verified coding loop is **implemented as v0.3.0** (RW-064). Live NIM retest of that
-loop is **RW-065**. Plan-timeout resilience is **implemented as v0.3.1** (scripted
-RW-066 / F-27). Live NIM retest of v0.3.1 is **RW-066** (this file; operator
-production run). Budget-aware planning is **implemented as v0.3.2** (RW-067).
-Do not rewrite RW-058–065. Scripted theme-2 RW-066 (F-27) is preserved.
+Operating spine: [ROADMAP.md](ROADMAP.md). Gen1 complete on 0.2.3; **Gen2 complete**
+on 0.3.0–0.3.2. Verified coding loop is **implemented as v0.3.0** (RW-064). Live NIM
+retest of that loop is **RW-065**. Plan-timeout resilience is **implemented as v0.3.1**
+(scripted RW-066 / F-27) and **used** (live RW-066). Budget-aware planning is
+**implemented as v0.3.2** (RW-067). Live NIM use of v0.3.2 is **RW-068** (PASS) and
+**RW-069** (FAIL). Do not rewrite RW-058–067. Scripted theme-2 RW-066 (F-27) is preserved.
 
 Every `VERIFIED` / `completed` cell is from the control-plane verifier **and** a disk
 check (file exists / contents / hash). A model `DONE:` line is never enough.
 
 Status vocabulary: **PASS** | **FAIL** | **BLOCKED** | **NOT TESTED**.
 
-Live NIM use of v0.3.1 (RW-066) and Gen2 / v0.3.2 (budget-aware planning, RW-067)
-are at the top, then v0.3.1 scripted theme 2 and v0.3.0. RW-058–065 are **not rewritten**.
+Live NIM use of v0.3.2 (RW-068 / RW-069) is at the top, then live v0.3.1 (RW-066)
+and Gen2 / v0.3.2 (budget-aware planning, RW-067), then v0.3.1 scripted theme 2
+and v0.3.0. RW-058–067 are **not rewritten**.
+
+# Live NIM use of v0.3.2 (RW-068 / RW-069)
+
+Lane: operator production `rad objective run` on **v0.3.2** (tag `v0.3.2`,
+`387776dc`). Needle `existing` / off. `max_plan_tasks` **16**. Default
+`Budget.tool_calls` **60**. RW-058–067 are **not rewritten**. Package stays
+**0.3.2** (no bump). **No v0.4.0.**
+
+Authoritative live facts: operator v0.3.2 use campaign for `obj_794fb0b3` /
+`/tmp/rad_prod_rw068_09177c89` and `obj_1d8cc7ed` /
+`/tmp/rad_prod_rw069_89512dd9`. This agent did not re-run NIM.
+
+## RW-068 word_counter (control vs RW-066) — PASS
+
+| id | Date | Category | Objective | #tasks | #actions | Tools | Result | Verification | Recovery | Failure class | Notes |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| RW-068 | 2026-09-18 IST 19:46:33–19:48:01 | coding (live NIM) — v0.3.2 word_counter vs RW-066 | word_counter.py (hello world → 2) + result.json `{"words": 2}` + test_word_counter.py asserting 2; run tests; no DONE pollution; `--max-tasks 4 --max-tools 12`; Needle `existing` / off | `PLAN_CREATED` **source=llm** **attempts=1** (4 tasks with per-task checks) | tools 12/12; model calls 9/80; wall ~88s / spent 51.2s; process exit 0 | 12/12 exhausted | **PASS** (`completed` / **VERIFIED**) | objective **VERIFIED**; valid `result.json` words=2; host tests **OK** (1 test) | Gen2 **YES** — `ENVIRONMENT_FAILURE` → `repair`. First task verify FAILED (actions errors + mis-applied `json_valid` on `.py`); budget exhausted mid-repair; leftover tasks CANCELLED because objective checks already satisfied | **B** residual (11B@12 tools exhausted mid-repair). Planning path **improved** vs RW-066 | Provider nvidia / `meta/llama-3.2-11b-vision-instruct`. Home `/tmp/rad_prod_rw068_09177c89`; `obj_794fb0b3`. Disk: `word_counter.py` YES (`split()` / `len(words)` → 2 for `hello world`); `result.json` **valid** `{"words": 2}`; `test_word_counter.py` YES; host `python3 -m unittest test_word_counter.py` **OK**; DONE-named files **NONE**. Agent attempted `write_file` path `DONE: …`; **tool refused**. False DONE **0**. vs RW-066: **llm/1** vs fallback/2. Caps unchanged. Needle OFF. **No v0.4.0.** |
+
+### RW-068 vs RW-066 (same 11B / tools=12 control)
+
+| | RW-066 (v0.3.1 live) | RW-068 (v0.3.2 live) |
+|---|---|---|
+| home | `/tmp/rad_prod_rw066_0b0bb188` | `/tmp/rad_prod_rw068_09177c89` |
+| objective id | `obj_e74d9fad` | `obj_794fb0b3` |
+| model | NIM 11B `meta/llama-3.2-11b-vision-instruct` | same |
+| `--max-tasks` / `--max-tools` | 4 / 12 | 4 / 12 |
+| Needle | `existing` / off | `existing` / off |
+| PLAN source | **fallback** | **llm** |
+| PLAN attempts | **2** | **1** |
+| Plan shape | 1 clause-collapsed mega-task (0 task checks) | **4 tasks** with per-task checks |
+| Gen2 repair insert | **YES** | **YES** (`ENVIRONMENT_FAILURE` → `repair`) |
+| `result.json` | valid `{"words": 2}` | valid `{"words": 2}` |
+| Tests (host) | **OK** (2 tests) | **OK** (1 test) |
+| DONE pollution | NO | NO (tool refused `DONE:` path) |
+| false DONE | **0** | **0** |
+| final status | `completed` / VERIFIED | `completed` / VERIFIED |
+| end-to-end PASS | Yes | **Yes** |
+| class | **B** residual (11B@12) | **B** residual (11B@12); **better plan path** |
+
+| metric | value |
+|---|---|
+| Package (live run) | **0.3.2** (tag `v0.3.2` / `387776dc`) |
+| Theme 1 (verified coding loop) | **used** — repair YES; valid JSON; tests OK; no DONE pollution |
+| Theme 2 (plan-timeout resilience) | **used** — live plan succeeded on **first LLM attempt** (no fallback) |
+| Residual | **Class B** — tools 12/12 mid-repair; objective already VERIFIED so leftovers CANCELLED (not false DONE) |
+| RW-058–067 | preserved (not rewritten) |
+| Default max-tools / max-tasks | **unchanged** (this run used `--max-tasks 4 --max-tools 12` only) |
+| Needle | **OFF** (`existing`) |
+| False completion | **0** |
+| Recommendation | Record **PASS**. Simple verified coding loop is **stable** on v0.3.2. Do not claim multi-file Class B is solved. |
+
+## RW-069 text_analyzer (vs RW-058 / RW-059 family) — FAIL
+
+| id | Date | Category | Objective | #tasks | #actions | Tools | Result | Verification | Recovery | Failure class | Notes |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| RW-069 | 2026-09-18 IST 19:48:29–19:51:22 | coding (live NIM) — v0.3.2 text_analyzer vs RW-058 family | production `text_analyzer/` layout (analyzer.py, **exact 3-line** input.txt, summary.json, test_analyzer.py, README.md); stdlib only; real tests; `--max-tasks 8 --max-tools 12`; Needle `existing` / off | `PLAN_CREATED` **source=llm** **attempts=1** | tools 12/12; spent 117.3s; wall ~173s; process exit 2 | 12/12 exhausted | **FAIL** vs success criteria (`needs_user`); **NOT DONE**, **not VERIFIED** complete | FAILED (task verify FAILED; objective stopped) | **retry_with_hint** (`VALIDATION_FAILURE`) — not Gen2 `repair` insert | **B** (same family as RW-058 / RW-059). A2 path-vs-write **watch**, **not proven Class A** | Provider nvidia / `meta/llama-3.2-11b-vision-instruct`. Home `/tmp/rad_prod_rw069_89512dd9`; `obj_1d8cc7ed`. 24-tool follow-up **not run**. Disk at stop (RAD-produced): `text_analyzer/analyzer.py` YES (buggy `str.split('\\s+')`; writes `chars` not `characters`); `text_analyzer/input.txt` YES **wrong** (1 line, not 3); `text_analyzer/summary.json` **NO**; `text_analyzer/test_analyzer.py` YES (weak `assertGreater`; import assumes CWD); `text_analyzer/README.md` YES; root `input.txt` / `README.md` / `summary.json` YES (retry thrash). input.txt sha256 **actual** `9bf9660fcac9d5a1cd5906dd8a8d42e4a9aedaa25847d6412ad53abf517d41aa` ≠ expected 3-line `bf69eb737ca6f3949b5626701cb8472a2fc683e6b05e3101744eccd49dab629b` (no trailing NL) / `5c376e468fe70a63e0d5341908cc7b1b283b7508458fd988d3f4f79a54ea3ec6` (trailing NL). Root `summary.json` `{"lines": 13, "words": 13, "characters": 76}` — valid JSON, **wrong counts** for the required 3-line input. Host post-run unittest under `text_analyzer/` reported OK only because tests are non-assertive and created `summary.json` as a side effect — **not** campaign PASS. False DONE **0**. Caps unchanged. Needle OFF. **No v0.4.0.** |
+
+### RW-069 vs RW-058 / RW-059 (text_analyzer family)
+
+| | RW-058 (v0.2.3) | RW-059 (v0.2.3, tools=24) | RW-069 (v0.3.2) |
+|---|---|---|---|
+| home | `/tmp/rad_prod_text_analyzer_live_a787512c` | `/tmp/rad_prod_rw059_b48e7b56` | `/tmp/rad_prod_rw069_89512dd9` |
+| objective id | `obj_4e219224` | `obj_e1419520` | `obj_1d8cc7ed` |
+| package | 0.2.3 | 0.2.3 | **0.3.2** |
+| `--max-tasks` / `--max-tools` | 8 / **12** | 8 / **24** | 8 / **12** |
+| Needle | `existing` / off | `existing` / off | `existing` / off |
+| PLAN source | llm (5 planned) | llm | **llm** attempts **1** |
+| Repair | user chose stop | budget exhausted | **retry_with_hint** (VALIDATION_FAILURE) |
+| tools used | 12/12 exhausted | 24/24 exhausted | 12/12 exhausted |
+| final status | `needs_user` / **FAIL** | `needs_user` / **FAIL** | `needs_user` / **FAIL** |
+| false DONE | **0** | **0** | **0** |
+| `input.txt` | **PASS** sha256 `bf69eb73…` (exact 3-line) | same PASS `bf69eb73…` | **FAIL** 1-line `9bf9660f…` |
+| package `summary.json` | **MISSING** (correct counts at workspace root, wrong path) | present, **invalid JSON** + wrong counts | **MISSING** (RAD); root file counts do not match 3-line input |
+| layout | pollution at workspace root | five files under `text_analyzer/` | package files + **root pollution** (retry flattened) |
+| class | **B** | **B** (Case B on tool-budget) | **B** (same family); planning healthier; artifact quality still fail |
+
+| metric | value |
+|---|---|
+| Package (live run) | **0.3.2** — no bump; **no v0.4.0** |
+| Planning | healthier (llm/1) vs historical thrash; **not** enough for package completion |
+| Residual | **Class B** — wrong newlines, missing package `summary.json`, weak tests, layout thrash at tools=12 |
+| A2 (check path vs write path) | **watch** — checks at workspace-root vs writes under package dir → false VALIDATION_FAILURE → retry thrash. **Not proven Class A** |
+| A1 budget→needs_user | **do not reopen** without new proof (honest stop at 12/12) |
+| Optional tools=24 follow-up | **not run** (B2; warranted later as a Gen3 baseline) |
+| RW-058–067 | preserved (not rewritten) |
+| Default max-tools / max-tasks | **unchanged** |
+| Needle | **OFF** (`existing`) |
+| False completion | **0** |
+| Recommendation | Record **FAIL**. Multi-file coding under tools=12 remains Class B. Scope Gen3 from this gap; do not implement v0.4.0 here. |
 
 # Live NIM retest of v0.3.1 (RW-066)
 

@@ -6,6 +6,129 @@ Default `Budget.tool_calls` remains **60**.
 
 ---
 
+# Cycle 9 — RW-068/069 v0.3.2 use campaign + Gen3 v0.4.x scope (2026-09-18)
+
+**Date:** 2026-09-18
+**Baseline:** `origin/main` `387776dc` (tag **v0.3.2**, package **0.3.2**)
+**Package at start:** `0.3.2`
+**This branch:** `cursor/rw068-069-gen3-scope-fa28` — package **0.3.2** (no bump)
+**Architecture:** control plane preserved. Needle stays off. Caps unchanged.
+**No product code. No v0.4.0 implementation.** RW-058–067 are **not rewritten**.
+
+## Part A — live use (RW-068 / RW-069)
+
+Live NVIDIA NIM 11B on v0.3.2. Authoritative facts: operator campaign (this
+agent did not re-run NIM). Needle off. Homes isolated per run.
+
+### RW-068 word_counter — PASS
+
+`obj_794fb0b3`, home `/tmp/rad_prod_rw068_09177c89`, `--max-tasks 4 --max-tools 12`.
+
+| item | value |
+|---|---|
+| Verdict | **PASS** — `completed` / **VERIFIED**. Disk matched; host tests OK (1 test) |
+| vs RW-066 | **better plan path** — llm attempts **1** vs fallback attempts **2** |
+| PLAN | **source=llm** **attempts=1** (4 tasks with per-task checks) |
+| Repair | Gen2 **YES** (`ENVIRONMENT_FAILURE` → `repair`); budget exhausted mid-repair; leftovers CANCELLED because objective checks already satisfied |
+| Disk | `word_counter.py` YES; `result.json` valid `{"words": 2}`; `test_word_counter.py` YES; DONE pollution none (tool refused `DONE:` path) |
+| Tools | 12/12 exhausted |
+| False DONE | **0** |
+| Class | **B** residual (11B@12). Simple verified coding loop **stable** on v0.3.2 |
+
+### RW-069 text_analyzer — FAIL
+
+`obj_1d8cc7ed`, home `/tmp/rad_prod_rw069_89512dd9`, `--max-tasks 8 --max-tools 12`.
+24-tool follow-up **not run**.
+
+| item | value |
+|---|---|
+| Verdict | **FAIL** — `needs_user` (tools 12/12). **Not** VERIFIED |
+| vs RW-058/059 | Planning healthier (llm/1); **artifact quality still Class B fail** |
+| PLAN | **source=llm** **attempts=1** |
+| Repair | **retry_with_hint** (`VALIDATION_FAILURE`) — not Gen2 `repair` insert |
+| Disk (RAD-at-stop) | package `analyzer.py` / `input.txt` / `test_analyzer.py` / `README.md` YES; package `summary.json` **NO**; wrong 1-line input sha256 `9bf9660f…` (expected 3-line `bf69eb73…`); root layout pollution |
+| Tools | 12/12 exhausted |
+| False DONE | **0** |
+| Class | **B** (same family as RW-058/059). A2 check-path vs write-path **watch**, not proven Class A |
+
+Host re-running package tests can create missing files — report **RAD-at-stop**
+tree only (C3). Do not treat the post-run unittest OK as campaign PASS.
+
+## Part B — Gen3 scope (docs only)
+
+Gen3 = Autonomous Agent Maturity (v0.4.x) — more reliable multi-step execution,
+recovery, planning, and long-horizon work.
+
+**Status:** **planned / scoped** from this campaign. **Not started** as a build.
+Do **not** implement v0.4.0 in this change.
+
+Proposed themes (evidence-backed; priority order):
+
+1. **Path-aligned checks / package layout** — A2 candidate: checks at workspace-root vs writes under package dir (RW-069)
+2. **Multi-file coding under tight budgets** — Class B: text_analyzer@12 still fails; optional tools=24 baseline later; efficiency / stronger artifact contracts
+3. **Longer-horizon / multi-step reliability** — roadmap Gen3 intent; only after themes 1–2 have measured wins
+
+Entry rules: Gen2 complete (0.3.0–0.3.2) — **DONE**. Enter Gen3 **build** only
+after Sanath accepts a first v0.4.0 theme. Class A only when proven; Class B is
+not an automatic architecture rewrite. Needle OFF; caps unchanged unless proven
+need. Operating loop unchanged.
+
+## What changed
+
+- Docs: RW-068 **PASS** + RW-069 **FAIL** in matrix, ledger (F-30 / F-31), this cycle
+- ROADMAP: Gen2 **complete**; Gen3 **planned / scoped** from measured gaps
+- Package **unchanged** at **0.3.2**
+
+## What did not change
+
+- Product code
+- Package version (no 0.3.3, no 0.4.0)
+- Needle default `existing` / off
+- `max_plan_tasks` default **16**
+- `Budget.tool_calls` default **60**
+- False completion remains **0**
+- RW-058–067 ledger/matrix rows
+- Control plane shape PLAN→PERMISSION→BUDGET→EXECUTE→OBSERVE→VERIFY→RECOVER
+- F-17 / F-18 / F-21 / F-26 closed; A1 budget→needs_user **not reopened**
+
+## Class A / B / C (this campaign)
+
+| class | this record |
+|---|---|
+| **A** | **none proven.** A1 do not reopen. A2 watch (root vs package check paths). A3 DONE refuse already works (RW-068). |
+| **B** | **F-20260918-31** — text_analyzer@12 still FAIL (wrong input, missing package summary.json, layout thrash). RW-068 residual tools 12/12 mid-repair. |
+| **C** | none (NIM key present on the live lane). |
+
+Ship blocker: **no** Class A ship-blocker proven. Residual is **Class B**
+capacity/quality. Highest-value Gen3 entry themes: (1) package-layout /
+path-aligned checks, (2) coding efficiency under tight tool budgets or a
+calibrated higher bound for multi-file, (3) stronger test/artifact contracts
+for multi-file objectives.
+
+## Quality gates (this branch)
+
+Docs-only. Isolated home `/tmp/rad-rw068-gate` if doctor/acceptance are run.
+
+| gate | result |
+|---|---|
+| Package | **0.3.2** — no bump |
+| Product code | **unchanged** |
+| Live NIM this patch | not re-run; RW-068/069 facts taken from the operator campaign |
+| Needle default | **PASS** (`existing`) |
+| Caps | **PASS** `max_plan_tasks` 16; `Budget.tool_calls` 60 |
+| False DONE | **PASS** (campaign 0; no DONE pollution files) |
+
+Gate commands actually run are recorded after they execute on this branch.
+
+## Roadmap pointer
+
+Operating spine: [ROADMAP.md](ROADMAP.md). **Generation 1 is complete**
+(v0.2.0–v0.2.3). **Generation 2 is complete** (v0.3.0–v0.3.2; v0.3.2 use
+campaign done). **Generation 3 is planned / scoped** (v0.4.x) — not started as
+a build. Gen4–5 are not started.
+
+---
+
 # Cycle 8 — RW-066 live NIM + Gen2 / v0.3.2 budget-aware planning (2026-09-18)
 
 **Date:** 2026-09-18
