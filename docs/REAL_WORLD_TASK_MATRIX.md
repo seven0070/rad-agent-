@@ -172,7 +172,14 @@ Sequential lot-SKU `write_file` through the real control plane. Disk-verified ea
 | RW-055 | 2026-09-18 | multi-step | 16-bin warehouse labels (exactly the cap) | 16 | 16 | write_file | **PASS** | VERIFIED | none | — | 16/16; `bins/b16.txt` sha256 `201ffddc49fb2261`. Cap is **not** a blocker at exactly 16 |
 | RW-056 | 2026-09-18 | multi-step | 17-bin warehouse labels (one past the cap) | 16 | 16 | write_file | **FAIL** (expected cap) | FAILED | none | — | 16/17; `bins/b17.txt` **absent**. Planner silently kept `items[:16]`. Useful work blocked only as one-file-per-task; bundling (RW-053) writes 20 files under 1 task |
 
-Cap hit this cycle: **2/18** campaign rows (RW-054, RW-056). Coding / research / filesystem / multi-step / recovery used 1–3 tasks and never hit it. Decision: **leave at 16**. See Cycle 4 report.
+### Planner hit 16 vs useful-work failure because of the cap
+
+| | count | rows |
+|---|---|---|
+| Planner **hit** 16 (tasks 17+ dropped before the graph) | **2** | RW-054, RW-056 |
+| Useful work **failed because of** the cap | **0** | coding/research/fs/multi-step/recovery all used 1–3 tasks and **VERIFIED**; 20 *actions* in 1 task **VERIFIED** (RW-053); exactly-16 labels **VERIFIED** (RW-055) |
+
+Do not raise `max_plan_tasks`. A cap *encounter* is not a product failure.
 
 ## Cycle 4 metrics (honest)
 
@@ -189,3 +196,18 @@ Cap hit this cycle: **2/18** campaign rows (RW-054, RW-056). Coding / research /
 | Live NIM | **BLOCKED** |
 | Needle | **NOT TESTED** as default (stays `existing` / off) |
 | Package / architecture | **0.2.3** frozen; **not v0.3.0** |
+| Planner-cap encounters vs useful-work failures | **2 encounters / 0 useful-work failures** |
+| Recommendation | **Outcome A — continue 0.2.x** (not B: no Class A patch; not C: no proven v0.3.0 gap) |
+
+### Decision gate (this cycle only)
+
+| # | question | answer |
+|---|---|---|
+| A | v0.2.3 stable? | **YES** |
+| B | Recurring Class A? | **NO** this cycle |
+| C | Cap prevents useful work? | **NO** (2 planner hits; 0 useful-work failures) |
+| D | 11B still model limitation? | **NOT TESTED** this cycle (NIM BLOCKED) |
+| E | Needle earned default? | **NO** |
+| F | NIM | **BLOCKED** |
+| G | Proven architectural gap? | **NO** |
+| H | v0.3.0 justified? | **NO** |

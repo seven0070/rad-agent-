@@ -412,6 +412,21 @@ Same condition as F-20260918-07 / F-20260918-10 / F-20260918-12. Offline reconst
 | New Class A this run | **none** — no 0.2.x code bump |
 | Needle | default `existing`; **NOT** turned on |
 | Evidence for v0.3.0 | **none** |
+| Planner-cap encounters vs useful-work failures | **2 / 0** (RW-054, RW-056 hit 16; no product row failed *because* of the cap) |
+| Recommendation | **Outcome A — continue 0.2.x** |
+
+### Decision gate (this cycle only)
+
+| # | question | answer |
+|---|---|---|
+| A | v0.2.3 stable? | **YES** — gates pass; useful campaign **VERIFIED**; false completion **0**; release not re-cut |
+| B | Recurring Class A? | **NO** — none this cycle; RW-057 grader/verifier parity **PASS** |
+| C | Cap prevents useful work? | **NO** — planner hit 16 twice; useful work used 1–3 tasks |
+| D | 11B still model limitation? | **NOT TESTED** this cycle (no NIM keys). Prior F-20260918-04 remains Class B on the ledger only |
+| E | Needle earned default? | **NO** — stays `existing` |
+| F | NIM | **BLOCKED** (F-20260918-13) |
+| G | Proven architectural gap? | **NO** |
+| H | v0.3.0 justified? | **NO** |
 
 ## How to add a finding
 

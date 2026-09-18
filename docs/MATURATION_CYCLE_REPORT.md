@@ -130,16 +130,68 @@ Isolated home `/tmp/rad-c4-gate`. Only items actually run are marked PASS.
 | Architecture freeze | **PASS** |
 | `max_plan_tasks` | **PASS** left at 16 (evidence-tested; not raised) |
 
+## Action ramp 1 / 3 / 5 / 10 / 20 (this cycle)
+
+| planned | row | on disk | verified | result | cap hit? | useful-work failure? |
+|---|---|---|---|---|---|---|
+| 1 task / 1 write | RW-049 | 1/1 `lot/l01.txt` | VERIFIED | **PASS** | no | no |
+| 3 tasks / 3 writes | RW-050 | 3/3 | VERIFIED | **PASS** | no | no |
+| 5 tasks / 5 writes | RW-051 | 5/5 | VERIFIED | **PASS** | no | no |
+| 10 tasks / 10 writes | RW-052 | 10/10 | VERIFIED | **PASS** | no | no |
+| 20 *actions* / 1 task | RW-053 | 20/20 `lot/l20.txt` | VERIFIED | **PASS** | no | no |
+| 20 *planned tasks* | RW-054 | **16/20** (`l17`–`l20` absent) | FAILED | **FAIL** (expected cap) | **yes** | **no** — stress of one-file-per-task, not a product path |
+
+## Planner hit 16 vs useful work failed because of the cap
+
+These are **not** the same failure.
+
+| | planner hit 16 | useful work failed *because of* the cap |
+|---|---|---|
+| meaning | `Planner._graph_from` kept `items[:16]`; tasks 17+ never entered the graph | a genuine coding/research/fs/multi-step/recovery objective could not complete unless the cap were raised |
+| this cycle | **2 encounters:** RW-054 (20 lot files as 20 tasks), RW-056 (17 bin cards as 17 tasks) | **0** |
+| counter-evidence | RW-055: 16 sequential labels **VERIFIED**. RW-053: 20 writes in **one** task **VERIFIED**. RW-040–RW-046: useful work used **1–3 tasks** and **VERIFIED** | no product-shaped row needed >16 tasks or failed for lack of task slots |
+
+Cap encounters: **2**. Actual useful-work failures caused by the cap: **0**. Cap **not raised**.
+
+## Capability gaps (this cycle only)
+
+| gap | class | status |
+|---|---|---|
+| Live NVIDIA NIM Class A (artifact-exists → VERIFIED; missing → not VERIFIED) | C | **BLOCKED** — no keys (F-20260918-13). Not a RAD hole. |
+| 11B over-decomposition | B | **NOT TESTED** live this cycle (same missing keys). Prior F-20260918-04 remains documented; bounded `--max-tasks` / `--max-tools` still the mitigation. |
+| Needle as default router | B | **not earned** — default `existing`; not measured this cycle; prior gold set lost to heuristic (F-20260918-06 / ADR-001). |
+| `max_plan_tasks=16` truncation of 17+ one-file-per-task plans | architecture guard | encountered; **did not** fail useful work. Leave at 16. |
+| False completion | — | **0**. Invariant held (RW-045 + suite `false_success` / `needs_user` / `no_loop`). |
+| New controller / verifier / adapter defect | A | **none**. |
+
+No OS-level shell sandbox (unchanged; not newly proven this cycle).
+
+## Final decision gate (this cycle's evidence only)
+
+| # | question | answer |
+|---|---|---|
+| **A** | Is v0.2.3 stable? | **YES.** Release verified on `d121c3f`. Gates 328 pytest / 50/50 acceptance / 10 realworld PASS + 1 BLOCKED. Campaign useful work **VERIFIED**. False completion **0**. No Class A. Package stays 0.2.3. |
+| **B** | Recurring Class A? | **NO this cycle.** Zero new Class A. Prior grader Class A (F-20260918-09, F-20260918-11) stayed fixed (RW-057 parity **PASS**). |
+| **C** | Does the 16-task cap prevent useful real-world work? | **NO.** Planner *hit* 16 twice (RW-054, RW-056). Useful work did **not** fail because of the cap. Coding/research/fs/multi-step/recovery used 1–3 tasks. 20 actions in one task **VERIFIED**. |
+| **D** | Is 11B still a model limitation? | **NOT TESTED this cycle** (NIM keys absent). Do not treat offline reconstruction as a live 11B result. Prior Class B F-20260918-04 remains on the ledger only. |
+| **E** | Has Needle earned reconsidering default? | **NO.** Default `existing`. Not measured. Prior gold set did not beat existing. ADR-001 unchanged. |
+| **F** | NIM complete or BLOCKED? | **BLOCKED.** Both `NVIDIA_NIM_API_KEY` and `NVIDIA_API_KEY` absent. Live success/failure Class A not run. |
+| **G** | Proven architectural capability gap? | **NO.** Cap-hit ≠ architecture gap. No missing control-plane stage. Models still propose; RAD still decides. |
+| **H** | Is v0.3.0 justified yet? | **NO.** Evidence for v0.3.0: **none**. |
+
+## Recommendation
+
+**Outcome A — continue 0.2.x.** Not Outcome B (no Class A patches this cycle). Not Outcome C (no proven gap that justifies designing v0.3.0).
+
+1. Keep shipping and using **v0.2.3** as-is. Do not re-cut the release.
+2. Supply `NVIDIA_NIM_API_KEY` before claiming live 11B Class A or closing F-20260918-13.
+3. Leave `max_plan_tasks` at **16**.
+4. Keep Needle off until a gold-set win on RAD tools.
+5. Do **not** start v0.3.0 from this loop.
+
 ## Evidence for v0.3.0
 
 **None.** No new validated capability was integrated. Needle stays off. The 16-task cap is an existing architecture guard, not a v0.3.0 gap. Stay on 0.2.x.
-
-## Recommended next action
-
-1. Supply `NVIDIA_NIM_API_KEY` and retest live Class A: file-on-disk → VERIFIED; missing file → not VERIFIED; one unconstrained 11B write (log B if `needs_user` after the file exists and the verifier *was* consulted).
-2. Leave `max_plan_tasks` at 16 unless a measured product need requires a documented config key.
-3. Keep Needle off until a gold-set win on RAD tools.
-4. Do not ship v0.3.0 from this loop.
 
 ---
 
