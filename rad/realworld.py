@@ -250,6 +250,8 @@ class RealWorldSuite:
                               "single-source claims are marked unverified"],
             constraints=["only use the provided sources", "no invented numbers"],
             graders=[_chk("json_field", path="report.json", key="conflicts"),
+                     _chk("json_valid", path="report.json"),
+                     _chk("json_min_len", path="report.json", n=2),
                      _chk("shell_ok", command="python3 -c \"import json;"
                            "r=json.load(open('report.json'));"
                            "assert r['conflicts'] and all(c.get('source') for c in r['claims'])\""),

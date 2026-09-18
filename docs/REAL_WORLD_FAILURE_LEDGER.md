@@ -317,6 +317,65 @@ Same condition as F-20260918-07. Offline reconstruction still `rad realworld --o
 | New Class A this run | **F-20260918-09** — 0.2.2 grader fix |
 | Needle | default `existing`; **NOT** turned on |
 
+## This maturation run (2026-09-18, cycle 3 — v0.2.3)
+
+Environment: Cloud Agent VM, **no** `NVIDIA_NIM_API_KEY` / `NVIDIA_API_KEY`.
+`origin/main` tip `8d9e196aa730c7bfeae7e501f44004078f080b61` (PR #8 / Release `v0.2.2`). Package **0.2.2**
+at start; this cycle ships **0.2.3** for one Class A grader fix. Needle remains default-off.
+Not AGI. Not v0.3.0. Planner cap left at 16. Task log: `docs/REAL_WORLD_TASK_MATRIX.md` cycle 3.
+
+### F-20260918-11 — lab grader missing json_valid / list-only json_min_len
+
+| field | value |
+|---|---|
+| class | A |
+| status | fixed |
+| found in | 0.2.2 `8d9e196` / this cycle's campaign (RW-025, RW-028, RW-038) |
+| fixed in | **v0.2.3** — `_run_grader` implements `json_valid`; `json_min_len` uses `len(doc)` like the verifier |
+| lane | scripted realworld + extra campaign |
+| objective / test | `test_grader_json_valid_and_json_min_len_match_verifier`; `rad realworld --only research` |
+| disk | `compare.json` / `inventory.json` / `config/settings.json` were valid JSON objects on disk |
+| expected | independent lab grader agrees with `Verifier.run_check` on advertised Check kinds `{json_valid, json_min_len}` |
+| actual | `json_valid` → `unknown grader`; `json_min_len{path,n=2}` on an object → `len=n/a` / `ok: false` while verifier `ok: true` |
+| notes | Control plane still VERIFIED from machine checks. Independent Lab / realworld `graders=` false-negatived correct artifacts. DONE semantics were not involved. Same family as F-20260918-09 (schema mismatch), different kinds. |
+
+Reproduction (redacted):
+
+```
+_run_grader(ws, {"kind":"json_valid","args":{"path":"inventory.json"}})
+# before: {"ok": false, "detail": "unknown grader"}
+_run_grader(ws, {"kind":"json_min_len","args":{"path":"inventory.json","n": 2}})
+# object {"items":[...],"count":3} — before: {"ok": false, "detail": "inventory.json: len=n/a"}
+# Verifier.run_check(Check(kind="json_min_len", args={...})): ok True (len(doc)=2)
+```
+
+### F-20260918-12 — live NIM Class A retest (cycle 3)
+
+| field | value |
+|---|---|
+| class | C |
+| status | **BLOCKED** |
+| found in | this cycle (RW-037; suite `live_nim`) |
+| lane | live NVIDIA NIM |
+| expected | with `NVIDIA_NIM_API_KEY` / `NVIDIA_API_KEY`: budget-boundary + artifact-exists → VERIFIED; artifact-missing → not VERIFIED |
+| actual | both env vars **absent** — live lane not run |
+
+Same condition as F-20260918-07 / F-20260918-10. Offline reconstruction still `rad realworld --only overdecompose,false_success`.
+
+| gate | result |
+|---|---|
+| `rad version` | **v0.2.3** (after the Class A bump) |
+| `python -m pytest -q` | **328 passed** in 8.73s |
+| `rad doctor --offline` | **20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR**, verdict READY, exit 0 (`/tmp/rad-v023-gate`) |
+| `rad acceptance` | **50/50 PASSED** (`/tmp/rad-v023-gate/acceptance/20260918-072009_gate.json`) |
+| `rad realworld` | **10 passed / 1 BLOCKED / 0 failed**; research independent graders `json_valid` + `json_min_len` `ok` |
+| Live NIM Class A | **BLOCKED** |
+| Action ramp 1/3/5/10 tasks | **VERIFIED** on disk |
+| 20 sequential actions (one task) | **VERIFIED** (20/20 files) |
+| 20 sequential planned tasks | **FAILED** at default `max_plan_tasks=16` (16 files written; s17–s20 absent) — documented limit, not patched |
+| New Class A this run | **F-20260918-11** — 0.2.3 grader fix |
+| Needle | default `existing`; **NOT** turned on |
+
 ## How to add a finding
 
 1. Reproduce with disk checks (file exists / hash / contents). Quote status + verification, not model prose.

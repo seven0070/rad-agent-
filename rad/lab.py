@@ -229,12 +229,26 @@ def _run_grader(ws: Path, g: Dict[str, Any]) -> Dict[str, Any]:
                 return {"kind": kind, "ok": ok, "detail": f"{a.get('path')}:{key} == {a['equals']!r}: {ok}"}
             ok = bool(node) if a.get("truthy", True) else True
             return {"kind": kind, "ok": ok, "detail": f"{a.get('path')}:{key} = {str(node)[:80]}"}
+        if kind == "json_valid":
+            # Advertised planner/verifier check. Missing this kind used to score a valid
+            # artifact as `unknown grader` while the control-plane verifier already passed.
+            if p is None or not p.exists():
+                return {"kind": kind, "ok": False, "detail": f"{a.get('path')} missing"}
+            try:
+                json.loads(p.read_text(encoding="utf-8"))
+                return {"kind": kind, "ok": True, "detail": f"{a.get('path')} is valid JSON"}
+            except Exception as e:
+                return {"kind": kind, "ok": False, "detail": f"{a.get('path')} invalid JSON: {e}"}
         if kind == "json_min_len":
-            got = json.loads(p.read_text(encoding="utf-8")) if p.exists() else {}
-            field = a.get("field", "")
-            items = got.get(field) if field else got
-            return {"kind": kind, "ok": isinstance(items, list) and len(items) >= int(a["n"]),
-                    "detail": f"{a['path']}:{field} len={len(items) if isinstance(items, list) else 'n/a'}"}
+            # Match Verifier.run_check: len() of the JSON value (list, dict, or string).
+            # Requiring a list false-negatived object reports the verifier had already VERIFIED
+            # (planner shape is json_min_len {path, n}).
+            if p is None or not p.exists():
+                return {"kind": kind, "ok": False, "detail": f"{a.get('path')} missing or unreadable"}
+            doc = json.loads(p.read_text(encoding="utf-8"))
+            n = len(doc) if hasattr(doc, "__len__") else 0
+            want = int(a.get("n", 1))
+            return {"kind": kind, "ok": n >= want, "detail": f"{a.get('path')} has {n} item(s), min {want}"}
         if kind == "file_contains_ordered":
             txt = p.read_text(encoding="utf-8").lower() if p.exists() else ""
             pos = [txt.find(x.lower()) for x in a["items"]]

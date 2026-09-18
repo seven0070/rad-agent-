@@ -12,7 +12,7 @@ runs commands with your confirmation, and **teaches itself new skills from a sin
   __ / \  |  _ \/ |      / \
  / _` __ \| |_) | | /\/\ / _ \
  \__,_||_|____/|_|/__/__\_/ \_\
-   v0.2.2 — open door, free first, self-evolving
+   v0.2.3 — open door, free first, self-evolving
 ```
 
 ---
