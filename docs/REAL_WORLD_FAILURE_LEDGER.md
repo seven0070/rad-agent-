@@ -1292,7 +1292,10 @@ python3 -m pytest -q tests/test_multifile_tight_budget.py
 
 | gate | result |
 |---|---|
-| `python3 -m pytest -q` | **(this branch — recorded after gates)** |
+| `python3 -m pytest -q` | **446 passed** in 9.01s |
+| `rad doctor --offline` | READY — 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR (`RAD_HOME=/tmp/rad-v041-gate`) |
+| `rad acceptance` | **50/50 PASSED** (`/tmp/rad-v041-gate/acceptance/20260918-150234_gate.json`) |
+| `rad realworld` | **10 passed / 1 BLOCKED / 0 failed** (`live_nim` BLOCKED; `/tmp/rad-v041-rw/realworld/20260918-150234_realworld.json`) |
 | Package | **0.4.1** |
 | RW-058–071 | preserved |
 | 16-task cap | **UNCHANGED** |
