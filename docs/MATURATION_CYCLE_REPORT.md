@@ -3,6 +3,10 @@
 Architecture frozen. Models propose; RAD decides. Needle stays optional/off. Not v0.3.0.
 `max_plan_tasks` default remains **16** unless a measured product need requires a documented config key.
 
+## Roadmap pointer
+
+Operating spine: [ROADMAP.md](ROADMAP.md). **Generation 1 is complete** (v0.2.0–v0.2.3; production baseline **0.2.3**). **Generation 2 is in progress:** the verified coding loop (write → test → repair until disk checks pass) is **accepted** as the first v0.3.0 build target. That build is **not implemented** in the roadmap docs; package stays **0.2.3** until it ships. Gen3–5 are not started. Cycle sections below that record “Evidence for v0.3.0: none” still stand as **control-plane** findings: those rows are not a missing stage; they are the Class B evidence that fed the accepted coding-loop theme.
+
 ---
 
 # Cycle 4 — v0.2.3 already live (2026-09-18)

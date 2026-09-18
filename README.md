@@ -377,6 +377,8 @@ and how to add a tool, a scenario or a migration.
 
 ## Roadmap
 
+Operating spine (Gen1–Gen5, the build → test → validate → release → use → discover gaps loop): [docs/ROADMAP.md](docs/ROADMAP.md). Gen1 complete on 0.2.3; Gen2 in progress (verified coding loop accepted for v0.3.0, not shipped). The list below is a product-idea backlog, not a generation commitment.
+
 LoRA fine-tune of Rad's personality into Edge0 weights · expert pruning/distillation for lighter
 35b · web/phone face · remote-MCP tool execution hardening · multi-user sessions ·
 full Graphiti temporal pipeline (LLM extraction over episodes) when a graph server is present ·
@@ -431,7 +433,7 @@ understand → success criteria → plan → task graph → execute → observe 
 [BENCHMARKS](docs/BENCHMARKS.md) · [EVOLUTION](docs/EVOLUTION.md) · [API](docs/API.md) ·
 [OPERATIONS](docs/OPERATIONS.md) · [TROUBLESHOOTING](docs/TROUBLESHOOTING.md) ·
 [MIGRATION](docs/MIGRATION.md) · [DEVELOPMENT](docs/DEVELOPMENT.md) · [ACCEPTANCE](docs/ACCEPTANCE.md) ·
-[AUDIT-2026-09](docs/AUDIT-2026-09.md) · [ADR-001 Needle tool-router](docs/ADR-001-NEEDLE-TOOL-ROUTER.md).
+[ROADMAP](docs/ROADMAP.md) · [AUDIT-2026-09](docs/AUDIT-2026-09.md) · [ADR-001 Needle tool-router](docs/ADR-001-NEEDLE-TOOL-ROUTER.md).
 
 Every document describes shipped behaviour: `docs/CLI.md` is generated from the argument parser and
 the acceptance gate fails if the docs mention a command that does not exist.
