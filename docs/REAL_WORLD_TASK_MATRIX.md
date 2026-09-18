@@ -222,12 +222,17 @@ experimental / off. Planner cap left at **16**. Not v0.3.0. **No 0.2.x bump.**
 These rows are **not** Cycle 4 campaign evidence. Cycle 4 live NIM remained **BLOCKED** on the
 Cloud Agent VM (no keys). This is a later operator run.
 
+RW-058 remains historical evidence and is not rewritten. RW-059 is a controlled
+`--max-tools 24` follow-up of the same text_analyzer objective (default max-tools **not**
+raised).
+
 ## Production campaign (text_analyzer)
 
 | id | Date | Category | Objective | #tasks | #actions | Tools | Result | Verification | Recovery | Failure class | Notes |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | RW-058a | 2026-09-18 | live NIM (no brain) | production text_analyzer (earlier attempt) | 7 planned / 1 attempted / 0 completed | 0 | 0/12 | **BLOCKED** | — | — | **C** | Home `/tmp/rad_prod_text_analyzer_f3cc7950`; `obj_442301c7`; rad v0.2.3. `MODEL_FAILURE` — no NVIDIA/other keys / no local engine. Workspace empty. False DONE **0**. Same condition family as F-20260918-08 / F-20260918-13 |
 | RW-058 | 2026-09-18 IST ~13:39–13:41 | coding (live NIM) | `text_analyzer/{analyzer.py,input.txt,summary.json,test_analyzer.py,README.md}`; exact 3-line input; stdlib; `--max-tasks 8 --max-tools 12` | 5 planned; 1 attempted (verification FAILED, 2 attempts); 4 PENDING | tools 12/12; model calls 7/80; wall ~103s | 12/12 exhausted | **FAIL** vs success criteria (`needs_user`); **NOT DONE**, **not VERIFIED** complete | FAILED | user chose stop; no resume | **B** | Provider nvidia / `meta/llama-3.2-11b-vision-instruct` (NIM key present; Class C closed for this attempt). Home `/tmp/rad_prod_text_analyzer_live_a787512c`; `obj_4e219224`. Disk: `text_analyzer/input.txt` **PASS** sha256 `bf69eb737ca6f3949b5626701cb8472a2fc683e6b05e3101744eccd49dab629b`; `analyzer.py` computes counts; `test_analyzer.py` byte-identical to `analyzer.py` (0 tests); README present; `text_analyzer/summary.json` **MISSING**; workspace-root `summary.json` had correct counts `{lines:3,words:13,characters:76}` (wrong path); layout pollution at workspace root. 11B tool spam / incomplete layout / duplicated "tests" / path confusion. **Not Class A**: RAD stopped at tool budget; false DONE **0**; verifier did not rubber-stamp. Bounded `--max-tasks 8 --max-tools 12`. No architecture change |
+| RW-059 | 2026-09-18 IST ~14:02–14:04 | coding (live NIM) — controlled tool-budget | same text_analyzer layout as RW-058; stdlib; `--max-tasks 8 --max-tools 24`; Needle `existing` / off | max-tasks 8 | tools 24/24 (`write_file` 19, `run_shell` 5); model calls 25/80; wall ~106s | 24/24 exhausted | **FAIL** vs success criteria (`needs_user`); **NOT DONE**, **not VERIFIED** complete | FAILED | budget exhausted | **B** (tool-budget hypothesis **Case B**); Class A candidates **open/investigate**, **not patched** | Provider nvidia / `meta/llama-3.2-11b-vision-instruct`. Home `/tmp/rad_prod_rw059_b48e7b56`; `obj_e1419520`. Disk: all five files present under `text_analyzer/`; `text_analyzer/input.txt` **PASS** sha256 `bf69eb737ca6f3949b5626701cb8472a2fc683e6b05e3101744eccd49dab629b` (same as RW-058); `summary.json` **invalid JSON** + wrong counts; tests **FAIL** `13!=6`. False DONE **0**. Doubling 12→24 did not complete the objective. Default max-tools **not** raised. No architecture change. **No v0.2.4.** |
 
 ## Production metrics (honest)
 
@@ -243,3 +248,34 @@ Cloud Agent VM (no keys). This is a later operator run.
 | Needle | stays `existing` / off; **not measured** this run |
 | `max_plan_tasks` | **16** unchanged (this run used `--max-tasks 8`) |
 | Recommendation | **Outcome A — continue 0.2.x** (not B: no Class A patch; not C: no proven v0.3.0 gap) |
+
+## Controlled tool-budget experiment (RW-059 vs RW-058)
+
+RW-058 is left unchanged as historical evidence. RW-059 is the same production
+text_analyzer objective with **only** `--max-tools` doubled (12 → 24). Default
+max-tools is **not** raised. Package stays **0.2.3**.
+
+| | RW-058 (historical) | RW-059 (this experiment) |
+|---|---|---|
+| home | `/tmp/rad_prod_text_analyzer_live_a787512c` | `/tmp/rad_prod_rw059_b48e7b56` |
+| objective id | `obj_4e219224` | `obj_e1419520` |
+| model | NIM 11B `meta/llama-3.2-11b-vision-instruct` | same |
+| `--max-tasks` | 8 | 8 |
+| `--max-tools` | **12** | **24** (run only; default unchanged) |
+| Needle | `existing` / off | `existing` / off |
+| wall | ~103s IST ~13:39–13:41 | ~106s IST ~14:02–14:04 |
+| tools used | 12/12 exhausted | 24/24 exhausted (`write_file` 19, `run_shell` 5) |
+| model calls | 7/80 | 25/80 |
+| final status | `needs_user` / **FAIL** | `needs_user` / **FAIL** |
+| false DONE | **0** | **0** |
+| disk | 4/5 under `text_analyzer/`; `summary.json` **MISSING** (root file had correct counts, wrong path) | all five files under `text_analyzer/`; `summary.json` invalid JSON + wrong counts; tests **FAIL** `13!=6` |
+| `input.txt` sha256 | `bf69eb737ca6f3949b5626701cb8472a2fc683e6b05e3101744eccd49dab629b` | same |
+
+| metric | value |
+|---|---|
+| Tool-budget hypothesis | **Case B** — 24 did **not** suffice (both runs exhausted budget; both `needs_user` / FAIL) |
+| Class A this experiment | **not patched.** Suspected candidates **open/investigate** (F-20260918-17, F-20260918-18). Do not treat as fixed |
+| Class B remaining | invalid JSON `summary.json`; wrong counts; tests FAIL `13!=6` (F-20260918-19) |
+| Default max-tools | **unchanged** |
+| Package | **0.2.3** — **no v0.2.4** unless a later confirmed Class A fix |
+| Recommendation | **Outcome A — continue 0.2.x** |
