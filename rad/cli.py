@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from rad import __version__
-from rad.home import RadHome, mask
+from rad.home import DEFAULTS, RadHome, mask
 from rad.ui import ask, col, fail, info, ok, warn
 
 from rad import providers as P
@@ -1082,14 +1082,30 @@ def cmd_config(args) -> int:
         ok(f"{args.key} removed")
         return 0
     if action == "set":
-        if not args.key or not args.value:
+        if not args.key or args.value is None:
             fail("usage: rad config set <key> <value>   (value is JSON when possible)")
             return 1
+        if args.key not in DEFAULTS:
+            fail(f"unknown key {args.key!r} — `rad config show` lists the settings")
+            return 1
+        from rad.storage import validate_config
         try:
             val = json.loads(args.value)
         except Exception:
             val = args.value
+            default = DEFAULTS[args.key]
+            if isinstance(default, bool) and str(val).lower() in ("true", "false", "yes", "no", "on", "off"):
+                val = str(val).lower() in ("true", "yes", "on")
+        previous = home.cfg.get(args.key)
         home.cfg[args.key] = val
+        issues = [i for i in validate_config(home.cfg) if i.key == args.key]
+        if issues:
+            home.cfg[args.key] = previous
+            hint = ""
+            if issues[0].fix not in (None, "__remove__"):
+                hint = f" — valid example: {issues[0].fix!r}"
+            fail(f"{args.key}: {issues[0].problem} (value {issues[0].value!r}){hint}")
+            return 1
         home.save_config()
         ok(f"{args.key} = {json.dumps(val) if not isinstance(val, str) else val}")
         return 0
@@ -1698,17 +1714,33 @@ def cmd_world(args) -> int:
     return 0
 
 
+def _argv_has_subcommand(argv: List[str], choices: set) -> bool:
+    """True if a real subcommand appears after any leading global flags (`--home VALUE`)."""
+    i = 0
+    while i < len(argv):
+        a = argv[i]
+        if a in ("-h", "--help"):
+            return True
+        if a == "--home":
+            i += 2
+            continue
+        return a in choices
+    return False
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
     parser = build_parser()
     choices = set(parser._subparsers._group_actions[0].choices)
-    # no subcommand (or a chat flag first) → chat
-    if not argv or (argv[0] not in choices and argv[0] not in ("-h", "--help")):
-        if argv and argv[0] == "--home":
-            idx = argv.index("--home")
-            argv = argv[:idx] + ["chat"] + argv[idx:]
-        else:
-            argv = ["chat"] + argv
+    # no subcommand (or a chat flag first) → chat. Keep `--home VALUE` in front of
+    # the injected command so `rad --home <dir> lab run` and `rad --home <dir>` both work.
+    if argv and argv[0] not in ("-h", "--help") and not _argv_has_subcommand(argv, choices):
+        insert_at = 0
+        if argv[0] == "--home":
+            insert_at = 2 if len(argv) >= 2 else 1
+        argv = argv[:insert_at] + ["chat"] + argv[insert_at:]
+    elif not argv:
+        argv = ["chat"]
     args = parser.parse_args(argv)
     if getattr(args, "fn", None) not in (cmd_storage, cmd_doctor):
         try:

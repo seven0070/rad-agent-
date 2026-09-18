@@ -428,10 +428,12 @@ def cmd_lab(args) -> int:
         return 0
     if a == "run":
         suite = args.suite or "smoke"
+        if suite == "bank":
+            suite = "banks"
         from rad import lab_banks
         offline = suite.startswith("bank:") or suite in ("banks", "everything")
         if not offline and suite not in SUITES:
-            fail(f"suite must be one of {sorted(SUITES)} or bank:<category> "
+            fail(f"suite must be one of {sorted(SUITES)} or bank | bank:<category> "
                  f"({', '.join(lab_banks.CATEGORIES)}) / banks / everything"); return 1
         from rad.router import RouterState
         if not offline and not RouterState(home).build_chain():
@@ -535,8 +537,8 @@ def add_parsers(sub) -> None:
     lb.add_argument("lab_action", nargs="?", default="list", choices=["list", "run", "history", "show", "compare"])
     lb.add_argument("lab_args", nargs="*")
     lb.add_argument("--suite", default=None,
-                    help="smoke | long | adversarial | all | bank:<reasoning|tool_use|coding|research|"
-                         "planning|long_horizon|recovery|memory|adversarial> | banks | everything")
+                    help="smoke | long | adversarial | all | bank | bank:<reasoning|tool_use|coding|"
+                         "research|planning|long_horizon|recovery|memory|adversarial> | banks | everything")
     lb.add_argument("--ids", nargs="*", default=None); lb.add_argument("--label", default=None)
     lb.add_argument("--keep", action="store_true", help="keep temp homes/workspaces for inspection")
     lb.add_argument("--sample", type=int, default=0, help="run only N scenarios (deterministic)")

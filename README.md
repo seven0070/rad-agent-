@@ -12,7 +12,7 @@ runs commands with your confirmation, and **teaches itself new skills from a sin
   __ / \  |  _ \/ |      / \
  / _` __ \| |_) | | /\/\ / _ \
  \__,_||_|____/|_|/__/__\_/ \_\
-   v0.1.0 — open door, free first, self-evolving
+   v0.2.0 — open door, free first, self-evolving
 ```
 
 ---
@@ -44,8 +44,8 @@ rad install edge0        # Mac only — clones + guides setup
 On other machines the engine socket takes Ollama / LM Studio / vLLM instead — same interface.
 
 **NVIDIA NIM** (build.nvidia.com) is a first-class free-tier brain:
-`rad keys add nvidia <nvapi-…>` — default model `meta/llama-3.3-70b-instruct`
-(free-credit), vision via `meta/llama-3.2-11b-vision-instruct`.
+`rad keys add nvidia <nvapi-…>` — default model `meta/llama-3.2-11b-vision-instruct`
+(NIM free-credit; `meta/llama-3.3-70b-instruct` reached end-of-life on 2026-08-26).
 
 ## Routing (free-first, auto-fallback)
 
@@ -208,7 +208,7 @@ Watchers are detached processes; notifications land in `~/.rad/notifications.md`
 
 ## Install
 
-Requires Python 3.9+. No mandatory dependencies (stdlib-only core).
+Requires Python 3.9+ (3.11 or 3.12 recommended). No mandatory dependencies (stdlib-only core).
 
 ```bash
 git clone https://github.com/seven0070/rad-agent- && cd rad-agent-
@@ -362,7 +362,7 @@ Rad runs on Windows (10/11) out of the box — `python -m venv .venv`, `pip inst
 
 ```bash
 pip install -e ".[dev]"
-python -m pytest -q         # 289 tests, offline, ~8s
+python -m pytest -q         # offline tests
 rad regression --quick      # security + agent groups + a live benchmark sample
 rad acceptance              # the 50-item acceptance gate, with per-item evidence
 ```
@@ -419,7 +419,7 @@ understand → success criteria → plan → task graph → execute → observe 
   typed stream per objective; `rad replay <id> --verify` re-checks a past run against today's disk.
 
 ## Documentation map
-[INSTALLATION](docs/INSTALLATION.md) · [CONFIGURATION](docs/CONFIGURATION.md) · [CLI](docs/CLI.md) ·
+[QUICKSTART](docs/QUICKSTART.md) · [INSTALLATION](docs/INSTALLATION.md) · [CONFIGURATION](docs/CONFIGURATION.md) · [CLI](docs/CLI.md) ·
 [ARCHITECTURE](docs/ARCHITECTURE.md) · [CONTROL-PLANE](docs/CONTROL-PLANE.md) · [MEMORY](docs/MEMORY.md) ·
 [WORLD-MODEL](docs/WORLD-MODEL.md) · [AGENTS](docs/AGENTS.md) · [SECURITY](docs/SECURITY.md) ·
 [TOOLS](docs/TOOLS.md) · [SKILLS](docs/SKILLS.md) · [MCP](docs/MCP.md) · [LAB](docs/LAB.md) ·
@@ -431,4 +431,4 @@ understand → success criteria → plan → task graph → execute → observe 
 Every document describes shipped behaviour: `docs/CLI.md` is generated from the argument parser and
 the acceptance gate fails if the docs mention a command that does not exist.
 
-Quick health check: `rad doctor` · local API: `rad serve` · is it finished? `rad acceptance`.
+Quick health check: `rad doctor` · first run: [quickstart](docs/QUICKSTART.md) · local API: `rad serve` · is it finished? `rad acceptance`.

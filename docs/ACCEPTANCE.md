@@ -25,7 +25,7 @@ and it is how this repository decides whether the architecture is actually finis
 |---|---|---|
 | 1 | No mandatory infrastructure — A plain install runs locally with no database, no service and no third-party runtime dependency | `rad status` |
 | 2 | v1 compatibility — Every v1 command still exists and works | `rad --help` |
-| 3 | Health checks — rad doctor covers python/deps/config/models/keys/runtimes/storage/MCP/browser/voice/filesystem/permissions/corrupt state with actionable output | `rad doctor` |
+| 3 | Health checks — rad doctor covers python/deps/config/models/keys/runtimes/storage/MCP/browser/voice/filesystem/permissions/sandbox/corrupt state with READY/WARNING/OPTIONAL/ERROR output | `rad doctor` |
 
 ### Control plane
 

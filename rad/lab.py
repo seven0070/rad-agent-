@@ -136,6 +136,8 @@ def scenarios(suite: str = "all", ids: Optional[List[str]] = None,
               sample: int = 0, seed: int = 0) -> List[Scenario]:
     """Resolve a suite: hand-written suites, generated banks (`bank:<category>`, `bank:all`),
     `all` (hand + banks), or an explicit id list. `sample` takes a deterministic subset."""
+    if suite == "bank":
+        suite = "banks"
     if suite.startswith("bank:") or suite == "banks":
         from rad import lab_banks
         cat = suite.split(":", 1)[1] if ":" in suite else "all"

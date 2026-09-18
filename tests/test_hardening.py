@@ -179,10 +179,33 @@ def test_restore_rejects_path_traversal(home, tmp_path):
 
 def test_doctor_full_run_healthy_and_exit_semantics(home):
     fs = Doctor(home, fix=False, probe_network=False).run()
-    assert {f.check for f in fs} >= {"python", "home", "config", "schema", "integrity", "policy", "memory", "objectives", "dna"}
-    assert all(f.status == "ok" for f in fs), [(f.check, f.message) for f in fs if f.status != "ok"]
+    assert {f.check for f in fs} >= {"python", "home", "config", "schema", "integrity", "policy", "memory", "objectives", "dna", "sandbox"}
+    assert all(f.status in ("ok", "optional") for f in fs), [(f.check, f.status, f.message) for f in fs if f.status not in ("ok", "optional")]
+    assert not any(f.status == "fail" for f in fs)
     home.update(allow_outside_workspace=True)
     assert {f.check: f.status for f in Doctor(home, fix=False, probe_network=False).run()}["workspace"] == "warn"
     from rad.policy import Policy
     Policy(home).set_default("shell", "ALLOW")
     assert {f.check: f.status for f in Doctor(home, fix=False, probe_network=False).run()}["policy"] == "warn"
+
+
+def test_doctor_schema_reports_current_version_after_stamp(home):
+    """Regression: doctor read the version *before* pending() stamped a fresh home, so a
+    first run printed 'schema v0 (current)' even after writing schema v3."""
+    from rad.storage import SCHEMA_VERSION
+    sp = home.root / "schema.json"
+    if sp.exists():
+        sp.unlink()
+    d = {f.check: f for f in Doctor(home, fix=False, probe_network=False).run()}
+    assert d["schema"].status == "ok"
+    assert f"v{SCHEMA_VERSION}" in d["schema"].message
+    assert json.loads(sp.read_text())["version"] == SCHEMA_VERSION
+
+
+def test_doctor_render_uses_release_labels(home):
+    from rad.doctor import render
+    fs = Doctor(home, fix=False, probe_network=False).run()
+    text = render(fs)
+    assert "READY" in text and "verdict: READY" in text
+    assert "OPTIONAL" in text          # unused MCP/voice are optional, not failures
+    assert "ok ·" not in text          # old ✓/ok vocabulary is gone from the summary line

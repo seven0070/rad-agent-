@@ -1,12 +1,17 @@
 # Operations: doctor, storage, migrations, backups
 
 ## `rad doctor [--fix] [--offline] [--json]`
-16 checks: python, home tree, secret-file permissions, config schema, storage schema, integrity,
+23 checks: python, home tree, secret-file permissions, config schema, storage schema, integrity,
 workspace, DNA, policy (flags permissive defaults), memory (contradictions / unconsolidated),
-objectives (needs-you / stale-running), agents, MCP skills, providers, disk, helper binaries.
-Report mode changes nothing. `--fix` only does what is safe: recreate dirs, chmod secrets, coerce
+objectives (needs-you / stale-running), agents, MCP skills, providers, local engines, MCP
+handshake, browser, voice, crash recovery, benchmarks, sandbox (hard layer + workspace jail),
+disk, helper binaries.
+
+Each line is **READY / WARNING / OPTIONAL / ERROR**. Missing optional capabilities
+(providers, local engines, MCP, voice) are OPTIONAL — they do not make RAD unusable and do
+not fail the exit code. Report mode changes nothing. `--fix` only does what is safe: recreate dirs, chmod secrets, coerce
 invalid config to defaults / drop unknown keys, run pending migrations (snapshot first), quarantine
-corrupt files (`*.corrupt-<ts>`, never delete). Exit 1 if anything is `fail`.
+corrupt files (`*.corrupt-<ts>`, never delete). Exit 1 only if anything is ERROR.
 
 ## Storage schema & migrations (`rad/storage.py`)
 `~/.rad/schema.json` records the schema version and every applied migration (name, time, summary).

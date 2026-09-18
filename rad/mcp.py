@@ -22,6 +22,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+from rad import __version__
 from rad.home import RadHome
 from rad.ui import col, ok, warn
 
@@ -104,7 +105,7 @@ class McpStdio:
             self.rpc("initialize", {
                 "protocolVersion": PROTOCOL_VERSION,
                 "capabilities": {},
-                "clientInfo": {"name": "rad-agent", "version": "0.1.0"},
+                "clientInfo": {"name": "rad-agent", "version": __version__},
             })
             self.notify("notifications/initialized")
             res = self.rpc("tools/list")
@@ -120,7 +121,7 @@ def mcp_call_stdio(entry: Dict[str, Any], tool: str, args: Dict[str, Any]) -> st
         client.start()
         client.rpc("initialize", {
             "protocolVersion": PROTOCOL_VERSION, "capabilities": {},
-            "clientInfo": {"name": "rad-agent", "version": "0.1.0"}})
+            "clientInfo": {"name": "rad-agent", "version": __version__}})
         client.notify("notifications/initialized")
         res = client.rpc("tools/call", {"name": tool, "arguments": args})
         parts = []
@@ -166,7 +167,7 @@ def mcp_http_handshake(url: str, timeout: float = 15.0) -> List[Dict[str, Any]]:
 
     post({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {
         "protocolVersion": PROTOCOL_VERSION, "capabilities": {},
-        "clientInfo": {"name": "rad-agent", "version": "0.1.0"}}})
+        "clientInfo": {"name": "rad-agent", "version": __version__}}})
     res = post({"jsonrpc": "2.0", "id": 2, "method": "tools/list"})
     body = res.get("result", res) if isinstance(res, dict) else {}
     return (body or {}).get("tools", []) or []
