@@ -372,16 +372,20 @@ def bank_planning(n: int = BANK_SIZE) -> List[Scenario]:
 
 
 # ============================================================================================
-# 6. long_horizon — 12..40 meaningful actions per objective (metrics in rad.longhorizon)
+# 6. long_horizon — 20..50 meaningful actions per objective (metrics in rad.longhorizon)
 # ============================================================================================
 
 def bank_long_horizon(n: int = BANK_SIZE) -> List[Scenario]:
-    """Objectives that need 12–45 real actions: a data pipeline, a journal of every step,
-    tests that really run, docs, and a final verification script over all artifacts."""
+    """Objectives that need 20–50 real actions: a data pipeline, a journal of every step,
+    tests that really run, docs, and a final verification script over all artifacts.
+
+    Each scenario's script is measured: `expect_min_actions` is the number of mandatory tool
+    calls, and the lab fails the scenario if fewer actions were actually taken.
+    """
     out = []
     rng = random.Random(SEED + 6)
     for i in range(n):
-        size = 12 + (i % 34)                     # 12..45 meaningful actions
+        size = 20 + (i % 30)                     # 20..49 mandatory actions → 21..50 taken
         extra = max(0, size - 12)
         token = f"lh{rng.randint(1000, 9999)}"
         values = [rng.randint(1, 20) for _ in range(max(6, size // 2))]

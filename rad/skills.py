@@ -27,7 +27,8 @@ import time
 from typing import Any, Dict, List, Optional, Tuple
 
 from rad.home import RadHome, _read_json, _write_json
-from rad.policy import CAP_MCP, CAP_READ, CAP_SHELL, CAP_WEB, CAP_WRITE
+from rad.policy import (CAP_BROWSER, CAP_CREDENTIALS, CAP_MCP, CAP_READ, CAP_SHELL,
+                        CAP_WEB, CAP_WRITE)
 
 DANGEROUS = (CAP_SHELL, CAP_WRITE)
 
@@ -71,14 +72,39 @@ def build_manifest(entry: Dict[str, Any], declared: Optional[Dict[str, Any]] = N
         d = (declared.get("tools") or {}).get(n)
         per_tool[n] = sorted(set(d)) if d else [infer_capability(n)]
     caps = sorted({c for cs in per_tool.values() for c in cs} | set(declared.get("capabilities") or []))
+    declared_inputs = declared.get("inputs") if isinstance(declared.get("inputs"), dict) else {}
+    declared_outputs = declared.get("outputs") if isinstance(declared.get("outputs"), dict) else {}
+    spec: List[Dict[str, Any]] = []
+    for t in tools:
+        n = t.get("name", "")
+        schema = t.get("schema") or t.get("inputSchema") or {}
+        spec.append({
+            "name": n,
+            "description": t.get("description", ""),
+            "inputs": declared_inputs.get(n) or sorted((schema.get("properties") or {}).keys()),
+            "outputs": declared_outputs.get(n) or ["text"],
+            "permissions": per_tool.get(n, [infer_capability(n)]),
+        })
+    approval = declared.get("approval", "ask" if any(c in DANGEROUS for c in caps) else "policy")
+    trust = "remote" if entry.get("transport") == "http" else ("local" if entry.get("command") else "unknown")
     return {
         "name": entry.get("name"),
+        "description": declared.get("description", entry.get("description", "")),
+        "version": str(declared.get("version", entry.get("version", "")) or ""),
         "transport": entry.get("transport", "stdio"),
-        "trust": "remote" if entry.get("transport") == "http" else ("local" if entry.get("command") else "unknown"),
+        "trust": trust,
         "capabilities": caps,
+        "permissions": sorted(set(declared.get("permissions") or caps)),
+        "dependencies": list(declared.get("dependencies") or entry.get("dependencies") or []),
+        "security": {"approval": approval, "trust": trust,
+                     "sandbox": "required" if caps else "not required",
+                     "credentials": "never shared" if CAP_CREDENTIALS not in caps else "declared",
+                     "network": "scoped by sandbox grants" if any(
+                         c in caps for c in (CAP_WEB, CAP_BROWSER)) else "none"},
         "tools": per_tool,
+        "spec": spec,
         "declared": bool(declared),
-        "approval": declared.get("approval", "ask" if any(c in DANGEROUS for c in caps) else "policy"),
+        "approval": approval,
         "pinned": _fingerprint(tools),
         "approved_at": None,
         "created": time.time(),

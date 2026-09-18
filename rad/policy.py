@@ -281,14 +281,17 @@ class Policy:
             return Decision(HARD_DENY, why, "hard")
         if capability in (CAP_READ, CAP_WRITE) and path is not None and (why := hard_check_path(path, self.home.root)):
             return Decision(HARD_DENY, why, "hard")
-        if capability == CAP_WEB and tool in ("fetch_page", "browse") and (
+        # every outbound URL — fetch, search, browser actions, downloads — goes through the same
+        # hard checks: private/loopback/metadata hosts and credentials-in-url are never reachable
+        # from an agent action unless the user opted into local development servers explicitly.
+        if capability in (CAP_WEB, CAP_BROWSER) and (
                 why := hard_check_url(resource, allow_local=bool(self.home.cfg.get("allow_localhost_web")))):
             return Decision(HARD_DENY, why, "hard")
         # 2. agent capability envelope (a sub-agent can only narrow, never widen)
         if agent_caps is not None and capability not in agent_caps:
             return Decision(DENY, f"agent lacks capability {capability}", "agent")
         # 3. web allowlist (soft, but explicit)
-        if capability in (CAP_WEB, CAP_BROWSER) and tool in ("fetch_page", "browse") and self._data.get("web_allow"):
+        if capability in (CAP_WEB, CAP_BROWSER) and self._data.get("web_allow"):
             from urllib.parse import urlparse
             host = (urlparse(resource).hostname or "").lower()
             if not any(host == d or host.endswith("." + d) for d in self._data["web_allow"]):

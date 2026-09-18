@@ -7,6 +7,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
+import platform
+import sys
 import re
 import threading
 import time
@@ -29,6 +32,8 @@ class Observation:
     status: str                 # success | error | blocked | declined
     output: str
     duration_ms: int
+    error: str = ""                       # the failure text, when status != success
+    env: Dict[str, Any] = field(default_factory=dict)   # where it ran: workspace, python, platform
     at: float = field(default_factory=time.time)
     artifacts: List[str] = field(default_factory=list)
     evidence: List[Dict[str, Any]] = field(default_factory=list)
@@ -56,6 +61,7 @@ class Artifact:
     at: float = field(default_factory=time.time)
     verification: Dict[str, Any] = field(default_factory=dict)
     metadata: Dict[str, Any] = field(default_factory=dict)
+    provenance: Dict[str, Any] = field(default_factory=dict)   # created_by → task → objective, lineage
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -107,7 +113,10 @@ class Observer:
         status = classify_output(tool, output)
         obs = Observation.new(objective_id=objective_id, task_id=task_id, action_id=action_id,
                               tool=tool, args=args, status=status, output=(output or "")[:20000],
-                              duration_ms=duration_ms, evidence=list(evidence or []))
+                              duration_ms=duration_ms, evidence=list(evidence or []),
+                              error=((output or "")[:2000] if status != "success" else ""),
+                              env={"workspace": str(workspace), "python": platform.python_version(),
+                                   "platform": sys.platform, "cwd": os.getcwd()[:300]})
         # artifacts: anything write_file produced, or files the shell reported creating
         if tool == "write_file" and status == "success":
             p = Path(str(args.get("path", "")))
@@ -182,7 +191,10 @@ class Observer:
             self._backup_version(reg[parent], version)
         art = Artifact(id="art_" + uuid.uuid4().hex[:8], objective_id=objective_id, task_id=task_id,
                        type=type_, location=location, creator=creator, sha256=sha, size=size,
-                       version=version, parent=parent, metadata=metadata or {})
+                       version=version, parent=parent, metadata=metadata or {},
+                       provenance={"created_by": creator, "tool": creator, "task_id": task_id,
+                                   "objective_id": objective_id, "version": version,
+                                   "parent": parent, "at": time.time()})
         reg[art.id] = art.to_dict()
         _write_json(self.artifacts_path, reg)
         return art

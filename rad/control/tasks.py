@@ -119,6 +119,7 @@ class Task:
     observations: List[str] = field(default_factory=list)   # observation ids
     artifacts: List[str] = field(default_factory=list)      # artifact ids
     history: List[Dict[str, Any]] = field(default_factory=list)
+    plan_version: int = 0                                   # plan/replan generation this task came from
 
     @classmethod
     def new(cls, objective_id: str, text: str, **kw: Any) -> "Task":

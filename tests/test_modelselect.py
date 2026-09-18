@@ -103,3 +103,28 @@ def test_registry_roundtrip_and_render(home):
     assert "mine" in text
     e = entries(FakeSpec("mine", "free"))
     assert "requirements" in reg.render(e, Requirements(kind="code"))
+
+
+def test_vision_requirement_keeps_likely_vision_models_and_flags_guesses(home):
+    """A model whose name says 'vision' is never silently dropped, and RAD records the guess."""
+    from rad.modelselect import Requirements, ModelProfile, ModelRegistry, vision_looks_possible
+    assert vision_looks_possible("ollama", "llama3.2-vision") and vision_looks_possible("p", "qwen2.5-vl:7b")
+    assert not vision_looks_possible("ollama", "llama3.1:8b")
+    reg = ModelRegistry(home)
+
+    class Spec:
+        def __init__(self, name, model, vision=False, tier="free"):
+            self.name, self.default_model, self.supports_vision, self.tier = name, model, vision, tier
+
+    class Entry:
+        def __init__(self, spec):
+            self.spec = spec
+
+    guessed = Entry(Spec("localvision", "llama3.2-vision:11b"))
+    plain = Entry(Spec("plain", "llama3.1:8b"))
+    confirmed = Entry(Spec("cloud", "gpt-4o", vision=True))
+    out = reg.select([guessed, plain, confirmed], Requirements(kind="vision"))
+    names = [getattr(e.spec, "name") for e in out]
+    assert "plain" not in names                      # no evidence at all that it takes images
+    assert names[0] == "cloud"                       # confirmed vision ranks above the guess
+    assert "localvision" in names

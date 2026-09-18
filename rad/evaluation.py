@@ -446,6 +446,7 @@ class ModelEvaluator:
         for h in runs:
             when = time.strftime("%m-%d %H:%M", time.localtime(h["at"]))
             cats = " ".join(f"{c[:4]}:{v}" for c, v in sorted(h.get("categories", {}).items()))
-            out.append(f"  {col.cyan(f'{h.get(chr(115)+chr(99)+chr(111)+chr(114)+chr(101), 0):>5}')}  "
+            score = h.get("score", 0)
+            out.append(f"  {col.cyan(f'{score:>5}')}  "
                        f"{h.get('provider','?'):<10} {(h.get('model') or '?')[:22]:<22} {when}  {col.dim(cats)}")
         return "\n".join(out)

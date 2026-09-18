@@ -221,9 +221,15 @@ class Memory:
         m1 = _SVO.search(a.lower())
         m2 = _SVO.search(b.lower())
         if m1 and m2 and m1.group(1) == m2.group(1) and m1.group(2) == m2.group(2):
-            oa, ob = set(tokenize(m1.group(3))), set(tokenize(m2.group(3)))
+            ta, tb = tokenize(m1.group(3)), tokenize(m2.group(3))
+            oa, ob = set(ta), set(tb)
             if oa and ob and not (oa & ob):
                 return True
+            # same shape, one slot differs: "on the blue shelf" vs "on the red shelf"
+            if len(ta) == len(tb) and len(ta) >= 2:
+                diff = [i for i, (x, y) in enumerate(zip(ta, tb)) if x != y]
+                if len(diff) == 1:
+                    return True
         return False
 
     # ------------------------------------------------------------ scan / recall

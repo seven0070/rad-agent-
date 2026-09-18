@@ -33,6 +33,7 @@ DEFAULTS: Dict[str, Any] = {
     "watch_every_min": 30,
     "custom_providers": [],       # open door: any OpenAI-compatible endpoint
     "allow_outside_workspace": False,  # file tools may leave the workspace (off = boundary enforced)
+    "allow_localhost_web": False,      # web/browser tools may reach loopback (local dev servers only)
     "plan_infer_done": False,
     "objective_parallel": 2,      # max ready tasks run concurrently (only with --auto)
     "accept_unverified_done": True,  # tasks w/o checks may complete on a DONE: claim (recorded UNVERIFIED)

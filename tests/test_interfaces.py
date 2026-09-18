@@ -263,3 +263,38 @@ def test_api_status_tasks_agents_world_tools_benchmarks(home, tmp_path):
     st, b = api.handle("GET", "/v1/benchmarks", {}, {})
     assert st == 200 and b["banks"]["reasoning"] == 100 and b["banks"]["adversarial"] == 100
     assert "lab" in b and "evaluation" in b and "long_horizon" in b
+
+
+def test_api_events_stream_and_memory_recall(home, tmp_path):
+    """`/v1/events` streams the global log; `/v1/memory/recall` takes its query as a parameter."""
+    from rad.api import Api
+    from rad.control.events import EventLog, global_path
+    log = EventLog(global_path(home), home=home)
+    log.emit("TOOL_CALLED", "obj_probe", "t_1", tool="write_file")
+    api = Api(home)
+    st, payload = api.handle("GET", "/v1/events", {"n": "10", "objective": "obj_probe"}, {})
+    assert st == 200 and payload["n"] >= 1
+    assert any(e["kind"] == "TOOL_CALLED" for e in payload["events"])
+    st, payload = api.handle("GET", "/v1/events", {"kind": "OBJECTIVE"}, {})
+    assert st == 200 and all(e["kind"].startswith("OBJECTIVE") for e in payload["events"])
+    st, payload = api.handle("GET", "/v1/memory/recall", {"q": "probe"}, {})
+    assert st == 200 and "memories" in payload
+
+
+def test_plan_version_advances_with_planning_and_replanning(home, tmp_path):
+    """Every objective records which plan generation its tasks came from."""
+    from rad.control import Controller
+    from tests.test_control_plane import ScriptedSession, _plan_llm
+    w = tmp_path / "ws"; w.mkdir(); home.update(workspace=str(w))
+    plan = {"tasks": [{"id": "t1", "text": "make a.txt", "depends_on": [],
+                       "checks": [{"kind": "file_exists", "args": {"path": "a.txt"}}]}]}
+    ScriptedSession.script = [([("write_file", {"path": "a.txt", "content": "x"})], "DONE")]
+    ScriptedSession.prompts = []
+    ctl = Controller(home, session_factory=ScriptedSession, llm=_plan_llm(plan), quiet=True)
+    obj = ctl.create("make a.txt")
+    graph = ctl.plan(obj)
+    assert obj.plan_version == 1
+    assert all(t.plan_version == 1 for t in graph.tasks.values())
+    again = ctl.plan(obj)                      # re-planning bumps the generation
+    assert obj.plan_version == 2 and all(t.plan_version == 2 for t in again.tasks.values())
+    assert obj.to_dict()["plan_version"] == 2  # persisted with the objective

@@ -925,6 +925,35 @@ def cmd_regression(args) -> int:
     return 0 if rep["verdict"]["pass"] else 2
 
 
+
+def cmd_acceptance(args) -> int:
+    """The 50-item acceptance gate: every requirement demonstrated by running code."""
+    from rad.acceptance import Gate, render
+    home = _home(args)
+    areas = [a.strip() for a in (args.area or "").split(",") if a.strip()] or None
+    if areas:
+        from rad.acceptance import AREAS
+        bad = [a for a in areas if a not in AREAS]
+        if bad:
+            fail(f"unknown area(s) {bad}; valid: {', '.join(AREAS)}")
+            return 1
+    info(f"  running the acceptance gate{' on ' + ','.join(areas) if areas else ''} "
+         f"— each item runs the real thing (objectives, crashes, MCP, API, browser)…")
+    rep = Gate(home, full=args.full).run(areas=areas)
+    if args.json:
+        print(json.dumps(rep, indent=2))
+    else:
+        print(render(rep))
+    if rep["ok"]:
+        ok(f"  acceptance gate PASSED ({rep['passed']}/{rep['total']} items) — evidence: {rep['report']}")
+        return 0
+    fail(f"  acceptance gate NOT satisfied: {rep['passed']}/{rep['total']} items "
+         f"(failing: {', '.join(rep['failed'])})")
+    info(f"  full evidence per item: {rep['report']}")
+    return 2
+
+
+
 def cmd_realworld(args) -> int:
     """The four end-to-end acceptance tests: research, coding, multi-agent, failure recovery."""
     from rad.realworld import RealWorldSuite
@@ -1445,6 +1474,15 @@ def build_parser() -> argparse.ArgumentParser:
     ev.add_argument("-n", type=int, default=8, help="history: how many runs")
     ev.set_defaults(fn=cmd_evaluate)
 
+    acc = sub.add_parser("acceptance", help="the 50-item acceptance gate: every requirement "
+                                            "demonstrated by running code, with per-item evidence")
+    acc.add_argument("--area", default=None, help=f"comma list of areas (runtime, control, state, "
+                                                  f"memory, agents, security, routing, ops, "
+                                                  f"benchmarks, docs)")
+    acc.add_argument("--json", action="store_true", help="machine-readable report with evidence")
+    acc.add_argument("--full", action="store_true", help="also run the wide benchmark sample")
+    acc.set_defaults(fn=cmd_acceptance)
+
     rg = sub.add_parser("regression", help="unit/integration/security/agent tests + live agent and "
                                            "long-horizon benchmark subset, with a pass/fail verdict")
     rg.add_argument("reg_action", nargs="?", default="run", choices=["run", "history", "show", "compare"])
@@ -1528,6 +1566,8 @@ def build_parser() -> argparse.ArgumentParser:
     wo.add_argument("world_term", nargs="*")
     wo.add_argument("--path", default=None, help="file to mine (learn)")
     wo.add_argument("--history", action="store_true", help="query: include superseded relations")
+    wo.add_argument("--assume", action="store_true",
+                    help="add: record a working assumption (origin ASSUMPTION), not a fact")
     wo.set_defaults(fn=cmd_world)
 
     v = sub.add_parser("version", help="version"); v.set_defaults(fn=cmd_version)
@@ -1614,8 +1654,13 @@ def cmd_world(args) -> int:
     if args.world_action == "add":
         sentence = " ".join(args.world_term)
         if not sentence:
-            fail("usage: rad world add <sentence about your world>")
+            fail("usage: rad world add <sentence about your world> [--assume]")
             return 1
+        if getattr(args, "assume", False):
+            n = w.assume(sentence)
+            ok(f"recorded {n} assumption(s) — `rad world show` marks them, "
+               f"`rad world confirm` promotes one to fact" if n else "nothing new assumed")
+            return 0
         caller = None
         if _router(home).build_chain():
             def caller(prompt: str) -> str:

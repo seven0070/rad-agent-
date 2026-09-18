@@ -85,6 +85,7 @@ class Objective:
     tags: List[str] = field(default_factory=list)
     result_summary: str = ""        # short human-facing outcome (set by the controller)
     budget_status: Dict[str, Any] = field(default_factory=dict)
+    plan_version: int = 0            # bumped on every plan/replan; tasks record the version
 
     @classmethod
     def new(cls, goal: str, **kw: Any) -> "Objective":

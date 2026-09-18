@@ -108,6 +108,20 @@ class Requirements:
                 "max_output_price": self.max_output_price, "label": self.label}
 
 
+#: model-name patterns that (strongly) suggest image input support. Used only when neither the
+#: provider spec nor a stored profile says anything about vision: the router must not silently
+#: exclude a model that is *probably* capable, and it must say so when it has to guess.
+VISION_NAME_HINTS = ("vision", "-vl", "vl-", "llava", "qwen-vl", "qwen2-vl", "qwen2.5-vl",
+                     "pixtral", "internvl", "moondream", "gpt-4o", "gpt-4.1", "claude-3",
+                     "claude-4", "gemini", "gemma3", "phi-3.5-vision", "minicpm-v", "idefics",
+                     "smolvlm", "ovis", "lfm2-vl")
+
+
+def vision_looks_possible(name: str, model: str = "") -> bool:
+    low = f"{name} {model}".lower()
+    return any(h in low for h in VISION_NAME_HINTS)
+
+
 @dataclass
 class ModelProfile:
     provider: str
@@ -278,14 +292,16 @@ class ModelRegistry:
             name = getattr(spec, "name", "") or str(e)
             prof = self.profiles().get(name) or ModelProfile(provider=name)
             tier = getattr(spec, "tier", None) or prof.tier
-            vision = bool(getattr(prof, "vision", False) or getattr(spec, "supports_vision", False))
+            flagged = getattr(spec, "supports_vision", None)
+            vision = bool(getattr(prof, "vision", False) or flagged)
+            guessed = vision or vision_looks_possible(name, getattr(prof, "model", ""))
             if name in req.avoid:
                 continue
             if req.privacy == "local" and tier != "local":
                 continue
             if not req.allow_paid and tier == "paid":
                 continue
-            if CAP_VISION in caps and not vision:
+            if CAP_VISION in caps and not guessed:
                 continue
             if req.max_output_price and prof.prices[1] > req.max_output_price and tier == "paid":
                 continue
@@ -295,6 +311,8 @@ class ModelRegistry:
             if ctx and req.context() > ctx:
                 continue
             fit = prof.score_for(caps)
+            if CAP_VISION in caps and not vision:
+                fit -= 0.25                     # guessed, not confirmed: usable but ranked below
             prefer_bonus = -1 if name in req.prefer else 0
             ranked.append(((0 if name in req.prefer else 1, TIER_RANK.get(tier, 2), -fit, prof.latency_s), e))
         ranked.sort(key=lambda t: t[0])

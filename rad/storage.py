@@ -44,6 +44,7 @@ CONFIG_TYPES: Dict[str, Tuple[type, ...]] = {
     "watch_every_min": (int, float), "custom_providers": (list,), "allow_outside_workspace": (bool,),
     "plan_infer_done": (bool,), "objective_parallel": (int,), "accept_unverified_done": (bool,),
     "evolution_require_approval": (bool,), "evolution_suite": (str,), "allow_api_fix": (bool,), "api_port": (int,),
+    "allow_localhost_web": (bool,),
 }
 CONFIG_RANGES: Dict[str, Tuple[Any, Any]] = {
     "max_tool_rounds": (1, 50), "max_context_chars": (2000, 400000), "memory_k": (0, 50),
@@ -62,7 +63,10 @@ def validate_config(cfg: Dict[str, Any]) -> List[ConfigIssue]:
             issues.append(ConfigIssue(k, "unknown key (ignored by RAD)", v, fix="__remove__"))
             continue
         types = CONFIG_TYPES.get(k)
-        if types and not isinstance(v, types) or (isinstance(v, bool) and bool not in types):
+        # a key without a declared type contract is accepted as-is; `types` must never be None here
+        # (iterating None used to crash `rad doctor` on any newly added boolean setting)
+        if types is not None and (not isinstance(v, types)
+                                  or (isinstance(v, bool) and bool not in types)):
             issues.append(ConfigIssue(k, f"expected {'/'.join(t.__name__ for t in types)}", v, fix=DEFAULTS[k]))
             continue
         if k in CONFIG_RANGES and v is not None:

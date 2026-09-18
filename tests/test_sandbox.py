@@ -144,3 +144,20 @@ def test_run_python_tool_is_gated_and_isolated(home, ws):
     ctx3.sandbox = Sandbox(home, workspace=ws)
     out3 = run_tool("run_python", {"code": "import os; print('RAD_TEST_SECRET_TOKEN' in os.environ)"}, ctx3)
     assert "False" in out3
+
+
+def test_sandbox_refusals_are_audited(home):
+    """Regression: workspace-jail and sandbox denials raised before the policy layer, so they were
+    never written to audit.jsonl — a blocked action had no trail."""
+    import json
+
+    from rad.policy import Policy
+    from rad.tools import ToolCtx, run_tool
+
+    ctx = ToolCtx(home=home, router=None, auto=True)
+    out = run_tool("write_file", {"path": "../escaped.txt", "content": "x"}, ctx)
+    assert out.startswith("BLOCKED")
+    rec = Policy(home).audit_tail(1)[0]
+    assert rec["effect"] == "DENY" and rec["by"] == "sandbox" and rec["cap"] == "fs.write"
+    assert "escaped.txt" in json.dumps(rec)
+    assert not (home.root.parent / "escaped.txt").exists()

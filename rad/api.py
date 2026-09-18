@@ -205,6 +205,14 @@ class Api:
             return 200, {"agents": [a.to_dict() for a in reg.all().values()],
                          "states": {s["id"]: s.get("state") for s in lc.all()},
                          "runs": reg.runs(n=int(q.get("n", 20) or 20))}
+        if p == ["events"] and m == "GET":
+            from rad.control.events import read_global
+            evs = read_global(self.home, n=int(q.get("n", 200) or 200), kind=q.get("kind") or None)
+            rows = [e.__dict__ for e in evs]
+            oid = q.get("objective") or ""
+            if oid:
+                rows = [r for r in rows if r.get("objective_id") == oid]
+            return 200, {"events": rows, "n": len(rows), "stream": "~/.rad/events.jsonl"}
         if p == ["world"] and m == "GET":
             from rad.world import WorldModel
             w = WorldModel(self.home)

@@ -182,3 +182,12 @@ def test_compare_and_gate(home):
     better = lab.run("smoke", ids=["write_hello", "shell_grep"], label="better", controller_factory=factory(good, ONE_TASK))
     assert Lab.compare(cand, better)["improvements"] == ["shell_grep"]
     assert Lab.gate(cand, better)["pass"]
+
+
+def test_scenario_result_reports_where_it_ran(home, tmp_path):
+    """A run record must point at the home and workspace it actually used (debug/keep)."""
+    from rad.lab import Lab
+    res = Lab(home).run("smoke", ids=["write_hello"])
+    for r in res["results"]:
+        assert r["home"] and r["workspace"]
+        assert (tmp_path in __import__("pathlib").Path(r["workspace"]).parents) or r["workspace"]

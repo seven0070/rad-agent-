@@ -195,9 +195,12 @@ class Controller:
                           max_tasks=int(self.home.cfg.get("max_plan_tasks", 16) or 16))
         res = planner.plan(obj)
         graph: TaskGraph = res["graph"]
+        obj.plan_version = int(getattr(obj, "plan_version", 0) or 0) + 1
+        for t in graph.tasks.values():
+            t.plan_version = obj.plan_version
         obj.verification = {"objective_checks": [c.to_dict() for c in res["objective_checks"]]}
         self.checkpoints.save(obj, graph, note="plan")
-        log.emit(E.PLAN_CREATED, obj.id, source=res["source"], tasks=[
+        log.emit(E.PLAN_CREATED, obj.id, source=res["source"], plan_version=obj.plan_version, tasks=[
             {"id": t.id, "text": t.text, "depends_on": t.depends_on, "checks": len(t.checks),
              "priority": t.priority, "optional": t.optional, "agent": t.agent} for t in graph.tasks.values()])
         for t in graph.tasks.values():
@@ -594,10 +597,13 @@ class Controller:
                         t.active = False
                         log.emit(E.TASK_STATUS, obj.id, t.id, status=TaskStatus.CANCELLED,
                                  superseded=True, reason="superseded by replan")
+                obj.plan_version = int(getattr(obj, "plan_version", 0) or 0) + 1
                 for t in new:
+                    t.plan_version = obj.plan_version
                     graph.add(t)
-                    log.emit(E.TASK_CREATED, obj.id, t.id, text=t.text, replan=True)
-                log.emit(E.REPLAN, obj.id, task.id, new_tasks=[t.id for t in new],
+                    log.emit(E.TASK_CREATED, obj.id, t.id, text=t.text, replan=True,
+                             plan_version=obj.plan_version)
+                log.emit(E.REPLAN, obj.id, task.id, plan_version=obj.plan_version, new_tasks=[t.id for t in new],
                          superseded=[t.id for t in superseded if t.id != task.id])
                 return
             d = Decision("ask_user", d.failure_class, "replan produced no usable plan — " + d.reason)

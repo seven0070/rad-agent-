@@ -277,6 +277,8 @@ class ScenarioResult:
     model_calls: int = 0
     cost_usd: float = 0.0
     injected_faults: int = 0
+    home: str = ""                    # the throw-away RAD home this run used (debug/keep)
+    workspace: str = ""               # where the files actually landed
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -397,7 +399,7 @@ class Lab:
                else self._offline_controller(h, sc) if sc.script is not None
                else Controller(h, quiet=True))
         t0 = time.time()
-        status, usage, verified, claim, oid, err = "error", {}, "", "", "", ""
+        status, usage, verified, claim, oid, err = "error", {}, "", "", str(h.root), ""
         obj = None
         try:
             obj = ctl.create(sc.goal, success_criteria=sc.success_criteria, constraints=sc.constraints,
@@ -466,7 +468,8 @@ class Lab:
                              recovered=traj["recovered"], budget_stopped=traj["budget_stopped"],
                              parallel_observed=traj["parallel_observed"],
                              trajectory_ok=traj["trajectory_ok"], trajectory_detail=traj["trajectory_detail"],
-                             follow_up_status=fu_status, follow_up_success=fu_ok,
+                             home=str(h.root), workspace=str(ws),
+                          follow_up_status=fu_status, follow_up_success=fu_ok,
                              model_false_claim=model_false_claim,
                              verified_false_completion=verified_false_completion,
                              tool_calls=traj["tool_calls"], tool_errors=traj["tool_errors"],

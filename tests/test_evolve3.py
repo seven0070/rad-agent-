@@ -197,3 +197,29 @@ def test_spawn_agents_tool(tmp_path, monkeypatch):
     out = run_tool("spawn_agents", {"problem": "design a queue"}, ctx)
     assert "final says Y" in out and "code says X" in out
     assert run_tool("spawn_agents", {"problem": ""}, ctx) == "empty problem"
+
+
+def test_world_model_holds_assumptions_separately_from_facts(home):
+    """An assumption is recorded with its own origin and stays out of the fact set until confirmed."""
+    from rad.world import ASSUMPTION, WorldModel
+    w = WorldModel(home)
+    w.add("Alice uses Vim")
+    w.assume("Bob uses EditorX")
+    rels = {(r["from"], r["rel"], r["to"]): r for r in w.current_relations()}
+    assert rels[("Bob", "uses", "editorx")]["origin"] == ASSUMPTION
+    assert rels[("Bob", "uses", "editorx")]["confidence"] < rels[("Alice", "uses", "vim")]["confidence"]
+    assert [r["to"] for r in w.assumptions()] == ["editorx"]
+    assert w.confirm("Bob", "uses", "editorx")
+    after = {(r["from"], r["rel"], r["to"]): r for r in w.current_relations()}
+    assert after[("Bob", "uses", "editorx")]["origin"] == "USER_PROVIDED"
+    assert w.assumptions() == []
+
+
+def test_world_entity_names_drop_leading_articles(home):
+    """'The Acceptance Rig is a test harness' must not create an entity literally named 'The Acceptance'."""
+    from rad.world import WorldModel
+    w = WorldModel(home)
+    w.add("The Acceptance Rig is a test harness.")
+    ents = set(w.data()["entities"])
+    assert "acceptance" in ents and "the acceptance" not in ents
+    assert [(r["from"], r["rel"]) for r in w.current_relations()] == [("Acceptance", "is")]

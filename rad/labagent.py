@@ -26,7 +26,9 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from rad.tools import ToolCtx, run_tool
 
-NETWORK_TOOLS = {"web_search", "fetch_page", "see_image", "verify_url", "browser"}
+NETWORK_TOOLS = {"web_search", "fetch_page", "see_image", "verify_url", "browser",
+                 "browser_navigate", "browser_extract", "browser_find", "browser_links",
+                 "browser_submit", "browser_download", "browser_screenshot"}
 
 
 class OfflineAgent:

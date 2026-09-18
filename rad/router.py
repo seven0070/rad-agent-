@@ -113,6 +113,14 @@ class RouterState:
             selected = sel or chain
             self.last_selection = {"kind": req.kind, "requested": [getattr(e.spec, "name", "?") for e in chain],
                                    "selected": [getattr(e.spec, "name", "?") for e in selected]}
+            if req.need_vision or req.kind == "vision":
+                confirmed = [getattr(e.spec, "name", "?") for e in selected
+                             if getattr(e.spec, "supports_vision", False)]
+                self.last_selection["vision_confirmed"] = confirmed
+                if not confirmed:
+                    # honest degradation: a vision task is being sent to a model RAD cannot
+                    # confirm accepts images. Recorded, surfaced (`rad status`), never hidden.
+                    self.last_selection["vision_gap"] = True
             return selected
         except Exception:
             return chain
@@ -127,10 +135,13 @@ class RouterState:
                 or getattr(requirements, "kind", "") == "vision"
         chain = self.build_chain_for(requirements=requirements, need_vision=need_vision)
         if not chain:
-            raise P.ProviderError(
-                "no brain available — add a key (`rad keys add <provider> <key>`), "
-                "start a local engine (Edge0/Ollama/LM Studio), or `rad provider add`",
-                retryable=False)
+            hint = ("no vision-capable brain available — this task includes an image; "
+                    "`rad providers` lists what each provider/model supports, then "
+                    "`rad use <provider>` or `rad provider add` with a vision model "
+                    "(e.g. gpt-4o, claude-3.5, gemini, qwen-vl, llava)" if need_vision else
+                    "no brain available — add a key (`rad keys add <provider> <key>`), "
+                    "start a local engine (Edge0/Ollama/LM Studio), or `rad provider add`")
+            raise P.ProviderError(hint, retryable=False)
         errors: List[str] = []
         for entry in chain:
             model = model_override or self.home.cfg.get("model") or entry.model

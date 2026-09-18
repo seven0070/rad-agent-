@@ -345,3 +345,36 @@ def test_task_roundtrip_keeps_branch_fields():
     # old checkpoints without the new fields still load
     legacy = {"id": "t1", "objective_id": "o", "text": "old"}
     assert Task.from_dict(legacy).priority == "normal"
+
+
+def test_observation_carries_error_and_environment(home, ws, scripted):
+    """Every observation is reproducible later: it says what failed and where it ran."""
+    plan = {"tasks": [{"id": "t1", "text": "read a missing file", "depends_on": [],
+                       "checks": [{"kind": "file_exists", "args": {"path": "a.txt"}}]}]}
+    scripted.script = [([("read_file", {"path": "missing.txt"}),
+                         ("write_file", {"path": "a.txt", "content": "x"})], "DONE")]
+    ctl = _ctl(home, scripted, plan)
+    obj = ctl.run(ctl.create("read then write"))
+    observer = Observer(ctl.store.dir(obj.id))
+    failed = [o for o in observer.for_task(sorted(ctl.load_graph(obj).tasks)[0])
+              if o.status == "error"]
+    assert failed, "the failed read must be observed as an error"
+    o = failed[0]
+    assert o.error.startswith("not found")
+    assert o.env["workspace"] == str(ws) and o.env["python"] and o.env["platform"]
+
+
+def test_artifacts_record_provenance_and_lineage(home, ws, scripted):
+    """An artifact knows who made it, in which task/objective, and which version it replaced."""
+    plan = {"tasks": [{"id": "t1", "text": "write twice", "depends_on": [],
+                       "checks": [{"kind": "file_exists", "args": {"path": "a.txt"}}]}]}
+    scripted.script = [([("write_file", {"path": "a.txt", "content": "one"}),
+                         ("write_file", {"path": "a.txt", "content": "two"})], "DONE")]
+    ctl = _ctl(home, scripted, plan)
+    obj = ctl.run(ctl.create("write twice"))
+    reg = Observer(ctl.store.dir(obj.id)).artifacts()
+    versions = sorted(reg.values(), key=lambda a: a["version"])
+    assert versions[-1]["version"] == 2 and versions[-1]["parent"]
+    p = versions[-1]["provenance"]
+    assert p["created_by"] == "write_file" and p["objective_id"] == obj.id
+    assert p["task_id"] and p["version"] == 2
