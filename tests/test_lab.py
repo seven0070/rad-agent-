@@ -105,6 +105,34 @@ def test_graders(tmp_path):
     assert not _run_grader(tmp_path, {"kind": "bogus", "args": {}})["ok"]
 
 
+def test_grader_accepts_verifier_style_json_field_and_shell_contains(tmp_path):
+    """Independent lab graders must score the same Check args the control plane uses.
+
+    Class A (F-20260918-09): `{key}` / `{contains}` used to KeyError (`field` / `expect`
+    required), so real-world json_field and shell_output graders false-negatived artifacts
+    the verifier had already marked VERIFIED.
+    """
+    (tmp_path / "report.json").write_text('{"conflicts": [{"field": "price"}], "empty": []}')
+    keyed = _run_grader(tmp_path, {"kind": "json_field",
+                                   "args": {"path": "report.json", "key": "conflicts"}})
+    assert keyed["ok"], keyed
+    legacy = _run_grader(tmp_path, {"kind": "json_field",
+                                    "args": {"path": "report.json", "field": "conflicts",
+                                             "equals": [{"field": "price"}]}})
+    assert legacy["ok"], legacy
+    missing = _run_grader(tmp_path, {"kind": "json_field",
+                                     "args": {"path": "report.json", "key": "nope"}})
+    assert not missing["ok"]
+    contains = _run_grader(tmp_path, {"kind": "shell_output",
+                                      "args": {"command": "echo ALL TESTS PASSED",
+                                               "contains": "ALL TESTS PASSED"}})
+    assert contains["ok"], contains
+    miss = _run_grader(tmp_path, {"kind": "shell_output",
+                                  "args": {"command": "echo ALL TESTS PASSED",
+                                           "contains": "NOPE"}})
+    assert not miss["ok"]
+
+
 def test_scenario_catalogue():
     ids = [s.id for s in scenarios("all")]
     assert len(ids) == len(set(ids)) >= 10

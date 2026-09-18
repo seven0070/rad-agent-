@@ -314,7 +314,7 @@ class RealWorldSuite:
                            artifacts=[{"path": "report.json", "sha256": _hash(report),
                                        "bytes": report.stat().st_size if report.exists() else 0}],
                            recoveries=res["recovered"], tool_errors=res["tool_errors"],
-                           steps=res["task_attempts"])
+                           steps=res["task_attempts"], graders=res["graders"])
 
     # ================================================================== 2. coding
     def t_coding(self) -> Dict[str, Any]:
@@ -430,7 +430,7 @@ class RealWorldSuite:
                            artifacts=[{"path": "pkg/stats.py", "sha256": _hash(ws / "pkg/stats.py")},
                                       {"path": "tests/check_stats.py", "sha256": after}],
                            recoveries=res["recovered"], tool_errors=res["tool_errors"],
-                           test_output=proc.stdout.strip()[:200])
+                           test_output=proc.stdout.strip()[:200], graders=res["graders"])
 
     # ================================================================== 3. multi-agent
     def t_multi_agent(self) -> Dict[str, Any]:

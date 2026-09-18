@@ -16,6 +16,7 @@ def test_research_multi_source_cross_check(home):
     assert not failed, failed
     assert t["verified"] == "VERIFIED"
     assert t["artifacts"] and t["artifacts"][0]["sha256"]
+    assert all(g["ok"] for g in t.get("graders") or []), t.get("graders")
 
 
 def test_coding_inspect_implement_test_repair_verify(home):
@@ -25,6 +26,7 @@ def test_coding_inspect_implement_test_repair_verify(home):
     assert t["verified"] == "VERIFIED"
     assert "ALL TESTS PASSED" in t.get("test_output", "")
     assert t["tool_errors"] >= 1                    # the injected failure really happened
+    assert all(g["ok"] for g in t.get("graders") or []), t.get("graders")
 
 
 def test_multi_agent_independent_verification(home):
