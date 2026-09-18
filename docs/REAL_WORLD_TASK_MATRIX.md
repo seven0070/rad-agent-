@@ -4,16 +4,42 @@ Factual rows from maturation cycles on disk-checked evidence.
 Architecture frozen. Needle stays experimental / off. Not AGI.
 Operating spine: [ROADMAP.md](ROADMAP.md). Gen1 complete on 0.2.3; Gen2 in progress.
 Verified coding loop is **implemented as v0.3.0** (RW-064). Live NIM retest of that
-loop is **RW-065**. Do not rewrite RW-058–064.
+loop is **RW-065**. Plan-timeout resilience is **implemented as v0.3.1** (RW-066).
+Do not rewrite RW-058–065.
 
 Every `VERIFIED` / `completed` cell is from the control-plane verifier **and** a disk
 check (file exists / contents / hash). A model `DONE:` line is never enough.
 
 Status vocabulary: **PASS** | **FAIL** | **BLOCKED** | **NOT TESTED**.
 
-Gen2 / v0.3.0 (verified coding loop) is at the top, then the live NIM retest
-(RW-065). Post-Cycle 4 production use (package **0.2.3**, no bump) and Cycles 4–2
-follow. RW-058–064 are **not rewritten**.
+Gen2 / v0.3.1 (plan-timeout resilience) is at the top, then v0.3.0 (verified coding
+loop) and the live NIM retest (RW-065). Post-Cycle 4 production use (package **0.2.3**,
+no bump) and Cycles 4–2 follow. RW-058–065 are **not rewritten**.
+
+# Gen2 — v0.3.1 plan-timeout resilience (RW-066)
+
+Lane: Cloud Agent, deterministic/scripted. Live NIM optional (BLOCKED if no key).
+Package **0.3.0 → 0.3.1**. Needle `existing` / off. `max_plan_tasks` **16**.
+Default `Budget.tool_calls` **60**. Default plan retries **1** (hard cap 3).
+F-17 fallback contract **unchanged** (goal-only clause split, cap 7, no checks).
+Does **not** claim RW-062 / RW-065 live 11B would now PASS.
+
+| id | Date | Category | Objective | #tasks | #actions | Tools | Result | Verification | Recovery | Failure class | Notes |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| RW-066 | 2026-09-18 | planning (scripted) — plan-timeout resilience | First plan call TimeoutError / empty / malformed; second call valid JSON with checks | timeout→JSON: 2 llm tasks with checks; exhausted: 7 fallback, no checks | plan only (plus bounded drive for false-DONE) | default **60** unchanged | **PASS** timeout-then-JSON is `source=llm`; exhausted is `source=fallback` F-17; first-try JSON still 1 attempt | LLM path keeps checks; fallback UNVERIFIED; objective not VERIFIED without checks | n/a (plan-time retry, not recovery) | capability (Gen2 theme 2) | Tests `tests/test_plan_timeout_resilience.py`. Needle OFF. Caps unchanged. False DONE **0**. F-17 preserved. Live NIM not required. |
+
+| metric | value |
+|---|---|
+| Package | **0.3.1** |
+| Theme | Gen2 #2 plan-timeout resilience |
+| Needle | **OFF** (`existing`) |
+| `max_plan_tasks` | **16** unchanged |
+| Default tool budget | **60** unchanged |
+| Default plan retries | **1** (hard cap **3**) |
+| False completion | **0** |
+| RW-058–065 | preserved (not rewritten) |
+| Live NIM | **BLOCKED** (no `NVIDIA_NIM_API_KEY`) |
+| Claim RW-062/065 live PASS | **NO** |
 
 # Gen2 — v0.3.0 verified coding loop (RW-064)
 

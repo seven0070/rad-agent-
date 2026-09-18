@@ -141,6 +141,13 @@ class Controller:
             from rad.ui import info
             info(msg)
 
+    def _planner(self) -> Planner:
+        cfg = self.home.cfg
+        retries = cfg.get("plan_retries", 1)
+        return Planner(self._brain(), str(self.home.workspace()),
+                       max_tasks=int(cfg.get("max_plan_tasks", 16) or 16),
+                       retries=retries)
+
     # ------------------------------------------------------------ lifecycle (delegates)
     def create(self, goal: str, success_criteria: Optional[List[str]] = None,
                constraints: Optional[List[str]] = None, budget: Optional[Budget] = None,
@@ -191,8 +198,7 @@ class Controller:
     def plan(self, obj: Objective) -> TaskGraph:
         log = self._log(obj.id)
         self.lifecycle.planning(obj)
-        planner = Planner(self._brain(), str(self.home.workspace()),
-                          max_tasks=int(self.home.cfg.get("max_plan_tasks", 16) or 16))
+        planner = self._planner()
         res = planner.plan(obj)
         graph: TaskGraph = res["graph"]
         obj.plan_version = int(getattr(obj, "plan_version", 0) or 0) + 1
@@ -200,7 +206,8 @@ class Controller:
             t.plan_version = obj.plan_version
         obj.verification = {"objective_checks": [c.to_dict() for c in res["objective_checks"]]}
         self.checkpoints.save(obj, graph, note="plan")
-        log.emit(E.PLAN_CREATED, obj.id, source=res["source"], plan_version=obj.plan_version, tasks=[
+        log.emit(E.PLAN_CREATED, obj.id, source=res["source"], plan_version=obj.plan_version,
+                 attempts=res.get("attempts", 0), tasks=[
             {"id": t.id, "text": t.text, "depends_on": t.depends_on, "checks": len(t.checks),
              "priority": t.priority, "optional": t.optional, "agent": t.agent} for t in graph.tasks.values()])
         for t in graph.tasks.values():
@@ -589,8 +596,7 @@ class Controller:
                 return
         if d.strategy == "replan":
             repairs[task.id] = repairs.get(task.id, 0) + 1
-            planner = Planner(self._brain(), str(self.home.workspace()),
-                          max_tasks=int(self.home.cfg.get("max_plan_tasks", 16) or 16))
+            planner = self._planner()
             new = planner.replan(obj, graph, task, d.hint or d.reason)
             if new:
                 # superseded work is *recorded* (CANCELLED + deactivated), never silently dropped:

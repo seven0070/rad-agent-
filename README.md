@@ -12,7 +12,7 @@ runs commands with your confirmation, and **teaches itself new skills from a sin
   __ / \  |  _ \/ |      / \
  / _` __ \| |_) | | /\/\ / _ \
  \__,_||_|____/|_|/__/__\_/ \_\
-   v0.3.0 — open door, free first, self-evolving
+   v0.3.1 — open door, free first, self-evolving
 ```
 
 ---
@@ -63,7 +63,7 @@ local engines → free cloud tiers (round-robin) → paid (unless free-lock)
 * Everything is reported: `rad [groq] …`
 * Optional experimental tool router: `RAD_TOOL_ROUTER=needle` lets [Needle](https://github.com/cactus-compute/needle)
   *propose* tool names/args. Default remains `existing`. Needle never executes tools, never
-  bypasses permission/sandbox/budget/verification, and stays **off** in v0.3.0
+  bypasses permission/sandbox/budget/verification, and stays **off** in v0.3.1
   (`RAD_TOOL_ROUTER=existing`). `rad needle-eval` is the measurement path; it is not a default.
 
 ## Human-inspired memory
@@ -251,8 +251,9 @@ Objective → Planner → Task graph (DAG, machine-checkable checks per task)
 
 Coding/verification goals drive **write → independent disk checks → repair** until
 `json_valid` / tests pass (or the budget forces `needs_user` / fail honestly). A model
-`DONE:` line is never completion. Needle stays off. Default `max_plan_tasks` remains 16;
-default `Budget.tool_calls` remains 60.
+`DONE:` line is never completion. A planner timeout / empty / malformed JSON is retried
+once for a structured JSON plan before the F-17 goal-only fallback. Needle stays off.
+Default `max_plan_tasks` remains 16; default `Budget.tool_calls` remains 60.
 
 ```
 rad objective run "Write three facts about X to facts.md, then summarise into summary.txt" \
@@ -382,7 +383,7 @@ and how to add a tool, a scenario or a migration.
 
 ## Roadmap
 
-Operating spine (Gen1–Gen5, the build → test → validate → release → use → discover gaps loop): [docs/ROADMAP.md](docs/ROADMAP.md). Gen1 complete on 0.2.3; Gen2 in progress (verified coding loop **implemented as v0.3.0** in this change). The list below is a product-idea backlog, not a generation commitment.
+Operating spine (Gen1–Gen5, the build → test → validate → release → use → discover gaps loop): [docs/ROADMAP.md](docs/ROADMAP.md). Gen1 complete on 0.2.3; Gen2 in progress (verified coding loop **v0.3.0**; plan-timeout resilience **implemented as v0.3.1** in this change). The list below is a product-idea backlog, not a generation commitment.
 
 LoRA fine-tune of Rad's personality into Edge0 weights · expert pruning/distillation for lighter
 35b · web/phone face · remote-MCP tool execution hardening · multi-user sessions ·

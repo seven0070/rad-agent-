@@ -2,7 +2,7 @@
 
 Living log of **measured** RAD failures found in live or reconstructed use.
 Architecture is frozen. Needle stays experimental and off by default. This is not AGI/ASI.
-Operating spine: [ROADMAP.md](ROADMAP.md) (adopted 2026-09-18). Gen1 complete on 0.2.3; Gen2 in progress. Verified coding loop is **implemented as v0.3.0** (F-20260918-24 / RW-064). Live retest **RW-065**. This ledger is evidence. Do not rewrite RW-058–064.
+Operating spine: [ROADMAP.md](ROADMAP.md) (adopted 2026-09-18). Gen1 complete on 0.2.3; Gen2 in progress. Verified coding loop is **implemented as v0.3.0** (F-20260918-24 / RW-064). Live retest **RW-065**. Plan-timeout resilience is **implemented as v0.3.1** (F-20260918-27 / RW-066). This ledger is evidence. Do not rewrite RW-058–065.
 
 No secrets belong here: never paste API keys, vault contents, account tokens, or full
 provider payloads. Paths under `/tmp/…` and objective ids are fine.
@@ -940,6 +940,57 @@ python3 -m pytest -q tests/test_json_valid_py_investigation.py
 | Needle | **OFF** (`existing`) |
 | False completion | **0** |
 | Recommendation | **stay 0.3.0** |
+
+## Gen2 / v0.3.1 — Plan-timeout resilience (RW-066) — 2026-09-18
+
+Generation 2 capability expansion, **second accepted theme**. Package **0.3.0 → 0.3.1**.
+Control plane preserved (models propose / RAD decides). Needle **OFF**. Caps **not**
+raised (`max_plan_tasks` 16, `Budget.tool_calls` 60). Default plan retries **1**
+(hard cap 3). RW-058–065 facts are **not rewritten**. F-17 / F-18 / F-26 stay closed.
+
+Product: when the LLM planner times out or returns empty/malformed/non-JSON once,
+RAD retries for a structured JSON plan with machine checks **before** falling back
+to `_fallback(obj)` (goal-only clause split, cap 7, no checks). First-try valid
+JSON is unchanged. Exhausted retries still F-17. This does **not** claim live
+11B RW-062 / RW-065 would now PASS.
+
+### F-20260918-27 — plan-timeout resilience (retry JSON before fallback)
+
+| field | value |
+|---|---|
+| class | **capability** (Gen2 theme 2). Not a re-open of F-17 (fallback still goal-only). Not a re-open of RW-062/065 Class B live 11B incompleteness |
+| status | **shipped in v0.3.1** |
+| found in | product-owner accepted theme after RW-062 (nvidia plan timeout → `source=fallback` → 7 no-check clause tasks) and RW-063 (F-17 NOT CONFIRMED as Class A) |
+| fixed in | **v0.3.1** — `Planner.plan` retries (default 1, hard cap 3) with a JSON-only nudge after timeout/empty/malformed/non-JSON/empty-graph; then `_fallback(obj)` unchanged. `PLAN_CREATED` records `attempts`. `plan_retries` readable from home.cfg (not in DEFAULTS; same pattern as `max_plan_tasks`) |
+| lane | deterministic / scripted (MUST). Live NIM optional; not claimed as a live PASS |
+| objective / test | `tests/test_plan_timeout_resilience.py`; F-17 regressions in `tests/test_f17_fallback_investigation.py` |
+| disk | n/a (plan-time). Scripted: timeout then JSON → `source=llm` + checks; exhausted → `source=fallback` + 7 goal clauses, no checks; first-try JSON → 1 attempt |
+| expected | one transient plan failure recovers a JSON plan; F-17 holds after exhaustion; false DONE **0**; caps/Needle unchanged |
+| actual | timeout/empty/malformed/prose then valid JSON → `source=llm`, checks kept, model prose discarded. Exhausted → goal-only fallback, cap 7. `retries=0` is one-shot. Objective not VERIFIED without machine checks |
+| notes | Trace: `Planner.plan` loop `1 + retries` → `_json_obj` → `_graph_from` or `except`/empty graph → retry with `PLAN_RETRY_NUDGE` → `_fallback(obj)`. `_fallback` still never receives `raw`. Planning LLM calls are not charged to `Budget.model_calls` (controller meters execution, not plan). Needle off. Caps unchanged. |
+
+Reproduction:
+
+```
+python3 -m pytest -q tests/test_plan_timeout_resilience.py tests/test_f17_fallback_investigation.py
+# timeout then JSON → source=llm, 2 attempts, checks kept
+# timeout+timeout → source=fallback, 2 attempts, goal clause-split, no checks
+# first-try JSON → source=llm, 1 attempt
+```
+
+| gate | result |
+|---|---|
+| `python3 -m pytest -q` | **402 passed** in 8.20s |
+| `rad doctor --offline` | READY — 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR (`RAD_HOME=/tmp/rad-v031-gate`) |
+| `rad acceptance` | **50/50 PASSED** (`/tmp/rad-v031-gate/acceptance/20260918-134136_gate.json`) |
+| `rad realworld` | **10 passed / 1 BLOCKED / 0 failed** (`live_nim` BLOCKED; `/tmp/rad-v031-rw/realworld/20260918-134142_realworld.json`) |
+| Package | **0.3.1** |
+| RW-058–065 | preserved |
+| 16-task cap | **UNCHANGED** |
+| Default tool budget | **UNCHANGED** (60) |
+| Needle | **OFF** (`existing`) |
+| False completion | **0** |
+| Live NIM | **BLOCKED** (no NVIDIA keys) — not a live PASS claim |
 
 ## How to add a finding
 

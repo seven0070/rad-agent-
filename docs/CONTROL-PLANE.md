@@ -11,7 +11,7 @@ done, nothing checks, nothing survives a crash. The control plane inverts that:
 | `objectives.py` | `Objective` (goal, criteria, budget/usage, status) + `ObjectiveStore` (disk) |
 | `tasks.py` | `Task` with explicit state machine, `Check` (machine-verifiable condition) |
 | `graph.py` | `TaskGraph` DAG: ready-set, doom propagation, optional branches, cycle check |
-| `planner.py` | LLM → task graph *with checks*; deterministic fallback without a brain; coding goals infer `json_valid` / test `shell_ok` as *objective* checks (fallback *tasks* stay check-less) |
+| `planner.py` | LLM → task graph *with checks*; bounded retry (default 1) on timeout/empty/malformed JSON *before* fallback; deterministic fallback without a brain (goal clause-split, no checks — F-17); coding goals infer `json_valid` / test `shell_ok` as *objective* checks (fallback *tasks* stay check-less) |
 | `codingloop.py` | verified coding loop helpers: coding-goal detection, DONE: pollution, broken-artifact repair hints |
 | `controller.py` | lifecycle: create / plan / run / resume / pause / cancel; the drive loop |
 | `observer.py` | `Observation` per tool call, `Artifact` registry (sha256, versions, lineage) |
