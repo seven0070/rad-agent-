@@ -682,6 +682,54 @@ python -m pytest -q tests/test_class_a_budget_investigation.py
 | Evidence for v0.3.0 | **none** |
 | Recommendation | **Outcome A — continue 0.2.x** |
 
+## Finish-line provider gate (2026-09-18, closeout — closing the v0.2.3 validation cycle)
+
+Environment: Cloud Agent VM (fresh), **no** `NVIDIA_NIM_API_KEY` / `NVIDIA_API_KEY`, no other
+provider keys (vault / env / `.env` all empty), no local engine running. `main` tip
+`aecfbae` (Class A investigation, no v0.2.4). Package **0.2.3** at start **and** at end —
+**not re-cut, no 0.2.x bump**. Architecture frozen. Needle `existing` / off. Cap **16**
+unchanged. Default tool budget **60** unchanged. Not AGI. Not v0.3.0.
+Finish plan: provider gate → (blocked) → classify all live evidence → close or keep open.
+
+### F-20260918-22 — finish-line provider gate: no usable provider / local engine
+
+| field | value |
+|---|---|
+| class | C |
+| status | **BLOCKED** |
+| found in | finish-line execution, rad v0.2.3, `aecfbae` |
+| fixed in | — not a RAD hole; external provider configuration is the only blocking dependency |
+| lane | provider gate — all supported RAD provider / local-engine paths, one pass each |
+| objective / test | none — gate failed **before** objective creation (by design: do not create an objective) |
+| disk | n/a — no objective created, no tools used, workspace untouched |
+| expected | `available_count ≥ 1` AND `actual_chat_check = SUCCESS` to run RW-063R |
+| actual | `RouterState.build_chain()` → **available_count = 0**; edge0 / ollama / lmstudio **not running** (`rad models`, `probe_local`); 9 cloud providers **no key** (`rad keys list`: vault → env → .env all empty; no `.env` in cwd, home, or `~/.rad/keys`); chat check has **no candidate to test** → not SUCCESS |
+| notes | Each detection path was exercised exactly once; not repeated. Same environmental family as F-20260918-08 / F-20260918-13 / F-20260918-14. Per the finish plan, live workload execution stops here: RW-063R remains **BLOCKED** (Class C), no RAD defect demonstrated, no patch. If a key is added or a local engine is started, the gate is re-run and RW-063R proceeds unchanged: `RAD_TOOL_ROUTER=existing --max-tasks 6 --max-tools 16 --auto`, Needle OFF, fresh workspace. |
+
+Reproduction (redacted):
+
+```
+RAD_HOME=/tmp/rad-c5-provider-gate  # fresh home; no keys anywhere; no local engine
+python3 -m rad providers            # 12 specs — all "no key" / "not running"
+python3 -m rad models               # edge0 / ollama / lmstudio: not running
+python3 -m rad keys list            # 9 cloud providers: no key (vault → env → .env)
+RouterState(home).build_chain()     # available_count = 0; chain empty
+```
+
+| gate | result |
+|---|---|
+| `rad version` | **v0.2.3** |
+| `python -m pytest -q` | **345 passed** in 10.12s (fresh venv, `.[dev]`) |
+| `rad doctor --offline` | **20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR**, verdict READY, exit 0 (`/tmp/rad-c5-gate`) |
+| `rad acceptance` | **50/50 PASSED** (`/tmp/rad-c5-gate/acceptance/20260918-122413_gate.json`) |
+| `rad realworld` | **10 passed / 1 BLOCKED / 0 failed** (`live_nim` Class C — no NVIDIA key); `false_success` / `needs_user` / `no_loop` → `needs_user`, **not** VERIFIED (`/tmp/rad-c5-gate/realworld/20260918-122353_realworld.json`) |
+| Provider gate | **BLOCKED** — `available_count = 0`, chat check no candidate (F-20260918-22) |
+| RW-063R | **not run** — gate failed; no objective created; no tools used |
+| New Class A | **none** |
+| False completion | **0** |
+| 16-task cap / default tool budget / Needle | **UNCHANGED (16) / UNCHANGED (60) / OFF** |
+| Recommendation | **close the v0.2.3 validation cycle** — `docs/V023_VALIDATION_CLOSEOUT.md` |
+
 ## How to add a finding
 
 1. Reproduce with disk checks (file exists / hash / contents). Quote status + verification, not model prose.

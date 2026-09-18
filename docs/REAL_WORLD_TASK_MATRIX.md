@@ -350,3 +350,31 @@ unchanged. Needle `existing` / off. Package stays **0.2.3**.
 | Needle | **OFF** (`existing`) |
 | Package | **0.2.3** — **no v0.2.4** |
 | Recommendation | **Outcome A — continue 0.2.x** |
+
+## Finish-line provider gate (closeout of the v0.2.3 validation cycle)
+
+RW-058 / RW-059 / RW-060 / RW-061 rows above are **not rewritten**. This is the
+finish-line provider gate and cycle closeout. RW-062's historical trace is **not
+recoverable** in this environment — **UNAVAILABLE FOR AUDIT** (no reconstruction
+attempted, per the finish plan). RW-063 / RW-063R: provider unavailable (Class C);
+the gate below reconfirms the condition and stops live execution by design —
+**no objective created, no tools used, no RAD defect demonstrated**. Package stays
+**0.2.3**. No 0.2.x bump. Needle `existing` / off. Cap **16** unchanged.
+
+| id | Date | Category | Objective | #tasks | #actions | Tools | Result | Verification | Recovery | Failure class | Notes |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| RW-063 | 2026-09-18 | provider gate (no live run) | none created — provider unavailable | 0 | 0 | 0/0 | **BLOCKED** | n/a | n/a | **C** | No key / no local engine available at the time. No objective created. No RAD defect demonstrated. |
+| RW-063R | 2026-09-18 | provider gate (retry; no live run) | none created — gate: `available_count ≥ 1` AND `actual_chat_check = SUCCESS` | 0 | 0 | 0/0 | **BLOCKED at gate** — `available_count = 0`; chat check has no candidate | n/a | n/a | **C** | Fresh-environment gate (F-20260918-22): 3 local engines not running; 9 cloud providers no key (vault → env → .env); each path probed exactly once, not repeated. Offline invariants reconfirmed on this checkout: pytest **345 passed**; doctor **READY** (20/0/3/0); acceptance **50/50**; realworld **10 passed / 1 BLOCKED / 0 failed** (`live_nim` Class C). False DONE **0**. No RAD defect. No patch. |
+
+### Closeout metrics
+
+| metric | value |
+|---|---|
+| Provider status at closeout | **BLOCKED** (environmental) — external provider configuration is the only blocking dependency for any further live workload |
+| Live evidence classified | **all** (RW-058 B · RW-059 B · RW-060 B · RW-061 NONE · RW-062 unavailable · RW-063 C · RW-063R C) |
+| Class A defect demonstrated | **NO** |
+| F-20260918-17 | **NOT CONFIRMED** — no patch |
+| False completion | **0** |
+| Validation cycle | **CLOSED** — `docs/V023_VALIDATION_CLOSEOUT.md` |
+| Production baseline | **v0.2.3** (frozen) |
+| v0.2.4 / v0.3.0 | **not created** — `docs/V030_CAPABILITY_GAP.md` (no evidence-justified capability) |
