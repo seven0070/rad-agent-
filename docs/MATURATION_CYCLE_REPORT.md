@@ -517,6 +517,113 @@ limited to complex objectives.
 **None.** A third live 11B Class B on a *simpler* coding+verification workload
 is not a missing control-plane stage and does not justify designing v0.3.0.
 
+Later (not this record): RW-063 investigated the F-17 timeout/prose claim on
+`d15af713` and closed it as **NOT CONFIRMED**. See the section below. RW-062
+Class B facts are unchanged.
+
+---
+
+# F-17 timeout / prose fallback — RW-063 (2026-09-18)
+
+**Date:** 2026-09-18
+**Baseline:** `origin/main` `d15af713` (PR #15 / RW-062; package **0.2.3**)
+**Package:** `0.2.3` — **no bump**. **No v0.2.4.** Not v0.3.0.
+**Architecture:** frozen. Needle stays optional/off. `max_plan_tasks` left at **16**.
+Default max-tools **not** raised.
+
+Investigate-first. No RAD product code change. RW-058–062 preserved.
+**Outcome A.**
+
+## Question
+
+When the LLM planner fails or times out, is RAD's fallback parser incorrectly
+converting ambiguous model output into executable tasks?
+
+## Trace (source)
+
+`Controller.plan` → `Planner.plan` → `self.llm(PLAN_PROMPT)` → `_json_obj(raw)`
+→ `_graph_from` (**source=llm**) or any exception / empty task list →
+`_fallback(obj)` (**source=fallback**).
+
+Intended LLM output: JSON `{tasks, objective_checks}` with machine checks;
+“Reply ONLY with JSON”.
+
+Fallback acceptance: split `obj.goal` on clause markers
+(`and then` / `then` / `;` / `, and` / period+space-or-end), keep parts
+longer than 3 chars, cap **7**, **no checks**. Valid task = non-empty clause
+of the user goal. Ordinary prose in the *goal* (“RAD verifies its results.”)
+becomes a clause task **by this contract**. Model prose is **not** an input
+to `_fallback`.
+
+## Feeds (task counts)
+
+| input | tasks |
+|---|---|
+| seven period sentences (“Create the project.” … “Verify the result.”) | **7** |
+| eight period sentences | **7** (`[:7]` cap) |
+| “RAD is a personal agent. / RAD executes useful work. / RAD verifies its results.” | **3** |
+| “Plan: 1. Create files. 2. Implement… 3. Run tests. 4. Verify…” | **5** (period after `1.` etc.) |
+| same seven lines **without** periods (PR #14) | **1** |
+
+## Scenarios A–D
+
+| scenario | expected | actual |
+|---|---|---|
+| A valid structured JSON plan | llm source, JSON tasks | **llm**, 2 tasks, checks kept |
+| B timeout + fallback-compatible (7-sentence) goal | fallback on **goal** | **fallback**, 7 clause tasks, no checks |
+| C timeout + ordinary prose; LLM returns 7-line plan prose | must not use model text | **fallback** on goal (3 sentences → 3 tasks). One-sentence goal + same model prose → **1** task |
+| D malformed / empty LLM | safe fallback, not uncontrolled | **fallback** on goal, **≤7**, not 16 |
+
+Spurious tasks from model output: **0**.
+
+## Tool / budget impact
+
+Fallback can turn a planning *failure* into up to **7** executable no-check
+tasks (the user goal's clauses). `--max-tasks 4` (RW-062 run bound) stops the
+drive after 4 of those; it does not change the planner. Default
+`Budget.tool_calls` remains **60**. `max_plan_tasks` remains **16**. This is
+bounded clause-split, not runaway multiplication. Live RW-062 tool exhaustion
+(12/12) remains Class B execution quality, not a parser hole.
+
+## Class A / B / C
+
+| class | this record |
+|---|---|
+| **A** | **NO.** Parser does not violate the intended contract. Timeout does not parse model output. Newlines do not split. |
+| **B** | none new. RW-062 / F-20260918-22 stays B. |
+| **C** | none (no live NIM this investigation). |
+
+Root cause of the PR #14 vs RW-062 contradiction: different *goals*. PR #14
+fed a bullet/newline goal without clause markers → 1 task. RW-062's 7 tasks
+match a period-separated user goal hitting `[:7]`, observed after nvidia
+timeout forced the fallback path. The operator label “newline-split” does
+not match `Planner._fallback`.
+
+## Decision
+
+- **RAD defect demonstrated: NO**
+- **Patch required: NO**
+- **Regression (product): NO** — investigation tests only
+- Needle **OFF**. Cap **16** unchanged. Default tools **UNCHANGED**.
+- False completion **0**.
+- **No v0.2.4.**
+- **Outcome A continues.** Not v0.3.0.
+
+## Quality gates (this branch)
+
+| gate | result |
+|---|---|
+| `python -m pytest -q` | **364 passed** in 8.30s (345 prior + 19 investigation) |
+| `rad doctor --offline` | READY — 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR |
+| `rad acceptance` | **50/50 PASSED** |
+| `rad realworld` | **10 passed / 1 BLOCKED / 0 failed** (`live_nim` BLOCKED) |
+| Architecture | frozen — no planner/controller product change |
+| Version | **0.2.3** — **no v0.2.4** |
+
+## Evidence for v0.3.0
+
+**None.** Closing F-17 without a control-plane hole is not a v0.3.0 gap.
+
 ---
 
 # Cycle 3 — v0.2.3 (2026-09-18)

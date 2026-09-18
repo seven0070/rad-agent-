@@ -387,9 +387,34 @@ deterministic test; this live run is additional evidence, not a product fix.
 | metric | value |
 |---|---|
 | Pattern | **generalizes further** — complex coding (RW-058/059), research (RW-060), **and simple coding+verification (RW-062)** fail under 11B+tool budget before a passing, verifiable result. Class B is not complexity-limited |
-| F-17 | PR #14 / RW-061: deterministic newline-only goal → 1 fallback task; live RW-058/059/060 were **llm**. **RW-062:** `PLAN_CREATED` source=**fallback**; 7 newline-split spurious tasks → **additional live evidence / reopened**. **No product fix this PR** |
+| F-17 | PR #14 / RW-061: deterministic newline-only goal → 1 fallback task; live RW-058/059/060 were **llm**. **RW-062:** `PLAN_CREATED` source=**fallback**; 7 tasks (then labeled newline-split). **Later (RW-063 / F-23):** timeout path uses `obj.goal` only; 7 = clause split of the user goal (`[:7]`), not model-output parse, not `\n` split. Class A **NOT CONFIRMED**. **No product fix** |
 | Class A this record | **none patched** |
 | Class C | **none** (NIM key present) |
 | Default max-tools / max-tasks | **unchanged** |
 | Package | **0.2.3** — **no v0.2.4** |
+| Recommendation | **Outcome A — continue 0.2.x** |
+
+## F-17 timeout / prose investigation (RW-063)
+
+RW-058 / RW-059 / RW-060 / RW-061 / RW-062 rows above are **not rewritten**.
+RW-063 is a scripted (no NIM) investigation of the planner timeout → fallback
+path after PR #15 (`d15af713`). Architecture frozen. Needle OFF. Cap 16 and
+default max-tools **UNCHANGED**. Package stays **0.2.3**. **No product patch.**
+
+| id | Date | Category | Objective | #tasks | #actions | Tools | Result | Verification | Recovery | Failure class | Notes |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| RW-063 | 2026-09-18 | investigation (scripted; no NIM) | F-17: does fallback convert model output after planner timeout? Scenarios A–D + PR #14 vs RW-062 | A: llm 2 tasks; B: fallback 7 (goal clauses); C: fallback 3 (prose *goal*); D: fallback ≤7 | n/a (plan + bounded drive) | default **60** unchanged | **no RAD defect**; F-17 **NOT CONFIRMED** | fallback tasks UNVERIFIED; objective not VERIFIED without checks | n/a | **NONE** | Timeout/empty/malformed/non-JSON LLM discarded; `_fallback(obj)` splits `obj.goal` on clause markers, not newlines, cap `[:7]`. One-sentence goal + 7-line model prose → 1 task. `--max-tasks 4` drives ≤4 of 7 planned. False DONE **0**. Needle OFF. Cap 16 UNCHANGED. **No patch. No v0.2.4.** |
+
+| metric | value |
+|---|---|
+| Trigger | nvidia plan timeout (RW-062) → `PLAN_CREATED` source=fallback |
+| Fallback path | `Planner.plan` `except` / no JSON / empty graph → `_fallback(obj)` — **never** the LLM `raw` string |
+| Parser behavior | `re.split(r"\b(?:and then|then|;|, and)\b|\.(?=\s|$)", obj.goal)` then `[:7]` |
+| PR #14 vs RW-062 | newline-only → 1 task (PR #14 true). 7 tasks = period/clause split of a seven-sentence **goal** (RW-062 count), not `\n` split of model output |
+| Spurious model-output tasks | **0** |
+| Tool/Budget impact | up to 7 no-check tasks after timeout; drive `--max-tasks` can stop earlier; default tools **60**; not unbounded to 16 |
+| Class A | **NO** |
+| Patch / Regression (product) | **NO** / investigation tests only |
+| Package | **0.2.3** — **no v0.2.4** |
+| Gates | pytest **364 passed**; `rad doctor --offline` READY; `rad acceptance` 50/50; `rad realworld` 10 passed / 1 BLOCKED (`live_nim`) |
 | Recommendation | **Outcome A — continue 0.2.x** |
