@@ -64,6 +64,8 @@ Check kinds (exactly these):
 For coding / test / JSON-result goals always include json_valid on every .json artifact and
 shell_ok (or shell_output) for the test command (pytest / python3 test_*.py). Never treat a
 DONE: line as a file path. A model claiming DONE is not completion. Empty .json is invalid JSON.
+DONE is not a tool — do not call a tool named DONE or DONE: …; put DONE: in the reply text after files exist.
+Stdlib-only coding goals must not pip install or invent requirements.txt.
 If the goal places files under a directory (e.g. pkg/ or text_analyzer/), check paths MUST
 use that prefix (pkg/input.txt not input.txt).
 If the goal is a multi-file package, do NOT emit a standalone mkdir/create-directory task —

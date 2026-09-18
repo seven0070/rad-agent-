@@ -15,7 +15,12 @@ import re
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
-from rad.control.codingloop import looks_like_broken_artifact, repair_hint
+from rad.control.codingloop import (
+    is_done_protocol_tool,
+    is_pip_requirements_file_missing,
+    looks_like_broken_artifact,
+    repair_hint,
+)
 from rad.control.observer import Observation
 from rad.control.tasks import Task
 
@@ -68,7 +73,9 @@ def classify(task: Task, observations: List[Observation], error: str = "",
         return FailureClass.NETWORK if "network" in text.lower() or "connection" in text.lower() else FailureClass.TRANSIENT
     # mkdir / create "already exists" is not a missing environment (RW-071). Mixed
     # "File exists" + "no such file" check noise must not insert Repair prerequisite.
-    if _ENV.search(text) and not _ALREADY_EXISTS.search(text):
+    # pip -r missing requirements.txt is not a missing env dependency (RW-075).
+    if (_ENV.search(text) and not _ALREADY_EXISTS.search(text)
+            and not _pip_requirements_missing(observations, text)):
         return FailureClass.ENVIRONMENT
     if any(o.status == "error" for o in observations):
         return FailureClass.TOOL          # a concrete tool error is more specific than "checks failed"
@@ -156,7 +163,7 @@ class RecoveryEngine:
                                   "failed_checks": [r.get("kind") for r in failed_checks]})
         if fc == FailureClass.TOOL and can_retry and task.attempts >= 2:
             bad_tool = _dominant_failing_tool(observations)
-            if bad_tool:
+            if bad_tool and not is_done_protocol_tool(bad_tool):
                 return Decision("switch_tool", fc, f"{bad_tool} keeps failing — try another way",
                                 hint=f"the tool '{bad_tool}' failed twice (last: {detail[:200] or 'tool error'}). "
                                      f"Use a different tool or fix the precondition before calling it again.")
@@ -164,7 +171,8 @@ class RecoveryEngine:
             if can_retry:
                 hint = ("Your previous attempt did NOT pass verification. Failed checks: "
                         + (detail or "no evidence of completion was produced")
-                        + ". Fix the actual outcome (files/commands), don't just restate that it is done.")
+                        + ". Fix the actual outcome (files/commands), don't just restate that it is done."
+                        + _thrash_hint(observations))
                 return Decision("retry_with_hint", fc, "verification failed — retry with explicit feedback", hint=hint)
             if repairs_so_far < self.max_repairs:
                 return Decision("replan", fc, "attempts exhausted — replan remaining work",
@@ -195,6 +203,30 @@ class RecoveryEngine:
 def _is_repair_task(task: Task) -> bool:
     text = task.text or ""
     return text.startswith("Repair so that") or text.startswith("Repair prerequisite")
+
+
+def _pip_requirements_missing(observations: List[Observation], text: str) -> bool:
+    if is_pip_requirements_file_missing(text, ""):
+        return True
+    for o in observations:
+        if o.status == "success":
+            continue
+        cmd = str((o.args or {}).get("command", ""))
+        if is_pip_requirements_file_missing(o.output or "", cmd):
+            return True
+    return False
+
+
+def _thrash_hint(observations: List[Observation]) -> str:
+    bits: List[str] = []
+    if any(is_done_protocol_tool(o.tool) for o in observations if o.status == "error"):
+        bits.append("DONE is not a tool. Do not call a tool named DONE or DONE: …. "
+                    "Write remaining files, then put DONE: in your reply text.")
+    if any(is_pip_requirements_file_missing(o.output or "", str((o.args or {}).get("command", "")))
+           for o in observations if o.status != "success"):
+        bits.append("Do not pip install -r a missing requirements.txt for stdlib-only coding. "
+                    "Use the workspace files; do not invent a requirements file.")
+    return (" " + " ".join(bits)) if bits else ""
 
 
 def _failed_providers(error: str, observations: List[Observation]) -> List[str]:

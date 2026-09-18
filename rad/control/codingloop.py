@@ -10,7 +10,10 @@ Package-layout goals (e.g. files under `text_analyzer/`, or an ASCII tree
 root-only checks cannot thrash a package write (RW-069 / RW-073 / Gen3
 theme 1). Multi-file goals also infer exact line-count and non-empty JSON
 contracts so weak artifacts cannot become VERIFIED (RW-071 / Gen3 theme 2).
-Fallback *tasks* stay check-less (F-17).
+Fallback *tasks* stay check-less (F-17). First-task thrash (RW-075): a missing
+`requirements.txt` from `pip install -r` is not an environment prerequisite, and
+an invented tool named `DONE` / `DONE: …` is a protocol mistake, not a failed
+contract (Gen3 theme 3 slice B).
 """
 from __future__ import annotations
 
@@ -31,6 +34,14 @@ TEST_FILE_RE = re.compile(r"\b((?:[\w.-]+/)*test_\w+\.py)\b", re.I)
 TXT_PATH_RE = re.compile(r"\b((?:[\w.-]+/)*[\w.-]+\.txt)\b", re.I)
 LINE_COUNT_RE = re.compile(r"\b(?:exact\s+)?(\d+)[ -]lines?\b", re.I)
 DONE_PREFIX_RE = re.compile(r"^\s*DONE\s*:", re.I)
+DONE_TOOL_RE = re.compile(r"^\s*DONE(?:\s*:.*)?\s*$", re.I)
+_PIP_REQ_ERR = re.compile(
+    r"Could not open requirements file|"
+    r"No such file or directory:\s*['\"][^'\"]*requirements[^'\"]*['\"]",
+    re.I,
+)
+_PIP_INSTALL_R = re.compile(r"\bpip(?:3)?\b(?:\s+\S+)*\s+install\s+-r\b", re.I)
+_COMMAND_NOT_FOUND = re.compile(r"command not found", re.I)
 # "under pkg/" (slash required so "under the …" is not a package name)
 _PKG_UNDER_RE = re.compile(
     r"\bunder\s+(?:the\s+)?(?:directory\s+|dir\s+|package\s+|folder\s+)?([A-Za-z_][\w.-]*)/",
@@ -77,6 +88,35 @@ def is_done_pollution_content(text: str) -> bool:
     return all(DONE_PREFIX_RE.match(ln) or ln.lower() in ("done", "done.") for ln in lines)
 
 
+def is_done_protocol_tool(name: str) -> bool:
+    """True when the model invoked DONE / DONE: … as if it were a tool (RW-075)."""
+    return bool(DONE_TOOL_RE.match(str(name or "").strip()))
+
+
+def is_pip_requirements_file_missing(output: str = "", command: str = "") -> bool:
+    """True when pip -r failed because the requirements file does not exist.
+
+    That is not a missing environment dependency for stdlib-only coding (RW-075).
+    `pip: command not found` stays a genuine ENVIRONMENT signal (F-18).
+    """
+    out = output or ""
+    cmd = command or ""
+    if _COMMAND_NOT_FOUND.search(out):
+        return False
+    if _PIP_REQ_ERR.search(out):
+        return True
+    if _PIP_INSTALL_R.search(cmd) and re.search(r"no such file|ENOENT|not found", out, re.I):
+        return True
+    return False
+
+
+def is_first_task_thrash_noise(tool: str, output: str = "", command: str = "") -> bool:
+    """Approach noise that must not fail a task whose machine checks passed."""
+    if is_done_protocol_tool(tool):
+        return True
+    return is_pip_requirements_file_missing(output, command)
+
+
 def looks_like_broken_artifact(failed_checks: Iterable[Dict[str, Any]]) -> bool:
     """Artifacts were produced but json/tests failed — not a missing-file lie."""
     return any(r.get("kind") in BROKEN_ARTIFACT_KINDS for r in failed_checks)
@@ -93,7 +133,9 @@ def repair_hint(failed_checks: Iterable[Dict[str, Any]]) -> str:
         "Your previous attempt did NOT pass verification. Concrete failures: "
         + body
         + ". Fix the actual files/tests on disk. Do not write a path named DONE: "
-          "and do not replace the artifact with a DONE: line."
+          "and do not replace the artifact with a DONE: line. "
+          "Do not call a tool named DONE. Do not pip install -r a missing requirements.txt "
+          "for stdlib-only coding."
     )
 
 
