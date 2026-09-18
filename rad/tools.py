@@ -24,6 +24,7 @@ from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
+from rad.control.codingloop import is_done_pollution_path
 from rad.home import RadHome
 from rad.ui import col
 
@@ -527,7 +528,11 @@ def _run_tool(name: str, args: Dict[str, Any], ctx: ToolCtx) -> str:
             return p.read_text(encoding="utf-8", errors="replace")[:int(limits.get("max_chars", 60_000))]
 
         if name == "write_file":
-            p = _resolve_path(ctx, str(args.get("path", "")))
+            raw_path = str(args.get("path", ""))
+            if is_done_pollution_path(raw_path):
+                return (f"tool error: refused DONE: pollution path {raw_path!r}; "
+                        "write the real artifact (for example result.json), not a DONE: claim")
+            p = _resolve_path(ctx, raw_path)
             content = str(args.get("content", ""))
             limits = _gate(ctx, CAP_WRITE, str(p), f"  write: {p} ({len(content)} chars)", path=p, tool=name)
             if limits.get("max_bytes") and len(content.encode()) > int(limits["max_bytes"]):

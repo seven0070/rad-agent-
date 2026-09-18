@@ -18,6 +18,7 @@ import subprocess
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
+from rad.control.codingloop import is_done_pollution_content, is_done_pollution_path
 from rad.control.observer import Observation, Observer
 from rad.control.tasks import Check, Task
 
@@ -61,6 +62,9 @@ class Verifier:
                 if a and a["type"] == "file":
                     p = Path(a["location"])
                     ok = p.exists() and p.stat().st_size > 0
+                    if ok and (is_done_pollution_path(a["location"]) or
+                               is_done_pollution_content(_read_text(p))):
+                        ok = False
                     r = {"level": "artifact", "kind": "file_nonempty", "ok": ok, "detail": a["location"]}
                     results.append(r)
                     self.observer.mark_verified(aid, r)
@@ -133,6 +137,9 @@ class Verifier:
         for a in latest.values():
             p = Path(a["location"])
             nonempty = p.exists() and p.stat().st_size > 0
+            if nonempty and (is_done_pollution_path(a["location"]) or
+                             is_done_pollution_content(_read_text(p))):
+                nonempty = False
             results.append({"level": "artifact", "kind": "file_nonempty",
                             "ok": nonempty, "detail": a["location"]})
             # integrity: does the file still hash to what we recorded when we made it?
@@ -201,6 +208,10 @@ class Verifier:
         a = c.args
         base = {"level": "check", "kind": c.kind, "detail": c.description or json.dumps(a)[:120]}
         try:
+            path = str(a.get("path", "")) if isinstance(a, dict) else ""
+            if path and is_done_pollution_path(path):
+                return {**base, "ok": False,
+                        "detail": f"refused DONE: pollution path {path!r}"}
             if c.kind == "file_exists":
                 p = self._p(a["path"])
                 return {**base, "ok": p.exists(), "detail": f"{p} exists={p.exists()}"}
@@ -211,12 +222,17 @@ class Verifier:
             if c.kind == "file_contains":
                 p = self._p(a["path"])
                 txt = p.read_text(encoding="utf-8", errors="replace") if p.exists() else ""
+                if is_done_pollution_content(txt):
+                    return {**base, "ok": False, "detail": f"{p} is a DONE: pollution file, not the artifact"}
                 ok = str(a["text"]) in txt
                 return {**base, "ok": ok, "detail": f"{p} contains {a['text']!r}={ok}"}
             if c.kind == "json_valid":
                 p = self._p(a["path"])
                 try:
-                    json.loads(p.read_text(encoding="utf-8"))
+                    raw = p.read_text(encoding="utf-8")
+                    if is_done_pollution_content(raw):
+                        return {**base, "ok": False, "detail": f"{p} is a DONE: pollution file, not JSON"}
+                    json.loads(raw)
                     return {**base, "ok": True, "detail": f"{p} is valid JSON"}
                 except Exception as e:
                     return {**base, "ok": False, "detail": f"{p} invalid JSON: {e}"}
@@ -348,3 +364,10 @@ class Verifier:
                     "unmet": d.get("unmet", [])}
         except Exception as e:
             return {"pass": False, "reason": f"judge error: {e}", "unmet": []}
+
+
+def _read_text(p: Path) -> str:
+    try:
+        return p.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return ""

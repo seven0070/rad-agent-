@@ -35,7 +35,7 @@ from rad.control.lifecycle import Lifecycle
 from rad.control.objectives import Budget, Objective, ObjectiveStatus, ObjectiveStore
 from rad.control.observer import Observer
 from rad.control.planner import Planner
-from rad.control.recovery import Decision, RecoveryEngine
+from rad.control.recovery import Decision, FailureClass, RecoveryEngine
 from rad.control.scheduler import Scheduler
 from rad.control.tasks import Check, Task, TaskStatus
 from rad.control.verifier import FAILED, UNVERIFIED, VERIFIED, Verifier
@@ -559,12 +559,19 @@ class Controller:
         if d.strategy == "repair":
             repairs[task.id] = repairs.get(task.id, 0) + 1
             spend_retry()
-            fix = Task.new(obj.id, f"Repair prerequisite so that this can succeed: {task.text}. {d.hint}",
-                           max_attempts=2)
+            if d.failure_class == FailureClass.ENVIRONMENT:
+                text = f"Repair prerequisite so that this can succeed: {task.text}. {d.hint}"
+            else:
+                text = f"Repair so that machine checks pass. {d.hint}"
+            fix = Task.new(obj.id, text, max_attempts=2)
+            if d.failure_class != FailureClass.ENVIRONMENT and task.checks:
+                fix.checks = [Check(kind=c.kind, args=dict(c.args), description=c.description)
+                              for c in task.checks]
             # repair runs before the failed task; failed task retries after it
             fix.depends_on = list(task.depends_on)
             graph.add(fix)
             task.depends_on = list(dict.fromkeys(task.depends_on + [fix.id]))
+            task.verification = {**(task.verification or {}), "hint": d.hint or d.reason}
             task.transition(TaskStatus.RETRYING, "waiting on repair step")
             log.emit(E.TASK_CREATED, obj.id, fix.id, text=fix.text, repair_for=task.id)
             return

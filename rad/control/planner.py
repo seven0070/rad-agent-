@@ -10,6 +10,7 @@ import json
 import re
 from typing import Any, Callable, Dict, List, Optional
 
+from rad.control.codingloop import infer_coding_checks
 from rad.control.graph import TaskGraph
 from rad.control.objectives import Objective
 from rad.control.tasks import Check, Task
@@ -25,6 +26,10 @@ Check kinds (exactly these):
   shell_ok {{"command"}}            shell_output {{"command","contains"}}
   reply_matches {{"pattern"}}       (regex on the agent's final reply — weakest; use only when nothing else fits)
   agent_review {{"criteria":[...]}} (independent read-only reviewer agent — use for quality of prose/code, IN ADDITION to a file check)
+
+For coding / test / JSON-result goals always include json_valid on every .json artifact and
+shell_ok (or shell_output) for the test command (pytest / python3 test_*.py). Never treat a
+DONE: line as a file path. A model claiming DONE is not completion.
 
 GOAL: {goal}
 SUCCESS CRITERIA:
@@ -75,10 +80,14 @@ class Planner:
                 d = _json_obj(raw)
                 g, oc = self._graph_from(obj.id, d)
                 if g.tasks:
+                    if not oc:
+                        oc = infer_coding_checks(obj.goal, obj.success_criteria)
                     return {"graph": g, "objective_checks": oc, "source": "llm"}
             except Exception:
                 pass
-        return {"graph": self._fallback(obj), "objective_checks": [], "source": "fallback"}
+        return {"graph": self._fallback(obj),
+                "objective_checks": infer_coding_checks(obj.goal, obj.success_criteria),
+                "source": "fallback"}
 
     def replan(self, obj: Objective, graph: TaskGraph, failed: Task, why: str) -> Optional[List[Task]]:
         if not self.llm:

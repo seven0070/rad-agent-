@@ -11,7 +11,8 @@ done, nothing checks, nothing survives a crash. The control plane inverts that:
 | `objectives.py` | `Objective` (goal, criteria, budget/usage, status) + `ObjectiveStore` (disk) |
 | `tasks.py` | `Task` with explicit state machine, `Check` (machine-verifiable condition) |
 | `graph.py` | `TaskGraph` DAG: ready-set, doom propagation, optional branches, cycle check |
-| `planner.py` | LLM → task graph *with checks*; deterministic fallback without a brain |
+| `planner.py` | LLM → task graph *with checks*; deterministic fallback without a brain; coding goals infer `json_valid` / test `shell_ok` as *objective* checks (fallback *tasks* stay check-less) |
+| `codingloop.py` | verified coding loop helpers: coding-goal detection, DONE: pollution, broken-artifact repair hints |
 | `controller.py` | lifecycle: create / plan / run / resume / pause / cancel; the drive loop |
 | `observer.py` | `Observation` per tool call, `Artifact` registry (sha256, versions, lineage) |
 | `verifier.py` | tool → checks → artifacts → objective; result is `VERIFIED` / `FAILED` / `UNVERIFIED` |
@@ -42,6 +43,7 @@ Illegal transitions raise. Every transition is on `task.history` and in the even
   model claimed `DONE:` and no tool errored — this is recorded on the task and surfaced in
   the objective's final report. Set `accept_unverified_done: false` to forbid it.
 * `llm_judge` checks are stored with `machine: false` and can never produce `VERIFIED`.
+* A `DONE:` path or a file whose body is only a `DONE:` claim is pollution, not an artifact.
 
 ## Recovery policy (deterministic)
 | class | strategy |
@@ -50,7 +52,8 @@ Illegal transitions raise. Every transition is on `task.history` and in the even
 | MODEL ("no brain") | ask_user; other model errors → retry (router falls back) |
 | TRANSIENT / NETWORK | retry while attempts remain |
 | ENVIRONMENT (not found / no module) | insert a **repair task** once, then retry_with_hint, then ask_user |
-| VALIDATION / TOOL / UNKNOWN | retry_with_hint (explicit failed-check feedback) → replan once → ask_user |
+| VALIDATION / TOOL with **broken artifacts** (`json_valid`, `json_field`, `json_min_len`, `shell_ok`, `shell_output`) | insert a **repair task** once with the concrete failure (stderr / invalid JSON / expected vs actual), then retry_with_hint → replan once → ask_user. Models propose; RAD decides. A `DONE:` line is never an artifact path. |
+| VALIDATION / TOOL / UNKNOWN (missing file, `file_exists` fail, other) | retry_with_hint (explicit failed-check feedback) → replan once → ask_user |
 
 When a tool or retry budget is exhausted the controller does **not** treat a model `DONE:` as success. If the graph is already complete, or remaining tasks / objective_checks are already proven by machine checks, it falls through to `_verify_objective` (the 11B over-decompose case where the file is on disk). Otherwise the objective ends `needs_user`. Unmet checks still cannot become `VERIFIED`.
 
