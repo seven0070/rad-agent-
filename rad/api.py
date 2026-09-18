@@ -184,6 +184,78 @@ class Api:
         if p == ["evolve", "candidates"] and m == "GET":
             from rad.evolution import Evolution
             return 200, {"candidates": [c.to_dict() for c in Evolution(self.home).candidates(int(q.get("n", 20) or 20))]}
+        if p == ["status"] and m == "GET":
+            return 200, self._status()
+        if p == ["tasks"] and m == "GET":
+            store = self._ctl().store
+            status = q.get("status")
+            rows: List[Dict[str, Any]] = []
+            for o in store.list(active_only=False):
+                if q.get("objective") and o.id != q["objective"] and q["objective"] != "last":
+                    continue
+                for t in store.load_tasks(o.id):
+                    if status and str(t.get("status")) != status:
+                        continue
+                    rows.append({**t, "objective_id": o.id, "goal": o.goal[:80]})
+            return 200, {"tasks": rows[-int(q.get("n", 200) or 200):]}
+        if p == ["agents"] and m == "GET":
+            from rad.agents import AgentLifecycle, AgentRegistry
+            reg = AgentRegistry(self.home)
+            lc = AgentLifecycle(self.home)
+            return 200, {"agents": [a.to_dict() for a in reg.all().values()],
+                         "states": {s["id"]: s.get("state") for s in lc.all()},
+                         "runs": reg.runs(n=int(q.get("n", 20) or 20))}
+        if p == ["world"] and m == "GET":
+            from rad.world import WorldModel
+            w = WorldModel(self.home)
+            term = q.get("q", "")
+            if term:
+                return 200, {"matches": w.query(term, include_history=q.get("history") == "1")}
+            d = w.data()
+            return 200, {"entities": d.get("entities", {}) if isinstance(d.get("entities"), dict)
+                         else d.get("entities", []),
+                         "relations": w.current_relations(d),
+                         "disputes": w.disputes(),
+                         "counts": {"entities": len(d.get("entities") or {}),
+                                    "relations": len(d.get("relations") or [])}}
+        if p == ["tools"] and m == "GET":
+            from rad.agents import cap_for_tool
+            from rad.policy import Policy
+            from rad.tools import TOOLS
+            pol = Policy(self.home)
+            tools = []
+            for t in TOOLS:
+                fn = t.get("function", t)
+                cap = cap_for_tool(fn.get("name", ""))
+                tools.append({"name": fn.get("name"), "capability": cap,
+                              "policy": pol.default_for(cap),
+                              "description": (fn.get("description") or "")[:160]})
+            return 200, {"tools": tools}
+        if p == ["benchmarks"] and m == "GET":
+            from rad import lab_banks
+            from rad.battery import Benchmark
+            from rad.evaluation import ModelEvaluator
+            from rad.lab import Lab
+            out: Dict[str, Any] = {"banks": lab_banks.counts()}
+            try:
+                out["lab"] = [{k: v for k, v in r.items() if k != "results"} for r in Lab(self.home).history(10)]
+            except Exception as e:
+                out["lab"] = {"error": str(e)[:80]}
+            try:
+                out["battery"] = [{k: v for k, v in r.items() if k != "tasks"}
+                                  for r in Benchmark(self.home).history()[-10:]]
+            except Exception as e:
+                out["battery"] = {"error": str(e)[:80]}
+            ev = ModelEvaluator(self.home)
+            latest = ev.latest()
+            out["evaluation"] = ({k: v for k, v in latest.items() if k != "tasks"} if latest else None)
+            try:
+                from rad.longhorizon import LongHorizonBenchmark
+                lh = LongHorizonBenchmark(self.home).latest()
+                out["long_horizon"] = lh or None
+            except Exception as e:
+                out["long_horizon"] = {"error": str(e)[:80]}
+            return 200, out
         if p == ["chat"] and m == "POST":
             text = str(b.get("text", "")).strip()
             if not text:
@@ -203,6 +275,70 @@ class Api:
         raise ApiError(404, "unknown route")
 
     # ---- helpers --------------------------------------------------------------------------
+    def _status(self) -> Dict[str, Any]:
+        """One object: health, brain, objectives, tasks, memory, agents, jobs, schema."""
+        from rad.control.events import EventLog
+        from rad.storage import Storage
+        st = Storage(self.home)
+        st.pending()
+        ctl = self._ctl()
+        objs = ctl.store.list()
+        by_status: Dict[str, int] = {}
+        tasks_open = 0
+        for o in objs:
+            by_status[o.status] = by_status.get(o.status, 0) + 1
+            try:
+                tasks_open += sum(1 for t in ctl.store.load_tasks(o.id)
+                                  if str(t.get("status")) not in ("COMPLETED", "CANCELLED"))
+            except Exception:
+                pass
+        chain = []
+        try:
+            from rad.router import RouterState
+            chain = [f"{e.spec.name}:{e.model}" for e in RouterState(self.home).build_chain()]
+        except Exception:
+            pass
+        mem: Dict[str, int] = {}
+        try:
+            from rad.memory import Memory
+            m = Memory(self.home)
+            for layer in ("working", "episodic", "semantic", "procedural"):
+                try:
+                    mem[layer] = len(m.items(layer))
+                except Exception:
+                    pass
+        except Exception:
+            pass
+        jobs = 0
+        try:
+            from rad.jobs import Jobs
+            jobs = len(Jobs(self.home).list())
+        except Exception:
+            pass
+        routines = 0
+        try:
+            from rad.background import BackgroundRuntime
+            routines = len(BackgroundRuntime(self.home).list_routines())
+        except Exception:
+            pass
+        last_event = None
+        path = self.home.root / "events.jsonl"
+        if path.exists():
+            try:
+                evs = list(EventLog(path).read())
+                if evs:
+                    last_event = {"kind": evs[-1].kind, "at": evs[-1].at, "seq": evs[-1].seq}
+            except Exception:
+                pass
+        return {"ok": True, "version": __version__, "schema": st.version(),
+                "pending_migrations": [m.name for m in st.pending()],
+                "home": str(self.home.root), "workspace": str(self.home.workspace()),
+                "auto": bool(self.home.cfg.get("auto")), "chain": chain,
+                "objectives": {"total": len(objs), "by_status": by_status, "open_tasks": tasks_open},
+                "memory": mem, "jobs": jobs, "background_routines": routines,
+                "running_objectives": sorted(k for k, t in self._runs.items() if t.is_alive()),
+                "last_event": last_event}
+
     def _may_run(self) -> bool:
         return bool(self.home.cfg.get("auto"))
 

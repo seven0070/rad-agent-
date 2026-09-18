@@ -57,7 +57,7 @@ def g_plan(text: str) -> Tuple[float, str]:
 
 def g_recall(text: str) -> Tuple[float, str]:
     """Memory discipline: repeat the fact, do not invent extras, mark uncertainty."""
-    facts = re.findall(r"\b(?:port|PIN|token)\s*(?:is|=|:)?\s*(\d{3,6})\b", text, re.I)
+    facts = re.findall(r"\b(?:port|PIN|token)\b[^0-9]{0,16}(\d{3,6})\b", text, re.I)
     ok = len(facts) == 1 and facts[0] == "48213"
     hedge = bool(re.search(r"(not (sure|recorded)|unknown|cannot (recall|confirm))", text, re.I))
     return ((1.0 if ok else 0.0) if not hedge else 0.5), f"facts={facts[:3]} hedge={hedge}"

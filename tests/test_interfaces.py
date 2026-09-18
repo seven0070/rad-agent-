@@ -214,3 +214,41 @@ def test_http_requires_token_and_serves(home, server):
     from rad.api import token_for
     new = token_for(home, rotate=True)
     assert new != tok
+
+
+# ---------------------------------------------------------------- API surface (phase 2.0)
+
+def test_api_status_tasks_agents_world_tools_benchmarks(home, tmp_path):
+    from tests.test_control_plane import ScriptedSession, _ctl
+    ws = tmp_path / "ws2"; ws.mkdir(); home.update(workspace=str(ws), auto=True)
+    ScriptedSession.script = [([("write_file", {"path": "b.txt", "content": "hi"})], "DONE: wrote")]
+    plan = {"tasks": [{"id": "t1", "title": "write b.txt",
+                       "checks": [{"kind": "file_exists", "args": {"path": "b.txt"}}]}]}
+    api = _api(home, ctl_factory=lambda h: _ctl(h, ScriptedSession, plan=plan))
+    st, d = api.handle("POST", "/v1/objectives", {}, {"goal": "write b.txt"})
+    api._runs[d["id"]].join(timeout=10)
+
+    st, s = api.handle("GET", "/v1/status", {}, {})
+    assert st == 200 and s["ok"] and s["objectives"]["total"] == 1
+    assert s["objectives"]["by_status"].get("completed") == 1
+    assert "memory" in s and "chain" in s and "pending_migrations" in s
+    assert isinstance(s["pending_migrations"], list)
+
+    st, t = api.handle("GET", "/v1/tasks", {}, {})
+    assert st == 200 and t["tasks"] and t["tasks"][0]["objective_id"] == d["id"]
+    st, t2 = api.handle("GET", "/v1/tasks", {"status": "COMPLETED"}, {})
+    assert t2["tasks"] and all(x["status"] == "COMPLETED" for x in t2["tasks"])
+    st, t3 = api.handle("GET", "/v1/tasks", {"status": "RUNNING"}, {})
+    assert t3["tasks"] == []
+
+    st, a = api.handle("GET", "/v1/agents", {}, {})
+    assert st == 200 and a["agents"] and "planner" in {x["id"] for x in a["agents"]}
+    st, w = api.handle("GET", "/v1/world", {}, {})
+    assert st == 200 and isinstance(w["relations"], list) and isinstance(w["disputes"], list)
+    assert w["counts"]["entities"] >= 1        # the run's artifact was observed into the world model
+    st, tl = api.handle("GET", "/v1/tools", {}, {})
+    assert st == 200 and {x["name"] for x in tl["tools"]} >= {"read_file", "write_file", "run_shell"}
+    assert all(x["capability"] and x["policy"] for x in tl["tools"])
+    st, b = api.handle("GET", "/v1/benchmarks", {}, {})
+    assert st == 200 and b["banks"]["reasoning"] == 100 and b["banks"]["adversarial"] == 100
+    assert "lab" in b and "evaluation" in b and "long_horizon" in b

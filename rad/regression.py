@@ -156,8 +156,9 @@ class RegressionSystem:
             b = (base.get("groups") or {}).get(name, {})
             if g.get("skipped") or b.get("skipped"):
                 continue
-            if g.get("passed", 0) < b.get("passed", 0) - 0 and not g.get("ok", True):
-                regressions.append(f"{name}: passing tests {b.get('passed')} → {g.get('passed')}")
+            if g.get("failed", 0) > 0 or g.get("passed", 0) < b.get("passed", 0):
+                regressions.append(f"{name}: passing tests {b.get('passed')} → {g.get('passed')}"
+                                   + (f", {g['failed']} failed" if g.get("failed") else ""))
         b_agent = ((base.get("benchmark") or {}).get("agent_sample") or {})
         c_agent = ((cand.get("benchmark") or {}).get("agent_sample") or {})
         if c_agent and b_agent:
