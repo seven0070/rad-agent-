@@ -61,7 +61,15 @@ When a tool or retry budget is exhausted the controller does **not** treat a mod
 ## Persistence / resume
 Checkpoint after every task: `objective.json`, `tasks.json`, `CHECKPOINT` event. `resume()`
 moves tasks left in RUNNING/OBSERVING/VERIFYING back to RETRYING, reopens NEEDS_USER/BLOCKED
-tasks, and continues. Completed tasks are never re-run.
+tasks, and continues. Completed tasks are never re-run. Budget exhaustion with unmet
+work is `needs_user` plus that same checkpoint; OPEN tasks whose machine checks
+already pass can close without a model call.
+
+Crash-resume is **shipped** (`CheckpointManager`, `rad objective resume`;
+acceptance gate 14). Intra-run yield so later independent READY tasks still get
+attempts when an early task burns remaining tools is **not** built — that is
+Gen3 theme 3 slice E, **SCOPED / PLANNED** in [ROADMAP.md](ROADMAP.md). Do not
+treat crash-resume as that gap, and do not invent a second persistence stack.
 
 ## Parallelism (Phase 3)
 Ready tasks with satisfied dependencies run concurrently up to `objective_parallel`
