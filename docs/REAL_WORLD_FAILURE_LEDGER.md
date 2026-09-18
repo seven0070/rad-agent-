@@ -980,10 +980,10 @@ python3 -m pytest -q tests/test_plan_timeout_resilience.py tests/test_f17_fallba
 
 | gate | result |
 |---|---|
-| `python3 -m pytest -q` | recorded after gates on this branch |
-| `rad doctor --offline` | recorded after gates on this branch |
-| `rad acceptance` | recorded after gates on this branch |
-| `rad realworld` | recorded after gates on this branch (`live_nim` may BLOCKED) |
+| `python3 -m pytest -q` | **402 passed** in 8.20s |
+| `rad doctor --offline` | READY — 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR (`RAD_HOME=/tmp/rad-v031-gate`) |
+| `rad acceptance` | **50/50 PASSED** (`/tmp/rad-v031-gate/acceptance/20260918-134136_gate.json`) |
+| `rad realworld` | **10 passed / 1 BLOCKED / 0 failed** (`live_nim` BLOCKED; `/tmp/rad-v031-rw/realworld/20260918-134142_realworld.json`) |
 | Package | **0.3.1** |
 | RW-058–065 | preserved |
 | 16-task cap | **UNCHANGED** |

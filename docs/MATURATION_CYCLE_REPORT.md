@@ -53,19 +53,19 @@ cap 7, no checks). First-try valid JSON is unchanged (one attempt). A model
 
 ## Quality gates (actually run)
 
-Isolated homes recorded after the gate run on this branch.
+Isolated homes `/tmp/rad-v031-gate` (doctor, acceptance) and `/tmp/rad-v031-rw` (realworld).
 
 | gate | result |
 |---|---|
 | `rad version` | **PASS** v0.3.1 |
-| `python3 -m pytest -q` | recorded after gates |
-| `rad doctor --offline` | recorded after gates |
-| `rad acceptance` | recorded after gates |
-| `rad realworld` | recorded after gates (`live_nim` may BLOCKED) |
+| `python3 -m pytest -q` | **PASS** 402 passed in 8.20s |
+| `rad doctor --offline` | **PASS** 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR, verdict READY, exit 0 |
+| `rad acceptance` | **PASS** 50/50 — `/tmp/rad-v031-gate/acceptance/20260918-134136_gate.json` |
+| `rad realworld` | **PASS** 10/11 + 1 BLOCKED — `/tmp/rad-v031-rw/realworld/20260918-134142_realworld.json` |
 | Live NIM | **BLOCKED** (no `NVIDIA_NIM_API_KEY` / `NVIDIA_API_KEY`) |
 | Needle default | **PASS** (`existing`) |
 | Caps | **PASS** `max_plan_tasks` 16; `Budget.tool_calls` 60 |
-| False DONE | **PASS** (scripted fallback after retries not VERIFIED) |
+| False DONE | **PASS** (scripted fallback after retries not VERIFIED + suite `false_success` / `needs_user` / `no_loop`) |
 
 ## Remaining limitations
 
