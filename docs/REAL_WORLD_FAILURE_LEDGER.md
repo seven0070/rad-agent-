@@ -1381,10 +1381,10 @@ python3 -m pytest -q tests/test_ascii_tree_package_dir.py
 
 | gate | result |
 |---|---|
-| `python3 -m pytest -q` | pending this branch |
-| `rad doctor --offline` | pending this branch |
-| `rad acceptance` | pending this branch |
-| `rad realworld` | pending this branch |
+| `python3 -m pytest -q` | **457 passed** in 9.45s |
+| `rad doctor --offline` | READY — 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR (`RAD_HOME=/tmp/rad-v042-gate`) |
+| `rad acceptance` | **50/50 PASSED** (`/tmp/rad-v042-gate/acceptance/20260918-152358_gate.json`) |
+| `rad realworld` | **10 passed / 1 BLOCKED / 0 failed** (`live_nim` BLOCKED; `/tmp/rad-v042-rw/realworld/20260918-152404_realworld.json`) |
 | Package | **0.4.2** |
 | RW-058–073 | preserved |
 | 16-task cap | **UNCHANGED** |
