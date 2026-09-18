@@ -14,13 +14,14 @@ from rad.control.graph import TaskGraph
 from rad.control.objectives import Objective
 from rad.control.tasks import Check, Task
 
-PLAN_PROMPT = """You are the planner of an autonomous agent. Decompose the goal into 2-12 concrete tasks.
+PLAN_PROMPT = """You are the planner of an autonomous agent. Decompose the goal into 2-16 concrete tasks.
 Each task must be independently executable with tools (shell, read/write files in the workspace, web search/fetch).
 For EVERY task give machine-checkable checks that prove it was done. Prefer checks over trust.
 
 Check kinds (exactly these):
   file_exists {{"path"}}            file_min_bytes {{"path","n"}}      file_contains {{"path","text"}}
-  json_valid {{"path"}}             shell_ok {{"command"}}            shell_output {{"command","contains"}}
+  json_valid {{"path"}}             json_field {{"path","key"}}       json_min_len {{"path","n"}}
+  shell_ok {{"command"}}            shell_output {{"command","contains"}}
   reply_matches {{"pattern"}}       (regex on the agent's final reply — weakest; use only when nothing else fits)
   agent_review {{"criteria":[...]}} (independent read-only reviewer agent — use for quality of prose/code, IN ADDITION to a file check)
 
@@ -54,9 +55,11 @@ Only reference ids of the new tasks or COMPLETED task ids in depends_on. Reply O
 
 
 class Planner:
-    def __init__(self, llm: Optional[Callable[[str], str]], workspace: str) -> None:
+    def __init__(self, llm: Optional[Callable[[str], str]], workspace: str,
+                 max_tasks: int = 16) -> None:
         self.llm = llm
         self.workspace = workspace
+        self.max_tasks = max(1, int(max_tasks or 16))   # runaway-plan guard (configurable)
 
     # ------------------------------------------------------------ plan
     def plan(self, obj: Objective) -> Dict[str, Any]:
@@ -99,11 +102,13 @@ class Planner:
         items = d.get("tasks") or []
         idmap: Dict[str, str] = {}
         tasks: List[Task] = []
-        for it in items[:12]:
+        for it in items[:self.max_tasks]:
             text = str(it.get("text", "")).strip()
             if not text:
                 continue
             t = Task.new(oid, text, optional=bool(it.get("optional", False)))
+            # capability selection: an optional specialist agent can own a task (rad.agents roles)
+            t.agent = str(it.get("agent") or "").strip()
             idmap[str(it.get("id", t.id))] = t.id
             t.checks = _checks(it.get("checks") or [])
             t._raw_deps = [str(x) for x in (it.get("depends_on") or [])]  # type: ignore[attr-defined]

@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from rad import __version__
-from rad.home import RadHome, mask
+from rad.home import DEFAULTS, RadHome, mask
 from rad.ui import ask, col, fail, info, ok, warn
 
 from rad import providers as P
@@ -739,6 +739,42 @@ def cmd_corpus(args) -> int:
 
 
 def cmd_benchmark(args) -> int:
+    action = getattr(args, "bench_action", "run")
+    if action == "bank":
+        return _benchmark_bank(args)
+    if action == "long":
+        from rad.longhorizon import LongHorizonBenchmark
+        home = _home(args)
+        lh = LongHorizonBenchmark(home)
+        if args.sample == 0 and not args.category:
+            hist = lh.latest()
+            if hist:
+                print(LongHorizonBenchmark.render(hist))
+                info("  (showing the last run — pass --sample N to run one now)")
+                return 0
+        info("  running the long-horizon suite through the control plane (real tools, isolated homes)…")
+        rep = lh.run(sample=args.sample or 10, label=args.label or "", seed=args.seed)
+        print(LongHorizonBenchmark.render(rep))
+        return 0
+    if action in ("history", "compare"):
+        from rad.battery import Benchmark
+        home = _home(args)
+        bench = Benchmark(home)
+        if action == "history":
+            print(bench.compare(args.n))
+            return 0
+        hist = bench.history()
+        if len(hist) < 2:
+            fail("need two battery runs to compare")
+            return 1
+        a, b = hist[-2], hist[-1]
+        diff = round(b["score"] - a["score"], 1)
+        print(col.bold(f"  {a['label']} {a['score']} → {b['label']} {b['score']}  ({diff:+})"))
+        for cat in sorted(set(a.get("categories", {})) | set(b.get("categories", {}))):
+            av, bv = a["categories"].get(cat), b["categories"].get(cat)
+            mark = " " if (av is None or bv is None) else ("▲" if bv > av else ("▼" if bv < av else "·"))
+            print(f"    {mark} {cat:<14} {av} → {bv}")
+        return 0 if diff >= 0 else 2
     from rad.battery import Benchmark, build_caller
     home = _home(args)
     bench = Benchmark(home)
@@ -764,6 +800,400 @@ def cmd_benchmark(args) -> int:
     print()
     print(col.bold("  history:"))
     print(bench.compare())
+    return 0
+
+
+def _benchmark_bank(args) -> int:
+    """Objective-level benchmark: whole objectives through the control plane, graded on disk.
+
+    This is the offline lab agent, so it costs nothing and needs no provider — it measures the
+    control plane (plan → execute → observe → verify → recover), not the model.
+    """
+    from rad import lab_banks
+    from rad.lab import Lab
+    home = _home(args)
+    cat = args.category or "all"
+    if cat not in ("all",) and cat not in lab_banks.CATEGORIES:
+        fail(f"unknown category '{cat}' — one of: {', '.join(lab_banks.CATEGORIES)}, all")
+        return 1
+    sample = args.sample or 0
+    info(f"  bank '{cat}': {sum(lab_banks.counts().values()) if cat == 'all' else lab_banks.counts()[cat]} "
+         f"scenario(s), sample={sample or 'all'}, seed={args.seed}")
+    suite = "banks" if cat == "all" else f"bank:{cat}"
+    lab = Lab(home)
+    label = args.label or f"bank-{cat}-{time.strftime('%H%M%S')}"
+
+    def prog(r):
+        if not r.success:
+            print(f"    {col.red('FAIL')} {r.id:<26} {r.status:<10} {r.trajectory_detail[:60]}")
+
+    rep = lab.run(suite=suite, label=label, sample=sample, seed=args.seed, progress=prog)
+    print(Lab.render(rep))
+    return 0 if rep["success_rate"] == 1.0 and rep["safety"] == 1.0 and rep["honesty"] == 1.0 else 1
+
+
+def cmd_evaluate(args) -> int:
+    """Full capability battery for a brain, with history, stability and a promotion gate."""
+    from rad.evaluation import ModelEvaluator, CATEGORIES
+    home = _home(args)
+    ev = ModelEvaluator(home)
+    action = getattr(args, "eval_action", "run")
+    if action == "tasks":
+        for t in ev.tasks():
+            print(f"    {t['category']:<14} {t['id']:<4} {t['prompt'][:80]}")
+        info(f"  {len(ev.tasks())} graded task(s) across {len(set(t['category'] for t in ev.tasks()))} "
+             f"categories: {', '.join(CATEGORIES)}")
+        return 0
+    if action == "history":
+        print(ev.table(args.n))
+        return 0
+    if action == "gate":
+        provider = args.provider or ""
+        if not provider:
+            chain = _router(home).build_chain()
+            if not chain:
+                fail("no provider available — add a key or start a local engine")
+                return 1
+            provider = chain[0].spec.name
+        g = ev.gate(provider, args.model or "")
+        print(json.dumps(g, indent=2))
+        print(col.green("  GATE PASS — safe to promote") if g["pass"]
+              else col.yellow("  GATE HOLD — one good run is not evidence"))
+        return 0 if g["pass"] else 2
+    # action == run
+    cats = args.categories.split(",") if getattr(args, "categories", None) else None
+    chain = _router(home).build_chain()
+    if not chain and not args.provider:
+        fail("no brain available to evaluate — add a key or start a local engine (`rad doctor`)")
+        return 1
+    probe = args.provider or chain[0].spec.name
+    info(f"  evaluating {probe} — {len(ev.tasks(cats))} task(s) × {max(1, args.repeats)} repeat(s)…")
+    try:
+        rep = ev.run(provider=args.provider or "", model=args.model or "", categories=cats,
+                     repeats=args.repeats, label=args.label or "")
+    except Exception as e:
+        fail(f"evaluation failed: {str(e)[:160]}")
+        return 1
+    print(ev.render(rep["provider"], rep["model"]))
+    return 0
+
+
+def cmd_regression(args) -> int:
+    """Unit / security / agent / integration tests + a live agent and long-horizon benchmark subset."""
+    from rad.regression import RegressionSystem
+    home = _home(args)
+    rs = RegressionSystem(home)
+    action = getattr(args, "reg_action", "run")
+    if action == "history":
+        hist = rs.history(args.n)
+        if not hist:
+            info("  no regression runs yet — `rad regression`")
+            return 0
+        for h in hist:
+            when = time.strftime("%m-%d %H:%M", time.localtime(h["at"]))
+            v = h.get("verdict", {})
+            print(f"  {col.dim(when)} {h.get('label', ''):<24} "
+                  f"{col.green('PASS') if v.get('pass') else col.red('FAIL')} "
+                  f"{'; '.join(v.get('problems', []))[:90]}")
+        return 0
+    if action == "show":
+        latest = rs.latest()
+        if not latest:
+            info("  no regression runs yet — `rad regression`")
+            return 0
+        print(RegressionSystem.render(latest))
+        return 0 if latest.get("verdict", {}).get("pass") else 2
+    if action == "compare":
+        hist = rs.history(2)
+        if len(hist) < 2:
+            fail("need two regression runs to compare")
+            return 1
+        cmp = RegressionSystem.compare(hist[1], hist[0])
+        print(json.dumps(cmp, indent=2))
+        return 0 if cmp["verdict"] == "ok" else 2
+    groups = [g.strip() for g in (args.groups or "").split(",") if g.strip()] or None
+    if args.quick:
+        groups = ["security", "agent"]
+        sample = min(args.sample, 4)
+    else:
+        sample = args.sample
+    info(f"  running regression groups={groups or ['unit', 'security', 'agent', 'integration']} "
+         f"sample={sample}…")
+    rep = rs.run(groups=groups, sample=sample, benchmarks=not args.no_benchmarks,
+                 label=args.label or "")
+    print(RegressionSystem.render(rep))
+    return 0 if rep["verdict"]["pass"] else 2
+
+
+
+def cmd_acceptance(args) -> int:
+    """The 50-item acceptance gate: every requirement demonstrated by running code."""
+    from rad.acceptance import Gate, render
+    home = _home(args)
+    areas = [a.strip() for a in (args.area or "").split(",") if a.strip()] or None
+    if areas:
+        from rad.acceptance import AREAS
+        bad = [a for a in areas if a not in AREAS]
+        if bad:
+            fail(f"unknown area(s) {bad}; valid: {', '.join(AREAS)}")
+            return 1
+    info(f"  running the acceptance gate{' on ' + ','.join(areas) if areas else ''} "
+         f"— each item runs the real thing (objectives, crashes, MCP, API, browser)…")
+    rep = Gate(home, full=args.full).run(areas=areas)
+    if args.json:
+        print(json.dumps(rep, indent=2))
+    else:
+        print(render(rep))
+    if rep["ok"]:
+        ok(f"  acceptance gate PASSED ({rep['passed']}/{rep['total']} items) — evidence: {rep['report']}")
+        return 0
+    fail(f"  acceptance gate NOT satisfied: {rep['passed']}/{rep['total']} items "
+         f"(failing: {', '.join(rep['failed'])})")
+    info(f"  full evidence per item: {rep['report']}")
+    return 2
+
+
+
+def cmd_realworld(args) -> int:
+    """The four end-to-end acceptance tests: research, coding, multi-agent, failure recovery."""
+    from rad.realworld import RealWorldSuite
+    home = _home(args)
+    which = [w.strip() for w in (args.only or "").split(",") if w.strip()] or None
+    info("  running whole goals through the real control plane (isolated home, real tools, no model "
+         "calls needed)…")
+    rep = RealWorldSuite(home, keep=args.keep).run(which)
+    if args.json:
+        print(json.dumps(rep, indent=2, default=str))
+    else:
+        print(RealWorldSuite.render(rep))
+    return 0 if rep.get("ok") else 2
+
+
+def cmd_status(args) -> int:
+    """One screen: what RAD owns right now — objectives, jobs, memory, providers, storage."""
+    from rad.control.objectives import ObjectiveStore
+    from rad.control.events import EventLog
+    from rad.storage import Storage
+    home = _home(args)
+    as_json = getattr(args, "json", False)
+    store = ObjectiveStore(home)
+    objs = store.list()
+    active = [o for o in objs if o.status in ("PENDING", "PLANNING", "RUNNING", "PAUSED")]
+    mem_counts: dict = {}
+    try:
+        from rad.memory import Memory
+        m = Memory(home)
+        for layer in ("working", "episodic", "semantic", "procedural"):
+            try:
+                mem_counts[layer] = len(m.items(layer))
+            except Exception:
+                mem_counts[layer] = m.count(layer) if hasattr(m, "count") else 0
+    except Exception as e:
+        mem_counts = {"error": str(e)[:60]}
+    chain = []
+    try:
+        chain = [f"{e.spec.name}:{e.model}" for e in _router(home).build_chain()]
+    except Exception:
+        pass
+    st = Storage(home)
+    st.pending()
+    jobs = []
+    try:
+        from rad.jobs import Jobs
+        jobs = Jobs(home).list()
+    except Exception:
+        pass
+    board = []
+    try:
+        from rad.background import BackgroundRuntime
+        board = BackgroundRuntime(home).list_routines()
+    except Exception:
+        pass
+    with_errors = 0
+    for o in objs[:50]:
+        try:
+            evs = list(EventLog(store.events_path(o.id)).read())
+            if any(e.kind in ("RECOVERY_DECISION", "OBJECTIVE_FAILED") for e in evs):
+                with_errors += 1
+        except Exception:
+            pass
+    last_event = None
+    try:
+        recent = list(EventLog(home.root / "events.jsonl").read())[-1:] if (home.root / "events.jsonl").exists() else []
+        last_event = {"kind": recent[0].kind, "at": recent[0].at} if recent else None
+    except Exception:
+        pass
+    data = {"home": str(home.root), "workspace": str(home.workspace()),
+            "version": __version__, "schema": st.version(),
+            "objectives": {"total": len(objs), "active": len(active),
+                           "with_failures": with_errors,
+                           "by_status": {s: sum(1 for o in objs if o.status == s)
+                                         for s in sorted({o.status for o in objs})}},
+            "memory": mem_counts, "chain": chain, "jobs": len(jobs),
+            "background_routines": len(board), "auto": bool(home.cfg.get("auto")),
+            "last_event": last_event}
+    if as_json:
+        print(json.dumps(data, indent=2, default=str))
+        return 0
+    print(col.bold(f"  RAD {__version__}  (schema v{st.version()})"))
+    print(f"    home       {data['home']}")
+    print(f"    workspace  {data['workspace']}")
+    print(f"    brain      {', '.join(chain) if chain else col.yellow('none — add a key or start a local engine')}")
+    print(f"    auto       {data['auto']}")
+    o = data["objectives"]
+    print(f"    objectives {o['total']} total, {o['active']} active"
+          + (f", {o['with_failures']} with failures/recovery" if o["with_failures"] else "")
+          + (f"  {col.dim(o['by_status'])}" if o["by_status"] else ""))
+    print(f"    memory     " + (", ".join(f"{k} {v}" for k, v in mem_counts.items()) or "empty"))
+    print(f"    jobs       {len(jobs)}   background routines {len(board)}")
+    if last_event:
+        print(f"    last event {last_event['kind']} at {time.strftime('%H:%M:%S', time.localtime(last_event['at']))}")
+    if active:
+        print(col.bold("    active objectives:"))
+        for obj in active[:8]:
+            print(f"      {obj.id}  {col.cyan(obj.status):<16} {obj.goal[:64]}")
+    return 0
+
+
+def cmd_config(args) -> int:
+    """Inspect and change RAD's configuration (the same file the runtime reads)."""
+    home = _home(args)
+    action = args.cfg_action
+    path = home.config_path
+    if action == "path":
+        print(str(path))
+        return 0
+    if action == "get":
+        if not args.key:
+            fail("usage: rad config get <key>")
+            return 1
+        val = home.cfg.get(args.key)
+        if val is None:
+            info(f"  {args.key} is not set")
+            return 1
+        print(json.dumps(val, indent=2) if isinstance(val, (dict, list)) else str(val))
+        return 0
+    if action == "unset":
+        if not args.key:
+            fail("usage: rad config unset <key>")
+            return 1
+        home.cfg.pop(args.key, None)
+        home.save_config()
+        ok(f"{args.key} removed")
+        return 0
+    if action == "set":
+        if not args.key or args.value is None:
+            fail("usage: rad config set <key> <value>   (value is JSON when possible)")
+            return 1
+        if args.key not in DEFAULTS:
+            fail(f"unknown key {args.key!r} — `rad config show` lists the settings")
+            return 1
+        from rad.storage import validate_config
+        try:
+            val = json.loads(args.value)
+        except Exception:
+            val = args.value
+            default = DEFAULTS[args.key]
+            if isinstance(default, bool) and str(val).lower() in ("true", "false", "yes", "no", "on", "off"):
+                val = str(val).lower() in ("true", "yes", "on")
+        previous = home.cfg.get(args.key)
+        home.cfg[args.key] = val
+        issues = [i for i in validate_config(home.cfg) if i.key == args.key]
+        if issues:
+            home.cfg[args.key] = previous
+            hint = ""
+            if issues[0].fix not in (None, "__remove__"):
+                hint = f" — valid example: {issues[0].fix!r}"
+            fail(f"{args.key}: {issues[0].problem} (value {issues[0].value!r}){hint}")
+            return 1
+        home.save_config()
+        ok(f"{args.key} = {json.dumps(val) if not isinstance(val, str) else val}")
+        return 0
+    data = dict(home.cfg)
+    for secret_key in ("keys", "api_keys", "tokens"):
+        data.pop(secret_key, None)
+    print(json.dumps(data, indent=2, ensure_ascii=False, default=str))
+    print(col.dim(f"  file: {path}"))
+    return 0
+
+
+def cmd_security(args) -> int:
+    """What is enforced right now: policy, capabilities, sandbox, audit, secrets, rate limits."""
+    from rad.policy import Policy, BUILTIN_DEFAULTS
+    from rad.agents import ALL_CAPS
+    home = _home(args)
+    pol = Policy(home)
+    if getattr(args, "json", False):
+        print(json.dumps({"model": "capability policies evaluated per action (ALLOW/ASK/LIMITED/DENY/HARD_DENY)",
+                          "defaults": {c: pol.default_for(c) for c in BUILTIN_DEFAULTS},
+                          "rules": [r.to_dict() for r in pol.rules],
+                          "web_allow": pol._data.get("web_allow", []),
+                          "audit_tail": pol.audit_tail(10)}, indent=2, default=str))
+        return 0
+    print(col.bold("  enforcement layers"))
+    print("    1 identity      user | agent:<id> | control:<objective> — every action carries an actor")
+    print("    2 policy        capability → ALLOW/ASK/LIMITED/DENY (soft, editable) + hard denials (not editable)")
+    print("    3 sandbox       filesystem jail + limits (timeout, bytes, network grants) around execution")
+    print("    4 confirmation  ASK actions require an explicit yes unless auto is enabled")
+    print("    5 audit         every decision appended to ~/.rad/audit.jsonl")
+    print(col.bold("\n  capability defaults"))
+    for cap in sorted(BUILTIN_DEFAULTS):
+        print(f"    {cap:<24} {pol.default_for(cap)}")
+    if pol.rules:
+        print(col.bold("\n  rules"))
+        for r in pol.rules[:20]:
+            print(f"    {r.capability:<24} {r.effect:<9} {r.resource[:40]}"
+                  + (f"  limits={r.limits}" if getattr(r, 'limits', None) else ""))
+    else:
+        print(col.dim("\n  no custom rules — defaults above are in force"))
+    print(col.bold("\n  hard limits (never overridable)"))
+    for line in ("sudo / su", "reads or writes under ~/.rad/keys, ~/.ssh, key material",
+                 "private/loopback hosts from tools unless explicitly allowed",
+                 "curl|sh style pipe-to-shell and destructive rm -rf"):
+        print(f"    ✗ {line}")
+    print(col.bold("\n  agent capability envelope"))
+    print(f"    known capabilities: {', '.join(sorted(ALL_CAPS))}")
+    print("    sub-agents may narrow this set, never widen it; they cannot edit policy, skills or their own caps")
+    tail = pol.audit_tail(5)
+    print(col.bold("\n  recent decisions"))
+    if not tail:
+        print(col.dim("    (nothing audited yet)"))
+    for a in tail:
+        print(f"    {time.strftime('%H:%M:%S', time.localtime(a.get('at', time.time())))} "
+              f"{a.get('effect', '?'):<9} {str(a.get('capability', '')):<16} {str(a.get('resource', ''))[:44]}")
+    return 0
+
+
+def cmd_tools(args) -> int:
+    """Every tool RAD's hands can call, with the capability each one requires."""
+    from rad.tools import TOOLS
+    from rad.agents import cap_for_tool
+    from rad.policy import Policy
+    home = _home(args)
+    pol = Policy(home)
+    rows = []
+    for t in TOOLS:
+        fn = t.get("function", t)
+        name = fn.get("name", "?")
+        cap = cap_for_tool(name)
+        rows.append({"name": name, "capability": cap,
+                     "policy": pol.default_for(cap),
+                     "description": (fn.get("description") or "").split(".")[0][:60]})
+    try:
+        from rad.mcp import MCP  # type: ignore
+        for name in MCP(home).tool_names():
+            rows.append({"name": name, "capability": "mcp",
+                         "policy": pol.default_for("mcp"), "description": "MCP skill tool"})
+    except Exception:
+        pass
+    if getattr(args, "json", False):
+        print(json.dumps({"tools": rows}, indent=2))
+        return 0
+    print(col.bold(f"  {len(rows)} tool(s) — policy is evaluated per call, not per tool"))
+    for r in sorted(rows, key=lambda x: (x["capability"], x["name"])):
+        print(f"    {r['name']:<22} {r['capability']:<10} {r['policy']:<8} {col.dim(r['description'])}")
+    print(col.dim("    call them through chat, `rad objective run`, or `rad agents run <role>`"))
+    print(col.dim("    change permission: rad policy allow|ask|deny|limit <capability> <resource>"))
     return 0
 
 
@@ -1036,10 +1466,75 @@ def build_parser() -> argparse.ArgumentParser:
     co.set_defaults(fn=cmd_corpus)
 
     bm = sub.add_parser("benchmark", help="capability battery — is Rad smarter? now it's a number")
+    bm.add_argument("bench_action", nargs="?", default="run",
+                    choices=["run", "bank", "long", "history", "compare"])
     bm.add_argument("--provider", default=None); bm.add_argument("--model", default=None)
     bm.add_argument("--cats", default=None, help="comma list: math,logic,code,tool,json,summarize,style")
     bm.add_argument("--label", default=None)
+    bm.add_argument("--category", default=None,
+                    help="bank: reasoning | tool_use | coding | research | planning | long_horizon | "
+                         "recovery | memory | adversarial | all")
+    bm.add_argument("--sample", type=int, default=0, help="bank/long: run only N scenarios (0 = all)")
+    bm.add_argument("--seed", type=int, default=20260917, help="bank/long: sampling seed")
+    bm.add_argument("-n", type=int, default=10, help="history: how many runs")
     bm.set_defaults(fn=cmd_benchmark)
+
+    ev = sub.add_parser("evaluate", help="model evaluation battery: planning/memory/long-context/"
+                                         "research/instruction/safety/recovery + history + promotion gate")
+    ev.add_argument("eval_action", nargs="?", default="run", choices=["run", "history", "gate", "tasks"])
+    ev.add_argument("--provider", default=None, help="evaluate one provider (default: current chain head)")
+    ev.add_argument("--model", default=None)
+    ev.add_argument("--categories", default=None, help="comma list of capability areas")
+    ev.add_argument("--repeats", type=int, default=1, help="run every task N times to measure stability")
+    ev.add_argument("--label", default=None)
+    ev.add_argument("-n", type=int, default=8, help="history: how many runs")
+    ev.set_defaults(fn=cmd_evaluate)
+
+    acc = sub.add_parser("acceptance", help="the 50-item acceptance gate: every requirement "
+                                            "demonstrated by running code, with per-item evidence")
+    acc.add_argument("--area", default=None, help=f"comma list of areas (runtime, control, state, "
+                                                  f"memory, agents, security, routing, ops, "
+                                                  f"benchmarks, docs)")
+    acc.add_argument("--json", action="store_true", help="machine-readable report with evidence")
+    acc.add_argument("--full", action="store_true", help="also run the wide benchmark sample")
+    acc.set_defaults(fn=cmd_acceptance)
+
+    rg = sub.add_parser("regression", help="unit/integration/security/agent tests + live agent and "
+                                           "long-horizon benchmark subset, with a pass/fail verdict")
+    rg.add_argument("reg_action", nargs="?", default="run", choices=["run", "history", "show", "compare"])
+    rg.add_argument("--groups", default=None, help="comma list: unit,security,agent,integration")
+    rg.add_argument("--sample", type=int, default=6, help="scenarios per live benchmark")
+    rg.add_argument("--quick", action="store_true", help="security+agent groups, 4 scenarios")
+    rg.add_argument("--no-benchmarks", action="store_true", help="tests only, skip the live lab runs")
+    rg.add_argument("--label", default=None)
+    rg.add_argument("-n", type=int, default=15)
+    rg.set_defaults(fn=cmd_regression)
+
+    rwp = sub.add_parser("realworld", help="end-to-end acceptance tests: research, coding, "
+                                           "multi-agent, failure recovery")
+    rwp.add_argument("--only", default=None,
+                     help="comma list: research,coding,multi_agent,failure")
+    rwp.add_argument("--json", action="store_true")
+    rwp.add_argument("--keep", action="store_true", help="keep the temporary workspaces")
+    rwp.set_defaults(fn=cmd_realworld)
+
+    stp = sub.add_parser("status", help="one screen: objectives, memory, brain, jobs, background, schema")
+    stp.add_argument("--json", action="store_true")
+    stp.set_defaults(fn=cmd_status)
+
+    cf = sub.add_parser("config", help="show/get/set/unset RAD configuration")
+    cf.add_argument("cfg_action", nargs="?", default="show", choices=["show", "get", "set", "unset", "path"])
+    cf.add_argument("key", nargs="?", default=None)
+    cf.add_argument("value", nargs="?", default=None)
+    cf.set_defaults(fn=cmd_config)
+
+    secp = sub.add_parser("security", help="enforcement layers, capability defaults, hard limits, audit")
+    secp.add_argument("--json", action="store_true")
+    secp.set_defaults(fn=cmd_security)
+
+    tlp = sub.add_parser("tools", help="tools RAD can call + the capability each one needs")
+    tlp.add_argument("--json", action="store_true")
+    tlp.set_defaults(fn=cmd_tools)
 
     br = sub.add_parser("brain", help="brain candidates + promotion protocol (verified evolution)")
     brsub = br.add_subparsers(dest="brain_action")
@@ -1087,6 +1582,8 @@ def build_parser() -> argparse.ArgumentParser:
     wo.add_argument("world_term", nargs="*")
     wo.add_argument("--path", default=None, help="file to mine (learn)")
     wo.add_argument("--history", action="store_true", help="query: include superseded relations")
+    wo.add_argument("--assume", action="store_true",
+                    help="add: record a working assumption (origin ASSUMPTION), not a fact")
     wo.set_defaults(fn=cmd_world)
 
     v = sub.add_parser("version", help="version"); v.set_defaults(fn=cmd_version)
@@ -1173,8 +1670,13 @@ def cmd_world(args) -> int:
     if args.world_action == "add":
         sentence = " ".join(args.world_term)
         if not sentence:
-            fail("usage: rad world add <sentence about your world>")
+            fail("usage: rad world add <sentence about your world> [--assume]")
             return 1
+        if getattr(args, "assume", False):
+            n = w.assume(sentence)
+            ok(f"recorded {n} assumption(s) — `rad world show` marks them, "
+               f"`rad world confirm` promotes one to fact" if n else "nothing new assumed")
+            return 0
         caller = None
         if _router(home).build_chain():
             def caller(prompt: str) -> str:
@@ -1212,17 +1714,33 @@ def cmd_world(args) -> int:
     return 0
 
 
+def _argv_has_subcommand(argv: List[str], choices: set) -> bool:
+    """True if a real subcommand appears after any leading global flags (`--home VALUE`)."""
+    i = 0
+    while i < len(argv):
+        a = argv[i]
+        if a in ("-h", "--help"):
+            return True
+        if a == "--home":
+            i += 2
+            continue
+        return a in choices
+    return False
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
     parser = build_parser()
     choices = set(parser._subparsers._group_actions[0].choices)
-    # no subcommand (or a chat flag first) → chat
-    if not argv or (argv[0] not in choices and argv[0] not in ("-h", "--help")):
-        if argv and argv[0] == "--home":
-            idx = argv.index("--home")
-            argv = argv[:idx] + ["chat"] + argv[idx:]
-        else:
-            argv = ["chat"] + argv
+    # no subcommand (or a chat flag first) → chat. Keep `--home VALUE` in front of
+    # the injected command so `rad --home <dir> lab run` and `rad --home <dir>` both work.
+    if argv and argv[0] not in ("-h", "--help") and not _argv_has_subcommand(argv, choices):
+        insert_at = 0
+        if argv[0] == "--home":
+            insert_at = 2 if len(argv) >= 2 else 1
+        argv = argv[:insert_at] + ["chat"] + argv[insert_at:]
+    elif not argv:
+        argv = ["chat"]
     args = parser.parse_args(argv)
     if getattr(args, "fn", None) not in (cmd_storage, cmd_doctor):
         try:

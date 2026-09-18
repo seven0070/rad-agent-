@@ -76,3 +76,22 @@ class _FakeStdio:
 
     def handshake(self):
         return [{"name": "echo", "description": "echo back", "inputSchema": {"type": "object"}}]
+
+
+def test_skill_manifest_is_declarative_and_security_aware(home, tmp_path):
+    from rad import skills as SK
+    reg = home.skills()
+    reg["probe"] = {"name": "probe", "description": "a probe skill", "version": "1.2.0",
+                    "transport": "stdio", "command": [sys.executable, "-c", "print(1)"],
+                    "dependencies": ["httpx>=0.27"],
+                    "tools": [{"name": "fetch_thing", "description": "fetch it",
+                               "schema": {"type": "object", "properties": {"q": {"type": "string"}}}}]}
+    home.save_skills(reg)
+    m = SK.ensure_manifest(home, "probe")
+    assert m["name"] == "probe" and m["version"] == "1.2.0" and m["description"] == "a probe skill"
+    assert m["capabilities"] == ["web"] and m["permissions"] == ["web"]
+    assert m["dependencies"] == ["httpx>=0.27"]
+    assert m["security"]["sandbox"] == "required" and m["security"]["credentials"] == "never shared"
+    assert m["security"]["network"] == "scoped by sandbox grants"
+    assert m["spec"][0]["inputs"] == ["q"] and m["spec"][0]["permissions"] == ["web"]
+    assert m["approval"] in ("policy", "ask", "allow", "deny")

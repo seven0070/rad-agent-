@@ -1,8 +1,11 @@
 """`rad doctor` — one command that tells you whether RAD is healthy and, with --fix, repairs
 what is safe to repair. Every check returns (status, message, fix?) and nothing is changed
-unless `fix=True`. Status: ok | warn | fail."""
+unless `fix=True`. Status: ok | warn | optional | fail — rendered as READY / WARNING /
+OPTIONAL / ERROR. Missing optional capabilities (providers, local engines, MCP, voice)
+never make the core unusable."""
 from __future__ import annotations
 
+import json
 import os
 import platform
 import shutil
@@ -19,10 +22,15 @@ from rad.storage import SCHEMA_VERSION, Storage, validate_config
 @dataclass
 class Finding:
     check: str
-    status: str                       # ok | warn | fail
+    status: str                       # ok | warn | optional | fail
     message: str
     fixed: bool = False
     detail: List[str] = field(default_factory=list)
+
+    @property
+    def label(self) -> str:
+        return {"ok": "READY", "warn": "WARNING", "optional": "OPTIONAL", "fail": "ERROR"}.get(
+            self.status, self.status.upper())
 
 
 class Doctor:
@@ -36,7 +44,9 @@ class Doctor:
         checks: List[Callable[[], Finding]] = [
             self.c_python, self.c_home_tree, self.c_permissions, self.c_config, self.c_schema, self.c_integrity,
             self.c_workspace, self.c_dna, self.c_policy, self.c_memory, self.c_objectives, self.c_agents,
-            self.c_skills, self.c_providers, self.c_disk, self.c_tools_on_path,
+            self.c_skills, self.c_providers, self.c_local_runtimes, self.c_mcp, self.c_browser,
+            self.c_voice, self.c_interrupted, self.c_benchmarks, self.c_sandbox, self.c_disk,
+            self.c_tools_on_path,
         ]
         out = []
         for c in checks:
@@ -112,8 +122,8 @@ class Doctor:
                        detail=[f"{i.key}: {i.problem} (value {i.value!r})" + (f" → --fix sets {i.fix!r}" if i.fix is not None and i.fix != "__remove__" else "") for i in issues])
 
     def c_schema(self) -> Finding:
+        pend = self.storage.pending()          # stamps a fresh home before we read the version
         v = self.storage.version()
-        pend = self.storage.pending()
         if not pend:
             return Finding("schema", "ok", f"storage schema v{v} (current)")
         if self.fix:
@@ -196,7 +206,7 @@ class Doctor:
     def c_skills(self) -> Finding:
         reg = self.home.skills()
         if not reg:
-            return Finding("skills", "ok", "no MCP skills connected")
+            return Finding("skills", "optional", "no MCP skills connected (optional — `rad connect <link>`)")
         probs = []
         for name, e in reg.items():
             if e.get("transport", "stdio") == "stdio":
@@ -214,20 +224,189 @@ class Doctor:
         r = RouterState(self.home)
         chain = r.build_chain()
         if not chain:
-            return Finding("providers", "fail", "no brain available: add a key (rad keys add …) or start a local engine")
+            pinned = str(self.home.cfg.get("force_provider") or "")
+            if pinned:
+                return Finding("providers", "warn",
+                               f"force_provider={pinned} but no brain is reachable",
+                               detail=["`rad use` another provider, `rad keys add <provider> <key>`, "
+                                       "or start a local engine (`ollama serve`)"])
+            return Finding("providers", "optional",
+                           "no brain configured — add a key (`rad keys add <provider> <key>`) "
+                           "or start a local engine; RAD still works offline",
+                           detail=["control plane, memory, doctor, lab banks and acceptance run without a key",
+                                   "configure a brain when you want `rad chat` / live `rad evaluate`"])
         names = [getattr(getattr(e, "spec", e), "name", str(e)) for e in chain][:5]
         return Finding("providers", "ok", f"{len(chain)} usable: {', '.join(names)}")
 
 
+    # ---- optional subsystems (all free to be absent; RAD stays usable)
+    def c_local_runtimes(self) -> Finding:
+        """Local engines (Ollama, LM Studio, Edge0, vLLM) — the free-first brains."""
+        from rad.providers import all_specs, probe_local
+        if not self.probe_network:
+            return Finding("local-engines", "ok", "probe skipped (offline mode)")
+        found: List[str] = []
+        for spec in all_specs(self.home):
+            if not spec.local:
+                continue
+            reachable, models = probe_local(spec)
+            if reachable:
+                extra = f" ({', '.join(models[:3])})" if models else ""
+                found.append(f"{spec.name}{extra}")
+        if found:
+            return Finding("local-engines", "ok", "running: " + ", ".join(found))
+        pinned = str(self.home.cfg.get("force_provider") or "")
+        if pinned in ("ollama", "lmstudio", "edge0", "vllm"):
+            return Finding("local-engines", "warn",
+                           f"force_provider={pinned} is a local engine but nothing is listening",
+                           detail=["start it, or pin a different brain with `rad use <provider>`",
+                                   "optional: `ollama serve` gives free offline brains"])
+        return Finding("local-engines", "optional",
+                       "no local engine detected (optional — `ollama serve` or `rad keys add`)",
+                       detail=["`rad providers` shows the chain; `ollama serve` gives free offline brains"])
+
+    def c_mcp(self) -> Finding:
+        """MCP skills: manifests parse, commands exist, permissions declared."""
+        d = self.home.root / "skills"
+        manifests = sorted(d.glob("*/manifest.json")) if d.is_dir() else []
+        if not manifests:
+            return Finding("mcp", "optional", "no MCP skills connected (optional — `rad connect <link>`)")
+        problems: List[str] = []
+        for m in manifests:
+            try:
+                doc = json.loads(m.read_text())
+            except Exception as e:
+                problems.append(f"{m.parent.name}: manifest unreadable ({str(e)[:60]})")
+                continue
+            cmd = (doc.get("command") or doc.get("server", {}).get("command")
+                   if isinstance(doc.get("server"), dict) else doc.get("command"))
+            if isinstance(cmd, str) and cmd and shutil.which(cmd.split()[0]) is None \
+                    and not Path(cmd.split()[0]).exists():
+                problems.append(f"{m.parent.name}: command '{cmd.split()[0]}' not found on PATH")
+            if not doc.get("permissions") and not doc.get("approval"):
+                problems.append(f"{m.parent.name}: no permissions/approval declared")
+        if problems:
+            return Finding("mcp", "warn", f"{len(problems)} issue(s) in {len(manifests)} skill(s)",
+                           detail=problems)
+        return Finding("mcp", "ok", f"{len(manifests)} skill(s) healthy")
+
+    def c_browser(self) -> Finding:
+        """Browser/environment: the always-available fetcher, plus Playwright when installed."""
+        try:
+            import rad.browser as _b  # noqa: F401
+        except Exception as e:
+            return Finding("browser", "fail", f"browser module unusable: {str(e)[:80]}")
+        try:
+            import playwright  # noqa: F401
+            have = "playwright installed (screenshots, JS pages, clicks)"
+        except Exception:
+            have = "urllib driver only (navigation, extraction, forms, downloads)"
+        if not self.probe_network:
+            return Finding("browser", "ok", have + " — network probe skipped")
+        try:
+            import urllib.request
+            with urllib.request.urlopen("https://example.com", timeout=3) as r:
+                ok_net = r.status == 200
+        except Exception as e:
+            return Finding("browser", "warn", f"{have}; network unreachable ({str(e)[:50]})")
+        return Finding("browser", "ok", have + "; outbound network works")
+
+    def c_voice(self) -> Finding:
+        """Voice is optional: report which half of the loop is available."""
+        tts = next((c for c in ("piper", "say", "espeak", "espeak-ng", "spd-say") if shutil.which(c)), None)
+        stt = "whisper" if shutil.which("whisper") else None
+        rec = next((c for c in ("rec", "arecord", "sox") if shutil.which(c)), None)
+        bits = [f"tts={tts or 'none'}", f"stt={stt or 'none'}", f"recorder={rec or 'none'}"]
+        if tts or stt:
+            return Finding("voice", "ok", ", ".join(bits))
+        def _on(key: str) -> bool:
+            v = str(self.home.cfg.get(key, "auto") or "").strip().lower()
+            return v not in ("", "auto", "none", "off", "false", "0", "disabled")
+
+        wanted = _on("voice_enabled") or _on("tts") or _on("stt")
+        message = "no local voice tooling: " + ", ".join(bits)
+        if wanted:
+            return Finding("voice", "warn", message,
+                           detail=["voice is enabled in config but no local tooling was found: "
+                                   "install piper/whisper, or set an OpenAI key for API voice"])
+        return Finding("voice", "optional", message + " (optional; unused until you enable voice)",
+                       detail=["`rad install voice` or set an OpenAI key; chat still works without it"])
+
+    def c_interrupted(self) -> Finding:
+        """Crash recovery: objectives whose run died mid-flight and are waiting to be resumed."""
+        from rad.control.checkpoints import CheckpointManager
+        cm = CheckpointManager(self.home)
+        items = cm.interrupted()
+        if not items:
+            return Finding("recovery", "ok", "no interrupted objective state")
+        detail = [f"{i['id']}: {i['status']} ({len(i['in_flight'])} task(s) mid-flight) — "
+                  f"rad objective resume {i['id']}" for i in items[:8]]
+        if self.fix:
+            done = [cm.restore(i["id"]) for i in items]
+            return Finding("recovery", "ok", f"restored {len(done)} interrupted objective(s) "
+                                             f"(resume with `rad objective resume <id>`)",
+                           fixed=True, detail=detail)
+        return Finding("recovery", "warn", f"{len(items)} objective(s) were interrupted by a crash "
+                                           f"or restart — `rad doctor --fix` prepares them for resume",
+                       detail=detail)
+
+    def c_benchmarks(self) -> Finding:
+        """Evaluation evidence exists and is intact (not 'good' — just present and parseable)."""
+        bits = []
+        for label, path in (("lab", self.home.root / "lab"),
+                            ("long-horizon", self.home.root / "benchmarks" / "longhorizon"),
+                            ("evaluation", self.home.root / "evaluation" / "history.json"),
+                            ("regression", self.home.root / "regression")):
+            n = len(list(path.glob("*.json"))) if path.is_dir() else int(path.exists())
+            bits.append(f"{label}={n}")
+        return Finding("benchmarks", "ok", "runs on record: " + ", ".join(bits),
+                       detail=["run one: rad benchmark bank --sample 20 | rad benchmark long | "
+                               "rad regression --quick"])
+
+    def c_sandbox(self) -> Finding:
+        """Workspace jail + the non-overridable hard layer (sudo, keys, private hosts)."""
+        from rad.policy import HARD_DENY, Policy
+        from rad.sandbox import Sandbox
+        pol = Policy(self.home)
+        sudo = pol.decide("shell", "sudo id", auto=True, tool="run_shell")
+        if sudo.effect != HARD_DENY:
+            return Finding("sandbox", "fail",
+                           f"hard layer did not refuse sudo (got {sudo.effect})",
+                           detail=["hard denials are code, not config — this is a defect"])
+        keys = pol.decide("fs.read", str(self.home.root / "keys"), auto=True,
+                          path=self.home.root / "keys", tool="read_file")
+        sb = Sandbox(self.home)
+        ws = sb.workspace
+        jail = "on" if sb.jail else "off"
+        if keys.effect != HARD_DENY:
+            return Finding("sandbox", "warn",
+                           f"workspace jail {jail} at {ws}; keys path was not hard-denied ({keys.effect})",
+                           detail=["`rad policy test` and `rad security` show the hard layer"])
+        return Finding("sandbox", "ok",
+                       f"hard layer active; workspace jail {jail} at {ws}")
+
+
+STATUS_LABEL = {"ok": "READY", "warn": "WARNING", "optional": "OPTIONAL", "fail": "ERROR"}
+
+
 def render(findings: List[Finding]) -> str:
     from rad.ui import col
-    sym = {"ok": col.green("✓"), "warn": col.yellow("!"), "fail": col.red("✗")}
+    colour = {"ok": col.green, "warn": col.yellow, "optional": col.cyan, "fail": col.red}
     lines = []
     for f in findings:
+        paint = colour.get(f.status, col.dim)
+        label = STATUS_LABEL.get(f.status, f.status.upper())
         tag = col.dim(" (fixed)") if f.fixed else ""
-        lines.append(f"  {sym[f.status]} {f.check:<12} {f.message}{tag}")
+        lines.append(f"  {paint(label):<8} {f.check:<14} {f.message}{tag}")
         for d in f.detail[:8]:
             lines.append(f"        {col.dim(d)}")
-    n = {s: sum(1 for f in findings if f.status == s) for s in ("ok", "warn", "fail")}
-    lines.append(f"  {n['ok']} ok · {n['warn']} warn · {n['fail']} fail")
+    n = {s: sum(1 for f in findings if f.status == s) for s in ("ok", "warn", "optional", "fail")}
+    lines.append(f"  {n['ok']} READY · {n['warn']} WARNING · {n['optional']} OPTIONAL · {n['fail']} ERROR")
+    if n["fail"]:
+        lines.append(col.red("  verdict: ERROR — RAD is not ready until the ERROR lines are fixed"))
+    elif n["warn"]:
+        lines.append(col.yellow("  verdict: WARNING — RAD runs, but something needs attention"))
+    else:
+        extra = col.dim(" — optional capabilities missing; core still works") if n["optional"] else ""
+        lines.append(col.green("  verdict: READY") + extra)
     return "\n".join(lines)

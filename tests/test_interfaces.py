@@ -208,9 +208,93 @@ def test_http_requires_token_and_serves(home, server):
     with pytest.raises(urllib.error.HTTPError) as ei:
         urllib.request.urlopen(req, timeout=5)
     assert ei.value.code == 400
-    log = (home.root / "logs" / "api.jsonl").read_text().splitlines()
-    assert len(log) >= 6 and all("body" not in json.loads(l) for l in log)
+    # the request log is written per request; give the server a moment under load
+    import time as _t
+    log: list = []
+    for _ in range(40):
+        try:
+            log = (home.root / "logs" / "api.jsonl").read_text().splitlines()
+        except FileNotFoundError:
+            log = []
+        if len(log) >= 6:
+            break
+        _t.sleep(0.05)
+    assert len(log) >= 6, f"expected every request to be logged, got {len(log)}"
+    assert all("body" not in json.loads(l) for l in log)
     assert oct((home.root / "api.token").stat().st_mode & 0o777) == "0o600"
     from rad.api import token_for
     new = token_for(home, rotate=True)
     assert new != tok
+
+
+# ---------------------------------------------------------------- API surface (phase 2.0)
+
+def test_api_status_tasks_agents_world_tools_benchmarks(home, tmp_path):
+    from tests.test_control_plane import ScriptedSession, _ctl
+    ws = tmp_path / "ws2"; ws.mkdir(); home.update(workspace=str(ws), auto=True)
+    ScriptedSession.script = [([("write_file", {"path": "b.txt", "content": "hi"})], "DONE: wrote")]
+    plan = {"tasks": [{"id": "t1", "title": "write b.txt",
+                       "checks": [{"kind": "file_exists", "args": {"path": "b.txt"}}]}]}
+    api = _api(home, ctl_factory=lambda h: _ctl(h, ScriptedSession, plan=plan))
+    st, d = api.handle("POST", "/v1/objectives", {}, {"goal": "write b.txt"})
+    api._runs[d["id"]].join(timeout=10)
+
+    st, s = api.handle("GET", "/v1/status", {}, {})
+    assert st == 200 and s["ok"] and s["objectives"]["total"] == 1
+    assert s["objectives"]["by_status"].get("completed") == 1
+    assert "memory" in s and "chain" in s and "pending_migrations" in s
+    assert isinstance(s["pending_migrations"], list)
+
+    st, t = api.handle("GET", "/v1/tasks", {}, {})
+    assert st == 200 and t["tasks"] and t["tasks"][0]["objective_id"] == d["id"]
+    st, t2 = api.handle("GET", "/v1/tasks", {"status": "COMPLETED"}, {})
+    assert t2["tasks"] and all(x["status"] == "COMPLETED" for x in t2["tasks"])
+    st, t3 = api.handle("GET", "/v1/tasks", {"status": "RUNNING"}, {})
+    assert t3["tasks"] == []
+
+    st, a = api.handle("GET", "/v1/agents", {}, {})
+    assert st == 200 and a["agents"] and "planner" in {x["id"] for x in a["agents"]}
+    st, w = api.handle("GET", "/v1/world", {}, {})
+    assert st == 200 and isinstance(w["relations"], list) and isinstance(w["disputes"], list)
+    assert w["counts"]["entities"] >= 1        # the run's artifact was observed into the world model
+    st, tl = api.handle("GET", "/v1/tools", {}, {})
+    assert st == 200 and {x["name"] for x in tl["tools"]} >= {"read_file", "write_file", "run_shell"}
+    assert all(x["capability"] and x["policy"] for x in tl["tools"])
+    st, b = api.handle("GET", "/v1/benchmarks", {}, {})
+    assert st == 200 and b["banks"]["reasoning"] == 100 and b["banks"]["adversarial"] == 100
+    assert "lab" in b and "evaluation" in b and "long_horizon" in b
+
+
+def test_api_events_stream_and_memory_recall(home, tmp_path):
+    """`/v1/events` streams the global log; `/v1/memory/recall` takes its query as a parameter."""
+    from rad.api import Api
+    from rad.control.events import EventLog, global_path
+    log = EventLog(global_path(home), home=home)
+    log.emit("TOOL_CALLED", "obj_probe", "t_1", tool="write_file")
+    api = Api(home)
+    st, payload = api.handle("GET", "/v1/events", {"n": "10", "objective": "obj_probe"}, {})
+    assert st == 200 and payload["n"] >= 1
+    assert any(e["kind"] == "TOOL_CALLED" for e in payload["events"])
+    st, payload = api.handle("GET", "/v1/events", {"kind": "OBJECTIVE"}, {})
+    assert st == 200 and all(e["kind"].startswith("OBJECTIVE") for e in payload["events"])
+    st, payload = api.handle("GET", "/v1/memory/recall", {"q": "probe"}, {})
+    assert st == 200 and "memories" in payload
+
+
+def test_plan_version_advances_with_planning_and_replanning(home, tmp_path):
+    """Every objective records which plan generation its tasks came from."""
+    from rad.control import Controller
+    from tests.test_control_plane import ScriptedSession, _plan_llm
+    w = tmp_path / "ws"; w.mkdir(); home.update(workspace=str(w))
+    plan = {"tasks": [{"id": "t1", "text": "make a.txt", "depends_on": [],
+                       "checks": [{"kind": "file_exists", "args": {"path": "a.txt"}}]}]}
+    ScriptedSession.script = [([("write_file", {"path": "a.txt", "content": "x"})], "DONE")]
+    ScriptedSession.prompts = []
+    ctl = Controller(home, session_factory=ScriptedSession, llm=_plan_llm(plan), quiet=True)
+    obj = ctl.create("make a.txt")
+    graph = ctl.plan(obj)
+    assert obj.plan_version == 1
+    assert all(t.plan_version == 1 for t in graph.tasks.values())
+    again = ctl.plan(obj)                      # re-planning bumps the generation
+    assert obj.plan_version == 2 and all(t.plan_version == 2 for t in again.tasks.values())
+    assert obj.to_dict()["plan_version"] == 2  # persisted with the objective

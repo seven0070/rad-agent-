@@ -33,6 +33,7 @@ class RouterState:
     preferred: Dict[str, str] = field(default_factory=dict)  # tier -> provider name
     _free_rr: "itertools.cycle" = None  # type: ignore
     warned_no_crypto: bool = False
+    last_selection: Optional[Dict[str, Any]] = None          # task-aware selection trace
 
     # ---------------------------------------------------------------- chain
     def build_chain(self, force: Optional[str] = None, free_lock: Optional[bool] = None,
@@ -95,16 +96,52 @@ class RouterState:
             entries[slot] = e
 
     # ---------------------------------------------------------------- chat
+    def build_chain_for(self, requirements: Optional[Any] = None, force: Optional[str] = None,
+                        free_lock: Optional[bool] = None, need_vision: bool = False) -> List[ChainEntry]:
+        """Availability chain, re-ordered for a task's requirements (free-first preserved)."""
+        chain = self.build_chain(force=force, free_lock=free_lock, need_vision=need_vision)
+        if not chain:
+            return chain
+        try:
+            from rad.modelselect import ModelRegistry, Requirements
+            req = requirements if isinstance(requirements, Requirements) else None
+            if req is None and requirements is not None:
+                req = Requirements(kind=str(getattr(requirements, "kind", "chat")))
+            if req is None:
+                return chain
+            sel = ModelRegistry(self.home).select(chain, req)
+            selected = sel or chain
+            self.last_selection = {"kind": req.kind, "requested": [getattr(e.spec, "name", "?") for e in chain],
+                                   "selected": [getattr(e.spec, "name", "?") for e in selected]}
+            if req.need_vision or req.kind == "vision":
+                confirmed = [getattr(e.spec, "name", "?") for e in selected
+                             if getattr(e.spec, "supports_vision", False)]
+                self.last_selection["vision_confirmed"] = confirmed
+                if not confirmed:
+                    # honest degradation: a vision task is being sent to a model RAD cannot
+                    # confirm accepts images. Recorded, surfaced (`rad status`), never hidden.
+                    self.last_selection["vision_gap"] = True
+            return selected
+        except Exception:
+            return chain
+
     def chat(self, messages: List[Dict[str, Any]], tools: Optional[List[Dict[str, Any]]] = None,
              stream_cb: Optional[Callable[[str], None]] = None,
              need_vision: bool = False, temperature: float = 0.7,
-             model_override: Optional[str] = None, max_tokens: int = 0) -> P.ChatResult:
-        chain = self.build_chain(need_vision=need_vision)
+             model_override: Optional[str] = None, max_tokens: int = 0,
+             requirements: Optional[Any] = None) -> P.ChatResult:
+        if requirements is not None:
+            need_vision = need_vision or bool(getattr(requirements, "need_vision", False)) \
+                or getattr(requirements, "kind", "") == "vision"
+        chain = self.build_chain_for(requirements=requirements, need_vision=need_vision)
         if not chain:
-            raise P.ProviderError(
-                "no brain available — add a key (`rad keys add <provider> <key>`), "
-                "start a local engine (Edge0/Ollama/LM Studio), or `rad provider add`",
-                retryable=False)
+            hint = ("no vision-capable brain available — this task includes an image; "
+                    "`rad providers` lists what each provider/model supports, then "
+                    "`rad use <provider>` or `rad provider add` with a vision model "
+                    "(e.g. gpt-4o, claude-3.5, gemini, qwen-vl, llava)" if need_vision else
+                    "no brain available — add a key (`rad keys add <provider> <key>`), "
+                    "start a local engine (Edge0/Ollama/LM Studio), or `rad provider add`")
+            raise P.ProviderError(hint, retryable=False)
         errors: List[str] = []
         for entry in chain:
             model = model_override or self.home.cfg.get("model") or entry.model

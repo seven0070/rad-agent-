@@ -12,7 +12,7 @@ runs commands with your confirmation, and **teaches itself new skills from a sin
   __ / \  |  _ \/ |      / \
  / _` __ \| |_) | | /\/\ / _ \
  \__,_||_|____/|_|/__/__\_/ \_\
-   v0.1.0 — open door, free first, self-evolving
+   v0.2.0 — open door, free first, self-evolving
 ```
 
 ---
@@ -44,8 +44,8 @@ rad install edge0        # Mac only — clones + guides setup
 On other machines the engine socket takes Ollama / LM Studio / vLLM instead — same interface.
 
 **NVIDIA NIM** (build.nvidia.com) is a first-class free-tier brain:
-`rad keys add nvidia <nvapi-…>` — default model `meta/llama-3.3-70b-instruct`
-(free-credit), vision via `meta/llama-3.2-11b-vision-instruct`.
+`rad keys add nvidia <nvapi-…>` — default model `meta/llama-3.2-11b-vision-instruct`
+(NIM free-credit; `meta/llama-3.3-70b-instruct` reached end-of-life on 2026-08-26).
 
 ## Routing (free-first, auto-fallback)
 
@@ -208,7 +208,7 @@ Watchers are detached processes; notifications land in `~/.rad/notifications.md`
 
 ## Install
 
-Requires Python 3.9+. No mandatory dependencies (stdlib-only core).
+Requires Python 3.9+ (3.11 or 3.12 recommended). No mandatory dependencies (stdlib-only core).
 
 ```bash
 git clone https://github.com/seven0070/rad-agent- && cd rad-agent-
@@ -362,12 +362,16 @@ Rad runs on Windows (10/11) out of the box — `python -m venv .venv`, `pip inst
 
 ```bash
 pip install -e ".[dev]"
-pytest            # 59 tests: router, memory, DNA, web parsers, MCP handshake, jobs, tools,
-                  # corpus miner, capability battery, promotion protocol, planner,
-                  # multi-agent team, world model (heuristic + brain extraction), plan executor
+python -m pytest -q         # offline tests
+rad regression --quick      # security + agent groups + a live benchmark sample
+rad acceptance              # the 50-item acceptance gate, with per-item evidence
 ```
 
-## Roadmap (v2)
+See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for the layout, the rules the codebase follows
+(the model proposes / the executor decides; verification is independent; failures are observations)
+and how to add a tool, a scenario or a migration.
+
+## Roadmap
 
 LoRA fine-tune of Rad's personality into Edge0 weights · expert pruning/distillation for lighter
 35b · web/phone face · remote-MCP tool execution hardening · multi-user sessions ·
@@ -379,9 +383,52 @@ SWE-bench / AgentBench bootstrap data wired to the corpus miner.
 See [LICENSE](LICENSE).
 
 ## Measuring the agent
-`rad lab run --suite smoke` runs whole objectives through the control plane in isolated homes and grades the results on disk (success, honesty, safety, verified-rate). `rad lab compare a b` is the promotion gate. See `docs/LAB.md`; `docs/SECURITY.md` and `docs/AGENTS.md` cover the permission layer and sub-agents.
+900 graded scenarios (9 categories × 100) plus long-horizon, model-evaluation, regression and
+four whole-goal acceptance tests — all offline, all graded on disk state, never on what a model
+claims. `rad lab run --suite bank --sample 20`, `rad benchmark long --sample 6`, `rad realworld`,
+`rad regression`, `rad acceptance`. Success, honesty (no over-claiming), safety (no canary touched),
+verified-rate, recovery rate, retries, cost and false-completion rate are all reported.
+See [docs/BENCHMARKS.md](docs/BENCHMARKS.md) and [docs/ACCEPTANCE.md](docs/ACCEPTANCE.md).
+
+## Autonomy: the control plane (v2)
+
+`rad objective run "<goal>"` is the whole loop, and every part of it is inspectable:
+
+```
+understand → success criteria → plan → task graph → execute → observe → verify → done
+      ▲                                                              │
+      └──────────── diagnose → recover → replan  ◄──── fail ──────────┘
+```
+
+* **Objectives own the work.** id, goal, success criteria, constraints, priority, deadline, budget,
+  status, timestamps and the plan generation (`plan_version`). `rad objective list|run|pause|resume|
+  cancel|retry|expire|verify`.
+* **Tasks never vanish.** 11 explicit statuses with legal transitions and full history; every task
+  belongs to an objective; a superseded task is recorded as CANCELLED, never deleted.
+* **The executor is the only way to act.** capability → sandbox → permission → budget → tool →
+  observation → events; the model (or a sub-agent, or a plugin) cannot bypass it.
+* **Verification is independent.** `rad/control/verifier.py` checks files, JSON fields and shell
+  commands; a model's sentence is never the completion criterion. Advisors (`agent_review`,
+  `llm_judge`) are advisory only.
+* **Recovery is a taxonomy, not a hope.** 10 failure classes → 10 strategies (retry, switch tool,
+  switch model, rollback, repair, replan, spawn specialist, ask) with bounded attempts and budgets;
+  checkpoints survive crashes, restarts and provider failures (`rad realworld --only failure`).
+* **Everything is answerable.** `rad trace | inspect | replay | events`, artifacts with hashes,
+  versions, lineage and rollback, and `rad why <claim|file>` for CLAIM→EVIDENCE→SOURCE→TOOL→AGENT→TIME.
+* **Budgets and events are enforced** (token/money/time/tool-call/retry/agent) and persisted as a
+  typed stream per objective; `rad replay <id> --verify` re-checks a past run against today's disk.
 
 ## Documentation map
-`docs/ARCHITECTURE.md` (overview + invariants) · `CONTROL-PLANE.md` · `MEMORY.md` · `AGENTS.md` · `SECURITY.md` · `SKILLS.md` · `LAB.md` · `EVOLUTION.md` · `OPERATIONS.md` · `API.md` · `AUDIT-2026-09.md`.
+[QUICKSTART](docs/QUICKSTART.md) · [INSTALLATION](docs/INSTALLATION.md) · [CONFIGURATION](docs/CONFIGURATION.md) · [CLI](docs/CLI.md) ·
+[ARCHITECTURE](docs/ARCHITECTURE.md) · [CONTROL-PLANE](docs/CONTROL-PLANE.md) · [MEMORY](docs/MEMORY.md) ·
+[WORLD-MODEL](docs/WORLD-MODEL.md) · [AGENTS](docs/AGENTS.md) · [SECURITY](docs/SECURITY.md) ·
+[TOOLS](docs/TOOLS.md) · [SKILLS](docs/SKILLS.md) · [MCP](docs/MCP.md) · [LAB](docs/LAB.md) ·
+[BENCHMARKS](docs/BENCHMARKS.md) · [EVOLUTION](docs/EVOLUTION.md) · [API](docs/API.md) ·
+[OPERATIONS](docs/OPERATIONS.md) · [TROUBLESHOOTING](docs/TROUBLESHOOTING.md) ·
+[MIGRATION](docs/MIGRATION.md) · [DEVELOPMENT](docs/DEVELOPMENT.md) · [ACCEPTANCE](docs/ACCEPTANCE.md) ·
+[AUDIT-2026-09](docs/AUDIT-2026-09.md).
 
-Quick health check: `rad doctor`. Local API: `rad serve`.
+Every document describes shipped behaviour: `docs/CLI.md` is generated from the argument parser and
+the acceptance gate fails if the docs mention a command that does not exist.
+
+Quick health check: `rad doctor` · first run: [quickstart](docs/QUICKSTART.md) · local API: `rad serve` · is it finished? `rad acceptance`.

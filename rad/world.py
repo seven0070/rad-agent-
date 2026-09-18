@@ -50,15 +50,29 @@ RELATION_KINDS = ("owns", "works_on", "works_at", "depends_on", "created", "uses
 FUNCTIONAL = {"located_in", "works_at", "named", "is"}
 
 # origin of a fact (same vocabulary as memory)
-USER_PROVIDED = "USER_PROVIDED"
-OBSERVED = "OBSERVED"
-INFERRED = "INFERRED"
-MODEL_GENERATED = "MODEL_GENERATED"
-_CONF = {USER_PROVIDED: 0.9, OBSERVED: 0.8, INFERRED: 0.5, MODEL_GENERATED: 0.4}
+USER_PROVIDED = "USER_PROVIDED"          # the user said so — treated as fact
+OBSERVED = "OBSERVED"                    # a tool/objective really observed it
+INFERRED = "INFERRED"                    # derived from other facts
+MODEL_GENERATED = "MODEL_GENERATED"      # a model wrote it — never a fact on its own
+ASSUMPTION = "ASSUMPTION"                # explicitly held as a working assumption, to be confirmed
+_CONF = {USER_PROVIDED: 0.9, OBSERVED: 0.8, INFERRED: 0.5, MODEL_GENERATED: 0.4,
+         ASSUMPTION: 0.3}
+ORIGINS = (USER_PROVIDED, OBSERVED, INFERRED, MODEL_GENERATED, ASSUMPTION)
+
+
+def _entity_name(raw: str) -> str:
+    """'The Acceptance Rig' → 'Acceptance Rig': drop leading articles and one-word noise."""
+    parts = [p for p in (raw or "").split() if p]
+    while parts and parts[0].lower() in ENTITY_STOP:
+        parts = parts[1:]
+    name = " ".join(parts)
+    return name if len(name) > 2 else ""
 
 
 def _origin_for(source: str) -> str:
     s = (source or "").lower()
+    if s.startswith(("assum",)):
+        return ASSUMPTION
     if s.startswith(("manual", "user")):
         return USER_PROVIDED
     if s.startswith(("obj_", "file:", "tool:", "artifact")):
@@ -122,16 +136,11 @@ class WorldModel:
             except Exception:
                 pass
         # heuristic fallback (works offline)
-        for m in ENTITY_RE.finditer(text):
-            name = m.group(1)
-            if name.lower() not in ENTITY_STOP and len(name) > 2:
-                if self._add_entity(d, name, "entity", source):
-                    added += 1
-        subject = None
-        for m in ENTITY_RE.finditer(text):
-            if m.group(1).lower() not in ENTITY_STOP:
-                subject = m.group(1)
-                break
+        names = [n for n in (_entity_name(m.group(1)) for m in ENTITY_RE.finditer(text)) if n]
+        for name in names:
+            if self._add_entity(d, name, "entity", source):
+                added += 1
+        subject = names[0] if names else None
         low = text.lower()
         for pat, rel in REL_PATTERNS:
             mm = re.search(pat, low)
@@ -304,6 +313,17 @@ class WorldModel:
 
     def add(self, sentence: str, caller: Optional[Callable[[str], str]] = None) -> int:
         return self.learn(sentence, source="manual", caller=caller)
+
+    def assume(self, sentence: str, caller: Optional[Callable[[str], str]] = None) -> int:
+        """Record something RAD is *assuming* (origin ASSUMPTION, low confidence, status assumed).
+
+        Assumptions are first-class so they can be listed, disputed and later `confirm`ed — a
+        guess must never quietly become a fact just because it was written down.
+        """
+        return self.learn(sentence, source="assumption", caller=None)
+
+    def assumptions(self) -> List[Dict[str, Any]]:
+        return [r for r in self.current_relations() if r.get("origin") == ASSUMPTION]
 
     def learn_observation(self, objective_id: str, task_id: str, artifacts: List[Dict[str, Any]]) -> int:
         """Ground truth from the control plane: artifacts really exist → OBSERVED facts."""

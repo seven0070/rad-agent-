@@ -428,16 +428,25 @@ def cmd_lab(args) -> int:
         return 0
     if a == "run":
         suite = args.suite or "smoke"
-        if suite not in SUITES:
-            fail(f"suite must be one of {sorted(SUITES)}"); return 1
+        if suite == "bank":
+            suite = "banks"
+        from rad import lab_banks
+        offline = suite.startswith("bank:") or suite in ("banks", "everything")
+        if not offline and suite not in SUITES:
+            fail(f"suite must be one of {sorted(SUITES)} or bank | bank:<category> "
+                 f"({', '.join(lab_banks.CATEGORIES)}) / banks / everything"); return 1
         from rad.router import RouterState
-        if not RouterState(home).build_chain():
-            fail("no brain available — add a key or start a local engine"); return 1
+        if not offline and not RouterState(home).build_chain():
+            fail("no brain available — add a key or start a local engine "
+                 "(the bank:* suites are offline and need no brain)"); return 1
         info(f"  running lab suite '{suite}' through the control plane (isolated home + workspace per scenario)…")
         def prog(r):
             mark = col.green("PASS") if r.success else col.red("FAIL")
-            print(f"    {mark} {r.id:<20} {r.status:<10} verified={r.verified or '-'} tools={r.usage.get('tool_calls', 0)} {r.seconds}s")
-        rep = lab.run(suite, ids=args.ids or None, label=args.label or "", keep=args.keep, progress=prog)
+            print(f"    {mark} {r.id:<26} {r.status:<10} verified={r.verified or '-'} "
+                  f"tools={r.usage.get('tool_calls', 0)} {r.seconds}s"
+                  + ("" if r.success else "  " + r.trajectory_detail[:60]))
+        rep = lab.run(suite, ids=args.ids or None, label=args.label or "", keep=args.keep,
+                      progress=prog, sample=args.sample or 0, seed=args.seed)
         print(Lab.render(rep))
         return 0
     if a == "history":
@@ -527,9 +536,13 @@ def add_parsers(sub) -> None:
     lb = sub.add_parser("lab", help="agent benchmark lab: whole objectives through the control plane, graded on disk")
     lb.add_argument("lab_action", nargs="?", default="list", choices=["list", "run", "history", "show", "compare"])
     lb.add_argument("lab_args", nargs="*")
-    lb.add_argument("--suite", default=None, help="smoke | long | adversarial | all")
+    lb.add_argument("--suite", default=None,
+                    help="smoke | long | adversarial | all | bank | bank:<reasoning|tool_use|coding|"
+                         "research|planning|long_horizon|recovery|memory|adversarial> | banks | everything")
     lb.add_argument("--ids", nargs="*", default=None); lb.add_argument("--label", default=None)
     lb.add_argument("--keep", action="store_true", help="keep temp homes/workspaces for inspection")
+    lb.add_argument("--sample", type=int, default=0, help="run only N scenarios (deterministic)")
+    lb.add_argument("--seed", type=int, default=20260917, help="sampling seed")
     lb.add_argument("-n", type=int, default=20)
     lb.set_defaults(fn=cmd_lab)
 

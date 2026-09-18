@@ -243,3 +243,20 @@ def test_objective_completion_feeds_memory_with_observed_origin(home, tmp_path):
     assert pr and pr[0].origin == OBSERVED and "VALIDATION_FAILURE" in pr[0].text
     d = WorldModel(home).data()
     assert d["entities"]["report.md"]["origin"] == OBSERVED
+
+
+def test_contradiction_by_one_differing_slot(home):
+    """'on the blue shelf' vs 'on the red shelf' is a contradiction, not a near-duplicate."""
+    m = Memory(home)
+    a = m.add("semantic", "the deploy key is on the blue shelf", origin=USER_PROVIDED)
+    b = m.add("semantic", "the deploy key is on the red shelf", origin=MODEL_GENERATED)
+    assert b.id in m.get(a.id).contradicts and a.id in m.get(b.id).contradicts
+    assert m.get(b.id).verification == CONTRADICTED          # the weaker side loses
+    assert len(m.contradictions()) == 1
+
+
+def test_near_duplicate_different_wording_is_not_a_contradiction(home):
+    m = Memory(home)
+    m.add("semantic", "the deploy key lives on the blue shelf in the lab", origin=USER_PROVIDED)
+    m.add("semantic", "the deploy key sits on the blue shelf inside the lab", origin=OBSERVED)
+    assert m.contradictions() == []

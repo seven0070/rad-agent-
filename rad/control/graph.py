@@ -5,6 +5,9 @@ from typing import Dict, Iterable, List, Optional, Set
 
 from rad.control.tasks import Task, TaskStatus
 
+#: terminal states that mean "this dependency will never succeed on its own"
+TERMINAL_FAIL = (TaskStatus.CANCELLED, TaskStatus.BLOCKED, TaskStatus.NEEDS_USER)
+
 
 class CycleError(Exception):
     pass
@@ -67,12 +70,21 @@ class TaskGraph:
     def get(self, tid: str) -> Task:
         return self.tasks[tid]
 
+    def _branch_satisfies(self, dep: Task) -> bool:
+        """A failed task is neutralised when every declared alternative branch completed."""
+        if not dep.alternatives:
+            return False
+        alts = [self.tasks[a] for a in dep.alternatives if a in self.tasks]
+        return bool(alts) and all(a.status == TaskStatus.COMPLETED for a in alts)
+
     def deps_satisfied(self, t: Task) -> bool:
         for d in t.depends_on:
             dep = self.tasks[d]
             if dep.status == TaskStatus.COMPLETED:
                 continue
             if dep.optional and dep.status in (TaskStatus.FAILED, TaskStatus.BLOCKED, TaskStatus.CANCELLED):
+                continue
+            if dep.status in (TaskStatus.FAILED, TaskStatus.CANCELLED) and self._branch_satisfies(dep):
                 continue
             return False
         return True
@@ -86,6 +98,11 @@ class TaskGraph:
             if dep.status in (TaskStatus.CANCELLED, TaskStatus.BLOCKED, TaskStatus.NEEDS_USER):
                 return True
             if dep.status == TaskStatus.FAILED and not dep.can_retry:
+                if self._branch_satisfies(dep):
+                    continue
+                if dep.alternatives and any(self.tasks[a].status not in TERMINAL_FAIL
+                                            for a in dep.alternatives if a in self.tasks):
+                    return False        # a live alternative may still rescue the dependents
                 return True
         return False
 
@@ -98,9 +115,20 @@ class TaskGraph:
                 out.append(t)
         return out
 
+    def failures(self) -> List[Task]:
+        return [t for t in self.tasks.values()
+                if t.status in (TaskStatus.FAILED, TaskStatus.BLOCKED, TaskStatus.NEEDS_USER)]
+
     def is_complete(self) -> bool:
-        return all(t.status == TaskStatus.COMPLETED or (t.optional and t.status in TaskStatus.TERMINAL)
-                   for t in self.tasks.values())
+        for t in self.tasks.values():
+            if t.status == TaskStatus.COMPLETED:
+                continue
+            if t.optional and t.status in TaskStatus.TERMINAL:
+                continue
+            if not t.active and t.status in (TaskStatus.PENDING, TaskStatus.CANCELLED):
+                continue                     # branch never taken
+            return False
+        return True
 
     def is_stuck(self) -> bool:
         """No ready tasks, not complete, nothing running."""

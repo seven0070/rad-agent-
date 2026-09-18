@@ -31,8 +31,17 @@ class TaskStatus:
     NEEDS_USER = "NEEDS_USER"
     CANCELLED = "CANCELLED"
 
+    ALL = ("PENDING", "READY", "RUNNING", "OBSERVING", "VERIFYING", "COMPLETED",
+           "FAILED", "RETRYING", "BLOCKED", "NEEDS_USER", "CANCELLED")
+
     TERMINAL = {"COMPLETED", "CANCELLED", "BLOCKED", "NEEDS_USER"}
     OPEN = {"PENDING", "READY", "RETRYING"}
+    #: states a task can be put back into runnable form from (human / resume / branch activation)
+    RESUMABLE = {"FAILED", "BLOCKED", "NEEDS_USER", "RETRYING", "PENDING"}
+
+
+OPEN_STATES = TaskStatus.OPEN
+TERMINAL_STATES = TaskStatus.TERMINAL
 
 
 ALLOWED = {
@@ -41,7 +50,8 @@ ALLOWED = {
     TaskStatus.RUNNING: {TaskStatus.OBSERVING, TaskStatus.FAILED, TaskStatus.CANCELLED, TaskStatus.NEEDS_USER},
     TaskStatus.OBSERVING: {TaskStatus.VERIFYING, TaskStatus.FAILED},
     TaskStatus.VERIFYING: {TaskStatus.COMPLETED, TaskStatus.FAILED},
-    TaskStatus.FAILED: {TaskStatus.RETRYING, TaskStatus.BLOCKED, TaskStatus.NEEDS_USER, TaskStatus.CANCELLED},
+    TaskStatus.FAILED: {TaskStatus.RETRYING, TaskStatus.BLOCKED, TaskStatus.NEEDS_USER, TaskStatus.CANCELLED,
+                        TaskStatus.READY, TaskStatus.COMPLETED},
     TaskStatus.RETRYING: {TaskStatus.READY, TaskStatus.CANCELLED, TaskStatus.BLOCKED},
     TaskStatus.COMPLETED: set(),
     TaskStatus.BLOCKED: {TaskStatus.READY, TaskStatus.CANCELLED},      # human unblocks
@@ -65,6 +75,8 @@ class Check:
       shell_ok      {command}          exit code 0
       shell_output  {command, contains}
       json_valid    {path}
+      json_field    {path, key, [equals], [truthy]}   dotted key path, optional exact value
+      json_min_len  {path, n}          JSON list/dict/string length at least n
       reply_matches {pattern}          regex against the task's final reply
       llm_judge     {question}         model-graded — records verdict as UNVERIFIED-BY-MACHINE
       agent_review  {criteria,[agent]} independent reviewer agent (read-only tools); never VERIFIED alone
@@ -92,6 +104,11 @@ class Task:
     attempts: int = 0
     max_attempts: int = 3
     optional: bool = False
+    priority: str = "normal"                                # high | normal | low
+    agent: str = ""                                         # specialist role to run this task (rad.agents)
+    alternatives: List[str] = field(default_factory=list)   # branch ids that can satisfy dependents if we fail
+    on_failure: List[str] = field(default_factory=list)     # diagnostic/repair branch activated on permanent failure
+    active: bool = True                                     # False = branch task, only runs when activated
     created: float = field(default_factory=time.time)
     started: Optional[float] = None
     finished: Optional[float] = None
@@ -102,6 +119,7 @@ class Task:
     observations: List[str] = field(default_factory=list)   # observation ids
     artifacts: List[str] = field(default_factory=list)      # artifact ids
     history: List[Dict[str, Any]] = field(default_factory=list)
+    plan_version: int = 0                                   # plan/replan generation this task came from
 
     @classmethod
     def new(cls, objective_id: str, text: str, **kw: Any) -> "Task":

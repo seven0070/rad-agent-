@@ -37,10 +37,18 @@ EFFECTS = (ALLOW, ASK, LIMITED, DENY)
 # capability names shared with rad.agents
 CAP_READ, CAP_WRITE, CAP_SHELL, CAP_WEB, CAP_VISION, CAP_SPAWN, CAP_MCP = (
     "fs.read", "fs.write", "shell", "web", "vision", "agents.spawn", "mcp")
+# finer-grained capabilities (sandbox: filesystem / shell / python / browser / network / packages / credentials)
+CAP_PY, CAP_BROWSER, CAP_PACKAGES, CAP_CREDENTIALS, CAP_MEMORY = (
+    "py.run", "browser", "packages", "credentials", "memory")
 
 BUILTIN_DEFAULTS: Dict[str, str] = {
     CAP_READ: ALLOW, CAP_WRITE: ASK, CAP_SHELL: ASK, CAP_WEB: ALLOW,
     CAP_VISION: ALLOW, CAP_SPAWN: ASK, CAP_MCP: ASK,
+    CAP_PY: ASK,            # isolated python execution
+    CAP_BROWSER: ALLOW,     # external pages (untrusted data only)
+    CAP_PACKAGES: ASK,      # installing packages
+    CAP_CREDENTIALS: DENY,  # reading RAD's own secrets is never model-driven
+    CAP_MEMORY: ALLOW,      # the agent's own long-term memory (local, provenance-tracked)
 }
 
 # ---------------------------------------------------------------- hard layer (code only)
@@ -80,10 +88,39 @@ def redact(text: str) -> str:
     return text
 
 
+def _rm_is_destructive(cmd: str) -> bool:
+    """`rm -rf anything` is irreversible and never what a user means to authorise blindly.
+    Plain `rm -f file` and `rm -r dir` stay soft (ASK/LIMITED) rules."""
+    import shlex
+    try:
+        parts = shlex.split(cmd)
+    except Exception:
+        parts = cmd.split()
+    if not parts or Path(parts[0]).name != "rm":
+        return False
+    recursive = force = False
+    for tok in parts[1:]:
+        if tok == "--recursive":
+            recursive = True
+        elif tok == "--force":
+            force = True
+        elif tok == "--no-preserve-root":
+            return True
+        elif tok.startswith("-") and not tok.startswith("--"):
+            letters = tok[1:]
+            recursive = recursive or ("r" in letters) or ("R" in letters)
+            force = force or ("f" in letters)
+        else:
+            break
+    return recursive and force
+
+
 def hard_check_shell(cmd: str) -> Optional[str]:
     for pat in HARD_SHELL:
         if re.search(pat, cmd, re.I):
             return f"shell pattern {pat!r}"
+    if _rm_is_destructive(cmd):
+        return "recursive forced delete (rm -rf) — irreversible, refused"
     return None
 
 
@@ -104,7 +141,10 @@ def hard_check_path(p: Path, rad_home: Optional[Path] = None) -> Optional[str]:
     return None
 
 
-def hard_check_url(url: str) -> Optional[str]:
+def hard_check_url(url: str, allow_local: bool = False) -> Optional[str]:
+    """Private/loopback egress is blocked by default. `allow_local` is an explicit,
+    user-set config opt-in (`allow_localhost_web: true`) used for local development
+    servers; it never unblocks metadata endpoints or credentials-in-url."""
     from urllib.parse import urlparse
     try:
         u = urlparse(url)
@@ -115,8 +155,12 @@ def hard_check_url(url: str) -> Optional[str]:
     host = (u.hostname or "").lower()
     if not host:
         return "no host"
+    if host in ("metadata.google.internal",) or host.startswith("169.254."):
+        return f"metadata/private host {host} is never reachable"
     for pat in HARD_HOSTS:
         if re.match(pat, host):
+            if allow_local:
+                break
             return f"private/loopback host {host}"
     if u.username or u.password:
         return "credentials in url"
@@ -237,13 +281,17 @@ class Policy:
             return Decision(HARD_DENY, why, "hard")
         if capability in (CAP_READ, CAP_WRITE) and path is not None and (why := hard_check_path(path, self.home.root)):
             return Decision(HARD_DENY, why, "hard")
-        if capability == CAP_WEB and tool == "fetch_page" and (why := hard_check_url(resource)):
+        # every outbound URL — fetch, search, browser actions, downloads — goes through the same
+        # hard checks: private/loopback/metadata hosts and credentials-in-url are never reachable
+        # from an agent action unless the user opted into local development servers explicitly.
+        if capability in (CAP_WEB, CAP_BROWSER) and (
+                why := hard_check_url(resource, allow_local=bool(self.home.cfg.get("allow_localhost_web")))):
             return Decision(HARD_DENY, why, "hard")
         # 2. agent capability envelope (a sub-agent can only narrow, never widen)
         if agent_caps is not None and capability not in agent_caps:
             return Decision(DENY, f"agent lacks capability {capability}", "agent")
         # 3. web allowlist (soft, but explicit)
-        if capability == CAP_WEB and tool == "fetch_page" and self._data.get("web_allow"):
+        if capability in (CAP_WEB, CAP_BROWSER) and self._data.get("web_allow"):
             from urllib.parse import urlparse
             host = (urlparse(resource).hostname or "").lower()
             if not any(host == d or host.endswith("." + d) for d in self._data["web_allow"]):

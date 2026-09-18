@@ -33,6 +33,7 @@ DEFAULTS: Dict[str, Any] = {
     "watch_every_min": 30,
     "custom_providers": [],       # open door: any OpenAI-compatible endpoint
     "allow_outside_workspace": False,  # file tools may leave the workspace (off = boundary enforced)
+    "allow_localhost_web": False,      # web/browser tools may reach loopback (local dev servers only)
     "plan_infer_done": False,
     "objective_parallel": 2,      # max ready tasks run concurrently (only with --auto)
     "accept_unverified_done": True,  # tasks w/o checks may complete on a DONE: claim (recorded UNVERIFIED)
@@ -75,7 +76,7 @@ class RadHome:
             "memory", "memory/short", "memory/long/episodic",
             "memory/long/semantic", "memory/long/procedural",
             "memory/archive", "dna", "skills", "downloads",
-            "logs", "models", "keys",
+            "logs", "models", "keys", "workspace",
         ):
             (self.root / sub).mkdir(parents=True, exist_ok=True)
         try:
@@ -208,8 +209,17 @@ class RadHome:
         return self.root.joinpath(*parts)
 
     def workspace(self) -> Path:
+        """Where file/shell tools operate.
+
+        An explicit `workspace` setting wins. Otherwise RAD uses `~/.rad/workspace`
+        (created on demand) so a clone-and-run never writes into the repository or
+        whatever directory the user happened to be in.
+        """
         ws = self.cfg.get("workspace")
-        p = Path(ws).expanduser() if ws else Path.cwd()
+        if ws:
+            return Path(str(ws)).expanduser()
+        p = self.root / "workspace"
+        p.mkdir(parents=True, exist_ok=True)
         return p
 
     def log(self, name: str, text: str) -> None:

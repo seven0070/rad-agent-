@@ -221,9 +221,15 @@ class Memory:
         m1 = _SVO.search(a.lower())
         m2 = _SVO.search(b.lower())
         if m1 and m2 and m1.group(1) == m2.group(1) and m1.group(2) == m2.group(2):
-            oa, ob = set(tokenize(m1.group(3))), set(tokenize(m2.group(3)))
+            ta, tb = tokenize(m1.group(3)), tokenize(m2.group(3))
+            oa, ob = set(ta), set(tb)
             if oa and ob and not (oa & ob):
                 return True
+            # same shape, one slot differs: "on the blue shelf" vs "on the red shelf"
+            if len(ta) == len(tb) and len(ta) >= 2:
+                diff = [i for i, (x, y) in enumerate(zip(ta, tb)) if x != y]
+                if len(diff) == 1:
+                    return True
         return False
 
     # ------------------------------------------------------------ scan / recall
@@ -280,13 +286,19 @@ class Memory:
             e.path.write_text(e.to_file(), encoding="utf-8")
             self._invalidate()
 
-    def recall(self, query: str, k: int = 5) -> List[Entry]:
+    def recall(self, query: str, k: int = 5, scope: Optional[str] = None) -> List[Entry]:
+        """Relevant long-term memories. `scope` isolates a sub-agent's private memories:
+        entries tagged `scope:<other>` are invisible, untagged entries count as shared."""
         q = set(tokenize(query))
         if not q:
             return []
         now = time.time()
         scored: List[Tuple[float, Entry]] = []
         for e in self.scan():
+            if scope is not None:
+                scopes = [t for t in (e.tags or []) if t.startswith("scope:")]
+                if scopes and f"scope:{scope}" not in scopes:
+                    continue
             toks = set(tokenize(e.text))
             overlap = len(q & toks) / len(q)
             if overlap == 0 and e.tags and any(t in q for t in e.tags):
