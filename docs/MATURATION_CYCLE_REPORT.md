@@ -367,6 +367,82 @@ control-plane stage and does not justify designing v0.3.0.
 
 ---
 
+# Class A investigation — budget exhaustion → needs_user (2026-09-18)
+
+**Date:** 2026-09-18
+**Baseline:** `origin/main` `a40a5446885c443c7c8fb3a975ed5af0f4bca30d` (RW-060 evidence; package **0.2.3**)
+**Package:** `0.2.3` — **no bump**. Not v0.2.4. Not v0.3.0.
+**Architecture:** frozen. Needle stays optional/off. `max_plan_tasks` left at **16**.
+Default max-tools **UNCHANGED** (60).
+
+Investigate-first after live NIM 11B RW-058 / RW-059 / RW-060 all `needs_user` /
+FAIL with false DONE **0**. Parked suspects F-20260918-17 / F-20260918-18.
+No live NIM on this VM (optional after deterministic proof; not required).
+
+RW-058 / RW-059 / RW-060 rows are **not rewritten**.
+
+## Budget exhaustion path (from code)
+
+`Executor.run_action` charges then raises `BudgetExceeded` → `_drive` →
+`Controller._on_budget` (`rad/control/controller.py`):
+
+1. Does the controller check if the objective is already satisfiable? **Yes** —
+   `_objective_already_satisfied` re-runs `objective_checks` via `Verifier.run_check`.
+2. Inspect pending objective checks? **Yes** — `_close_already_satisfied` completes
+   OPEN tasks whose machine checks already pass (no model call, no DONE claim).
+3. Attempt verification? **Yes** if the graph is complete or objective checks pass
+   → fall through to `_verify_objective`. Otherwise **no** — `needs_user`.
+4. Attempt legitimate recovery at the budget boundary? **No extra recovery spend.**
+   Per-task recovery already ran during `_run_task`. With no remaining tool budget,
+   recovery cannot continue; that is not a skip of a still-affordable retry.
+5. Checkpoint correctly? **Yes** — `_finish` → `CheckpointManager.save` (`finish needs_user`).
+6. Distinguish budget exhausted vs incomplete vs potentially complete? **Yes** —
+   graph complete → verify; objective checks pass → supersede leftovers + verify;
+   else `needs_user`.
+7. Prematurely terminate recoverable state? **No** — status is `needs_user` not
+   `failed`; Scenario B resume with a raised budget continues remaining tasks.
+8. Does `needs_user` accurately represent state? **Yes** when checks are unmet.
+   When checks are met, status is `COMPLETED` / `VERIFIED` (Scenario A / F-20260918-03).
+
+## Parked suspects
+
+| id | claim | result |
+|---|---|---|
+| F-20260918-17 | fallback splits multiline objective **newlines** into spurious tasks | **Not confirmed.** `_fallback` splits on clause markers, not newlines. Live RW runs used the **llm** planner (brain present). |
+| F-20260918-18 | `ENVIRONMENT_FAILURE` misclass burns tool budget | **Not confirmed as Class A.** Unmet checks without env-tokens → VALIDATION/TOOL → `retry_with_hint`. `command not found` → ENVIRONMENT repair **by design**. RW-058 (2 attempts, 4 PENDING, no repair task) matches VALIDATION retry. |
+
+## Deterministic scenarios (no NIM)
+
+| scenario | setup | observed |
+|---|---|---|
+| **A** | multi-task; some complete; leftover planned work; tool budget dies; objective checks pass | `COMPLETED` / `VERIFIED`; leftovers `CANCELLED`; not `needs_user` solely because budget hit |
+| **B** | some complete; remaining checks unmet; budget dies | `needs_user` + checkpoint; **not** `failed`; resume after raising budget → `VERIFIED` |
+| **C** | budget dies; checks unmet or artifact invalid; model claims `DONE:` | `needs_user`; **not** `VERIFIED`; false DONE **0** |
+
+Tests: `tests/test_class_a_budget_investigation.py` (17). Full suite **345 passed**.
+
+## Class A / B / C
+
+| class | this investigation |
+|---|---|
+| **A** | **not proven. no patch.** F-17 / F-18 closed as not-confirmed. No v0.2.4. |
+| **B** | live RW-058/059/060 remain Class B (11B + tool budget, success criteria unmet). |
+| **C** | none new. Live NIM retest on this VM **BLOCKED** (no NVIDIA keys); not required after deterministic proof. |
+
+## Decision
+
+- **RAD defect demonstrated: NO**
+- **Patch required: NO**
+- Needle **OFF**. Cap **16** unchanged. Default tool budget **UNCHANGED**.
+- **Outcome A continues.** Not v0.3.0.
+
+## Evidence for v0.3.0
+
+**None.** Closing parked Class A suspects without a control-plane hole is not a
+v0.3.0 gap.
+
+---
+
 # Cycle 3 — v0.2.3 (2026-09-18)
 
 **Date:** 2026-09-18
