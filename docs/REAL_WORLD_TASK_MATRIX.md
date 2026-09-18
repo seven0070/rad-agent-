@@ -9,16 +9,80 @@ retest of that loop is **RW-065**. Plan-timeout resilience is **implemented as v
 **implemented as v0.3.2** (RW-067). Live NIM use of v0.3.2 is **RW-068** (PASS) and
 **RW-069** (FAIL). Path-aligned checks are **implemented as v0.4.0** (RW-070). Live
 NIM retest of v0.4.0 is **RW-071** (FAIL; theme 1 live-confirmed). Multi-file
-contracts under tight budgets are **implemented as v0.4.1** (RW-072). Do not
-rewrite RW-058–070. Scripted theme-2 RW-066 (F-27) is preserved.
+contracts under tight budgets are **implemented as v0.4.1** (RW-072). Live
+NIM retest of v0.4.1 is **RW-073** (FAIL; theme 1/2 live-confirmed; ASCII-tree
+obj-checks bare). ASCII-tree `package_dir` is **implemented as v0.4.2**
+(RW-074; theme-1 follow-up / Gen3 theme 3 slice A). Do not rewrite
+RW-058–072. Scripted theme-2 RW-066 (F-27) is preserved.
 
 Every `VERIFIED` / `completed` cell is from the control-plane verifier **and** a disk
 check (file exists / contents / hash). A model `DONE:` line is never enough.
 
 Status vocabulary: **PASS** | **FAIL** | **BLOCKED** | **NOT TESTED**.
 
-Live NIM retest of v0.4.0 (RW-071) is at the top, then scripted v0.4.1 (RW-072),
-then v0.4.0 (RW-070). RW-058–070 are **not rewritten**.
+Live NIM retest of v0.4.1 (RW-073) is at the top, then scripted v0.4.2
+(RW-074), then RW-071 / RW-072. RW-058–072 are **not rewritten**.
+
+# Live NIM retest of v0.4.1 (RW-073)
+
+Lane: operator production `rad objective run` on **v0.4.1** (tag `v0.4.1`,
+`387bd83a`). Needle `existing` / off. `max_plan_tasks` **16**. Default
+`Budget.tool_calls` **60** (this run used `--max-tasks 8 --max-tools 12`).
+RW-058–072 are **not rewritten**. **Not** an end-to-end PASS. Package **0.4.1**
+on the live run; this change bumps to **0.4.2** for ASCII-tree `package_dir`
+(does **not** claim live 11B text_analyzer@12 now PASS).
+
+Authoritative live facts: operator report for `obj_d8bd898a` /
+`/tmp/rad_prod_rw073_46da6971`.
+
+| id | Date | Category | Objective | #tasks | #actions | Tools | Result | Verification | Recovery | Failure class | Notes |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| RW-073 | 2026-09-18 IST 20:39:05–20:41:06 | coding (live NIM) — v0.4.1 text_analyzer retest vs RW-071 | production ASCII-tree `text_analyzer/` layout (analyzer.py, **exact 3-line** input.txt, summary.json, test_analyzer.py, README.md); stdlib; real tests; `--max-tasks 8 --max-tools 12`; Needle `existing` / off | `PLAN_CREATED` **source=llm** **attempts=2** (4 tasks, `fit=true`, `compacted=false`, `estimated_tools=8`); t_d4defdf3 RUNNING at stop (retry 3); later package tasks PENDING | tools 12/12 (`write_file` dominant; `run_shell` mkdir/`rm -rf`; unknown tool `DONE`); model calls 14/80; retries 2/6; wall ~63s reported / ~121s; process exit 2 | 12/12 exhausted | **FAIL** vs success criteria (`needs_user`); **NOT DONE**, **not VERIFIED** complete | First task machine checks **passed** (`file_exists` + `file_line_count` under `text_analyzer/`); overall FAILED on **actions** (shell error/block, then `DONE` tool error). Objective inferred checks **bare** (`json_valid summary.json`, `file_line_count input.txt`, `shell_ok python3 test_analyzer.py`) + LLM `file_min_bytes text_analyzer/README.md` | **PERMISSION_FAILURE** → `retry_with_hint` (mkdir already-exists then **`rm -rf` blocked**; not ENVIRONMENT / no Repair prerequisite). Attempt 2 sticky PERMISSION + fake tool `DONE` → `unknown tool: DONE`; machine checks still ✓. Attempt 3 cut mid-task at budget | **B** residual (11B/budget). Theme 1 disk/tasks **Y**; obj-checks **partial/bare** (ASCII-tree `package_dir` miss). Theme 2 **Y**. ASCII-tree Class A closed as v0.4.2 | Provider nvidia / `meta/llama-3.2-11b-vision-instruct`. Home `/tmp/rad_prod_rw073_46da6971`; `obj_d8bd898a`. Disk: workspace root **only** `text_analyzer/` (no root pollution). `input.txt` **PASS** 3-line sha256 `bf69eb737ca6f3949b5626701cb8472a2fc683e6b05e3101744eccd49dab629b`. Package `summary.json` **missing**. `analyzer.py` stdlib with import-time side effect. `test_analyzer.py` unittest **no count assertions**. README ~479 B. False DONE **0**. Caps unchanged. Needle OFF. |
+
+### RW-073 vs RW-071 (same 11B / tools=12 control)
+
+| | RW-071 (v0.4.0) | RW-073 (v0.4.1) |
+|---|---|---|
+| home | `/tmp/rad_prod_rw071_7811425c` | `/tmp/rad_prod_rw073_46da6971` |
+| objective id | `obj_d662224b` | `obj_d8bd898a` |
+| package | 0.4.0 | **0.4.1** |
+| `--max-tasks` / `--max-tools` | 8 / 12 | 8 / 12 |
+| Needle | `existing` / off | `existing` / off |
+| PLAN source | **llm** attempts **1** (6 tasks) | **llm** attempts **2** (**4 tasks**) |
+| Path-alignment (disk/tasks) | **Y** | **Y** |
+| Objective checks | path-aligned LLM paths | contracts **merged** (`json_valid` / `file_line_count` / `shell_ok`) but inferred paths **bare** |
+| mkdir / ENVIRONMENT thrash | **Y** — ENVIRONMENT → Repair prerequisite | **N** — PERMISSION after `rm -rf` block; **no** repair-insert thrash |
+| Root pollution | NO | NO |
+| `input.txt` | wrong 1-line `9bf9660f…` | **correct 3-line `bf69eb73…`** |
+| Package `summary.json` | present, empty/invalid | **missing** |
+| tools | 12/12 | 12/12 |
+| false DONE | **0** | **0** |
+| Theme 1 | PASS signal | PASS signal (disk/tasks); objective infer bare |
+| Theme 2 | (pre-patch baseline) | contracts + mkdir-class fix **live** |
+| Residual class | B | **B** |
+
+| metric | value |
+|---|---|
+| Package (live run) | **0.4.1** (tag `v0.4.1` / `387bd83a`) |
+| Theme 1 (path-aligned checks) | **Y** on disk + task checks; **partial** on merged objective_checks (ASCII-tree `infer_package_dir` → None) |
+| Theme 2 (multi-file contracts) | **Y** — `json_valid` / `file_line_count` / `shell_ok` present; mkdir already-exists is PERMISSION not ENVIRONMENT; correct 3-line input |
+| Residual | **Class B** — missing `summary.json`, weak tests, tools 12/12 on permission retries + fake `DONE` |
+| Class A ASCII-tree package_dir | **confirmed** (deterministic); patched as v0.4.2. Did **not** cause this live stop (budget cut before objective gate) |
+| RW-058–072 | preserved (not rewritten) |
+| Default max-tools / max-tasks | **unchanged** (this run used `--max-tasks 8 --max-tools 12` only) |
+| Needle | **OFF** (`existing`) |
+| False completion | **0** |
+| Recommendation | Record **FAIL**. Theme 1/2 hold. Do not claim live 11B@12 PASS. Theme 3 scoped; slice A ships as v0.4.2 (ASCII-tree `package_dir`). Remaining longer-horizon slices stay planned. |
+
+# Gen3 — v0.4.2 ASCII-tree package_dir (RW-074)
+
+Lane: deterministic / scripted on **v0.4.2**. Needle `existing` / off.
+`max_plan_tasks` **16**. Default `Budget.tool_calls` **60**. RW-058–073 are
+**not rewritten**. Package **0.4.1 → 0.4.2**. Live NIM not re-run.
+
+| id | Date | Category | Objective | #tasks | #actions | Tools | Result | Verification | Recovery | Failure class | Notes |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| RW-074 | 2026-09-18 | coding (scripted) — ASCII-tree `package_dir` | RW-073 shape: ASCII-tree `text_analyzer/` + `├── file`; LLM plan has prefixed task checks + `file_min_bytes` README; inferred contracts would have been bare `summary.json` / `input.txt` | 1 planned (LLM) | n/a (plan-time alignment) | default **60** unchanged | **PASS** (inferred objective contracts join to `text_analyzer/`; LLM root-only checks joined; dash-list / `docs/` / single child / word_counter unchanged) | objective checks **path-aligned** `text_analyzer/summary.json`, `text_analyzer/input.txt`, `python3 text_analyzer/test_analyzer.py`; fallback *tasks* still check-less (F-17) | n/a (plan-time; not ENVIRONMENT) | **A** (theme-1 follow-up / Gen3 theme 3 slice A; live 11B quality stays **B**) | Tests `test_ascii_tree_package_dir_*`. False DONE **0**. Check *kinds* not remapped (F-26). Needle OFF. Caps unchanged. Live NIM not required. RW-073 Class B live facts preserved. |
 
 # Live NIM retest of v0.4.0 (RW-071)
 
