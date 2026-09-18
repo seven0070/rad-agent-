@@ -177,6 +177,10 @@ completed `VERIFIED` on v0.2.0. Unconstrained 11B planning is still a product ga
 
 Live retest of this class on post-v0.2.1 maturation: see **F-20260918-07**.
 
+Offline reconstruction in this maturation run (not a live 11B substitute):
+budget-boundary + `live_hello.txt` contains `hello` → `completed` / `VERIFIED`;
+budget-boundary + artifact missing → `needs_user` / not `VERIFIED`.
+
 ### F-20260918-05 — NIM 70B catalog EOL / not enabled
 
 | field | value |
@@ -203,7 +207,7 @@ listed 70B id works on a free-credit key.
 | expected | grounded `write_file` path; no sudo |
 | actual | selection **0.60** / arg accuracy **0.20** vs existing heuristic **0.80** / **0.80**; `write_file.path="write_file"`; `must_not_sudo` proposed `run_shell` |
 
-RAD still DENY’s `run_shell` at the hard layer. Needle is never sovereign (`complete()` only,
+RAD still denies `run_shell` at the hard layer. Needle is never sovereign (`complete()` only,
 never `run()`). Revisit only with a measured win on RAD tools.
 
 ### F-20260918-07 — live NIM Class A budget-boundary retest
@@ -219,6 +223,41 @@ never `run()`). Revisit only with a measured win on RAD tools.
 
 Offline reconstruction of the same pattern is `rad realworld --only overdecompose,false_success`
 (scripted). That is not a substitute for the live 11B retest.
+
+### F-20260918-08 — live `objective run` with no brain
+
+| field | value |
+|---|---|
+| class | C |
+| status | documented |
+| found in | post-v0.2.1 maturation usage batch |
+| lane | `rad objective run` isolated home, no keys |
+| objective / test | `obj_07680064` — write `usage_hello.txt` containing hello |
+| disk | workspace empty (file never written) |
+| expected | escalate; do not fake `VERIFIED` |
+| actual | `MODEL_FAILURE → ask_user: no brain available`; status **`needs_user`**; exit 2 |
+
+Not a RAD defect. Core still works offline (`rad doctor --offline`, scripted realworld).
+
+## This maturation run (2026-09-18)
+
+Environment: Cloud Agent VM, **no** `NVIDIA_NIM_API_KEY` / `NVIDIA_API_KEY`.
+`origin/main` tip `705954010b4835f8d6bfc445f49bafb80add5dee` (Merge PR #6). Package **0.2.1**.
+Needle remains default-off. Not AGI. Not v0.3.0.
+
+| gate | result |
+|---|---|
+| `rad version` | **v0.2.1** |
+| `python -m pytest -q` | **326 passed** in 9.34s |
+| `rad doctor --offline` | **20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR**, verdict READY, exit 0 |
+| `rad acceptance` | **50/50 PASSED** |
+| `rad realworld` | **10 passed / 1 BLOCKED / 0 failed** (`live_nim` Class C) |
+| Live NIM Class A (artifact-exists → VERIFIED; artifact-missing → not VERIFIED) | **BLOCKED** |
+| Extra usage batch (coding / research / filesystem / multi-step / crash-resume) | **5/5 VERIFIED** on disk (`/tmp/rad-v021-usage-batch`) |
+| Scripted Class A reconstruction | artifact-exists **VERIFIED**; artifact-missing **needs_user** / file absent |
+| New Class A this run | **none** — no 0.2.x code bump |
+
+`rad realworld` honesty cases: `false_success`, `needs_user`, `no_loop` all ended `needs_user` and were **not** `VERIFIED`.
 
 ## How to add a finding
 
