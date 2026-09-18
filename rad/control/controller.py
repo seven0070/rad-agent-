@@ -467,14 +467,48 @@ class Controller:
             # The latter is recorded honestly as UNVERIFIED on the task.
             task.transition(TaskStatus.COMPLETED, ver["summary"][:300] or "done")
             log.emit(E.TASK_COMPLETED, obj.id, task.id, verified=ver["status"] == VERIFIED)
+            self._record_agent_run(obj, task, reply, "done", ver)
             self._say(f"  ✓ {task.text}  [{ver['status']}]")
             return
 
         task.transition(TaskStatus.FAILED, f"verification {ver['status']}: {ver['summary'][:200]}")
         log.emit(E.TASK_FAILED, obj.id, task.id, verification=ver["status"], summary=ver["summary"][:400])
+        self._record_agent_run(obj, task, reply or error, "failed", ver)
         with lock:
             self._recover(obj, graph, task, observer, recovery, repairs, log, verification=ver,
                           budgets=budgets, executor=executor)
+
+    def _record_agent_run(self, obj: Objective, task: Task, output: str, status: str,
+                          verification: Optional[Dict[str, Any]] = None) -> None:
+        """Tasks delegated to a specialist agent leave a run record in the agent registry.
+
+        The control plane still owns execution — this is the audit trail that says *which*
+        agent did the work, under which capability envelope, with what result, so the team
+        history (`rad agents runs`, `/v1/agents`) reflects the objective that used it.
+        """
+        if not task.agent:
+            return
+        try:
+            import uuid as _uuid
+
+            from rad.agents import AgentRegistry, AgentRun
+            spec = self._agent_spec(task)
+            if spec is None:
+                return
+            obs = [o for o in Observer(self.store.dir(obj.id)).for_task(task.id)]
+            ver = verification or {}
+            run = AgentRun(id="run_" + _uuid.uuid4().hex[:8], agent=spec.id, role=spec.role,
+                           objective_id=obj.id, task_id=task.id, input=task.text[:300],
+                           status=status, output=str(output or "")[:800],
+                           tool_calls=len(obs),
+                           denied=[o.tool for o in obs if o.status in ("declined", "denied", "blocked")],
+                           provider=str(getattr(self, "last_provider", "") or ""),
+                           evidence=[{"task_verification": ver.get("status", ""),
+                                      "summary": str(ver.get("summary", ""))[:200],
+                                      "caps": list(spec.caps), "attempts": int(task.attempts)}])
+            AgentRegistry(self.home).save_run(run)
+        except Exception:
+            pass                                        # an audit record must never break a run
 
     # ------------------------------------------------------------ recovery
     def _recover(self, obj: Objective, graph: TaskGraph, task: Task, observer: Observer,
@@ -548,14 +582,23 @@ class Controller:
                           max_tasks=int(self.home.cfg.get("max_plan_tasks", 16) or 16))
             new = planner.replan(obj, graph, task, d.hint or d.reason)
             if new:
-                for t in graph.tasks.values():
-                    if t.status in TaskStatus.OPEN and t.id != task.id:
+                # superseded work is *recorded* (CANCELLED + deactivated), never silently dropped:
+                # the task keeps its history, its failure reason and its events, but it no longer
+                # counts as outstanding work for this objective.
+                superseded = [t for t in graph.tasks.values()
+                              if (t.status in TaskStatus.OPEN or t.id == task.id) and t.id != task.id] \
+                    + [task]
+                for t in superseded:
+                    if t.status in TaskStatus.OPEN or t.id == task.id:
                         t.transition(TaskStatus.CANCELLED, "superseded by replan")
-                task.transition(TaskStatus.CANCELLED, "superseded by replan")
+                        t.active = False
+                        log.emit(E.TASK_STATUS, obj.id, t.id, status=TaskStatus.CANCELLED,
+                                 superseded=True, reason="superseded by replan")
                 for t in new:
                     graph.add(t)
                     log.emit(E.TASK_CREATED, obj.id, t.id, text=t.text, replan=True)
-                log.emit(E.REPLAN, obj.id, task.id, new_tasks=[t.id for t in new])
+                log.emit(E.REPLAN, obj.id, task.id, new_tasks=[t.id for t in new],
+                         superseded=[t.id for t in superseded if t.id != task.id])
                 return
             d = Decision("ask_user", d.failure_class, "replan produced no usable plan — " + d.reason)
         if d.strategy == "ask_user":

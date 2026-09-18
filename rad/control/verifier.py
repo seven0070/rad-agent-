@@ -220,6 +220,28 @@ class Verifier:
                     return {**base, "ok": True, "detail": f"{p} is valid JSON"}
                 except Exception as e:
                     return {**base, "ok": False, "detail": f"{p} invalid JSON: {e}"}
+            if c.kind in ("json_field", "json_min_len"):
+                p = self._p(a["path"])
+                doc = json.loads(p.read_text(encoding="utf-8")) if p.exists() else None
+                if doc is None:
+                    return {**base, "ok": False, "detail": f"{p} missing or unreadable"}
+                if c.kind == "json_min_len":
+                    n = len(doc) if hasattr(doc, "__len__") else 0
+                    want = int(a.get("n", 1))
+                    return {**base, "ok": n >= want, "detail": f"{p} has {n} item(s), min {want}"}
+                node = doc
+                for part in str(a["key"]).split("."):
+                    if isinstance(node, dict) and part in node:
+                        node = node[part]
+                    elif isinstance(node, list) and part.isdigit() and int(part) < len(node):
+                        node = node[int(part)]
+                    else:
+                        return {**base, "ok": False, "detail": f"{p}: key '{a['key']}' not found"}
+                if "equals" in a:
+                    ok = node == a["equals"]
+                    return {**base, "ok": ok, "detail": f"{p}: {a['key']} == {a['equals']!r}: {ok}"}
+                ok = bool(node) if a.get("truthy", True) else True
+                return {**base, "ok": ok, "detail": f"{p}: {a['key']} = {str(node)[:80]}"}
             if c.kind == "shell_ok":
                 code, out = self._sh(a["command"])
                 return {**base, "ok": code == 0, "detail": f"exit={code} {out[-120:]}"}

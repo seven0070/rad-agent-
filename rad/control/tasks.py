@@ -75,6 +75,8 @@ class Check:
       shell_ok      {command}          exit code 0
       shell_output  {command, contains}
       json_valid    {path}
+      json_field    {path, key, [equals], [truthy]}   dotted key path, optional exact value
+      json_min_len  {path, n}          JSON list/dict/string length at least n
       reply_matches {pattern}          regex against the task's final reply
       llm_judge     {question}         model-graded — records verdict as UNVERIFIED-BY-MACHINE
       agent_review  {criteria,[agent]} independent reviewer agent (read-only tools); never VERIFIED alone

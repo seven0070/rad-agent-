@@ -925,6 +925,21 @@ def cmd_regression(args) -> int:
     return 0 if rep["verdict"]["pass"] else 2
 
 
+def cmd_realworld(args) -> int:
+    """The four end-to-end acceptance tests: research, coding, multi-agent, failure recovery."""
+    from rad.realworld import RealWorldSuite
+    home = _home(args)
+    which = [w.strip() for w in (args.only or "").split(",") if w.strip()] or None
+    info("  running whole goals through the real control plane (isolated home, real tools, no model "
+         "calls needed)…")
+    rep = RealWorldSuite(home, keep=args.keep).run(which)
+    if args.json:
+        print(json.dumps(rep, indent=2, default=str))
+    else:
+        print(RealWorldSuite.render(rep))
+    return 0 if rep.get("ok") else 2
+
+
 def cmd_status(args) -> int:
     """One screen: what RAD owns right now — objectives, jobs, memory, providers, storage."""
     from rad.control.objectives import ObjectiveStore
@@ -1015,7 +1030,7 @@ def cmd_config(args) -> int:
     """Inspect and change RAD's configuration (the same file the runtime reads)."""
     home = _home(args)
     action = args.cfg_action
-    path = home.root / "config.json"
+    path = home.config_path
     if action == "path":
         print(str(path))
         return 0
@@ -1034,7 +1049,7 @@ def cmd_config(args) -> int:
             fail("usage: rad config unset <key>")
             return 1
         home.cfg.pop(args.key, None)
-        home.save_cfg() if hasattr(home, "save_cfg") else _save_cfg(home)
+        home.save_config()
         ok(f"{args.key} removed")
         return 0
     if action == "set":
@@ -1046,7 +1061,7 @@ def cmd_config(args) -> int:
         except Exception:
             val = args.value
         home.cfg[args.key] = val
-        home.save_cfg() if hasattr(home, "save_cfg") else _save_cfg(home)
+        home.save_config()
         ok(f"{args.key} = {json.dumps(val) if not isinstance(val, str) else val}")
         return 0
     data = dict(home.cfg)
@@ -1055,12 +1070,6 @@ def cmd_config(args) -> int:
     print(json.dumps(data, indent=2, ensure_ascii=False, default=str))
     print(col.dim(f"  file: {path}"))
     return 0
-
-
-def _save_cfg(home: RadHome) -> None:
-    path = home.root / "config.json"
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(home.cfg, indent=2, ensure_ascii=False))
 
 
 def cmd_security(args) -> int:
@@ -1446,6 +1455,14 @@ def build_parser() -> argparse.ArgumentParser:
     rg.add_argument("--label", default=None)
     rg.add_argument("-n", type=int, default=15)
     rg.set_defaults(fn=cmd_regression)
+
+    rwp = sub.add_parser("realworld", help="end-to-end acceptance tests: research, coding, "
+                                           "multi-agent, failure recovery")
+    rwp.add_argument("--only", default=None,
+                     help="comma list: research,coding,multi_agent,failure")
+    rwp.add_argument("--json", action="store_true")
+    rwp.add_argument("--keep", action="store_true", help="keep the temporary workspaces")
+    rwp.set_defaults(fn=cmd_realworld)
 
     stp = sub.add_parser("status", help="one screen: objectives, memory, brain, jobs, background, schema")
     stp.add_argument("--json", action="store_true")

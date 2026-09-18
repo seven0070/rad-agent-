@@ -81,6 +81,17 @@ class RegressionSystem:
                 "failures": [r["id"] for r in rep.get("results", []) if not r["success"]],
                 "results": rep.get("results", [])}
 
+    def _realworld(self) -> Dict[str, Any]:
+        """The four end-to-end acceptance tests (research, coding, multi-agent, failure recovery)."""
+        from rad.realworld import RealWorldSuite
+        rep = RealWorldSuite(self.home).run()
+        return {"ok": rep["ok"], "passed": rep["passed"], "total": rep["total"],
+                "failures": [t["name"] for t in rep["tests"] if not t.get("passed")],
+                "detail": {t["name"]: t.get("problems", [])[:2] for t in rep["tests"]
+                           if not t.get("passed")},
+                "seconds": round(sum(t.get("seconds", 0) for t in rep["tests"]), 2),
+                "report": rep.get("report")}
+
     def _longhorizon(self, sample: int) -> Dict[str, Any]:
         from rad.longhorizon import LongHorizonBenchmark
         return LongHorizonBenchmark(self.home).run(sample=sample, label=f"regression-{int(time.time())}")
@@ -100,6 +111,7 @@ class RegressionSystem:
                 files = list(TEST_GROUPS[g])
             report["groups"][g] = self._pytest(files)
         if benchmarks:
+            report["realworld"] = self._realworld()
             report["benchmark"] = {
                 "agent_sample": self._lab("bank:all", sample=max(1, sample // 2), label="reg-agent"),
                 "long_horizon": self._longhorizon(sample=max(1, sample)),
@@ -133,6 +145,10 @@ class RegressionSystem:
             problems.append(f"long-horizon objective completion {lh['objective_completion_rate']}")
         if lh.get("false_completion_rate"):
             problems.append(f"false completion rate {lh['false_completion_rate']}")
+        rw = report.get("realworld") or {}
+        if rw and not rw.get("ok"):
+            problems.append(f"real-world: {rw.get('passed')}/{rw.get('total')} passed — "
+                            + "; ".join(f"{k}: {v}" for k, v in (rw.get("detail") or {}).items()))
         return {"pass": not problems, "problems": problems}
 
     # ------------------------------------------------------------------ history / compare
@@ -169,6 +185,11 @@ class RegressionSystem:
                 regressions.append("agent lab safety dropped")
             if (c_agent.get("honesty") or 0) < (b_agent.get("honesty") or 0):
                 regressions.append("agent lab honesty dropped")
+        b_rw = base.get("realworld") or {}
+        c_rw = cand.get("realworld") or {}
+        if c_rw and b_rw and c_rw.get("passed", 0) < b_rw.get("passed", 0):
+            regressions.append(f"real-world tests {b_rw.get('passed')}/{b_rw.get('total')} → "
+                               f"{c_rw.get('passed')}/{c_rw.get('total')}")
         b_lh = ((base.get("benchmark") or {}).get("long_horizon") or {}).get("metrics") or {}
         c_lh = ((cand.get("benchmark") or {}).get("long_horizon") or {}).get("metrics") or {}
         for key, lower_better in (("objective_completion_rate", False), ("correctness", False),
@@ -196,6 +217,12 @@ class RegressionSystem:
                 mark = col.green("ok") if g.get("ok") else col.red("FAIL")
                 lines.append(f"  {name:<12} {mark}  {g.get('passed')} passed, {g.get('failed')} failed  "
                              f"{g.get('seconds')}s")
+        rw = report.get("realworld") or {}
+        if rw:
+            colour = col.green if rw.get("ok") else col.red
+            summary = f"{rw.get('passed')}/{rw.get('total')} passed"
+            lines.append(f"  {'real-world':<12} {colour(summary)}  {rw.get('seconds')}s"
+                         + ("" if rw.get("ok") else "  " + str(rw.get("failures"))))
         b = report.get("benchmark") or {}
         agent = b.get("agent_sample") or {}
         if agent:

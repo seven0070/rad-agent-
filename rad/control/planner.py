@@ -20,7 +20,8 @@ For EVERY task give machine-checkable checks that prove it was done. Prefer chec
 
 Check kinds (exactly these):
   file_exists {{"path"}}            file_min_bytes {{"path","n"}}      file_contains {{"path","text"}}
-  json_valid {{"path"}}             shell_ok {{"command"}}            shell_output {{"command","contains"}}
+  json_valid {{"path"}}             json_field {{"path","key"}}       json_min_len {{"path","n"}}
+  shell_ok {{"command"}}            shell_output {{"command","contains"}}
   reply_matches {{"pattern"}}       (regex on the agent's final reply — weakest; use only when nothing else fits)
   agent_review {{"criteria":[...]}} (independent read-only reviewer agent — use for quality of prose/code, IN ADDITION to a file check)
 
@@ -106,6 +107,8 @@ class Planner:
             if not text:
                 continue
             t = Task.new(oid, text, optional=bool(it.get("optional", False)))
+            # capability selection: an optional specialist agent can own a task (rad.agents roles)
+            t.agent = str(it.get("agent") or "").strip()
             idmap[str(it.get("id", t.id))] = t.id
             t.checks = _checks(it.get("checks") or [])
             t._raw_deps = [str(x) for x in (it.get("depends_on") or [])]  # type: ignore[attr-defined]
