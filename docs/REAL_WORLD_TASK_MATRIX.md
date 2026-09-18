@@ -20,16 +20,85 @@ mkdir File-exists action noise confirmed Class A). mkdir already-exists action
 noise is **implemented as v0.4.4** (RW-078; Gen3 theme 3 slice C). Live NIM retest
 of v0.4.4 is **RW-079** (FAIL; mkdir File-exists **not live-hit**; premature-test
 ENVIRONMENT confirmed Class A). Premature-test ENVIRONMENT is **implemented as
-v0.4.5** (RW-080; Gen3 theme 3 slice D).
-Do not rewrite RW-058–078. Scripted theme-2 RW-066 (F-27) is preserved.
+v0.4.5** (RW-080; Gen3 theme 3 slice D). Live NIM retest of v0.4.5 is **RW-081**
+(FAIL; mkdir File-exists **live Y**; premature-test ENVIRONMENT **not live-hit**;
+pip/echo + root pollution residual). Pip thrash + root pollution Class A is
+**NOT CONFIRMED** (RW-082; stay **0.4.5**).
+Do not rewrite RW-058–080. Scripted theme-2 RW-066 (F-27) is preserved.
 
 Every `VERIFIED` / `completed` cell is from the control-plane verifier **and** a disk
 check (file exists / contents / hash). A model `DONE:` line is never enough.
 
 Status vocabulary: **PASS** | **FAIL** | **BLOCKED** | **NOT TESTED**.
 
-Live NIM retest of v0.4.4 (RW-079) is at the top, then scripted v0.4.5
-(RW-080), then RW-077 / RW-078. RW-058–078 are **not rewritten**.
+Live NIM retest of v0.4.5 (RW-081) is at the top, then scripted RW-082
+(pip/root-pollution investigation), then RW-079 / RW-080. RW-058–080 are
+**not rewritten**.
+
+# Live NIM retest of v0.4.5 (RW-081)
+
+Lane: operator production `rad objective run` on **v0.4.5** (tag `v0.4.5`,
+`32e9fe87`). Needle `existing` / off. `max_plan_tasks` **16**. Default
+`Budget.tool_calls` **60** (this run used `--max-tasks 8 --max-tools 12`).
+RW-058–080 are **not rewritten**. **Not** an end-to-end PASS. Package **0.4.5**
+on the live run **and** this branch (no bump; pip/root-pollution Class A **NOT
+CONFIRMED**). Does **not** claim live 11B text_analyzer@12 now PASS.
+
+Authoritative live facts: operator report for `obj_b6d32fcc` /
+`/tmp/rad_prod_rw081_5a76b128`.
+
+| id | Date | Category | Objective | #tasks | #actions | Tools | Result | Verification | Recovery | Failure class | Notes |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| RW-081 | 2026-09-18 IST 22:28:43–22:30:12 | coding (live NIM) — v0.4.5 text_analyzer retest vs RW-079 | production ASCII-tree `text_analyzer/` layout (analyzer.py, **exact 3-line** input.txt, summary.json, test_analyzer.py, README.md); stdlib; real tests; `--max-tasks 8 --max-tools 12`; Needle `existing` / off | `PLAN_CREATED` **source=llm** **attempts=2** (4 tasks, **no repair**, `fit=true`, `compacted=false`, `estimated_tools=8`); t_930abfbd Create directory+input **COMPLETED / VERIFIED**; t_99bd2247 Write analyzer.py **RUNNING** at stop; Write test **PENDING**; README **COMPLETED** (already-satisfied) | tools 12/12 (`write_file`×6, `run_shell`×6 — **0** invented `DONE`; pip `-r` **attempted**×1 error); model calls 9/80; retries 0/6; wall ~89s / spent ≈41.5s; process exit 2 | 12/12 exhausted | **FAIL** vs success criteria (`needs_user`); **NOT DONE**, **not VERIFIED** complete | First task machine checks **passed**; actions **ok=true** despite 1 mkdir File-exists error (8 actions, 1 error) → **VERIFIED**. Objective checks **all package-joined** under `text_analyzer/` (3 checks; 0 bare). Second task never reached verify | **none** (retries=0). No ENVIRONMENT_FAILURE. No Repair-prerequisite. pip `-r` error present but budget stop before verify | **B** residual (11B/budget / second-task pip+echo). Theme 1 ASCII-tree obj-checks **Y**. Theme 2 **Y**. mkdir File-exists Class A **live: Y**. Premature-test ENVIRONMENT Class A **live: N**. Pip/root-pollution Class A **NOT CONFIRMED** (F-44 / RW-082) | Provider nvidia / `meta/llama-3.2-11b-vision-instruct`. Home `/tmp/rad_prod_rw081_5a76b128`; `obj_b6d32fcc`. Disk: workspace root `text_analyzer/` **+** stray **`analyzer.py`** (echo redirect). `input.txt` **PASS** 3-line sha256 `bf69eb737ca6f3949b5626701cb8472a2fc683e6b05e3101744eccd49dab629b`. Package `summary.json` **`{}` valid, empty**. `test_analyzer.py` **SyntaxError**. README 393 B. False DONE **0**. Caps unchanged. Needle OFF. |
+
+### RW-081 vs RW-079 (same 11B / tools=12 control)
+
+| | RW-079 (v0.4.4) | RW-081 (v0.4.5) |
+|---|---|---|
+| home | `/tmp/rad_prod_rw079_803109d5` | `/tmp/rad_prod_rw081_5a76b128` |
+| objective id | `obj_a0781a42` | `obj_b6d32fcc` |
+| package | 0.4.4 | **0.4.5** |
+| `--max-tasks` / `--max-tools` | 8 / 12 | 8 / 12 |
+| Needle | `existing` / off | `existing` / off |
+| PLAN source | **llm** attempts **1** (5 tasks + **repair**) | **llm** attempts **2** (4 tasks, **no repair**) |
+| Path-alignment (disk/tasks) | **Y** | **Y** |
+| Objective checks | **all package-joined** `text_analyzer/…` (6; 0 bare) | **all package-joined** `text_analyzer/…` (3; 0 bare) |
+| mkdir File-exists | **N** — mkdir **succeeded** (path not exercised) | **Y** → action-noise → **VERIFIED** |
+| Recovery | **ENVIRONMENT_FAILURE** → **repair** (premature test) | **none** (retries=0) |
+| Root pollution | NO | **Y** (root `analyzer.py` from `echo >`) |
+| `input.txt` | correct 3-line `bf69eb73…` | **same** correct 3-line `bf69eb73…` |
+| Package `summary.json` | valid JSON, wrong counts | **`{}` valid, empty** |
+| tools | 12/12 (`write_file`×6, `run_shell`×6; **0** pip, **0** invented DONE) | 12/12 (`write_file`×6, `run_shell`×6; pip `-r`×1 error; **0** invented DONE) |
+| false DONE | **0** | **0** |
+| Theme 1 | PASS signal (disk/tasks/obj-checks) | **PASS signal (disk/tasks/obj-checks)** |
+| Theme 2 | contracts hold; pip/DONE still **0** | contracts hold; 0 invented DONE; pip `-r` attempted, no ENVIRONMENT repair |
+| Residual class | **B** (+ premature-test ENVIRONMENT Class A → v0.4.5) | **B** (pip/echo thrash + quality; mkdir live Y; premature-test live N) |
+
+| metric | value |
+|---|---|
+| Package (live run) | **0.4.5** (tag `v0.4.5` / `32e9fe87`) |
+| Theme 1 (path-aligned checks) | **Y** on disk + task checks **and** merged objective_checks (ASCII-tree `package_dir` **still Y**) |
+| Theme 2 (multi-file contracts) | **Y** — package-joined checks; correct 3-line input |
+| Residual | **Class B** — pip/echo budget burn under tools=12; root `analyzer.py` pollution; empty `summary.json`; SyntaxError test; analyzer task starved |
+| Class A pip/DONE first-task thrash | **live-consistent** (0 invented DONE). pip `-r` attempted×1; **no** ENVIRONMENT→repair (budget stop before verify). Do not re-litigate v0.4.3 |
+| Class A mkdir File-exists actions | **live Y** — first live confirm in this series. Task **VERIFIED** despite File-exists action error (v0.4.4 win) |
+| Class A premature-test ENVIRONMENT | **not live-hit** (no early `python …/test_*.py`; 0 ENVIRONMENT repair). Unit RW-080 remains the evidence. Do not regress |
+| Class A pip thrash + root pollution | **NOT CONFIRMED** (RW-082 / F-44). Stay **0.4.5**. No product bump |
+| RW-058–080 | preserved (not rewritten) |
+| Default max-tools / max-tasks | **unchanged** (this run used `--max-tasks 8 --max-tools 12` only) |
+| Needle | **OFF** (`existing`) |
+| False completion | **0** |
+| Recommendation | Record **FAIL**. mkdir File-exists **live-confirmed**. Do not claim live 11B@12 PASS. Pip/root-pollution is Class B. Multi-step checkpoint stays planned. |
+
+# Investigation — pip thrash + root pollution (RW-082)
+
+Lane: deterministic / scripted on **v0.4.5**. Needle `existing` / off.
+`max_plan_tasks` **16**. Default `Budget.tool_calls` **60**. RW-058–081 are
+**not rewritten**. Package stays **0.4.5** (no bump). Live NIM not re-run.
+
+| id | Date | Category | Objective | #tasks | #actions | Tools | Result | Verification | Recovery | Failure class | Notes |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| RW-082 | 2026-09-18 | investigation (scripted; no NIM) | RW-081 shape: ASCII-tree `text_analyzer/`; root `echo > analyzer.py` vs package checks; pip `-r` missing; mkdir File-exists | 2 planned (LLM) | write package + mkdir noise; pip `-r` + echo root; root-only write counterfactual | default **60** unchanged | **no RAD defect**; pip/root-pollution Class A **NOT CONFIRMED** | package checks **not** satisfied by root `analyzer.py`; package file **unchanged** when echo lands at root; empty `{}` + missing json_field **not** VERIFIED; mkdir File-exists still VERIFIED | pip `-r` missing → TOOL **not** Repair prerequisite; budget stop mid-pip/echo → `needs_user` without ENVIRONMENT repair | **NONE** (not A) | Tests `test_pip_root_pollution_investigation.py`. False DONE **0**. F-17 / F-26 preserved. Path-aligned, multifile, ASCII-tree, pip/DONE, mkdir, premature-test preserved. Needle OFF. Caps unchanged. **No patch. No v0.4.6.** |
 
 # Live NIM retest of v0.4.4 (RW-079)
 
