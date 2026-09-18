@@ -1719,6 +1719,20 @@ python3 -m pytest -q tests/test_pip_root_pollution_investigation.py
 # root write ≠ package VERIFIED; echo redirect not joined; pip -r ≠ ENVIRONMENT; false DONE 0
 ```
 
+| gate | result |
+|---|---|
+| `python3 -m pytest -q` | **519 passed** in 11.05s |
+| `rad doctor --offline` | READY — 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR (`RAD_HOME=/tmp/rad-rw081-gate`) |
+| `rad acceptance` | **50/50 PASSED** (`/tmp/rad-rw081-gate/acceptance/20260918-171326_gate.json`) |
+| `rad realworld` | **10 passed / 1 BLOCKED / 0 failed** (`live_nim` BLOCKED; `/tmp/rad-rw081-rw/realworld/20260918-171327_realworld.json`) |
+| Package | **0.4.5** (no bump) |
+| RW-058–080 | preserved |
+| 16-task cap | **UNCHANGED** |
+| Default tool budget | **UNCHANGED** (60) |
+| Needle | **OFF** (`existing`) |
+| False completion | **0** |
+| Live NIM this patch | **BLOCKED** (no NVIDIA keys) — not a live PASS claim for RW-081 |
+
 ## How to add a finding
 
 1. Reproduce with disk checks (file exists / hash / contents). Quote status + verification, not model prose.

@@ -85,15 +85,14 @@ F-20260918-44 (not A). Theme-3 measured win: mkdir File-exists **live Y**.
 ## Quality gates (this branch)
 
 Isolated homes `/tmp/rad-rw081-gate` (doctor, acceptance) and `/tmp/rad-rw081-rw` (realworld).
-Gate numbers are filled after the suite actually runs.
 
 | gate | result |
 |------|--------|
-| `rad version` | **PASS** v0.4.5 (expected; filled after run) |
-| `python3 -m pytest -q` | pending |
-| `rad doctor --offline` | pending |
-| `rad acceptance` | pending |
-| `rad realworld` | pending |
+| `rad version` | **PASS** v0.4.5 |
+| `python3 -m pytest -q` | **PASS** 519 passed in 11.05s |
+| `rad doctor --offline` | **PASS** 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR, verdict READY, exit 0 |
+| `rad acceptance` | **PASS** 50/50 — `/tmp/rad-rw081-gate/acceptance/20260918-171326_gate.json` |
+| `rad realworld` | **PASS** 10/11 + 1 BLOCKED — `/tmp/rad-rw081-rw/realworld/20260918-171327_realworld.json` |
 | Needle default | **PASS** (`existing`) — asserted in tests |
 | Caps | **PASS** `max_plan_tasks` 16; `Budget.tool_calls` 60 — asserted in tests |
 | False DONE | **PASS** (scripted 0) — asserted in tests |
