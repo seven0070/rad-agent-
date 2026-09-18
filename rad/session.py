@@ -26,19 +26,29 @@ TOOL_LINE = re.compile(r'^\s*TOOL:\s*(\{.*\})\s*$', re.S)
 
 
 class Session:
-    def __init__(self, home: RadHome, auto: bool = False, voice: bool = False) -> None:
+    def __init__(self, home: RadHome, auto: bool = False, voice: bool = False,
+                 quiet: bool = False, memory_scope: Optional[str] = None,
+                 actor: str = "user", system_prefix: str = "",
+                 provider: Optional[str] = None, model: Optional[str] = None) -> None:
         self.home = home
         self.auto = auto
         self.voice = voice
+        self.quiet = quiet                      # control-plane runs stay silent
+        self.memory_scope = memory_scope        # sub-agent memory isolation (None = shared)
+        self.system_prefix = system_prefix      # e.g. an agent role prompt / task-scoped rules
+        self._force_provider = provider
+        self._force_model = model
         self.router = RouterState(home)
         self.mem = Memory(home)
         self.dna = Evolver(home)
         self.ctx = ToolCtx(home=home, router=self.router, auto=auto, confirm=ask,
-                           mcp_call=lambda s, t, a: mcp.call(home, s, t, a))
+                           mcp_call=lambda s, t, a: mcp.call(home, s, t, a), actor=actor)
         self.working: List[Dict[str, Any]] = []
         self.turns = 0
         self._last_user = ""
         self.last_provider = ""
+        self.last_usage: Dict[str, int] = {"in": 0, "out": 0, "rounds": 0, "max_tokens": 0}
+        self.requirements: Any = None           # rad.modelselect.Requirements for task-aware routing
         # injectable: the control plane wraps this to observe/budget every action
         self.tool_runner = run_tool
 
@@ -55,8 +65,11 @@ class Session:
             f"Workspace (where your hands work): {self.home.workspace()}",
             TOOL_PROTOCOL_NOTE,
         ]
+        if self.system_prefix:
+            extra_parts.append(self.system_prefix)
         if self._last_user:
-            memories = self.mem.recall(self._last_user, k=self.home.cfg.get("memory_k", 5))
+            memories = self.mem.recall(self._last_user, k=self.home.cfg.get("memory_k", 5),
+                                       scope=self.memory_scope)
             block = self.mem.format_for_prompt(memories)
             if block:
                 extra_parts.append(block)
@@ -103,8 +116,17 @@ class Session:
         messages = [{"role": "system", "content": self._system()}] + self.working
         tools = self._all_tools()
         final_text = ""
+        self.last_usage = {"in": 0, "out": 0, "rounds": 0, "max_tokens": 0}
         for _round in range(int(self.home.cfg.get("max_tool_rounds", 8))):
-            res = self.router.chat(messages, tools=tools, stream_cb=print_live)
+            res = self.router.chat(messages, tools=tools,
+                                   stream_cb=None if self.quiet else print_live,
+                                   model_override=self._force_model,
+                                   requirements=self.requirements)
+            self.last_usage["in"] += int((res.usage or {}).get("in", 0) or 0)
+            self.last_usage["out"] += int((res.usage or {}).get("out", 0) or 0)
+            self.last_usage["rounds"] += 1
+            self.last_usage["max_tokens"] = max(self.last_usage["max_tokens"],
+                                                int((res.usage or {}).get("in", 0) or 0))
             self.last_provider = res.provider
             text = res.text
             messages = messages[:-1]  # drop the user msg we're about to re-append as assistant
@@ -126,7 +148,8 @@ class Session:
                 self.working.append(assistant_msg)
                 for tc in tool_reqs:
                     name, args = tc["name"], tc.get("arguments", {})
-                    print(col.magenta(f"  ⚙ {name} {json.dumps(args, ensure_ascii=False)[:160]}"))
+                    if not self.quiet:
+                        print(col.magenta(f"  ⚙ {name} {json.dumps(args, ensure_ascii=False)[:160]}"))
                     out = self.tool_runner(name, args, self.ctx)
                     out = out[:20000]
                     self.working.append({"role": "tool", "tool_call_id": tc.get("id", ""),

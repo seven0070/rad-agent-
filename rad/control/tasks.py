@@ -31,8 +31,17 @@ class TaskStatus:
     NEEDS_USER = "NEEDS_USER"
     CANCELLED = "CANCELLED"
 
+    ALL = ("PENDING", "READY", "RUNNING", "OBSERVING", "VERIFYING", "COMPLETED",
+           "FAILED", "RETRYING", "BLOCKED", "NEEDS_USER", "CANCELLED")
+
     TERMINAL = {"COMPLETED", "CANCELLED", "BLOCKED", "NEEDS_USER"}
     OPEN = {"PENDING", "READY", "RETRYING"}
+    #: states a task can be put back into runnable form from (human / resume / branch activation)
+    RESUMABLE = {"FAILED", "BLOCKED", "NEEDS_USER", "RETRYING", "PENDING"}
+
+
+OPEN_STATES = TaskStatus.OPEN
+TERMINAL_STATES = TaskStatus.TERMINAL
 
 
 ALLOWED = {
@@ -41,7 +50,8 @@ ALLOWED = {
     TaskStatus.RUNNING: {TaskStatus.OBSERVING, TaskStatus.FAILED, TaskStatus.CANCELLED, TaskStatus.NEEDS_USER},
     TaskStatus.OBSERVING: {TaskStatus.VERIFYING, TaskStatus.FAILED},
     TaskStatus.VERIFYING: {TaskStatus.COMPLETED, TaskStatus.FAILED},
-    TaskStatus.FAILED: {TaskStatus.RETRYING, TaskStatus.BLOCKED, TaskStatus.NEEDS_USER, TaskStatus.CANCELLED},
+    TaskStatus.FAILED: {TaskStatus.RETRYING, TaskStatus.BLOCKED, TaskStatus.NEEDS_USER, TaskStatus.CANCELLED,
+                        TaskStatus.READY, TaskStatus.COMPLETED},
     TaskStatus.RETRYING: {TaskStatus.READY, TaskStatus.CANCELLED, TaskStatus.BLOCKED},
     TaskStatus.COMPLETED: set(),
     TaskStatus.BLOCKED: {TaskStatus.READY, TaskStatus.CANCELLED},      # human unblocks
@@ -92,6 +102,11 @@ class Task:
     attempts: int = 0
     max_attempts: int = 3
     optional: bool = False
+    priority: str = "normal"                                # high | normal | low
+    agent: str = ""                                         # specialist role to run this task (rad.agents)
+    alternatives: List[str] = field(default_factory=list)   # branch ids that can satisfy dependents if we fail
+    on_failure: List[str] = field(default_factory=list)     # diagnostic/repair branch activated on permanent failure
+    active: bool = True                                     # False = branch task, only runs when activated
     created: float = field(default_factory=time.time)
     started: Optional[float] = None
     finished: Optional[float] = None

@@ -62,12 +62,18 @@ class Provenance:
         return None
 
     # ------------------------------------------------------------ evidence
+    #: evidence entries that are provenance *sources* (anything else is internal metadata:
+    #: permission decisions, sandbox grants, sandbox denials)
+    INTERNAL_EVIDENCE = ("permission", "sandbox", "sandbox_denial")
+
     def evidence_for_task(self, task_id: str, before: Optional[float] = None) -> List[Dict[str, Any]]:
         out = []
         for o in self.observer.for_task(task_id):
             if before is not None and o.at > before:
                 continue
             for ev in o.evidence:
+                if ev.get("kind") in self.INTERNAL_EVIDENCE:
+                    continue
                 out.append({**ev, "observation": o.id, "excerpt": o.output[:300]})
             if o.tool == "read_file" and o.status == "success":
                 out.append({"source": f"file:{o.args.get('path', '')}", "tool": "read_file", "at": o.at,

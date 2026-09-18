@@ -37,11 +37,14 @@ class ObjectiveStatus:
 
 @dataclass
 class Budget:
+    """0 on any field = unlimited for that kind."""
     tool_calls: int = 60
     model_calls: int = 80
     retries: int = 6
     seconds: int = 1800
     money_usd: float = 0.0          # 0 = no paid spend allowed beyond free-lock policy
+    tokens: int = 0                 # prompt+completion tokens
+    agents: int = 0                 # sub-agent runs
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -54,6 +57,8 @@ class Usage:
     retries: int = 0
     seconds: float = 0.0
     money_usd: float = 0.0
+    tokens: int = 0
+    agents: int = 0
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -77,6 +82,9 @@ class Objective:
     failure: str = ""
     verification: Dict[str, Any] = field(default_factory=dict)
     auto: bool = False
+    tags: List[str] = field(default_factory=list)
+    result_summary: str = ""        # short human-facing outcome (set by the controller)
+    budget_status: Dict[str, Any] = field(default_factory=dict)
 
     @classmethod
     def new(cls, goal: str, **kw: Any) -> "Objective":
@@ -112,6 +120,10 @@ class Objective:
             return f"time budget {b.seconds}s exhausted"
         if b.money_usd and u.money_usd >= b.money_usd:
             return f"money budget ${b.money_usd} exhausted"
+        if b.tokens and u.tokens >= b.tokens:
+            return f"token budget {b.tokens} exhausted"
+        if b.agents and u.agents >= b.agents:
+            return f"agent budget {b.agents} exhausted"
         if self.deadline and time.time() > self.deadline:
             return "deadline passed"
         return None

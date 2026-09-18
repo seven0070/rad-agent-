@@ -14,7 +14,7 @@ from rad.control.graph import TaskGraph
 from rad.control.objectives import Objective
 from rad.control.tasks import Check, Task
 
-PLAN_PROMPT = """You are the planner of an autonomous agent. Decompose the goal into 2-12 concrete tasks.
+PLAN_PROMPT = """You are the planner of an autonomous agent. Decompose the goal into 2-16 concrete tasks.
 Each task must be independently executable with tools (shell, read/write files in the workspace, web search/fetch).
 For EVERY task give machine-checkable checks that prove it was done. Prefer checks over trust.
 
@@ -54,9 +54,11 @@ Only reference ids of the new tasks or COMPLETED task ids in depends_on. Reply O
 
 
 class Planner:
-    def __init__(self, llm: Optional[Callable[[str], str]], workspace: str) -> None:
+    def __init__(self, llm: Optional[Callable[[str], str]], workspace: str,
+                 max_tasks: int = 16) -> None:
         self.llm = llm
         self.workspace = workspace
+        self.max_tasks = max(1, int(max_tasks or 16))   # runaway-plan guard (configurable)
 
     # ------------------------------------------------------------ plan
     def plan(self, obj: Objective) -> Dict[str, Any]:
@@ -99,7 +101,7 @@ class Planner:
         items = d.get("tasks") or []
         idmap: Dict[str, str] = {}
         tasks: List[Task] = []
-        for it in items[:12]:
+        for it in items[:self.max_tasks]:
             text = str(it.get("text", "")).strip()
             if not text:
                 continue

@@ -3,7 +3,8 @@
 Failure classes:  TRANSIENT · TOOL_FAILURE · NETWORK_FAILURE · AUTH_FAILURE ·
                   PERMISSION_FAILURE · PLANNING_FAILURE · MODEL_FAILURE ·
                   VALIDATION_FAILURE · ENVIRONMENT_FAILURE · BUDGET · UNKNOWN
-Strategies:       retry · retry_with_hint · repair · replan · ask_user · abort
+Strategies:       retry · retry_with_hint · switch_tool · switch_model · repair ·
+                  rollback · replan · spawn_specialist · ask_user · abort
 
 Policy is deterministic and testable; the LLM is only consulted to *write*
 a repair step, never to decide whether to keep looping.
@@ -32,9 +33,13 @@ class FailureClass:
     UNKNOWN = "UNKNOWN"
 
 
+STRATEGIES = ("retry", "retry_with_hint", "switch_tool", "switch_model", "repair", "rollback",
+              "replan", "spawn_specialist", "ask_user", "abort")
+
+
 @dataclass
 class Decision:
-    strategy: str                    # retry | retry_with_hint | repair | replan | ask_user | abort
+    strategy: str                    # one of STRATEGIES
     failure_class: str
     reason: str
     hint: str = ""                   # appended to the next prompt for retry_with_hint / repair
@@ -79,27 +84,50 @@ class RecoveryEngine:
 
     def decide(self, task: Task, observations: List[Observation], error: str = "",
                verification: Optional[Dict[str, Any]] = None, repairs_so_far: int = 0,
-               retries_left: int = 99) -> Decision:
+               retries_left: int = 99, artifacts: Optional[Dict[str, Dict[str, Any]]] = None) -> Decision:
         fc = classify(task, observations, error, verification)
         can_retry = task.can_retry and retries_left > 0
         failed_checks = [r for r in (verification or {}).get("results", []) if not r.get("ok")]
         detail = "; ".join(r.get("detail", "")[:100] for r in failed_checks)[:600]
+        broken_verified = self._broken_verified(failed_checks, artifacts or {})
 
         if fc == FailureClass.AUTH:
             return Decision("ask_user", fc, "credentials rejected — a human must fix keys")
         if fc == FailureClass.PERMISSION:
+            blocked = [o.output[:200] for o in observations if o.status in ("blocked", "declined")]
+            if can_retry:
+                # a refusal must never be retried blind: the hint names the refusal and demands
+                # a permitted alternative. Repeated refusal exhausts the retry budget → ask_user.
+                return Decision("retry_with_hint", fc,
+                                "an action was blocked by policy — retrying with an explicit alternative",
+                                hint=("A previous action was refused by RAD's security layer: "
+                                      + " | ".join(blocked[:2])[:300]
+                                      + " Do not repeat it. Reach the goal with a permitted approach: "
+                                        "stay inside the workspace, never touch credentials, "
+                                        "never run privileged or destructive commands."),
+                                data={"blocked": blocked})
             return Decision("ask_user", fc, "an action was blocked or declined by policy",
-                            data={"blocked": [o.output[:200] for o in observations if o.status in ("blocked", "declined")]})
+                            data={"blocked": blocked})
         if fc == FailureClass.MODEL:
             if "no brain available" in (error or ""):
                 return Decision("ask_user", fc, "no brain available — add a key or start a local engine")
             if can_retry:
-                return Decision("retry", fc, "model/provider failure — retry (router will fall back)")
+                failed = _failed_providers(error or "", observations)
+                return Decision("retry", fc, "model/provider failure — retry on another brain",
+                                data={"switch_model": True, "avoid": failed})
+            if repairs_so_far < self.max_repairs:
+                return Decision("replan", fc, "provider kept failing — replan around it")
             return Decision("abort", fc, "no working brain after retries")
         if fc in (FailureClass.TRANSIENT, FailureClass.NETWORK):
             if can_retry:
                 return Decision("retry", fc, "transient/network failure — retry")
             return Decision("abort", fc, "transient failure persisted past retry budget")
+        if broken_verified and can_retry:
+            return Decision("rollback", fc,
+                            f"{broken_verified} was verified earlier and is now broken — restore it",
+                            hint=f"the previous version of {broken_verified} was verified; "
+                                 f"the current one fails: {detail[:200]}",
+                            data={"path": broken_verified})
         if fc == FailureClass.ENVIRONMENT:
             if repairs_so_far < self.max_repairs:
                 return Decision("repair", fc, "missing dependency/file — insert a repair step",
@@ -109,6 +137,12 @@ class RecoveryEngine:
                                 hint="Previous attempt failed because the environment was missing something. "
                                      "Install/create the prerequisite first, then do the step.")
             return Decision("ask_user", fc, "environment problem persists")
+        if fc == FailureClass.TOOL and can_retry and task.attempts >= 2:
+            bad_tool = _dominant_failing_tool(observations)
+            if bad_tool:
+                return Decision("switch_tool", fc, f"{bad_tool} keeps failing — try another way",
+                                hint=f"the tool '{bad_tool}' failed twice (last: {detail[:200] or 'tool error'}). "
+                                     f"Use a different tool or fix the precondition before calling it again.")
         if fc in (FailureClass.VALIDATION, FailureClass.TOOL, FailureClass.UNKNOWN, FailureClass.PLANNING):
             if can_retry:
                 hint = ("Your previous attempt did NOT pass verification. Failed checks: "
@@ -120,3 +154,41 @@ class RecoveryEngine:
                                 hint="Approach so far failed verification: " + detail[:300])
             return Decision("ask_user", fc, "could not satisfy verification after retries and replan")
         return Decision("abort", fc, "unrecoverable")
+
+    # ---------------------------------------------------------------- helpers
+    @staticmethod
+    def _broken_verified(failed_checks: List[Dict[str, Any]],
+                         artifacts: Dict[str, Dict[str, Any]]) -> str:
+        """Name a file that was VERIFIED earlier and now fails a check (→ rollback candidate)."""
+        verified: Dict[str, Dict[str, Any]] = {}
+        for a in artifacts.values():
+            if a.get("verification", {}).get("ok") and a.get("type") == "file":
+                verified[a.get("location", "")] = a
+        for r in failed_checks:
+            args = r.get("args") or {}
+            path = str(args.get("path", ""))
+            if not path:
+                continue
+            for loc, a in verified.items():
+                if loc.endswith("/" + path) or loc == path:
+                    return path
+        return ""
+
+
+def _failed_providers(error: str, observations: List[Observation]) -> List[str]:
+    names = set(re.findall(r"([a-z0-9_.-]{3,20}):\s*(?:HTTP|error|rate|timeout|all providers)", error or "", re.I))
+    for o in observations:
+        if o.status != "success":
+            names |= set(re.findall(r"([a-z0-9_.-]{3,20}):\s*(?:HTTP|error|timed out)", o.output[-300:], re.I))
+    return sorted(n for n in names if n not in ("tool", "python"))
+
+
+def _dominant_failing_tool(observations: List[Observation]) -> str:
+    counts: Dict[str, int] = {}
+    for o in observations:
+        if o.status == "error":
+            counts[o.tool] = counts.get(o.tool, 0) + 1
+    if not counts:
+        return ""
+    tool, n = max(counts.items(), key=lambda kv: kv[1])
+    return tool if n >= 2 else ""
