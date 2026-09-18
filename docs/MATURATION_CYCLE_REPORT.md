@@ -51,15 +51,15 @@ and files whose body is only a `DONE:` claim are not artifacts.
 
 ## Quality gates (actually run)
 
-Isolated homes `/tmp/rad-v030-gate` (doctor, acceptance) and `/tmp/rad-v030-rw` (realworld).
+Isolated homes `/tmp/rad-v030-gate2` (doctor, acceptance) and `/tmp/rad-v030-rw2` (realworld). Re-run after rebase onto `origin/main` `02ef2f0` (PR #18 roadmap).
 
 | gate | result |
 |---|---|
 | `rad version` | **PASS** v0.3.0 |
-| `python3 -m pytest -q` | **PASS** 373 passed in 8.62s |
+| `python3 -m pytest -q` | **PASS** 373 passed in 8.37s |
 | `rad doctor --offline` | **PASS** 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR, verdict READY, exit 0 |
-| `rad acceptance` | **PASS** 50/50 — `/tmp/rad-v030-gate/acceptance/20260918-130116_gate.json` |
-| `rad realworld` | **PASS** 10/11 + 1 BLOCKED — `/tmp/rad-v030-rw/realworld/20260918-130121_realworld.json` |
+| `rad acceptance` | **PASS** 50/50 — `/tmp/rad-v030-gate2/acceptance/20260918-130429_gate.json` |
+| `rad realworld` | **PASS** 10/11 + 1 BLOCKED — `/tmp/rad-v030-rw2/realworld/20260918-130429_realworld.json` |
 | Live NIM | **BLOCKED** (no `NVIDIA_NIM_API_KEY` / `NVIDIA_API_KEY`) |
 | Needle default | **PASS** (`existing`) |
 | Caps | **PASS** `max_plan_tasks` 16; `Budget.tool_calls` 60 |
