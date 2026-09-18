@@ -416,4 +416,5 @@ default max-tools **UNCHANGED**. Package stays **0.2.3**. **No product patch.**
 | Class A | **NO** |
 | Patch / Regression (product) | **NO** / investigation tests only |
 | Package | **0.2.3** — **no v0.2.4** |
+| Gates | pytest **364 passed**; `rad doctor --offline` READY; `rad acceptance` 50/50; `rad realworld` 10 passed / 1 BLOCKED (`live_nim`) |
 | Recommendation | **Outcome A — continue 0.2.x** |

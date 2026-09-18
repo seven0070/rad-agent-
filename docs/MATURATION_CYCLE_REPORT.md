@@ -609,6 +609,17 @@ not match `Planner._fallback`.
 - **No v0.2.4.**
 - **Outcome A continues.** Not v0.3.0.
 
+## Quality gates (this branch)
+
+| gate | result |
+|---|---|
+| `python -m pytest -q` | **364 passed** in 8.30s (345 prior + 19 investigation) |
+| `rad doctor --offline` | READY — 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR |
+| `rad acceptance` | **50/50 PASSED** |
+| `rad realworld` | **10 passed / 1 BLOCKED / 0 failed** (`live_nim` BLOCKED) |
+| Architecture | frozen — no planner/controller product change |
+| Version | **0.2.3** — **no v0.2.4** |
+
 ## Evidence for v0.3.0
 
 **None.** Closing F-17 without a control-plane hole is not a v0.3.0 gap.

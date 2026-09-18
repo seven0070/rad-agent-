@@ -775,6 +775,10 @@ python3 -m pytest -q tests/test_f17_fallback_investigation.py
 
 | gate | result |
 |---|---|
+| `python -m pytest -q` | **364 passed** in 8.30s (345 prior + 19 investigation) |
+| `rad doctor --offline` | READY — 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR (`RAD_HOME=/tmp/rad-f17-gate`) |
+| `rad acceptance` | **50/50 PASSED** (`/tmp/rad-f17-gate/acceptance/20260918-122911_gate.json`) |
+| `rad realworld` | **10 passed / 1 BLOCKED / 0 failed** (`live_nim` BLOCKED; `/tmp/rad-f17-rw/realworld/20260918-122908_realworld.json`) |
 | Package | **0.2.3** — no bump; **no v0.2.4** |
 | RW-058–062 | preserved (live Class B rows + PR #14 investigation) |
 | F-20260918-17 | **investigated / not Class A** (timeout does not parse model output; 7 = goal clause split) |
