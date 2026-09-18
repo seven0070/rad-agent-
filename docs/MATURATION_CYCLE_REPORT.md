@@ -195,6 +195,65 @@ No OS-level shell sandbox (unchanged; not newly proven this cycle).
 
 ---
 
+# Production use (post-Cycle 4) — 2026-09-18
+
+**Date:** 2026-09-18 (IST ~13:39–13:41 for the live-NIM attempt)
+**Package:** `0.2.3` — **no bump**. Not v0.2.4. Not v0.3.0.
+**Architecture:** frozen. Needle stays optional/off. `max_plan_tasks` left at **16**.
+
+These runs are operator production evidence **after** Cycle 4. They do not rewrite Cycle 4's
+Cloud Agent gates (that VM still had no NIM keys; F-20260918-13 remains the cycle-4 BLOCKED
+live-NIM retest).
+
+## What was run
+
+Two `rad objective run` attempts of a production text_analyzer layout on v0.2.3.
+
+1. **RW-058a** — no brain. Home `/tmp/rad_prod_text_analyzer_f3cc7950`, `obj_442301c7`.
+   **BLOCKED** Class C (`MODEL_FAILURE`: no NVIDIA/other keys / no local engine).
+   7 planned / 1 attempted / 0 completed; tools 0/12; workspace empty; false DONE **0**.
+   Same condition family as F-20260918-08 / F-20260918-13.
+2. **RW-058** — live NIM. Home `/tmp/rad_prod_text_analyzer_live_a787512c`, `obj_4e219224`.
+   Provider nvidia / `meta/llama-3.2-11b-vision-instruct` (NIM key present; Class C closed
+   for this attempt). Objective: `text_analyzer/{analyzer.py,input.txt,summary.json,test_analyzer.py,README.md}`;
+   exact 3-line input; stdlib; `--max-tasks 8 --max-tools 12`. Status `needs_user` /
+   **FAIL** vs success criteria — **NOT DONE**, **not VERIFIED** complete.
+
+## Disk (attempt 2)
+
+- `text_analyzer/input.txt` **PASS** sha256 `bf69eb737ca6f3949b5626701cb8472a2fc683e6b05e3101744eccd49dab629b`
+- `analyzer.py` computes counts
+- `test_analyzer.py` byte-identical to `analyzer.py` (0 tests)
+- README present
+- `text_analyzer/summary.json` **MISSING**
+- workspace-root `summary.json` had correct counts `{lines:3,words:13,characters:76}` (wrong path)
+- layout pollution at workspace root
+
+Attempt 2: plan 5 tasks; 1 attempted (verification FAILED, 2 attempts), 4 PENDING;
+tools 12/12 exhausted; model calls 7/80; wall ~103s.
+
+## Class A / B / C
+
+| class | this production use |
+|---|---|
+| **A** | **none.** RAD stopped at the tool budget; false DONE **0**; verifier did not rubber-stamp. No 0.2.x patch. Package stays 0.2.3. |
+| **B** | **F-20260918-15** (RW-058) — 11B limitation: tool spam / incomplete layout / duplicated "tests" / path confusion. Same family as F-20260918-04, now live production evidence. User chose stop; no resume. Bounded `--max-tasks 8 --max-tools 12`. |
+| **C** | **F-20260918-14** (RW-058a) — no brain. Same missing-key / no-engine family as F-20260918-08 / F-20260918-13. Closed for attempt 2 (key present). |
+
+## Decision
+
+- **Outcome A continues** — stay on 0.2.x.
+- Needle stays **off**.
+- `max_plan_tasks` cap **16** unchanged (this run used `--max-tasks 8`).
+- **No v0.2.4** from this (no Class A fix).
+- No architecture change. Not v0.3.0.
+
+## Evidence for v0.3.0
+
+**None.** Live 11B incompleteness is Class B (model), not a missing control-plane stage.
+
+---
+
 # Cycle 3 — v0.2.3 (2026-09-18)
 
 **Date:** 2026-09-18

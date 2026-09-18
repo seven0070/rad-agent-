@@ -8,7 +8,7 @@ check (file exists / contents / hash). A model `DONE:` line is never enough.
 
 Status vocabulary: **PASS** | **FAIL** | **BLOCKED** | **NOT TESTED**.
 
-Cycle 4 (package **0.2.3**, no bump) is at the bottom. Cycle 3 and Cycle 2 follow.
+Post-Cycle 4 production use (package **0.2.3**, no bump) is at the bottom. Cycle 4, Cycle 3, and Cycle 2 follow.
 
 # Cycle 2 (post-v0.2.1 → package **0.2.2**)
 
@@ -211,3 +211,35 @@ Do not raise `max_plan_tasks`. A cap *encounter* is not a product failure.
 | F | NIM | **BLOCKED** |
 | G | Proven architectural gap? | **NO** |
 | H | v0.3.0 justified? | **NO** |
+
+---
+
+# Production use (post-Cycle 4) — package **0.2.3**, no bump
+
+Lane: operator production `rad objective run` on **v0.2.3**. Architecture frozen. Needle stays
+experimental / off. Planner cap left at **16**. Not v0.3.0. **No 0.2.x bump.**
+
+These rows are **not** Cycle 4 campaign evidence. Cycle 4 live NIM remained **BLOCKED** on the
+Cloud Agent VM (no keys). This is a later operator run.
+
+## Production campaign (text_analyzer)
+
+| id | Date | Category | Objective | #tasks | #actions | Tools | Result | Verification | Recovery | Failure class | Notes |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| RW-058a | 2026-09-18 | live NIM (no brain) | production text_analyzer (earlier attempt) | 7 planned / 1 attempted / 0 completed | 0 | 0/12 | **BLOCKED** | — | — | **C** | Home `/tmp/rad_prod_text_analyzer_f3cc7950`; `obj_442301c7`; rad v0.2.3. `MODEL_FAILURE` — no NVIDIA/other keys / no local engine. Workspace empty. False DONE **0**. Same condition family as F-20260918-08 / F-20260918-13 |
+| RW-058 | 2026-09-18 IST ~13:39–13:41 | coding (live NIM) | `text_analyzer/{analyzer.py,input.txt,summary.json,test_analyzer.py,README.md}`; exact 3-line input; stdlib; `--max-tasks 8 --max-tools 12` | 5 planned; 1 attempted (verification FAILED, 2 attempts); 4 PENDING | tools 12/12; model calls 7/80; wall ~103s | 12/12 exhausted | **FAIL** vs success criteria (`needs_user`); **NOT DONE**, **not VERIFIED** complete | FAILED | user chose stop; no resume | **B** | Provider nvidia / `meta/llama-3.2-11b-vision-instruct` (NIM key present; Class C closed for this attempt). Home `/tmp/rad_prod_text_analyzer_live_a787512c`; `obj_4e219224`. Disk: `text_analyzer/input.txt` **PASS** sha256 `bf69eb737ca6f3949b5626701cb8472a2fc683e6b05e3101744eccd49dab629b`; `analyzer.py` computes counts; `test_analyzer.py` byte-identical to `analyzer.py` (0 tests); README present; `text_analyzer/summary.json` **MISSING**; workspace-root `summary.json` had correct counts `{lines:3,words:13,characters:76}` (wrong path); layout pollution at workspace root. 11B tool spam / incomplete layout / duplicated "tests" / path confusion. **Not Class A**: RAD stopped at tool budget; false DONE **0**; verifier did not rubber-stamp. Bounded `--max-tasks 8 --max-tools 12`. No architecture change |
+
+## Production metrics (honest)
+
+| metric | value |
+|---|---|
+| Package / architecture | **0.2.3** frozen; **not v0.3.0**; **no v0.2.4** (no Class A) |
+| Attempt 1 (no brain) | **BLOCKED** Class C (RW-058a) |
+| Attempt 2 (live NIM 11B) | **FAIL** Class B (RW-058) — `needs_user`; success criteria unmet |
+| False completion (VERIFIED without the artifact) | **0** |
+| Class A | **none** |
+| Live NIM (this operator run) | Attempt 1 Class C; attempt 2 key present (Class C closed for that attempt) and incomplete vs layout |
+| 11B model limitation | **documented live** — tool budget exhausted; incomplete layout (F-20260918-15) |
+| Needle | stays `existing` / off; **not measured** this run |
+| `max_plan_tasks` | **16** unchanged (this run used `--max-tasks 8`) |
+| Recommendation | **Outcome A — continue 0.2.x** (not B: no Class A patch; not C: no proven v0.3.0 gap) |
