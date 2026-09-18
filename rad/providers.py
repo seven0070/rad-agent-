@@ -296,6 +296,57 @@ def _openai_message(m: Dict[str, Any]) -> Dict[str, Any]:
     return out
 
 
+def _unparallel_tool_history(messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Split an assistant turn that issued N tool_calls into N single-call turns.
+
+    `meta/llama-3.2-11b-vision-instruct` on NVIDIA NIM rejects a follow-up whose
+    history contains more than one tool_call in a single assistant message
+    (HTTP 400: "This model only supports single tool-calls at once"). RAD still
+    executes every call locally; this only reshapes the transcript for the next
+    request. Assistant messages with 0–1 tool_calls are unchanged.
+    """
+    out: List[Dict[str, Any]] = []
+    i = 0
+    n = len(messages)
+    while i < n:
+        m = messages[i]
+        tcs = m.get("tool_calls") if isinstance(m, dict) else None
+        if not (isinstance(m, dict) and m.get("role") == "assistant" and isinstance(tcs, list) and len(tcs) > 1):
+            out.append(m)
+            i += 1
+            continue
+        tools: List[Dict[str, Any]] = []
+        j = i + 1
+        while j < n and isinstance(messages[j], dict) and messages[j].get("role") == "tool":
+            tools.append(messages[j])
+            j += 1
+        by_id: Dict[str, Dict[str, Any]] = {}
+        unused: List[Dict[str, Any]] = []
+        for tm in tools:
+            tid = str(tm.get("tool_call_id") or "")
+            if tid and tid not in by_id:
+                by_id[tid] = tm
+            else:
+                unused.append(tm)
+        for k, tc in enumerate(tcs):
+            if not isinstance(tc, dict):
+                continue
+            am = dict(m)
+            am["tool_calls"] = [tc]
+            if k:
+                am["content"] = ""
+            out.append(am)
+            tid = str(tc.get("id") or "")
+            if tid in by_id:
+                out.append(by_id.pop(tid))
+            elif unused:
+                out.append(unused.pop(0))
+        out.extend(by_id[t] for t in list(by_id))
+        out.extend(unused)
+        i = j
+    return out
+
+
 def _chat_openai(spec: ProviderSpec, key: Optional[str], messages: List[Dict[str, Any]],
                  model: str, tools: Optional[List[Dict[str, Any]]], stream_cb: Optional[Callable[[str], None]],
                  temperature: float, timeout: float, max_tokens: int) -> ChatResult:
@@ -303,6 +354,7 @@ def _chat_openai(spec: ProviderSpec, key: Optional[str], messages: List[Dict[str
     if spec.name == "nvidia":
         # NIM quirk: some endpoints force SSE unless Accept: application/json is set
         headers.setdefault("Accept", "application/json")
+        messages = _unparallel_tool_history(messages)
     body: Dict[str, Any] = {
         "model": model, "messages": [_openai_message(m) for m in messages],
         "temperature": temperature,
@@ -312,6 +364,9 @@ def _chat_openai(spec: ProviderSpec, key: Optional[str], messages: List[Dict[str
         body["max_tokens"] = max_tokens
     if tools and spec.supports_tools:
         body["tools"] = tools
+        if spec.name == "nvidia":
+            # llama-3.2-11b-vision-instruct rejects parallel tool_calls (HTTP 400).
+            body["parallel_tool_calls"] = False
     status, _, resp = _post_json(spec.base_url + "/chat/completions", body, headers, timeout,
                                  stream=stream_cb is not None)
     if status != 200:

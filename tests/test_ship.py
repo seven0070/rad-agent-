@@ -13,6 +13,7 @@ from rad.cli import main
 from rad.doctor import Doctor
 from rad.home import RadHome
 from rad.lab import scenarios
+from rad.providers import ProviderSpec, _chat_openai, _openai_message, _unparallel_tool_history
 
 
 def test_version_is_synced():
@@ -95,7 +96,6 @@ def test_nvidia_default_model_is_not_eol(tmp_path):
 
 def test_openai_tool_calls_use_nested_function_shape():
     """NVIDIA NIM rejects flat `{id,name,arguments}` tool_calls (HTTP 400)."""
-    from rad.providers import _openai_message
     m = _openai_message({"role": "assistant", "content": "", "tool_calls": [
         {"id": "c1", "name": "write_file", "arguments": {"path": "a.txt", "content": "x"}},
     ]})
@@ -108,6 +108,56 @@ def test_openai_tool_calls_use_nested_function_shape():
         "function": {"name": "read_file", "arguments": {"path": "b.txt"}},
     }]})
     assert json.loads(already["tool_calls"][0]["function"]["arguments"])["path"] == "b.txt"
+
+
+def test_nvidia_unparallels_multi_tool_history():
+    """llama-3.2-11b-vision-instruct returns HTTP 400 if one assistant message
+    carries more than one tool_call. History is split; tools still all present."""
+    msgs = [
+        {"role": "user", "content": "write three files"},
+        {"role": "assistant", "content": "", "tool_calls": [
+            {"id": "c1", "name": "write_file", "arguments": {"path": "a.txt"}},
+            {"id": "c2", "name": "write_file", "arguments": {"path": "b.txt"}},
+            {"id": "c3", "name": "write_file", "arguments": {"path": "c.txt"}},
+        ]},
+        {"role": "tool", "tool_call_id": "c1", "content": "wrote a"},
+        {"role": "tool", "tool_call_id": "c2", "content": "wrote b"},
+        {"role": "tool", "tool_call_id": "c3", "content": "wrote c"},
+    ]
+    out = _unparallel_tool_history(msgs)
+    assistants = [m for m in out if m.get("role") == "assistant"]
+    assert all(len(m.get("tool_calls") or []) == 1 for m in assistants)
+    assert [m["tool_calls"][0]["id"] for m in assistants] == ["c1", "c2", "c3"]
+    tools = [m for m in out if m.get("role") == "tool"]
+    assert [m["tool_call_id"] for m in tools] == ["c1", "c2", "c3"]
+    # already-serial history is a no-op
+    serial = [
+        {"role": "assistant", "tool_calls": [{"id": "x", "name": "read_file"}]},
+        {"role": "tool", "tool_call_id": "x", "content": "ok"},
+    ]
+    assert _unparallel_tool_history(serial) == serial
+
+
+def test_nvidia_requests_disable_parallel_tool_calls(monkeypatch):
+    """The working NIM 11B model only accepts one tool-call at a time."""
+    captured: dict = {}
+
+    def fake_post(url, body, headers, timeout, stream=False):
+        captured["body"] = body
+        payload = json.dumps({
+            "choices": [{"message": {"content": "ok", "tool_calls": []}}],
+            "usage": {"prompt_tokens": 1, "completion_tokens": 1},
+        }).encode()
+        return 200, {}, payload
+
+    monkeypatch.setattr("rad.providers._post_json", fake_post)
+    spec = ProviderSpec("nvidia", "openai", "https://integrate.api.nvidia.com/v1",
+                        supports_tools=True, default_model="meta/llama-3.2-11b-vision-instruct")
+    _chat_openai(spec, "k", [{"role": "user", "content": "hi"}],
+                 spec.default_model, tools=[{"type": "function", "function": {"name": "write_file"}}],
+                 stream_cb=None, temperature=0.2, timeout=5, max_tokens=16)
+    assert captured["body"]["parallel_tool_calls"] is False
+    assert all(len(m.get("tool_calls") or []) <= 1 for m in captured["body"]["messages"])
 
 
 def test_rad_version_cli(capsys):
