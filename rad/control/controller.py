@@ -26,6 +26,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
 from rad.control import events as E
+from rad.control.budgetplan import remaining_tool_calls
 from rad.control.budgets import BudgetExceeded, BudgetManager
 from rad.control.checkpoints import CheckpointManager
 from rad.control.events import EventLog
@@ -199,7 +200,8 @@ class Controller:
         log = self._log(obj.id)
         self.lifecycle.planning(obj)
         planner = self._planner()
-        res = planner.plan(obj)
+        tool_budget = remaining_tool_calls(obj)
+        res = planner.plan(obj, tool_budget=tool_budget)
         graph: TaskGraph = res["graph"]
         obj.plan_version = int(getattr(obj, "plan_version", 0) or 0) + 1
         for t in graph.tasks.values():
@@ -207,7 +209,10 @@ class Controller:
         obj.verification = {"objective_checks": [c.to_dict() for c in res["objective_checks"]]}
         self.checkpoints.save(obj, graph, note="plan")
         log.emit(E.PLAN_CREATED, obj.id, source=res["source"], plan_version=obj.plan_version,
-                 attempts=res.get("attempts", 0), tasks=[
+                 attempts=res.get("attempts", 0),
+                 tool_budget=res.get("tool_budget"), estimated_tools=res.get("estimated_tools"),
+                 compacted=bool(res.get("compacted")), fit=res.get("fit"),
+                 tasks=[
             {"id": t.id, "text": t.text, "depends_on": t.depends_on, "checks": len(t.checks),
              "priority": t.priority, "optional": t.optional, "agent": t.agent} for t in graph.tasks.values()])
         for t in graph.tasks.values():
@@ -597,7 +602,8 @@ class Controller:
         if d.strategy == "replan":
             repairs[task.id] = repairs.get(task.id, 0) + 1
             planner = self._planner()
-            new = planner.replan(obj, graph, task, d.hint or d.reason)
+            new = planner.replan(obj, graph, task, d.hint or d.reason,
+                                 tool_budget=remaining_tool_calls(obj))
             if new:
                 # superseded work is *recorded* (CANCELLED + deactivated), never silently dropped:
                 # the task keeps its history, its failure reason and its events, but it no longer

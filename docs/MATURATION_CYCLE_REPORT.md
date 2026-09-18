@@ -6,7 +6,100 @@ Default `Budget.tool_calls` remains **60**.
 
 ---
 
+# Cycle 8 — RW-066 live NIM + Gen2 / v0.3.2 budget-aware planning (2026-09-18)
+
+**Date:** 2026-09-18
+**Baseline:** `origin/main` `50d98e26` (tag **v0.3.1**, package **0.3.1**)
+**Package at start:** `0.3.1`
+**This branch:** `cursor/rw066-theme3-budget-aware-dcb1` — package **0.3.2**
+**Architecture:** control plane preserved. Needle stays off. Caps unchanged.
+RW-058–065 are **not rewritten**. Scripted theme-2 RW-066 (F-27) is preserved.
+
+## Part A — live use (RW-066)
+
+Live NVIDIA NIM 11B word_counter on v0.3.1 (`obj_e74d9fad`, home
+`/tmp/rad_prod_rw066_0b0bb188`, `--max-tasks 4 --max-tools 12`, Needle off).
+Authoritative facts: operator report (this agent did not re-run NIM).
+
+| item | value |
+|---|---|
+| Verdict | **PASS** — `completed` / **VERIFIED**. Disk matched; host tests OK |
+| vs RW-065 | **better E2E** — 065 was `needs_user` / tests FAIL |
+| PLAN | **source=fallback** **attempts=2** (theme 2 live-confirmed) |
+| Repair | Gen2 **YES**; wrote valid `result.json` `{"words": 2}` + counter; budget cut mid further writes |
+| Disk | `word_counter.py` YES; `result.json` valid words=2; tests **PASS** (2 OK); pollution none |
+| Tools | 12/12 exhausted |
+| False DONE | **0** |
+| Class | **B** residual (11B plan/coding@12). CANCELLED+VERIFIED when objective checks already satisfied (low urgency; not false DONE) |
+
+## Part B — product (theme 3)
+
+Budget-aware planning: remaining `Budget.tool_calls` is passed into the planner.
+A *fat* plan (more tasks than fit at 2 tools/task, **and** more than 3 tasks)
+is retried with a JSON budget nudge; the cheaper graph is selected. Exhausted
+fallback graphs that are still fat are compacted. LLM graphs are **not**
+silently compacted (F-21 leftover-work). A model `DONE:` is never completion.
+
+## Why (evidence cited, not rewritten)
+
+- **RW-059 Case B** — doubling max-tools 12→24 did not complete text_analyzer
+- **RW-065 / RW-066** — tools 12/12 exhausted; 066 still VERIFIED via objective checks but cancelled mid-repair
+- Theme 3 accepted so plans fit the tool budget rather than thrashing until exhaustion
+
+## What changed
+
+- `rad/control/budgetplan.py` — cost model (`TOOLS_PER_TASK=2`), fat vs small, fallback compact
+- `Planner.plan(tool_budget=)` prompt + fat-plan retry (`PLAN_BUDGET_NUDGE`) + cheapest select
+- Fallback compact when still fat; F-17 tasks stay check-less
+- `PLAN_CREATED` records `tool_budget` / `estimated_tools` / `compacted` / `fit`
+- Tests `tests/test_budget_aware_planning.py`
+- Package **0.3.1 → 0.3.2**
+
+## What did not change
+
+- F-17 `_fallback(obj)` (goal only, cap 7, no checks; never parses model `raw`)
+- F-21 leftover-work (≤3-task LLM graphs may exceed remaining tools)
+- F-18 / F-26 closed
+- Control plane shape PLAN→PERMISSION→BUDGET→EXECUTE→OBSERVE→VERIFY→RECOVER
+- Needle default `existing` / off
+- `max_plan_tasks` default **16**
+- `Budget.tool_calls` default **60**
+- False completion remains **0**
+- RW-058–065 ledger/matrix rows; scripted RW-066 (F-27)
+- Live 11B Class B incompleteness is **not** claimed solved
+- Intra-task write/test thrash (RW-059 19× `write_file`) is **not** an executor redesign
+- Planning LLM calls still not charged to `Budget.model_calls`
+
+## Quality gates (actually run)
+
+Isolated homes `/tmp/rad-v032-gate` (doctor, acceptance) and `/tmp/rad-v032-rw` (realworld).
+
+| gate | result |
+|---|---|
+| `rad version` | **PASS** v0.3.2 |
+| `python3 -m pytest -q` | **PASS** 415 passed in 9.02s |
+| `rad doctor --offline` | **PASS** 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR, verdict READY, exit 0 |
+| `rad acceptance` | **PASS** 50/50 — `/tmp/rad-v032-gate/acceptance/20260918-140012_gate.json` |
+| `rad realworld` | **PASS** 10/11 + 1 BLOCKED — `/tmp/rad-v032-rw/realworld/20260918-140035_realworld.json` |
+| Live NIM this patch | **BLOCKED** (no `NVIDIA_NIM_API_KEY` / `NVIDIA_API_KEY`) — RW-066 live facts taken from the operator report |
+| Needle default | **PASS** (`existing`) |
+| Caps | **PASS** `max_plan_tasks` 16; `Budget.tool_calls` 60 |
+| False DONE | **PASS** (scripted compacted fallback not VERIFIED + suite `false_success` / `needs_user` / `no_loop`) |
+
+## Remaining limitations
+
+1. Live NVIDIA NIM on 11B may still fail Class B (model / intra-task thrash). This release selects a plan that fits N tools; it does not make 11B complete every coding goal under tools=12.
+2. Default planner cap is **16**. Default tool budget is **60**. Default plan retries is **1**.
+3. RW-066 CANCELLED+VERIFIED UX when objective checks already pass is low-urgency; not patched here.
+
+## Roadmap pointer
+
+Operating spine: [ROADMAP.md](ROADMAP.md). **Generation 1 is complete** (v0.2.0–v0.2.3). **Generation 2 is in progress:** verified coding loop **v0.3.0**; plan-timeout resilience **v0.3.1** (used RW-066); budget-aware planning **v0.3.2**. Gen3–5 are not started.
+
+---
+
 # Cycle 7 — Gen2 / v0.3.1 plan-timeout resilience (2026-09-18)
+
 
 **Date:** 2026-09-18
 **Baseline:** `origin/main` `76376a86` (PR #20 merge; package **0.3.0**)

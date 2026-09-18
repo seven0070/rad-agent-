@@ -8,6 +8,11 @@ A transient LLM plan failure (timeout, empty, malformed, non-JSON, empty graph)
 is retried a bounded number of times for a structured JSON plan *before*
 falling back. Fallback still splits `obj.goal` only (F-17); it never parses
 model prose.
+
+When a remaining tool budget is known, a *fat* plan (more tasks than fit at
+2 tools/task, and more than 3 tasks) is retried with a budget nudge; the
+cheaper graph is selected. Exhausted fallback graphs that are still fat are
+compacted. LLM graphs are never silently compacted (F-21 leftover work).
 """
 from __future__ import annotations
 
@@ -15,6 +20,15 @@ import json
 import re
 from typing import Any, Callable, Dict, List, Optional
 
+from rad.control.budgetplan import (
+    budget_prompt_line,
+    compact_graph,
+    estimate_plan_tools,
+    is_fat,
+    is_over_budget,
+    max_fit_tasks,
+    pick_cheapest,
+)
 from rad.control.codingloop import infer_coding_checks
 from rad.control.graph import TaskGraph
 from rad.control.objectives import Objective
@@ -27,6 +41,7 @@ PLAN_PROMPT = """You are the planner of an autonomous agent. Decompose the goal 
 A single-file write or one-command goal is 1-3 tasks. Do not invent extra review, backup, polish, README, or documentation tasks unless the criteria require them.
 Each task must be independently executable with tools (shell, read/write files in the workspace, web search/fetch).
 For EVERY task give machine-checkable checks that prove it was done. Prefer checks over trust.
+TOOL BUDGET: {tool_budget}
 
 Check kinds (exactly these):
   file_exists {{"path"}}            file_min_bytes {{"path","n"}}      file_contains {{"path","text"}}
@@ -57,6 +72,12 @@ PLAN_RETRY_NUDGE = (
     "Reply ONLY with the JSON object. No prose, no markdown fences."
 )
 
+PLAN_BUDGET_NUDGE = (
+    "\n\nYour previous plan used too many tasks for the remaining tool budget. "
+    "Reply ONLY with JSON for a SMALLER plan that fits the budget "
+    "(each task costs at least 2 tool calls). Prefer 1-3 tasks. No prose."
+)
+
 REPLAN_PROMPT = """You are replanning part of an autonomous agent's work after failures.
 GOAL: {goal}
 COMPLETED TASKS:
@@ -66,8 +87,10 @@ WHY: {why}
 REMAINING (will be replaced): 
 {remaining}
 WORKSPACE: {workspace}
+TOOL BUDGET: {tool_budget}
 
 Propose 1-5 NEW tasks that achieve what the failed and remaining tasks were meant to, using a different approach.
+The new graph must fit the remaining tool budget (each task costs at least 2 tool calls). Prefer fewer tasks.
 Same JSON shape as before: {{"tasks":[{{"id":"r1","text":"...","depends_on":[],"checks":[...]}}]}}
 Only reference ids of the new tasks or COMPLETED task ids in depends_on. Reply ONLY with JSON.
 """
@@ -90,40 +113,59 @@ class Planner:
         self.retries = _bound_retries(retries)
 
     # ------------------------------------------------------------ plan
-    def plan(self, obj: Objective) -> Dict[str, Any]:
-        """Return {"graph": TaskGraph, "objective_checks": [Check], "source": "llm"|"fallback",
-        "attempts": int}.
+    def plan(self, obj: Objective, tool_budget: Optional[int] = None) -> Dict[str, Any]:
+        """Return graph / objective_checks / source / attempts plus budget-fit fields.
 
         `retries` is extra tries after the first failure (default 1 → 2 attempts).
         Planning LLM calls are not charged to Budget.model_calls (the controller
         meters model calls on task execution, not on plan()).
+        `tool_budget` is remaining tool calls (None = unlimited / unknown).
         """
         attempts = 0
+        candidates: List[Dict[str, Any]] = []
         if self.llm:
             prompt = PLAN_PROMPT.format(
                 goal=obj.goal,
                 criteria="\n".join(f"- {c}" for c in obj.success_criteria) or "- (none given: infer sensible ones)",
                 constraints="\n".join(f"- {c}" for c in obj.constraints) or "- none",
-                workspace=self.workspace)
+                workspace=self.workspace,
+                tool_budget=budget_prompt_line(tool_budget))
+            last_fat = False
             for i in range(1 + self.retries):
                 attempts += 1
+                extra = PLAN_BUDGET_NUDGE if last_fat else (PLAN_RETRY_NUDGE if i else "")
                 try:
-                    raw = self.llm(prompt if i == 0 else prompt + PLAN_RETRY_NUDGE)
+                    raw = self.llm(prompt if not extra else prompt + extra)
                     d = _json_obj(raw)
                     g, oc = self._graph_from(obj.id, d)
-                    if g.tasks:
-                        if not oc:
-                            oc = infer_coding_checks(obj.goal, obj.success_criteria)
-                        return {"graph": g, "objective_checks": oc, "source": "llm",
-                                "attempts": attempts}
+                    if not g.tasks:
+                        last_fat = False
+                        continue
+                    last_fat = is_fat(len(g.tasks), tool_budget)
+                    if not oc:
+                        oc = infer_coding_checks(obj.goal, obj.success_criteria)
+                    candidates.append({"graph": g, "objective_checks": oc, "fat": last_fat})
+                    if not last_fat:
+                        break
                 except Exception:
-                    pass
-        return {"graph": self._fallback(obj),
-                "objective_checks": infer_coding_checks(obj.goal, obj.success_criteria),
-                "source": "fallback",
-                "attempts": attempts}
+                    last_fat = False
+            if candidates:
+                chosen = pick_cheapest(candidates)
+                return _plan_result(chosen["graph"], chosen["objective_checks"], "llm",
+                                    attempts, tool_budget, compacted=False)
+        g = self._fallback(obj)
+        compacted = False
+        cap = max_fit_tasks(tool_budget)
+        leftover: List[Check] = []
+        if cap is not None and is_fat(len(g.tasks), tool_budget):
+            g, leftover, compacted = compact_graph(g, cap)
+        oc = infer_coding_checks(obj.goal, obj.success_criteria)
+        if leftover:
+            oc = list(oc) + leftover
+        return _plan_result(g, oc, "fallback", attempts, tool_budget, compacted=compacted)
 
-    def replan(self, obj: Objective, graph: TaskGraph, failed: Task, why: str) -> Optional[List[Task]]:
+    def replan(self, obj: Objective, graph: TaskGraph, failed: Task, why: str,
+               tool_budget: Optional[int] = None) -> Optional[List[Task]]:
         if not self.llm:
             return None
         done = [t for t in graph.tasks.values() if t.status == "COMPLETED"]
@@ -134,9 +176,13 @@ class Planner:
                 done="\n".join(f"- {t.id}: {t.text}" for t in done) or "- none",
                 failed=f"{failed.id}: {failed.text}", why=why[:600],
                 remaining="\n".join(f"- {t.id}: {t.text}" for t in remaining) or "- none",
-                workspace=self.workspace))
+                workspace=self.workspace,
+                tool_budget=budget_prompt_line(tool_budget)))
             d = _json_obj(raw)
             g, _ = self._graph_from(obj.id, d, allowed_deps={t.id for t in done})
+            cap = max_fit_tasks(tool_budget)
+            if cap is not None and is_fat(len(g.tasks), tool_budget):
+                g, _, _ = compact_graph(g, cap)
             return list(g.tasks.values()) or None
         except Exception:
             return None
@@ -191,6 +237,15 @@ class Planner:
             g.add(t)
             prev = t.id
         return g
+
+
+def _plan_result(graph: TaskGraph, oc: List[Check], source: str, attempts: int,
+                 tool_budget: Optional[int], compacted: bool) -> Dict[str, Any]:
+    n = len(graph.tasks)
+    return {"graph": graph, "objective_checks": oc, "source": source,
+            "attempts": attempts, "tool_budget": tool_budget,
+            "estimated_tools": estimate_plan_tools(n), "compacted": compacted,
+            "fit": not is_over_budget(n, tool_budget)}
 
 
 def _checks(items: List[Dict[str, Any]]) -> List[Check]:
