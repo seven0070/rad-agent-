@@ -2,7 +2,7 @@
 
 Living log of **measured** RAD failures found in live or reconstructed use.
 Architecture is frozen. Needle stays experimental and off by default. This is not AGI/ASI.
-Operating spine: [ROADMAP.md](ROADMAP.md) (adopted 2026-09-18). Gen1 complete on 0.2.3; **Gen2 complete** on 0.3.0–0.3.2. Verified coding loop is **implemented as v0.3.0** (F-20260918-24 / RW-064). Live retest **RW-065**. Plan-timeout resilience is **implemented as v0.3.1** (F-20260918-27 / scripted RW-066) and **used** (live RW-066 / F-20260918-28). Budget-aware planning is **implemented as v0.3.2** (F-20260918-29 / RW-067). Live NIM use of v0.3.2 is **RW-068 PASS** (F-20260918-30) and **RW-069 FAIL** (F-20260918-31). Path-aligned checks are **implemented as v0.4.0** (F-20260918-32 / RW-070). Live NIM retest of v0.4.0 is **RW-071 FAIL** (F-20260918-33; theme 1 live-confirmed). Multi-file contracts under tight budgets are **implemented as v0.4.1** (F-20260918-34 / RW-072). Live NIM retest of v0.4.1 is **RW-073 FAIL** (F-20260918-35; theme 1/2 live-confirmed). ASCII-tree `package_dir` is **implemented as v0.4.2** (F-20260918-36 / RW-074). Live NIM retest of v0.4.2 is **RW-075 FAIL** (F-20260918-37; ASCII-tree obj-checks live-confirmed). First-task thrash is **implemented as v0.4.3** (F-20260918-38 / RW-076). Live NIM retest of v0.4.3 is **RW-077 FAIL** (F-20260918-39; pip/DONE Class A **live-consistent**; mkdir File-exists action noise is F-40). mkdir already-exists action noise is **implemented as v0.4.4** (F-20260918-40 / RW-078). Live NIM retest of v0.4.4 is **RW-079 FAIL** (F-20260918-41; mkdir File-exists **not live-hit**; premature-test ENVIRONMENT is F-42). Premature-test ENVIRONMENT is **implemented as v0.4.5** (F-20260918-42 / RW-080). Live NIM retest of v0.4.5 is **RW-081 FAIL** (F-20260918-43; mkdir File-exists **live Y**; premature-test ENVIRONMENT **not live-hit**; pip/echo + root pollution residual). Pip thrash + root `analyzer.py` pollution Class A is **NOT CONFIRMED** (F-20260918-44 / scripted RW-082). Package stays **0.4.5**. This ledger is evidence. Do not rewrite RW-058–080. Scripted RW-066 (F-27) is preserved.
+Operating spine: [ROADMAP.md](ROADMAP.md) (adopted 2026-09-18). Gen1 complete on 0.2.3; **Gen2 complete** on 0.3.0–0.3.2. Verified coding loop is **implemented as v0.3.0** (F-20260918-24 / RW-064). Live retest **RW-065**. Plan-timeout resilience is **implemented as v0.3.1** (F-20260918-27 / scripted RW-066) and **used** (live RW-066 / F-20260918-28). Budget-aware planning is **implemented as v0.3.2** (F-20260918-29 / RW-067). Live NIM use of v0.3.2 is **RW-068 PASS** (F-20260918-30) and **RW-069 FAIL** (F-20260918-31). Path-aligned checks are **implemented as v0.4.0** (F-20260918-32 / RW-070). Live NIM retest of v0.4.0 is **RW-071 FAIL** (F-20260918-33; theme 1 live-confirmed). Multi-file contracts under tight budgets are **implemented as v0.4.1** (F-20260918-34 / RW-072). Live NIM retest of v0.4.1 is **RW-073 FAIL** (F-20260918-35; theme 1/2 live-confirmed). ASCII-tree `package_dir` is **implemented as v0.4.2** (F-20260918-36 / RW-074). Live NIM retest of v0.4.2 is **RW-075 FAIL** (F-20260918-37; ASCII-tree obj-checks live-confirmed). First-task thrash is **implemented as v0.4.3** (F-20260918-38 / RW-076). Live NIM retest of v0.4.3 is **RW-077 FAIL** (F-20260918-39; pip/DONE Class A **live-consistent**; mkdir File-exists action noise is F-40). mkdir already-exists action noise is **implemented as v0.4.4** (F-20260918-40 / RW-078). Live NIM retest of v0.4.4 is **RW-079 FAIL** (F-20260918-41; mkdir File-exists **not live-hit**; premature-test ENVIRONMENT is F-42). Premature-test ENVIRONMENT is **implemented as v0.4.5** (F-20260918-42 / RW-080). Live NIM retest of v0.4.5 is **RW-081 FAIL** (F-20260918-43; mkdir File-exists **live Y**; premature-test ENVIRONMENT **not live-hit**; pip/echo + root pollution residual). Pip thrash + root `analyzer.py` pollution Class A is **NOT CONFIRMED** (F-20260918-44 / scripted RW-082). Package stays **0.4.5**. Gen3 theme 3 slice E (multi-step checkpoint) is **SCOPED / PLANNED** in [ROADMAP.md](ROADMAP.md) — not accepted, not implemented. This ledger is evidence. Do not rewrite RW-058–080. Scripted RW-066 (F-27) is preserved.
 
 No secrets belong here: never paste API keys, vault contents, account tokens, or full
 provider payloads. Paths under `/tmp/…` and objective ids are fine.
@@ -1710,7 +1710,7 @@ pip-missing-requirements ENVIRONMENT (task never reached verify this run).
 | disk | scripted: package `analyzer.py` unchanged when `echo > analyzer.py` lands at workspace root; root-only write does **not** VERIFIED package checks; mkdir File-exists still VERIFIED; pip `-r` still not ENVIRONMENT; empty `{}` + missing `json_field` still FAILED; fallback *tasks* still check-less (F-17) |
 | expected | A control-plane hole that emits/accepts root writes as satisfying package checks, or that classifies pip thrash as ENVIRONMENT repair, or a verifier hole that wastes budget / rubber-stamps |
 | actual | Checks stay package-joined. Actions stay model-proposed (no path remap). Root pollution is leftover disk, not a false DONE and not a failed package contract. Pip `-r` missing is still TOOL / action-noise when verify runs; live RW-081 never reached verify (budget stop). Successful pip is a real tool call, not a classifier hole |
-| notes | Theme-3 measured win this live run: mkdir File-exists action-noise **live Y** (v0.4.4). Premature-test ENVIRONMENT **not live-hit** (v0.4.5 unit RW-080 remains). Multi-step checkpoint stays planned. Needle off. Caps unchanged. Live 11B text_analyzer@12 **not** claimed PASS |
+| notes | Theme-3 measured win this live run: mkdir File-exists action-noise **live Y** (v0.4.4). Premature-test ENVIRONMENT **not live-hit** (v0.4.5 unit RW-080 remains). Multi-step checkpoint is **SCOPED / PLANNED** as theme 3 slice E (Cycle 17 / ROADMAP; not built). Needle off. Caps unchanged. Live 11B text_analyzer@12 **not** claimed PASS |
 
 Reproduction:
 
@@ -1732,6 +1732,39 @@ python3 -m pytest -q tests/test_pip_root_pollution_investigation.py
 | Needle | **OFF** (`existing`) |
 | False completion | **0** |
 | Live NIM this patch | **BLOCKED** (no NVIDIA keys) — not a live PASS claim for RW-081 |
+
+## Scope — Gen3 theme 3 slice E multi-step checkpoint (docs only) — 2026-09-18
+
+Docs-only scope on `16b41553` / v0.4.5 after PR #30. No product patch. Package
+stays **0.4.5**. Needle **OFF**. Caps **not** raised. RW-058–082 facts are
+**not rewritten**. F-17 / F-18 / F-21 / F-26 stay closed. A1 not reopened.
+Thrash Class A chase **paused** after F-44 **NOT CONFIRMED**.
+
+Crash-resume already ships (`CheckpointManager`, `rad objective resume`). The
+measured gap is intra-run: later independent READY work still gets no attempt
+when an early task burns remaining tools (RW-081: first task VERIFIED, second
+RUNNING pip/echo, Write-test PENDING, tools 12/12). Slice E is **strengthen /
+use** that checkpoint + `Scheduler` path, not a new persistence stack.
+
+Recommended first **v0.4.6** candidate **E1** (task-boundary yield /
+leftover-budget dispatch) is listed in [ROADMAP.md](ROADMAP.md) — **not
+accepted**, **not implemented**. E2/E3 remain candidates. Next product work
+waits for a written accept.
+
+| gate | result |
+|---|---|
+| `python3 -m pytest -q` | **519 passed** in 11.70s |
+| `rad doctor --offline` | READY — 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR (`RAD_HOME=/tmp/rad-slicee-gate`) |
+| `rad acceptance` | **50/50 PASSED** (`/tmp/rad-slicee-gate/acceptance/20260918-172927_gate.json`) |
+| `rad realworld` | **10 passed / 1 BLOCKED / 0 failed** (`live_nim` BLOCKED; `/tmp/rad-slicee-rw/realworld/20260918-172928_realworld.json`) |
+| Package | **0.4.5** (no bump; no v0.4.6) |
+| Product code | unchanged |
+| Slice E | **SCOPED / PLANNED** |
+| 16-task cap | **UNCHANGED** |
+| Default tool budget | **UNCHANGED** (60) |
+| Needle | **OFF** (`existing`) |
+| False completion | **0** |
+| Live NIM this patch | **BLOCKED** (no NVIDIA keys) — not a live PASS claim |
 
 ## How to add a finding
 

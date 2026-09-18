@@ -6,6 +6,76 @@ Default `Budget.tool_calls` remains **60**.
 
 ---
 
+# Cycle 17 — Scope Gen3 theme 3 slice E (multi-step checkpoint); stay 0.4.5 (2026-09-18)
+
+**Date:** 2026-09-18
+**Baseline:** `origin/main` `16b41553` (merge PR #30; package **0.4.5**, tag **v0.4.5** @ `32e9fe87`)
+**Package at start:** `0.4.5`
+**This branch:** `cursor/gen3-multistep-checkpoint-scope-0f75` — package **0.4.5** (no bump)
+**Architecture:** control plane preserved. Needle stays off. Caps unchanged.
+**Kind:** docs / scope only. No `rad/` product change. RW-058–082 are **not rewritten**.
+
+## Why this cycle
+
+Thrash Class A slices A–D shipped (v0.4.2–v0.4.5). Live RW-081 still **FAIL**
+`needs_user` @ 12/12; pip/root-pollution Class A **NOT CONFIRMED** (RW-082).
+Multi-step checkpoint had been a one-line “planned / later”. This cycle
+**scopes** it as Gen3 theme 3 **slice E** (theme-3 remainder, not a new Gen3
+theme and not Gen4).
+
+## Code findings (lightweight; no patch)
+
+Crash-resume already exists. Slice E is strengthen/use, not invent:
+
+| existing | role | gap vs live RW-081 |
+|---|---|---|
+| `rad/control/checkpoints.py` `CheckpointManager` | Save after every task/loop/finish | Does not yield an in-flight stuck task before tools hit 0 |
+| `Controller.resume` / restore | Crash and `needs_user` continue; completed tasks never re-run | Human resume (often raised budget) is not the 12-tool intra-run loop |
+| `_on_budget` + `_close_already_satisfied` | Honest stop; already-passing OPEN tasks close (RW-081 README) | PENDING later files not yet on disk stay PENDING |
+| `Scheduler` + `TaskGraph` (`optional`, `alternatives`, `block_doomed`) | Ready-set after the current task returns | Drive loop stays in `_run_task` until budget death; planner often linear-chains `depends_on` |
+| Gen2 v0.3.2 budget-aware planning | Fit the *plan* at PLAN time | No mid-run “this retry consumes the rest; try independent READY work” |
+
+## Decision
+
+| item | value |
+|---|---|
+| Package | **0.4.5** (no 0.4.6) |
+| Slice E | **SCOPED / PLANNED**. Not accepted. Not implemented |
+| Recommended first v0.4.6 candidate | **E1** — task-boundary yield / leftover-budget dispatch (see ROADMAP). **Not** accepted here |
+| Other candidates | E2 independent later-file `depends_on`; E3 budget-aware retry stop |
+| Thrash Class A chase | **Paused** after RW-081 NOT CONFIRMED |
+| Next product work | Waits for an accepted checkpoint slice |
+| Invariants | Needle OFF; caps 16/60; false DONE 0; no redesign; no cap raise as primary fix; no Class B quality claim |
+
+## Quality gates (this branch)
+
+Isolated homes `/tmp/rad-slicee-gate` (doctor, acceptance) and `/tmp/rad-slicee-rw` (realworld).
+
+| gate | result |
+|------|--------|
+| `rad version` | **PASS** v0.4.5 |
+| `python3 -m pytest -q` | **PASS** 519 passed in 11.70s |
+| `rad doctor --offline` | **PASS** 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR, verdict READY, exit 0 |
+| `rad acceptance` | **PASS** 50/50 — `/tmp/rad-slicee-gate/acceptance/20260918-172927_gate.json` |
+| `rad realworld` | **PASS** 10/11 + 1 BLOCKED — `/tmp/rad-slicee-rw/realworld/20260918-172928_realworld.json` |
+| Needle default | **PASS** (`existing`) |
+| Caps | **PASS** `max_plan_tasks` 16; `Budget.tool_calls` 60 |
+| Package | **0.4.5** (no bump) |
+| Live NIM this patch | not re-run; suite `live_nim` **BLOCKED** (no keys here) |
+
+## Remaining limitations
+
+1. Live 11B text_analyzer@12 remains Class B FAIL. This cycle does not change that.
+2. Slice E is scoped only. E1/E2/E3 are candidates.
+3. Premature-test ENVIRONMENT Class A remains unit-confirmed (RW-080), not live-hit.
+
+## Roadmap pointer
+
+Operating spine: [ROADMAP.md](ROADMAP.md). **Generation 3 in progress.** Theme 3
+slice E **SCOPED / PLANNED**. Stay **0.4.5**. Gen4–5 are not started.
+
+---
+
 # Cycle 16 — RW-081 live v0.4.5 retest + pip/root-pollution Class A **NOT CONFIRMED** (2026-09-18)
 
 **Date:** 2026-09-18
@@ -105,7 +175,8 @@ Isolated homes `/tmp/rad-rw081-gate` (doctor, acceptance) and `/tmp/rad-rw081-rw
    text_analyzer@12. This cycle records that mkdir File-exists action-noise is
    live, and that pip/echo + root pollution is not a new control-plane hole.
 2. Default planner cap is **16**. Default tool budget is **60**.
-3. Multi-step checkpoint remains a Gen3 theme 3 planned slice (not this patch).
+3. Multi-step checkpoint is Gen3 theme 3 **slice E**, **SCOPED / PLANNED** in
+   Cycle 17 / [ROADMAP.md](ROADMAP.md) (not built; not this patch).
 4. Premature-test ENVIRONMENT Class A remains unit-confirmed (RW-080) and was
    **not live-hit** on RW-081.
 
@@ -116,8 +187,8 @@ Operating spine: [ROADMAP.md](ROADMAP.md). **Generation 1 is complete**
 is in progress:** path-aligned checks **v0.4.0** (used through RW-081);
 multi-file contracts **v0.4.1** (used through RW-081); theme 3 **planned /
 scoped**, slice A **v0.4.2**, slice B **v0.4.3**, slice C **v0.4.4** (**live
-Y** RW-081), slice D **v0.4.5** (used RW-081; premature-test path not live-hit).
-Stay **0.4.5**. Gen4–5 are not started.
+Y** RW-081), slice D **v0.4.5** (used RW-081; premature-test path not live-hit),
+slice E **SCOPED / PLANNED** (Cycle 17). Stay **0.4.5**. Gen4–5 are not started.
 
 ---
 

@@ -23,7 +23,9 @@ ENVIRONMENT confirmed Class A). Premature-test ENVIRONMENT is **implemented as
 v0.4.5** (RW-080; Gen3 theme 3 slice D). Live NIM retest of v0.4.5 is **RW-081**
 (FAIL; mkdir File-exists **live Y**; premature-test ENVIRONMENT **not live-hit**;
 pip/echo + root pollution residual). Pip thrash + root pollution Class A is
-**NOT CONFIRMED** (RW-082; stay **0.4.5**).
+**NOT CONFIRMED** (RW-082; stay **0.4.5**). Gen3 theme 3 slice E (multi-step
+checkpoint) is **SCOPED / PLANNED** in [ROADMAP.md](ROADMAP.md) — not accepted,
+not implemented; recommended first v0.4.6 candidate **E1** is not built.
 Do not rewrite RW-058–080. Scripted theme-2 RW-066 (F-27) is preserved.
 
 Every `VERIFIED` / `completed` cell is from the control-plane verifier **and** a disk
