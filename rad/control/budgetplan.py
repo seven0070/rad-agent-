@@ -1,4 +1,4 @@
-"""Budget-aware planning helpers (Gen2 theme 3).
+"""Budget-aware planning helpers (Gen2 theme 3) plus leftover-tool reserve (E1).
 
 Plans should fit remaining ``Budget.tool_calls`` rather than emitting a fat
 task graph that thrashes until exhaustion (RW-059 Case B; RW-065/066 tools
@@ -13,6 +13,10 @@ remaining budget — that is the F-21 leftover-work contract (partial progress
 then ``needs_user``, or already-satisfied ``VERIFIED``). Fat graphs are
 retried/selected (LLM) or compacted (fallback only). LLM graphs are never
 silently compacted so machine checks and leftover-task cancellation stay.
+
+Gen3 theme 3 slice E1 reuses the same remaining-tools account at *drive*
+time: reserve one tool per later independent unattempted READY task so a
+stuck in-flight task yields before leftover hits 0.
 """
 from __future__ import annotations
 
@@ -23,6 +27,49 @@ from rad.control.tasks import Check, Task
 
 TOOLS_PER_TASK = 2
 SMALL_PLAN_MAX = 3  # 1-3 task graphs may exceed remaining tools (F-21)
+
+
+def task_is_yielded(task: Task) -> bool:
+    """Parked at a task boundary so leftover tools can reach later READY work."""
+    return bool((task.verification or {}).get("yielded"))
+
+
+def independent_unattempted_ready(graph: TaskGraph, current: Optional[Task] = None) -> List[Task]:
+    """READY/PENDING/RETRYING tasks that do not wait on ``current`` and have not run yet.
+
+    ``graph.ready()`` already requires deps satisfied, so an in-flight ``current``
+    is excluded when later tasks depend on it. E1 does not rewrite ``depends_on``
+    (that is candidate E2).
+    """
+    cur_id = current.id if current is not None else None
+    out: List[Task] = []
+    for t in graph.ready():
+        if cur_id is not None and t.id == cur_id:
+            continue
+        if not t.active:
+            continue
+        if int(t.attempts or 0) > 0:
+            continue
+        if task_is_yielded(t):
+            continue
+        out.append(t)
+    return out
+
+
+def leftover_tool_reserve(graph: TaskGraph, current: Optional[Task],
+                          remaining: Optional[int]) -> int:
+    """How many tool calls to hold back for later independent READY work.
+
+    One tool per unattempted independent READY task, never more than remaining.
+    Unlimited budgets (``remaining is None``) reserve nothing — no yield.
+    """
+    if remaining is None:
+        return 0
+    rem = max(0, int(remaining))
+    n = len(independent_unattempted_ready(graph, current))
+    if n <= 0 or rem <= 0:
+        return 0
+    return min(n, rem)
 
 
 def remaining_tool_calls(obj: Any) -> Optional[int]:

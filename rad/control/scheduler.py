@@ -15,12 +15,16 @@ Branch semantics (explicit, so nothing silently disappears):
 When a task fails permanently the scheduler *activates* its alternatives and its
 failure branch. When a prerequisite can never be satisfied, dependents are moved
 to BLOCKED with a reason instead of being forgotten.
+
+Yielded tasks (`verification.yielded`, slice E1) are skipped while other READY
+work exists so leftover tool budget can reach later independent files.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
+from rad.control.budgetplan import task_is_yielded
 from rad.control.graph import TaskGraph
 from rad.control.tasks import OPEN_STATES, TERMINAL_STATES, Task, TaskStatus
 
@@ -85,6 +89,9 @@ class Scheduler:
     def runnable(self, graph: TaskGraph) -> List[Task]:
         self.activate_branches(graph)
         ready = [t for t in graph.ready() if t.active]
+        preferred = [t for t in ready if not task_is_yielded(t)]
+        if preferred:
+            ready = preferred
         ready.sort(key=lambda t: (PRIORITY_RANK.get(t.priority, 1), graph.order.index(t.id)))
         return ready
 
@@ -98,6 +105,10 @@ class Scheduler:
             if left <= 0:
                 return Batch([], "task limit reached")
             batch = batch[:left]
+        for t in batch:
+            ver = t.verification or {}
+            if ver.get("yielded"):
+                t.verification = {**ver, "yielded": False}
         self.dispatched += len(batch)
         note = "parallel" if len(batch) > 1 else ""
         return Batch(batch, note)

@@ -17,9 +17,9 @@ from rad.providers import ProviderSpec, _chat_openai, _openai_message, _unparall
 
 
 def test_version_is_synced():
-    assert __version__ == "0.4.5"
+    assert __version__ == "0.4.6"
     pyproject = Path(__file__).resolve().parent.parent / "pyproject.toml"
-    assert 'version = "0.4.5"' in pyproject.read_text(encoding="utf-8")
+    assert 'version = "0.4.6"' in pyproject.read_text(encoding="utf-8")
 
 
 def test_default_workspace_is_inside_home_not_cwd(tmp_path, monkeypatch):

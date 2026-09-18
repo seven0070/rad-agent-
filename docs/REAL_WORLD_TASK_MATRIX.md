@@ -23,19 +23,25 @@ ENVIRONMENT confirmed Class A). Premature-test ENVIRONMENT is **implemented as
 v0.4.5** (RW-080; Gen3 theme 3 slice D). Live NIM retest of v0.4.5 is **RW-081**
 (FAIL; mkdir File-exists **live Y**; premature-test ENVIRONMENT **not live-hit**;
 pip/echo + root pollution residual). Pip thrash + root pollution Class A is
-**NOT CONFIRMED** (RW-082; stay **0.4.5**). Gen3 theme 3 slice E (multi-step
-checkpoint) is **SCOPED / PLANNED** in [ROADMAP.md](ROADMAP.md) — not accepted,
-not implemented; recommended first v0.4.6 candidate **E1** is not built.
-Do not rewrite RW-058–080. Scripted theme-2 RW-066 (F-27) is preserved.
+**NOT CONFIRMED** (RW-082; stay **0.4.5**). Gen3 theme 3 slice E1 (task-boundary
+yield / leftover-budget dispatch) is **implemented as v0.4.6** (RW-083). E2/E3
+remain candidates. Do not rewrite RW-058–082. Scripted theme-2 RW-066 (F-27) is preserved.
 
 Every `VERIFIED` / `completed` cell is from the control-plane verifier **and** a disk
 check (file exists / contents / hash). A model `DONE:` line is never enough.
 
 Status vocabulary: **PASS** | **FAIL** | **BLOCKED** | **NOT TESTED**.
 
-Live NIM retest of v0.4.5 (RW-081) is at the top, then scripted RW-082
-(pip/root-pollution investigation), then RW-079 / RW-080. RW-058–080 are
+Live NIM retest of v0.4.5 (RW-081) is at the top, then scripted RW-083
+(E1 leftover-budget dispatch), then scripted RW-082
+(pip/root-pollution investigation), then RW-079 / RW-080. RW-058–082 are
 **not rewritten**.
+
+# Scripted E1 leftover-budget dispatch (RW-083)
+
+| id | date | task | goal (short) | plan | steps | tools | result | disk / verify | ENVIRONMENT? | class | notes |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| RW-083 | 2026-09-18 | coding (scripted) — task-boundary yield / leftover-budget dispatch | t1 writes `first.txt`; t2 thrashes pip/echo and would burn remaining tools; t3 independent `later.txt` | 3 planned (LLM): t3 depends on t1 only | t1 write, t2 10× echo, t3 write | default **60** unchanged; scripted cap **4** | **PASS** (t1 VERIFIED; t2 yielded RETRYING; t3 VERIFIED ≥1 attempt; missing JSON still **not** VERIFIED; chained later file stays PENDING) | `first.txt` + `later.txt` on disk; `stuck.txt` absent; checkpoint intact; false DONE **0** | n/a (budget yield, not ENVIRONMENT) | **A** (Gen3 theme 3 slice E1; live 11B quality stays **B**) | Tests `test_task_boundary_yield.py`. Needle OFF. Caps unchanged. No new checkpoint format. Live NIM not required. RW-081 Class B live facts preserved. |
 
 # Live NIM retest of v0.4.5 (RW-081)
 
