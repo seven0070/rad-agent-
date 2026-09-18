@@ -21,14 +21,14 @@ rad/
   evaluation.py, regression.py, realworld.py, acceptance.py   measurement and the gate
   browser.py, background.py, skills.py, mcp.py, storage.py, doctor.py, api.py, evolution.py,
   experience.py, dna.py, memory.py, voice.py, drive.py, jobs.py, corpora…
-tests/              275 tests, all offline
+tests/              offline pytest suite
 docs/               this documentation set
 ```
 
 ## Running the tests
 
 ```bash
-python -m pytest -q                 # everything (~8s, no network, no keys)
+python -m pytest -q                 # everything (~8s, no network, no keys; currently 299 tests)
 python -m pytest -q tests/test_policy.py -k hard
 rad regression --quick              # security + agent groups + a live benchmark sample
 rad acceptance                      # the 50-item gate, with per-item evidence

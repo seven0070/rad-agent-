@@ -3,12 +3,13 @@
 Start here:
 
 ```bash
-rad doctor            # 22 checks; every warn/fail line carries the command that fixes it
+rad doctor            # 23 checks; READY / WARNING / OPTIONAL / ERROR; every non-READY line carries a fix
 rad doctor --fix      # repairs only what is safe (dirs, permissions, config types, migrations, quarantine)
 rad status            # objectives, memory, brain, jobs, schema on one screen
 ```
 
-`rad doctor` exits 1 if anything is `fail`, so it is usable as a pre-flight check in scripts.
+`rad doctor` exits 1 if anything is ERROR. OPTIONAL findings (no cloud key, no local engine,
+no MCP skills, no voice) do not fail the command — RAD stays usable.
 
 ## "No brain available"
 

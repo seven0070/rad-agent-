@@ -300,7 +300,10 @@ class Storage:
                     shutil.rmtree(target)
                 elif target.exists():
                     target.unlink()
-            tar.extractall(self.home.root, members=members)
+            try:
+                tar.extractall(self.home.root, members=members, filter="data")
+            except TypeError:
+                tar.extractall(self.home.root, members=members)
             restored = sorted(tops)
         self.home.cfg = self.home.load_config()
         return restored

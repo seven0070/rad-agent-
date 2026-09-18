@@ -1,6 +1,6 @@
 # Configuration
 
-RAD reads one JSON file (`~/.rad/config.json`, override with `RAD_HOME`) plus environment
+RAD reads one JSON file (`~/.rad/rad.json`, override with `RAD_HOME`; `rad config path` prints it) plus environment
 variables. `rad config show` prints the effective values, `rad config get <key>`,
 `rad config set <key> <value>` and `rad config unset <key>` change them; invalid values are
 rejected with a reason instead of being written (`rad doctor` re-checks the whole file and
@@ -10,7 +10,7 @@ rejected with a reason instead of being written (`rad doctor` re-checks the whol
 
 | key | default | what it does |
 |---|---|---|
-| `workspace` | `null` | where the hands work (files, shells) — a boundary, not just a default |
+| `workspace` | `null` → `~/.rad/workspace` | where the hands work (files, shells) — a boundary, not just a default |
 | `free_lock` | `false` | true = paid providers are never used, no matter what falls over |
 | `auto` | `false` | true = stop asking for confirmation (hard-blocked patterns stay blocked regardless) |
 | `force_provider` | `null` | pin one provider for every call |
@@ -33,7 +33,7 @@ rejected with a reason instead of being written (`rad doctor` re-checks the whol
 | `allow_localhost_web` | `false` | true = web/browser tools may reach loopback (local dev servers); metadata endpoints stay blocked |
 | `plan_infer_done` | `false` | let the planner infer completion from the observation stream |
 | `objective_parallel` | `2` | how many tasks of one objective may run at once |
-| `accept_unverified_done` | `true` | accept a task that finished without machine verification (off by default: an unproven task is not "done") |
+| `accept_unverified_done` | `true` | accept a task that finished without machine verification (recorded as UNVERIFIED) |
 | `evolution_require_approval` | `false` | evolution candidates need explicit approval before promotion |
 | `evolution_suite` | `"smoke"` | benchmark suite used to gate an evolution candidate |
 | `allow_api_fix` | `false` | allow `GET /v1/doctor?fix=1` to repair state |

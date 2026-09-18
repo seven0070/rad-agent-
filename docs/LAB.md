@@ -27,7 +27,7 @@ a DNA generation / prompt / route change.
 
 ```
 rad lab list [--suite …]
-rad lab run --suite smoke|long|adversarial|all [--ids a b] [--label name] [--keep]
+rad lab run --suite smoke|long|adversarial|all|bank|bank:<category> [--ids a b] [--sample N] [--label name] [--keep]
 rad lab history · rad lab show [label] · rad lab compare <base> <cand>   (exit 2 on gate fail)
 ```
 

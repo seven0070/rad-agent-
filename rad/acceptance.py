@@ -191,13 +191,17 @@ class Gate:
         names = {f.check for f in fs}
         required = {"python", "home", "config", "schema", "integrity", "workspace", "dna", "policy",
                     "memory", "objectives", "agents", "skills", "providers", "local-engines", "mcp",
-                    "browser", "voice", "recovery", "benchmarks", "disk", "tools", "permissions"}
+                    "browser", "voice", "recovery", "benchmarks", "sandbox", "disk", "tools",
+                    "permissions"}
         missing = sorted(required - names)
-        fails = [f.check for f in fs if f.status == "fail" and f.check != "providers"]
+        fails = [f.check for f in fs if f.status == "fail"]
+        known = {"ok", "warn", "optional", "fail"}
+        labels_ok = all(f.status in known for f in fs)
         actionable = all((f.detail or f.message) for f in fs if f.status != "ok")
-        return (not missing and not fails and actionable), (
+        return (not missing and not fails and actionable and labels_ok), (
             f"{len(fs)} checks: {sorted(names)}; missing={missing or 'none'}; "
-            f"unexpected failures={fails or 'none'}; every warn carries an action")
+            f"unexpected failures={fails or 'none'}; statuses={{ok,warn,optional,fail}}→"
+            f"READY/WARNING/OPTIONAL/ERROR; every warn/optional/error carries an action")
 
     # ================================================================== control
     def i_objective_lifecycle(self) -> Tuple[bool, str]:
@@ -1173,7 +1177,8 @@ class Gate:
                   "AGENTS.md": "agent", "SECURITY.md": "security", "EVOLUTION.md": "evolution",
                   "LAB.md": "benchmark", "BENCHMARKS.md": "benchmark", "TROUBLESHOOTING.md": "troubleshoot",
                   "MIGRATION.md": "migrat", "DEVELOPMENT.md": "development",
-                  "CONTROL-PLANE.md": "objective", "ACCEPTANCE.md": "acceptance"}
+                  "CONTROL-PLANE.md": "objective", "ACCEPTANCE.md": "acceptance",
+                  "QUICKSTART.md": "quickstart"}
         missing = [f for f, kw in topics.items() if f not in docs or kw not in readme.lower()]
         # every `rad <cmd>` mentioned anywhere in the docs must be a real command
         commands = set(build_parser()._subparsers._group_actions[0].choices)
@@ -1209,14 +1214,21 @@ class Gate:
         actionable = [f for f in findings if f.status in ("warn", "fail")]
         hints = [f for f in actionable if ("rad " in f.message
                                            or any("rad " in (d or "") for d in (f.detail or [])))]
+        # optional findings must also name a command so a clean install is a to-do list, not a shrug
+        optionals = [f for f in findings if f.status == "optional"]
+        optional_hints = [f for f in optionals if ("rad " in f.message
+                                                   or any("rad " in (d or "") for d in (f.detail or [])))]
         versioned = home.rel("schema.json").exists() and st.version() == SCHEMA_VERSION
         return (not missing and back == "v1" and versioned and bool(snap.exists())
-                and len(hints) == len(actionable) and bool(MIGRATIONS)), (
+                and len(hints) == len(actionable)
+                and len(optional_hints) == len(optionals)
+                and bool(MIGRATIONS)), (
             f"install/upgrade/backup/restore/verify are real commands (missing={missing or 'none'}); "
             f"versioning stamped (schema v{st.version()} of {SCHEMA_VERSION}, {len(MIGRATIONS)} "
             f"migrations); snapshot→modify→restore rolled the file back to {back!r}; doctor reported "
-            f"{len(findings)} checks, and all {len(hints)}/{len(actionable)} warn/fail findings carry "
-            f"an actionable command (`rad doctor --fix` where repair is safe); crash recovery is covered "
+            f"{len(findings)} checks, and all {len(hints)}/{len(actionable)} warn/fail findings plus "
+            f"{len(optional_hints)}/{len(optionals)} optional findings carry an actionable command "
+            f"(`rad doctor --fix` where repair is safe); crash recovery is covered "
             f"by `rad doctor` + checkpoint restore + `rad storage check --repair`")
     def i_final_loop(self) -> Tuple[bool, str]:
         """The whole loop, end to end, on a goal nobody scripted for this item."""

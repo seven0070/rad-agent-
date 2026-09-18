@@ -10,9 +10,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 def home(tmp_path, monkeypatch):
     """A throw-away RAD home with its own workspace.
 
-    The workspace is set explicitly: `RadHome.workspace()` falls back to the process CWD, so a
-    test that forgets it writes into the repository (that is how stray `f.csv`/`r0_out.txt` files
-    used to appear in the project root).
+    The workspace is set explicitly. The runtime default is `~/.rad/workspace` (never the
+    process CWD); tests still pin their own directory so they cannot collide with each other.
     """
     monkeypatch.setenv("RAD_HOME", str(tmp_path / "radhome"))
     from rad.home import RadHome

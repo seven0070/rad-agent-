@@ -2,7 +2,7 @@
 
 ## Requirements
 
-* **Python 3.10+** (3.11 or 3.12 recommended). Nothing else — the core has **no runtime
+* **Python 3.9+** (3.11 or 3.12 recommended). Nothing else — the core has **no runtime
   dependencies**; `dependencies = []` in `pyproject.toml` is enforced by the acceptance gate.
 * A brain: any one of
   * a local engine (Edge0 / Ollama / LM Studio / vLLM on your machine),
@@ -19,7 +19,7 @@ git clone https://github.com/seven0070/rad-agent-.git && cd rad-agent-
 python3 -m venv .venv && . .venv/bin/activate
 pip install -e .                 # or: pip install -e ".[dev]" for the test suite
 rad version
-rad doctor                       # 22 checks: python, home, config, schema, providers, keys, …
+rad doctor                       # READY / WARNING / OPTIONAL / ERROR — 23 checks
 ```
 
 `rad` works without a key, without a local engine and without network access: it will tell you
@@ -33,9 +33,9 @@ database, no daemon:
 
 ```
 ~/.rad/
-  config.json          settings (rad config show)
+  rad.json             settings (rad config show / rad config path)
   keys/keys.env        0600, RAD's own secrets (capability `credentials` = DENY)
-  workspace/           the hands: files RAD may read/write/run in
+  workspace/           the hands: files RAD may read/write/run in (default; override with rad config set workspace)
   memory/long/…        episodic · semantic · procedural (markdown + front-matter)
   objectives/<id>/     objective.json · tasks.json · events.jsonl · observations/ · artifacts.json
   events.jsonl         the global event stream (rad events)

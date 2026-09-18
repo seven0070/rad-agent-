@@ -47,7 +47,6 @@ Global: `--home <dir>` (or `RAD_HOME`), `--quiet`, `--json` where noted.
 | `rad agents` | scoped sub-agents: registry, capabilities, runs, blackboard |
 | `rad team` | multi-agent cognition — specialists + synthesis |
 | `rad jobs` | list/cancel jobs |
-| `rad watcher` | ==SUPPRESS== |
 
 ## Memory & world
 
@@ -128,7 +127,7 @@ Several commands take a sub-action as their first argument:
 
 ## Exit codes
 
-* `0` success (including `rad doctor` when nothing failed)
-* `1` usage/validation error, `2` a check failed (`rad regression`, `rad realworld`,
+* `0` success (including `rad doctor` when nothing is ERROR — OPTIONAL capabilities do not fail)
+* `1` usage/validation error or `rad doctor` ERROR, `2` a check failed (`rad regression`, `rad realworld`,
   `rad acceptance`, `rad evaluate gate`) — usable directly in CI.
 
