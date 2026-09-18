@@ -1208,17 +1208,17 @@ python3 -m pytest -q tests/test_path_aligned_checks.py
 
 | gate | result |
 |---|---|
-| `python3 -m pytest -q` | **pending this branch** |
-| `rad doctor --offline` | pending |
-| `rad acceptance` | pending |
-| `rad realworld` | pending (`live_nim` may BLOCKED) |
+| `python3 -m pytest -q` | **435 passed** in 8.60s |
+| `rad doctor --offline` | READY — 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR (`RAD_HOME=/tmp/rad-v040-gate`) |
+| `rad acceptance` | **50/50 PASSED** (`/tmp/rad-v040-gate/acceptance/20260918-144259_gate.json`) |
+| `rad realworld` | **10 passed / 1 BLOCKED / 0 failed** (`live_nim` BLOCKED; `/tmp/rad-v040-rw/realworld/20260918-144303_realworld.json`) |
 | Package | **0.4.0** |
 | RW-058–069 | preserved |
 | 16-task cap | **UNCHANGED** |
 | Default tool budget | **UNCHANGED** (60) |
 | Needle | **OFF** (`existing`) |
 | False completion | **0** |
-| Live NIM this patch | **BLOCKED** if no NVIDIA keys — not a live PASS claim for RW-069 |
+| Live NIM this patch | **BLOCKED** (no NVIDIA keys) — not a live PASS claim for RW-069 |
 
 ## How to add a finding
 

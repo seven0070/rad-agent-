@@ -72,16 +72,16 @@ Isolated homes `/tmp/rad-v040-gate` (doctor, acceptance) and `/tmp/rad-v040-rw` 
 
 | gate | result |
 |------|--------|
-| `rad version` | **pending** |
-| `python3 -m pytest -q` | **PASS** 435 passed (pre-gate local) |
-| `rad doctor --offline` | pending |
-| `rad acceptance` | pending |
-| `rad realworld` | pending |
+| `rad version` | **PASS** v0.4.0 |
+| `python3 -m pytest -q` | **PASS** 435 passed in 8.60s |
+| `rad doctor --offline` | **PASS** 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR, verdict READY, exit 0 |
+| `rad acceptance` | **PASS** 50/50 — `/tmp/rad-v040-gate/acceptance/20260918-144259_gate.json` |
+| `rad realworld` | **PASS** 10/11 + 1 BLOCKED — `/tmp/rad-v040-rw/realworld/20260918-144303_realworld.json` |
 | Needle default | **PASS** (`existing`) |
 | Caps | **PASS** `max_plan_tasks` 16; `Budget.tool_calls` 60 |
-| False DONE | **PASS** (scripted 0) |
+| False DONE | **PASS** (scripted 0; suite `false_success` / `needs_user` / `no_loop`) |
 | Package | **0.4.0** |
-| Live NIM this patch | not re-run; RW-069 facts preserved |
+| Live NIM this patch | not re-run; RW-069 facts preserved. Suite `live_nim` **BLOCKED** (no keys here) |
 
 ## Roadmap pointer
 
