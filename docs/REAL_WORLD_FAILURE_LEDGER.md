@@ -491,6 +491,97 @@ RAD_HOME=/tmp/rad_prod_text_analyzer_live_a787512c  # rad v0.2.3; nvidia / meta/
 | Evidence for v0.3.0 | **none** |
 | Recommendation | **Outcome A — continue 0.2.x** |
 
+## Controlled tool-budget experiment (RW-059) — 2026-09-18
+
+Operator production follow-up on package **0.2.3**. Same text_analyzer objective as
+RW-058 with `--max-tools` doubled 12 → **24** for this run only. RW-058 is preserved
+as historical evidence. Architecture frozen. Needle remains default-off. Planner cap
+left at 16. **No 0.2.x bump. Default max-tools not raised.** Not AGI. Not v0.3.0.
+Task log: `docs/REAL_WORLD_TASK_MATRIX.md` RW-059.
+
+### F-20260918-16 — tool-budget doubling 12→24 did not complete text_analyzer
+
+| field | value |
+|---|---|
+| class | B (tool-budget hypothesis **Case B**) |
+| status | documented |
+| found in | post-Cycle 4 production use (RW-059 vs RW-058), rad v0.2.3, 2026-09-18 IST ~14:02–14:04 |
+| fixed in | — not a RAD hole to patch from this experiment; 24 did **not** suffice. **No v0.2.4.** Default max-tools **not** raised |
+| lane | live NVIDIA NIM `meta/llama-3.2-11b-vision-instruct` (controlled `--max-tools 24`) |
+| objective / test | `obj_e1419520` — same text_analyzer layout as RW-058; `--max-tasks 8 --max-tools 24`; Needle `existing` / off |
+| disk | all five files present under `text_analyzer/`; `input.txt` sha256 `bf69eb737ca6f3949b5626701cb8472a2fc683e6b05e3101744eccd49dab629b` (same as RW-058); `summary.json` invalid JSON + wrong counts; tests FAIL `13!=6` |
+| expected | doubling the tool budget 12→24 would complete the objective if 12 was the bottleneck (hypothesis Case A) |
+| actual | both RW-058 and RW-059 exhausted the tool budget (12/12 and 24/24); both ended `needs_user` / **FAIL**; false DONE **0**. Home `/tmp/rad_prod_rw059_b48e7b56`. Tools: `write_file` 19, `run_shell` 5; model calls 25/80; wall ~106s |
+| notes | Controlled comparison against RW-058. More tools produced all five paths under `text_analyzer/` but did not yield a passing, verifiable result. RAD still stopped at the budget; verifier did not rubber-stamp. Outcome A continues. |
+
+Reproduction (redacted):
+
+```
+RAD_HOME=/tmp/rad_prod_rw059_b48e7b56  # rad v0.2.3; nvidia / meta/llama-3.2-11b-vision-instruct
+# --max-tasks 8 --max-tools 24; Needle existing/off
+# obj_e1419520 → needs_user; tools 24/24; tests FAIL 13!=6; summary.json invalid JSON
+```
+
+### F-20260918-17 — suspected fallback planner splits multiline objective newlines
+
+| field | value |
+|---|---|
+| class | A (suspected; **not confirmed**) |
+| status | **open / investigate** — do **not** claim fixed |
+| found in | post-Cycle 4 production use (RW-059 investigation candidates), rad v0.2.3 |
+| fixed in | — **not patched this PR.** No v0.2.4 unless a later confirmed Class A fix |
+| lane | live production `objective run` (planner path) |
+| objective / test | production text_analyzer multiline objective (RW-058 / RW-059) |
+| disk | n/a — suspected planning defect, not a disk-hash finding |
+| expected | one coherent plan for a single multiline objective; no spurious tasks from newline wrapping |
+| actual | suspected: fallback planner splitting multiline objective newlines into spurious tasks, burning plan/tool budget |
+| notes | Investigation item only. Do not treat this row as a proven Class A or as a shipped fix. Architecture frozen until a confirmed reproduction + smallest patch. |
+
+### F-20260918-18 — suspected ENVIRONMENT_FAILURE misclassification burns tool budget
+
+| field | value |
+|---|---|
+| class | A (suspected; **not confirmed**) |
+| status | **open / investigate** — do **not** claim fixed |
+| found in | post-Cycle 4 production use (RW-059 investigation candidates), rad v0.2.3 |
+| fixed in | — **not patched this PR.** No v0.2.4 unless a later confirmed Class A fix |
+| lane | live production `objective run` (recovery classify) |
+| objective / test | production text_analyzer (RW-058 / RW-059) |
+| disk | n/a — suspected recovery-classification defect, not a disk-hash finding |
+| expected | missing/failed work classified so recovery does not spend the tool budget on mis-tagged environment repairs |
+| actual | suspected: recovery `ENVIRONMENT_FAILURE` misclassification burning tool budget (retry/repair loops) |
+| notes | Investigation item only. Both RW-058 and RW-059 exhausted `--max-tools`. Do not treat this row as a proven Class A or as a shipped fix. Architecture frozen until a confirmed reproduction + smallest patch. |
+
+### F-20260918-19 — 11B invalid JSON summary and wrong counts on RW-059
+
+| field | value |
+|---|---|
+| class | B |
+| status | documented |
+| found in | post-Cycle 4 production use (RW-059), rad v0.2.3, 2026-09-18 IST ~14:02–14:04 |
+| fixed in | — not a RAD hole; model limitation. Same family as F-20260918-04 / F-20260918-15. **No v0.2.4.** |
+| lane | live NVIDIA NIM `meta/llama-3.2-11b-vision-instruct` |
+| objective / test | `obj_e1419520` — `text_analyzer/{analyzer.py,input.txt,summary.json,test_analyzer.py,README.md}` |
+| disk | all five files present under `text_analyzer/`; `input.txt` sha256 `bf69eb737ca6f3949b5626701cb8472a2fc683e6b05e3101744eccd49dab629b`; `summary.json` **invalid JSON** + wrong counts; tests **FAIL** `13!=6` |
+| expected | valid `summary.json` with correct counts; tests pass |
+| actual | layout paths present, but model output failed the success criteria. Status `needs_user` / FAIL. False DONE **0** |
+| notes | Class B aspects remain after the extra tool budget: wrong counts, invalid JSON summary, test mismatch. Do not weaken `DONE:` / `VERIFIED` to paper over this. |
+
+| gate | result |
+|---|---|
+| Package | **0.2.3** — no bump; **no v0.2.4** |
+| RW-058 | preserved as historical evidence (F-20260918-15 Class B; tools 12/12) |
+| RW-059 vs RW-058 | both `needs_user` / FAIL; both exhausted tool budget; false DONE **0** |
+| Tool-budget hypothesis | **Case B** — 24 did not suffice (F-20260918-16) |
+| Class A patched | **none** |
+| Class A open/investigate | **F-20260918-17**, **F-20260918-18** — suspected only; **not fixed** |
+| Class B | **F-20260918-16** (budget doubling), **F-20260918-19** (invalid JSON / wrong counts); RW-058 **F-20260918-15** unchanged |
+| Default max-tools | **unchanged** (RW-059 used `--max-tools 24` for this run only) |
+| Needle | default `existing`; **NOT** turned on |
+| `max_plan_tasks` | **16** unchanged (run used `--max-tasks 8`) |
+| Evidence for v0.3.0 | **none** |
+| Recommendation | **Outcome A — continue 0.2.x** |
+
 ## How to add a finding
 
 1. Reproduce with disk checks (file exists / hash / contents). Quote status + verification, not model prose.

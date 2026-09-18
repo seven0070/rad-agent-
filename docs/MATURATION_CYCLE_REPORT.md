@@ -254,6 +254,62 @@ tools 12/12 exhausted; model calls 7/80; wall ~103s.
 
 ---
 
+# Controlled tool-budget experiment — RW-059 vs RW-058 (2026-09-18)
+
+**Date:** 2026-09-18 (IST ~14:02–14:04 for RW-059)
+**Package:** `0.2.3` — **no bump**. Not v0.2.4. Not v0.3.0.
+**Architecture:** frozen. Needle stays optional/off. `max_plan_tasks` left at **16**.
+Default max-tools **not** raised.
+
+Docs-only record. No RAD code change. RW-058 is preserved exactly as historical
+evidence (incomplete layout at `--max-tools 12`).
+
+## Controlled comparison
+
+Same production text_analyzer objective; same 11B NIM model; same `--max-tasks 8`;
+Needle `existing` / off. The independent variable is `--max-tools` 12 vs 24.
+
+| | RW-058 | RW-059 |
+|---|---|---|
+| home | `/tmp/rad_prod_text_analyzer_live_a787512c` | `/tmp/rad_prod_rw059_b48e7b56` |
+| objective | `obj_4e219224` | `obj_e1419520` |
+| `--max-tools` | 12 | 24 |
+| wall | ~103s IST ~13:39–13:41 | ~106s IST ~14:02–14:04 |
+| tools | 12/12 | 24/24 (`write_file` 19, `run_shell` 5) |
+| model calls | 7/80 | 25/80 |
+| status | `needs_user` / **FAIL** | `needs_user` / **FAIL** |
+| false DONE | **0** | **0** |
+| disk | `summary.json` missing under `text_analyzer/` (correct counts at workspace root, wrong path) | all five files under `text_analyzer/`; `summary.json` invalid JSON + wrong counts; tests FAIL `13!=6` |
+| `input.txt` | sha256 `bf69eb737ca6f3949b5626701cb8472a2fc683e6b05e3101744eccd49dab629b` | same |
+
+Interpretation: tool-budget hypothesis **Case B** — 24 did **not** suffice. Both
+runs exhausted the budget. Extra tools got the five paths onto disk but not a
+passing result.
+
+## Class A / B / C
+
+| class | this experiment |
+|---|---|
+| **A** | **not patched.** Suspected candidates **open/investigate** only: fallback planner splitting multiline objective newlines into spurious tasks (F-20260918-17); recovery `ENVIRONMENT_FAILURE` misclassification burning tool budget (F-20260918-18). Do **not** claim fixed. No v0.2.4 from this record. |
+| **B** | **F-20260918-16** (12→24 still FAIL); **F-20260918-19** (invalid JSON summary, wrong counts, tests `13!=6`). RW-058 **F-20260918-15** remains the historical 12-tool layout failure. |
+| **C** | none new (NIM key present for both live attempts). |
+
+## Decision
+
+- **Outcome A continues** — stay on 0.2.x.
+- Needle stays **off**.
+- Default max-tools **unchanged** (24 was this run’s `--max-tools` only).
+- Cap **16** unchanged.
+- **No v0.2.4** unless a later confirmed Class A fix.
+- No architecture change. Not v0.3.0.
+
+## Evidence for v0.3.0
+
+**None.** Case B on the tool-budget hypothesis is not a missing control-plane stage
+and does not justify designing v0.3.0.
+
+---
+
 # Cycle 3 — v0.2.3 (2026-09-18)
 
 **Date:** 2026-09-18
