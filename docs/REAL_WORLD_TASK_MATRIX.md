@@ -3,15 +3,17 @@
 Factual rows from maturation cycles on disk-checked evidence.
 Architecture frozen. Needle stays experimental / off. Not AGI.
 Operating spine: [ROADMAP.md](ROADMAP.md). Gen1 complete on 0.2.3; Gen2 in progress.
-Verified coding loop is **implemented as v0.3.0** in this change (RW-064). Do not rewrite RW-058–063.
+Verified coding loop is **implemented as v0.3.0** (RW-064). Live NIM retest of that
+loop is **RW-065**. Do not rewrite RW-058–064.
 
 Every `VERIFIED` / `completed` cell is from the control-plane verifier **and** a disk
 check (file exists / contents / hash). A model `DONE:` line is never enough.
 
 Status vocabulary: **PASS** | **FAIL** | **BLOCKED** | **NOT TESTED**.
 
-Gen2 / v0.3.0 (verified coding loop) is at the top. Post-Cycle 4 production use
-(package **0.2.3**, no bump) and Cycles 4–2 follow. RW-058–063 are **not rewritten**.
+Gen2 / v0.3.0 (verified coding loop) is at the top, then the live NIM retest
+(RW-065). Post-Cycle 4 production use (package **0.2.3**, no bump) and Cycles 4–2
+follow. RW-058–064 are **not rewritten**.
 
 # Gen2 — v0.3.0 verified coding loop (RW-064)
 
@@ -34,6 +36,52 @@ Default `Budget.tool_calls` **60**. Control plane unchanged in shape
 | False completion | **0** |
 | RW-058–063 | preserved (not rewritten) |
 | Live NIM | **BLOCKED** (no `NVIDIA_NIM_API_KEY`) |
+
+# Live NIM retest of v0.3.0 (RW-065)
+
+Lane: operator production `rad objective run` on **v0.3.0** (tag `v0.3.0`,
+`183ff611`). Needle `existing` / off. `max_plan_tasks` **16**. Default
+`Budget.tool_calls` **60** (this run used `--max-tasks 4 --max-tools 12`).
+RW-058–064 are **not rewritten**. **Not** an end-to-end PASS. Package stays
+**0.3.0** (json_valid-on-.py Class A **NOT CONFIRMED**; no 0.3.1).
+
+Authoritative live facts: operator report for `obj_efed5285` /
+`/tmp/rad_prod_rw065_ab0919b2`.
+
+| id | Date | Category | Objective | #tasks | #actions | Tools | Result | Verification | Recovery | Failure class | Notes |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| RW-065 | 2026-09-18 IST 18:46:10–18:47:36 | coding (live NIM) — v0.3.0 word_counter retest vs RW-062 | word_counter.py + result.json (`words==2`) + test_word_counter.py + tests pass; no DONE: pollution; `--max-tasks 4 --max-tools 12`; Needle `existing` / off | `PLAN_CREATED` **source=llm** (4 tasks); t_8ca54965 RETRYING; t_1c465c51 COMPLETED/VERIFIED; tests+run PENDING; repair t_6b2926a5 RUNNING at stop | tools 12/12; model calls 9/80; retries 1/6; wall ~86s event / spent 66.7s | 12/12 exhausted | **FAIL** vs success criteria (`needs_user`); **NOT DONE**, **not VERIFIED** complete | FAILED on first task (actions errors + `json_valid` on `.py`); objective `json_min_len` on `result.json` registered, not VERIFIED | Gen2 **YES** — `RECOVERY_DECISION` `strategy=repair` `failure_class=ENVIRONMENT_FAILURE` (“missing dependency/file”); repair cut off by tool budget | **B** primary (11B/budget); json_valid-on-.py Class A **NOT CONFIRMED** (F-20260918-26) | Provider nvidia / `meta/llama-3.2-11b-vision-instruct`. Home `/tmp/rad_prod_rw065_ab0919b2`; `obj_efed5285`. Disk: `word_counter.py` YES (broken `s.split().count()` TypeError); `result.json` **valid** `{"words": 2}`; `test_word_counter.py` YES (NameError, no import); DONE pollution **NONE**. Tests **FAIL**. False DONE **0**. vs RW-062: **improved** (llm plan, Gen2 repair, valid JSON, no DONE pollution) but not E2E PASS. Caps unchanged. Needle OFF. **No v0.3.1.** |
+
+### RW-065 vs RW-062 (same 11B / tools=12 control)
+
+| | RW-062 (v0.2.3) | RW-065 (v0.3.0) |
+|---|---|---|
+| home | `/tmp/rad_prod_rw062_6ede431b` | `/tmp/rad_prod_rw065_ab0919b2` |
+| objective id | `obj_7a020865` | `obj_efed5285` |
+| model | NIM 11B `meta/llama-3.2-11b-vision-instruct` | same |
+| `--max-tasks` / `--max-tools` | 4 / 12 | 4 / 12 |
+| Needle | `existing` / off | `existing` / off |
+| PLAN source | **fallback** (7 clause-split tasks) | **llm** (4 coherent tasks) |
+| Gen2 repair insert | No | **YES** (`RECOVERY_DECISION` → `t_6b2926a5`) |
+| `result.json` | invalid `{` | **valid `{"words": 2}`** |
+| Tests | FAIL `6 != 2` | FAIL `NameError` / broken counter |
+| DONE pollution | YES (`DONE:` fake path) | **NO** |
+| false DONE | **0** | **0** |
+| final status | `needs_user` / FAIL | `needs_user` / FAIL |
+| end-to-end PASS | No | No |
+| class | **B** (F-22) | **B** (F-25); json_valid-on-.py **NOT CONFIRMED** (F-26) |
+
+| metric | value |
+|---|---|
+| Package | **0.3.0** — no bump; **no v0.3.1** |
+| Theme 1 (verified coding loop) | **used** — repair fired; valid JSON; no DONE pollution |
+| Residual | **Class B** — 11B + tools=12 exhausted mid-repair; tests FAIL; not E2E PASS |
+| Class A json_valid-on-.py | **NOT CONFIRMED** — see ledger F-20260918-26 / `tests/test_json_valid_py_investigation.py` |
+| RW-058–064 | preserved (not rewritten) |
+| Default max-tools / max-tasks | **unchanged** (this run used `--max-tasks 4 --max-tools 12` only) |
+| Needle | **OFF** (`existing`) |
+| False completion | **0** |
+| Recommendation | **stay 0.3.0** — document live use; do not claim coding PASS on 11B@12 |
 
 # Cycle 2 (post-v0.2.1 → package **0.2.2**)
 
