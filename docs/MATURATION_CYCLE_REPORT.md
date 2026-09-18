@@ -47,6 +47,22 @@ Crash-resume already exists. Slice E is strengthen/use, not invent:
 | Next product work | Waits for an accepted checkpoint slice |
 | Invariants | Needle OFF; caps 16/60; false DONE 0; no redesign; no cap raise as primary fix; no Class B quality claim |
 
+## Quality gates (this branch)
+
+Isolated homes `/tmp/rad-slicee-gate` (doctor, acceptance) and `/tmp/rad-slicee-rw` (realworld).
+
+| gate | result |
+|------|--------|
+| `rad version` | **PASS** v0.4.5 |
+| `python3 -m pytest -q` | **PASS** 519 passed in 11.70s |
+| `rad doctor --offline` | **PASS** 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR, verdict READY, exit 0 |
+| `rad acceptance` | **PASS** 50/50 — `/tmp/rad-slicee-gate/acceptance/20260918-172927_gate.json` |
+| `rad realworld` | **PASS** 10/11 + 1 BLOCKED — `/tmp/rad-slicee-rw/realworld/20260918-172928_realworld.json` |
+| Needle default | **PASS** (`existing`) |
+| Caps | **PASS** `max_plan_tasks` 16; `Budget.tool_calls` 60 |
+| Package | **0.4.5** (no bump) |
+| Live NIM this patch | not re-run; suite `live_nim` **BLOCKED** (no keys here) |
+
 ## Remaining limitations
 
 1. Live 11B text_analyzer@12 remains Class B FAIL. This cycle does not change that.

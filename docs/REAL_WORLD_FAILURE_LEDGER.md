@@ -1753,6 +1753,10 @@ waits for a written accept.
 
 | gate | result |
 |---|---|
+| `python3 -m pytest -q` | **519 passed** in 11.70s |
+| `rad doctor --offline` | READY — 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR (`RAD_HOME=/tmp/rad-slicee-gate`) |
+| `rad acceptance` | **50/50 PASSED** (`/tmp/rad-slicee-gate/acceptance/20260918-172927_gate.json`) |
+| `rad realworld` | **10 passed / 1 BLOCKED / 0 failed** (`live_nim` BLOCKED; `/tmp/rad-slicee-rw/realworld/20260918-172928_realworld.json`) |
 | Package | **0.4.5** (no bump; no v0.4.6) |
 | Product code | unchanged |
 | Slice E | **SCOPED / PLANNED** |
@@ -1760,6 +1764,7 @@ waits for a written accept.
 | Default tool budget | **UNCHANGED** (60) |
 | Needle | **OFF** (`existing`) |
 | False completion | **0** |
+| Live NIM this patch | **BLOCKED** (no NVIDIA keys) — not a live PASS claim |
 
 ## How to add a finding
 
