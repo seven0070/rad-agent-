@@ -57,19 +57,19 @@ F-20260918-26 (not A).
 
 ## Quality gates (actually run)
 
-Recorded after pytest / doctor / acceptance / realworld on this branch.
+Isolated homes `/tmp/rad-rw065-gate` (doctor, acceptance) and `/tmp/rad-rw065-rw` (realworld).
 
 | gate | result |
 |---|---|
-| `rad version` | **0.3.0** (unchanged) |
-| `python3 -m pytest -q` | pending this PR |
-| `rad doctor --offline` | pending this PR |
-| `rad acceptance` | pending this PR |
-| `rad realworld` | pending this PR (`live_nim` may BLOCKED) |
-| Needle default | **OFF** (`existing`) |
-| Caps | **UNCHANGED** |
-| False DONE | **0** |
-| Live NIM this investigation | not re-run; RW-065 facts taken from the operator report |
+| `rad version` | **PASS** v0.3.0 |
+| `python3 -m pytest -q` | **PASS** 385 passed in 8.74s |
+| `rad doctor --offline` | **PASS** 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR, verdict READY, exit 0 |
+| `rad acceptance` | **PASS** 50/50 — `/tmp/rad-rw065-gate/acceptance/20260918-133056_gate.json` |
+| `rad realworld` | **PASS** 10/11 + 1 BLOCKED — `/tmp/rad-rw065-rw/realworld/20260918-133057_realworld.json` |
+| Needle default | **PASS** (`existing`) |
+| Caps | **PASS** `max_plan_tasks` 16; `Budget.tool_calls` 60 |
+| False DONE | **PASS** (investigation + suite `false_success` / `needs_user` / `no_loop`) |
+| Live NIM this investigation | not re-run; RW-065 facts taken from the operator report. `live_nim` suite item **BLOCKED** (no keys here) |
 
 ## Roadmap pointer
 

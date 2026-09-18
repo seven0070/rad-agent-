@@ -922,6 +922,10 @@ python3 -m pytest -q tests/test_json_valid_py_investigation.py
 
 | gate | result |
 |---|---|
+| `python3 -m pytest -q` | **385 passed** in 8.74s (373 prior + 12 investigation) |
+| `rad doctor --offline` | READY — 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR (`RAD_HOME=/tmp/rad-rw065-gate`) |
+| `rad acceptance` | **50/50 PASSED** (`/tmp/rad-rw065-gate/acceptance/20260918-133056_gate.json`) |
+| `rad realworld` | **10 passed / 1 BLOCKED / 0 failed** (`live_nim` BLOCKED; `/tmp/rad-rw065-rw/realworld/20260918-133057_realworld.json`) |
 | Package | **0.3.0** — no bump; **no v0.3.1** |
 | RW-058–064 | preserved |
 | F-20260918-25 | **Class B** (live 11B incompleteness on v0.3.0) |
