@@ -72,6 +72,7 @@ class Check:
       file_exists   {path}
       file_contains {path, text}
       file_min_bytes{path, n}
+      file_line_count {path, n}    exact splitlines() count (trailing newline optional)
       shell_ok      {command}          exit code 0
       shell_output  {command, contains}
       json_valid    {path}

@@ -345,12 +345,12 @@ class Gate:
         src = self.code("control/verifier.py")
         kinds = [k for k in ("file_exists", "file_min_bytes", "file_contains", "json_valid",
                              "json_field", "json_min_len", "shell_ok", "shell_output", "file_equals",
-                             "file_absent", "dir_exists", "file_count_min", "url_ok", "reply_matches",
-                             "agent_review", "llm_judge") if f'"{k}"' in src]
+                             "file_absent", "dir_exists", "file_count_min", "file_line_count", "url_ok",
+                             "reply_matches", "agent_review", "llm_judge") if f'"{k}"' in src]
         advisory_only = ("agent_review" in src and "llm_judge" in src
                          and "never VERIFIED alone" in self.code("control/verifier.py") + self.code("control/tasks.py"))
         res = self.realworld("research")
-        return (len(kinds) == 16 and advisory_only and res["verified"] == "VERIFIED"), (
+        return (len(kinds) == 17 and advisory_only and res["verified"] == "VERIFIED"), (
             f"{len(kinds)} machine check kinds; the model's own statements are never sufficient "
             f"(agent_review/llm_judge are advisory); live: the report was VERIFIED by inspecting "
             f"the artifact and re-running a command")

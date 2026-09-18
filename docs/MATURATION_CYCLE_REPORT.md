@@ -6,6 +6,109 @@ Default `Budget.tool_calls` remains **60**.
 
 ---
 
+# Cycle 11 — RW-071 live v0.4.0 retest + Gen3 theme 2 multi-file contracts / v0.4.1 (2026-09-18)
+
+**Date:** 2026-09-18
+**Baseline:** `origin/main` `a8aac8ae` (tag **v0.4.0**, package **0.4.0**)
+**Package at start:** `0.4.0`
+**This branch:** `cursor/rw071-theme2-multifile-ad3c` — package **0.4.1**
+**Architecture:** control plane preserved. Needle stays off. Caps unchanged.
+RW-058–070 are **not rewritten**. F-17 / F-18 / F-21 / F-26 stay closed.
+
+## Part A — live use (RW-071)
+
+Live NVIDIA NIM 11B text_analyzer on v0.4.0 (`obj_d662224b`, home
+`/tmp/rad_prod_rw071_7811425c`, `--max-tasks 8 --max-tools 12`, Needle off).
+Authoritative facts from the operator report. This agent did not re-run NIM.
+
+| item | value |
+|------|--------|
+| Verdict | **FAIL** — `needs_user` (tools 12/12). **Not** E2E PASS |
+| vs RW-069 | Theme 1 **live-confirmed** — path-aligned checks under `text_analyzer/`; **no root pollution**. Same Class B stop |
+| Disk | 1-line `input.txt` sha256 `9bf9660f…` (expected 3-line `bf69eb73…`); package `summary.json` present **empty/invalid**; tests `1 != 3` |
+| Repair | ENVIRONMENT → Repair prerequisite (mkdir already exists + empty JSON among check noise); 11 `write_file` + 1 `run_shell` |
+| False DONE | **0** |
+| Class | **B** residual (11B/budget). Path-misalignment Class A **not reproduced** |
+
+## Part B — product (theme 2)
+
+Help multi-file coding objectives fail earlier with useful structure under
+tight `--max-tools` without weakening VERIFIED / false DONE=0. Smallest
+control-plane addition:
+
+- Merge omitted `json_valid` / `file_line_count` / test `shell_ok` into LLM
+  `objective_checks` (kinds never remapped; fallback *tasks* stay check-less)
+- `mkdir` / create **already exists** is not ENVIRONMENT — mixed File-exists +
+  no-such-file noise gets TOOL/VALIDATION coding repair, not Repair prerequisite
+- PLAN_PROMPT: no standalone mkdir; prefer write+verify; exact N-line uses
+  `file_line_count`
+
+Does **not** raise `Budget.tool_calls` (60) or `max_plan_tasks` (16). Does
+**not** claim live 11B text_analyzer@12 now PASS.
+
+## What changed
+
+- Product: `rad/control/codingloop.py`, `rad/control/planner.py`,
+  `rad/control/recovery.py`, `rad/control/verifier.py`
+- Tests: `tests/test_multifile_tight_budget.py`
+- Docs: ROADMAP Gen3 theme 2 **implemented**; ledger F-33 / F-34; matrix
+  RW-071 / RW-072; this cycle
+- Package **0.4.0 → 0.4.1**
+
+## What did not change
+
+- Needle default `existing` / off
+- `max_plan_tasks` default **16**
+- `Budget.tool_calls` default **60**
+- False completion remains **0**
+- RW-058–070 ledger/matrix rows
+- Control plane shape PLAN→PERMISSION→BUDGET→EXECUTE→OBSERVE→VERIFY→RECOVER
+- F-17 / F-18 / F-21 / F-26 closed; A1 budget→needs_user **not reopened**
+- Live 11B text_analyzer **not** claimed PASS
+- Path-aligned checks (v0.4.0) preserved
+
+## Class A / B / C (this cycle)
+
+| class | this record |
+|---|---|
+| **A** | **F-20260918-34** — weak `file_exists` contracts + already-exists ENVIRONMENT thrash. Patched. |
+| **B** | **F-20260918-33** — RW-071 live 11B incompleteness (wrong input, empty summary.json, tools=12). |
+| **C** | none proven. `live_nim` may BLOCKED. |
+
+## Quality gates (this branch)
+
+Isolated homes `/tmp/rad-v041-gate` (doctor, acceptance) and `/tmp/rad-v041-rw` (realworld).
+
+| gate | result |
+|------|--------|
+| `rad version` | **PASS** v0.4.1 |
+| `python3 -m pytest -q` | **PASS** 446 passed in 9.01s |
+| `rad doctor --offline` | **PASS** 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR, verdict READY, exit 0 |
+| `rad acceptance` | **PASS** 50/50 — `/tmp/rad-v041-gate/acceptance/20260918-150234_gate.json` |
+| `rad realworld` | **PASS** 10/11 + 1 BLOCKED — `/tmp/rad-v041-rw/realworld/20260918-150234_realworld.json` |
+| Needle default | **PASS** (`existing`) |
+| Caps | **PASS** `max_plan_tasks` 16; `Budget.tool_calls` 60 |
+| False DONE | **PASS** (scripted 0; suite `false_success` / `needs_user` / `no_loop`) |
+| Package | **0.4.1** |
+| Live NIM this patch | not re-run; RW-071 facts from the operator report. Suite `live_nim` **BLOCKED** (no keys here) |
+
+## Remaining limitations
+
+1. Live NVIDIA NIM on 11B may still fail Class B (model / budget) on
+   text_analyzer@12. This release strengthens contracts and already-exists
+   classification; it does not make 11B complete the package under tools=12.
+2. Default planner cap is **16**. Default tool budget is **60**.
+3. Longer-horizon / multi-step reliability is Gen3 theme 3 (later).
+
+## Roadmap pointer
+
+Operating spine: [ROADMAP.md](ROADMAP.md). **Generation 1 is complete**
+(v0.2.0–v0.2.3). **Generation 2 is complete** (v0.3.0–v0.3.2). **Generation 3
+is in progress:** path-aligned checks **v0.4.0** (used RW-071); multi-file
+contracts **implemented as v0.4.1**. Gen4–5 are not started.
+
+---
+
 # Cycle 10 — Gen3 theme 1 path-aligned checks / v0.4.0 (2026-09-18)
 
 **Date:** 2026-09-18

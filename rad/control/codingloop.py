@@ -7,7 +7,9 @@ or a substitute for the file.
 
 Package-layout goals (e.g. files under `text_analyzer/`) get check paths
 joined to that directory so root-only checks cannot thrash a package write
-(RW-069 / Gen3 theme 1). Fallback *tasks* stay check-less (F-17).
+(RW-069 / Gen3 theme 1). Multi-file goals also infer exact line-count and
+non-empty JSON contracts so weak artifacts cannot become VERIFIED (RW-071 /
+Gen3 theme 2). Fallback *tasks* stay check-less (F-17).
 """
 from __future__ import annotations
 
@@ -25,6 +27,8 @@ CODING_MARKERS_RE = re.compile(
 )
 JSON_PATH_RE = re.compile(r"\b([\w./-]+\.json)\b", re.I)
 TEST_FILE_RE = re.compile(r"\b((?:[\w.-]+/)*test_\w+\.py)\b", re.I)
+TXT_PATH_RE = re.compile(r"\b((?:[\w.-]+/)*[\w.-]+\.txt)\b", re.I)
+LINE_COUNT_RE = re.compile(r"\b(?:exact\s+)?(\d+)[ -]lines?\b", re.I)
 DONE_PREFIX_RE = re.compile(r"^\s*DONE\s*:", re.I)
 # "under pkg/" (slash required so "under the …" is not a package name)
 _PKG_UNDER_RE = re.compile(
@@ -190,4 +194,67 @@ def infer_coding_checks(goal: str, criteria: Optional[List[str]] = None) -> List
         cmd = f"python3 {test_file}" if test_file else "python3 -m pytest -q"
         cmd = align_shell_command(cmd, package_dir)
         out.append(Check("shell_ok", {"command": cmd}, "tests exit 0"))
+    line_m = LINE_COUNT_RE.search(blob)
+    if line_m:
+        n = int(line_m.group(1))
+        txts: List[str] = []
+        for tm in TXT_PATH_RE.finditer(blob):
+            path = align_rel_path(tm.group(1), package_dir)
+            if is_done_pollution_path(path) or path in txts:
+                continue
+            txts.append(path)
+        chosen = next((p for p in txts if Path(p).name.lower() == "input.txt"), None)
+        if chosen is None and txts:
+            chosen = txts[0]
+        if chosen:
+            key = ("file_line_count", chosen)
+            if key not in seen:
+                seen.add(key)
+                out.append(Check(
+                    "file_line_count", {"path": chosen, "n": n},
+                    f"{chosen} has exactly {n} lines",
+                ))
     return out[:6]
+
+
+def merge_coding_checks(existing: Optional[Iterable[Check]],
+                        inferred: Optional[Iterable[Check]]) -> List[Check]:
+    """Add inferred coding checks the planner omitted. Check *kinds* are never remapped (F-26)."""
+    out: List[Check] = list(existing or [])
+    seen = set()
+    json_paths = set()
+    line_paths = set()
+    has_shell = False
+    for c in out:
+        args = c.args or {}
+        path = str(args.get("path", "")).replace("\\", "/")
+        cmd = str(args.get("command", ""))
+        seen.add((c.kind, path or cmd))
+        if c.kind in ("json_valid", "json_field", "json_min_len") and path:
+            json_paths.add(path)
+        if c.kind == "file_line_count" and path:
+            line_paths.add(path)
+        if c.kind in ("shell_ok", "shell_output"):
+            has_shell = True
+    for c in inferred or []:
+        args = c.args or {}
+        path = str(args.get("path", "")).replace("\\", "/")
+        cmd = str(args.get("command", ""))
+        key = (c.kind, path or cmd)
+        if key in seen:
+            continue
+        if c.kind == "json_valid" and path in json_paths:
+            continue
+        if c.kind == "file_line_count" and path in line_paths:
+            continue
+        if c.kind == "shell_ok" and has_shell:
+            continue
+        seen.add(key)
+        out.append(c)
+        if c.kind in ("json_valid", "json_field", "json_min_len") and path:
+            json_paths.add(path)
+        if c.kind == "file_line_count" and path:
+            line_paths.add(path)
+        if c.kind in ("shell_ok", "shell_output"):
+            has_shell = True
+    return out[:8]

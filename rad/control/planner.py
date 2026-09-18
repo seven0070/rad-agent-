@@ -5,7 +5,9 @@ fallback produces one task per clause and no checks, which the Verifier will
 correctly report as UNVERIFIED rather than pretending).
 
 Bare check paths on a package-layout goal are joined to that package directory
-(RW-069). Check *kinds* are never silently remapped (F-26).
+(RW-069). Inferred json_valid / test / file_line_count contracts are merged into
+LLM objective_checks that omitted them (RW-071). Check *kinds* are never
+silently remapped (F-26).
 
 A transient LLM plan failure (timeout, empty, malformed, non-JSON, empty graph)
 is retried a bounded number of times for a structured JSON plan *before*
@@ -32,7 +34,12 @@ from rad.control.budgetplan import (
     max_fit_tasks,
     pick_cheapest,
 )
-from rad.control.codingloop import align_checks, infer_coding_checks, infer_package_dir
+from rad.control.codingloop import (
+    align_checks,
+    infer_coding_checks,
+    infer_package_dir,
+    merge_coding_checks,
+)
 from rad.control.graph import TaskGraph
 from rad.control.objectives import Objective
 from rad.control.tasks import Check, Task
@@ -49,15 +56,19 @@ TOOL BUDGET: {tool_budget}
 Check kinds (exactly these):
   file_exists {{"path"}}            file_min_bytes {{"path","n"}}      file_contains {{"path","text"}}
   json_valid {{"path"}}             json_field {{"path","key"}}       json_min_len {{"path","n"}}
+  file_line_count {{"path","n"}}    exact newline/line count (use for "exact N-line" files)
   shell_ok {{"command"}}            shell_output {{"command","contains"}}
   reply_matches {{"pattern"}}       (regex on the agent's final reply — weakest; use only when nothing else fits)
   agent_review {{"criteria":[...]}} (independent read-only reviewer agent — use for quality of prose/code, IN ADDITION to a file check)
 
 For coding / test / JSON-result goals always include json_valid on every .json artifact and
 shell_ok (or shell_output) for the test command (pytest / python3 test_*.py). Never treat a
-DONE: line as a file path. A model claiming DONE is not completion.
+DONE: line as a file path. A model claiming DONE is not completion. Empty .json is invalid JSON.
 If the goal places files under a directory (e.g. pkg/ or text_analyzer/), check paths MUST
 use that prefix (pkg/input.txt not input.txt).
+If the goal is a multi-file package, do NOT emit a standalone mkdir/create-directory task —
+write_file creates parent directories. Prefer fewer tasks that each write and verify.
+For "exact N-line" files include file_line_count.
 
 GOAL: {goal}
 SUCCESS CRITERIA:
@@ -148,8 +159,8 @@ class Planner:
                         last_fat = False
                         continue
                     last_fat = is_fat(len(g.tasks), tool_budget)
-                    if not oc:
-                        oc = infer_coding_checks(obj.goal, obj.success_criteria)
+                    oc = merge_coding_checks(
+                        oc, infer_coding_checks(obj.goal, obj.success_criteria))
                     candidates.append({"graph": g, "objective_checks": oc, "fat": last_fat})
                     if not last_fat:
                         break
@@ -167,7 +178,7 @@ class Planner:
             g, leftover, compacted = compact_graph(g, cap)
         oc = infer_coding_checks(obj.goal, obj.success_criteria)
         if leftover:
-            oc = list(oc) + leftover
+            oc = merge_coding_checks(oc, leftover)
         return _plan_result(g, oc, "fallback", attempts, tool_budget, compacted=compacted)
 
     def replan(self, obj: Objective, graph: TaskGraph, failed: Task, why: str,

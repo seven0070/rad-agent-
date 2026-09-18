@@ -7,17 +7,76 @@ on 0.3.0–0.3.2. Verified coding loop is **implemented as v0.3.0** (RW-064). Li
 retest of that loop is **RW-065**. Plan-timeout resilience is **implemented as v0.3.1**
 (scripted RW-066 / F-27) and **used** (live RW-066). Budget-aware planning is
 **implemented as v0.3.2** (RW-067). Live NIM use of v0.3.2 is **RW-068** (PASS) and
-**RW-069** (FAIL). Path-aligned checks are **implemented as v0.4.0** (RW-070). Do not
-rewrite RW-058–069. Scripted theme-2 RW-066 (F-27) is preserved.
+**RW-069** (FAIL). Path-aligned checks are **implemented as v0.4.0** (RW-070). Live
+NIM retest of v0.4.0 is **RW-071** (FAIL; theme 1 live-confirmed). Multi-file
+contracts under tight budgets are **implemented as v0.4.1** (RW-072). Do not
+rewrite RW-058–070. Scripted theme-2 RW-066 (F-27) is preserved.
 
 Every `VERIFIED` / `completed` cell is from the control-plane verifier **and** a disk
 check (file exists / contents / hash). A model `DONE:` line is never enough.
 
 Status vocabulary: **PASS** | **FAIL** | **BLOCKED** | **NOT TESTED**.
 
-Live NIM use of v0.3.2 (RW-068 / RW-069) is at the top, then live v0.3.1 (RW-066)
-and Gen2 / v0.3.2 (budget-aware planning, RW-067), then v0.3.1 scripted theme 2
-and v0.3.0. RW-058–069 are **not rewritten**.
+Live NIM retest of v0.4.0 (RW-071) is at the top, then scripted v0.4.1 (RW-072),
+then v0.4.0 (RW-070). RW-058–070 are **not rewritten**.
+
+# Live NIM retest of v0.4.0 (RW-071)
+
+Lane: operator production `rad objective run` on **v0.4.0** (tag `v0.4.0`,
+`a8aac8ae`). Needle `existing` / off. `max_plan_tasks` **16**. Default
+`Budget.tool_calls` **60** (this run used `--max-tasks 8 --max-tools 12`).
+RW-058–070 are **not rewritten**. **Not** an end-to-end PASS. Package **0.4.0**
+on the live run; this change bumps to **0.4.1** for theme 2 (does **not** claim
+live 11B text_analyzer@12 now PASS).
+
+Authoritative live facts: operator report for `obj_d662224b` /
+`/tmp/rad_prod_rw071_7811425c`.
+
+| id | Date | Category | Objective | #tasks | #actions | Tools | Result | Verification | Recovery | Failure class | Notes |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| RW-071 | 2026-09-18 IST 20:18:41–20:20:53 | coding (live NIM) — v0.4.0 text_analyzer retest vs RW-069 | production `text_analyzer/` layout (analyzer.py, **exact 3-line** input.txt, summary.json, test_analyzer.py, README.md); stdlib; real tests; `--max-tasks 8 --max-tools 12`; Needle `existing` / off | `PLAN_CREATED` **source=llm** **attempts=1** (6 tasks, `fit=true`); t_9e88e690 RETRYING; t_05a32ab3 COMPLETED (skipped model on budget); analyzer/summary/tests/README PENDING; repair t_2d3f39f4 RUNNING at stop | tools 12/12 (`write_file` 11, `run_shell` 1); model calls 9/80; retries 1/6; wall ~95s reported / ~132s; process exit 2 | 12/12 exhausted | **FAIL** vs success criteria (`needs_user`); **NOT DONE**, **not VERIFIED** complete | First task `Create text_analyzer directory` FAILED; objective checks path-aligned `text_analyzer/analyzer.py`, `text_analyzer/summary.json`. `file_nonempty` on package `summary.json` failed (empty) | Gen2 **YES** — `ENVIRONMENT_FAILURE` → `repair` (“Repair prerequisite”) on mkdir-already-exists + empty `summary.json` among action/shell check noise; repair rewrote README/analyzer/input/test, did not fill empty summary before budget cut | **B** residual (11B/budget). Theme 1 path-alignment **Y** (Class A path-misalignment **not** reproduced) | Provider nvidia / `meta/llama-3.2-11b-vision-instruct`. Home `/tmp/rad_prod_rw071_7811425c`; `obj_d662224b`. Disk: workspace root **only** `text_analyzer/` (no root pollution). `input.txt` **FAIL** 1-line sha256 `9bf9660fcac9d5a1cd5906dd8a8d42e4a9aedaa25847d6412ad53abf517d41aa` ≠ expected 3-line `bf69eb737ca6f3949b5626701cb8472a2fc683e6b05e3101744eccd49dab629b`. Package `summary.json` **present, 0 bytes, invalid JSON**. `analyzer.py` stdlib, never ran as `__main__`. `test_analyzer.py` unittest expects lines=3 vs 1-line input (`1 != 3`). README present. False DONE **0**. Caps unchanged. Needle OFF. |
+
+### RW-071 vs RW-069 (same 11B / tools=12 control)
+
+| | RW-069 (v0.3.2) | RW-071 (v0.4.0) |
+|---|---|---|
+| home | `/tmp/rad_prod_rw069_89512dd9` | `/tmp/rad_prod_rw071_7811425c` |
+| objective id | `obj_1d8cc7ed` | `obj_d662224b` |
+| package | 0.3.2 | **0.4.0** |
+| `--max-tasks` / `--max-tools` | 8 / 12 | 8 / 12 |
+| Needle | `existing` / off | `existing` / off |
+| PLAN source | **llm** attempts **1** | **llm** attempts **1** |
+| Checks | **root-only** misaligned | **path-aligned under `text_analyzer/`** |
+| Root pollution | YES | **NO** |
+| `input.txt` | wrong 1-line `9bf9660f…` | **same** wrong 1-line `9bf9660f…` |
+| Package `summary.json` | missing (RAD) | **present, empty/invalid** |
+| Repair | retry_with_hint VALIDATION | ENVIRONMENT → Repair prerequisite (mkdir already exists + empty JSON noise) |
+| tools | 12/12 | 12/12 |
+| false DONE | **0** | **0** |
+| Theme 1 (path-aligned checks) | FAIL (A2) | **PASS signal (live-confirmed)** |
+| Residual class | B (+ path-misalignment A) | **B** (A path theme closed for this shape) |
+
+| metric | value |
+|---|---|
+| Package (live run) | **0.4.0** (tag `v0.4.0` / `a8aac8ae`) |
+| Theme 1 (path-aligned checks) | **live-confirmed** — checks under `text_analyzer/`; no root pollution |
+| Residual | **Class B** — 1-line input `9bf9660f…`, empty `summary.json`, tools 12/12, ENVIRONMENT mkdir thrash |
+| Class A path-misalignment | **not reproduced** |
+| RW-058–070 | preserved (not rewritten) |
+| Default max-tools / max-tasks | **unchanged** (this run used `--max-tasks 8 --max-tools 12` only) |
+| Needle | **OFF** (`existing`) |
+| False completion | **0** |
+| Recommendation | Record **FAIL**. Theme 1 holds. Do not claim live 11B@12 PASS. Theme 2 ships as v0.4.1 (contracts + already-exists not ENVIRONMENT); live 11B quality remains Class B. |
+
+# Gen3 — v0.4.1 multi-file contracts under tight budgets (RW-072)
+
+Lane: deterministic / scripted on **v0.4.1**. Needle `existing` / off.
+`max_plan_tasks` **16**. Default `Budget.tool_calls` **60**. RW-058–071 are
+**not rewritten**. Package **0.4.0 → 0.4.1**. Live NIM not re-run.
+
+| id | Date | Category | Objective | #tasks | #actions | Tools | Result | Verification | Recovery | Failure class | Notes |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| RW-072 | 2026-09-18 | coding (scripted) — multi-file contracts / already-exists | RW-071 shape: package `text_analyzer/`; LLM plan emits weak `file_exists` / first-sentence contains; disk is 1-line `input.txt` + empty `summary.json`; mkdir File-exists mixed with no-such-file noise | 1 planned (LLM) | write weak package files once | default **60** unchanged | **PASS** (weak artifacts **not** VERIFIED; already-exists **not** ENVIRONMENT) | objective **FAILED** from merged `json_valid` + `file_line_count` + `shell_ok`; 3-line + valid JSON + tests still **VERIFIED**; no root pollution | mkdir already-exists + empty JSON → TOOL/VALIDATION **coding repair**, not Repair prerequisite | **A** (Gen3 theme 2; live 11B quality stays **B**) | Tests `test_multifile_tight_budget_*`. False DONE **0**. Fallback tasks still have no checks (F-17); check *kinds* not remapped (F-26). Path-aligned checks preserved. Needle OFF. Caps unchanged. Live NIM not required. RW-071 Class B live facts preserved. |
 
 # Gen3 — v0.4.0 path-aligned checks (RW-070)
 
