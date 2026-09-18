@@ -11,10 +11,13 @@ resilience** — shipped as **v0.3.1** and **used** (live RW-066 **PASS**;
 RW-068 llm/1). Theme 3 — **budget-aware planning** — shipped as **v0.3.2**.
 v0.3.2 use campaign is **done** (RW-068 **PASS**, RW-069 **FAIL**). Generation 3
 theme 1 — **path-aligned checks / package layout** — is **implemented as
-v0.4.0** and **live-confirmed** (RW-071). Theme 2 — **multi-file coding under
-tight budgets** — is **implemented as v0.4.1**. Needle stays off. Caps
-unchanged. This patch does **not** claim live 11B RW-071 would now PASS.
-Generations 4–5 are **not started**.
+v0.4.0** and **live-confirmed** (RW-071; RW-073 disk/tasks). Theme 2 —
+**multi-file coding under tight budgets** — is **implemented as v0.4.1** and
+**live-confirmed** (RW-073 contracts + mkdir class). Theme 3 —
+**longer-horizon / multi-step reliability** — is **planned / scoped**; slice A
+(ASCII-tree `package_dir`, a theme-1 follow-up) is **implemented as v0.4.2**.
+Needle stays off. Caps unchanged. This patch does **not** claim live 11B
+RW-073 would now PASS. Generations 4–5 are **not started**.
 
 ```
 build → test → validate → release → use → discover gaps → build the next version
@@ -29,12 +32,12 @@ Stability with no code change is a valid result.
 
 | item | value |
 |---|---|
-| Generation in production | **Gen3 in progress** — this change is **v0.4.1**; v0.4.0 is tagged `v0.4.0` @ `a8aac8ae`; Gen2 complete on `387776dc` / tag `v0.3.2`; Gen1 baseline remains tagged `v0.2.3` @ `d121c3f` |
-| Package / tag on `main` | **0.4.0** / annotated tag `v0.4.0` @ `a8aac8ae` (this branch bumps the package to **0.4.1**) |
-| This change | **v0.4.1** — multi-file contracts under tight budgets (Gen3 theme 2) |
+| Generation in production | **Gen3 in progress** — this change is **v0.4.2**; v0.4.1 is tagged `v0.4.1` @ `387bd83a`; v0.4.0 is tagged `v0.4.0` @ `a8aac8ae`; Gen2 complete on `387776dc` / tag `v0.3.2`; Gen1 baseline remains tagged `v0.2.3` @ `d121c3f` |
+| Package / tag on `main` | **0.4.1** / annotated tag `v0.4.1` @ `387bd83a` (this branch bumps the package to **0.4.2**) |
+| This change | **v0.4.2** — ASCII-tree `package_dir` (theme-1 follow-up / Gen3 theme 3 slice A) + RW-073 record |
 | Generation 2 | **COMPLETE** — theme 1 **v0.3.0** (used RW-065 / RW-068); theme 2 **v0.3.1** (used live RW-066 / RW-068); theme 3 **v0.3.2** (scripted RW-067; used RW-068 / RW-069) |
-| Latest use (RW-071) | Live NIM 11B text_analyzer on v0.4.0: **FAIL** `needs_user`; path-alignment **Y** (theme 1 live-confirmed); residual **Class B** (1-line input `9bf9660f…`, empty `summary.json`, tools 12/12) |
-| Generation 3 | **IN PROGRESS** — theme 1 **implemented** (v0.4.0) and **used** (RW-071); theme 2 **implemented** (v0.4.1); theme 3 still later |
+| Latest use (RW-073) | Live NIM 11B text_analyzer on v0.4.1: **FAIL** `needs_user` @ 12/12; theme 1 **Y** (disk/tasks; obj-checks bare residual); theme 2 **Y** (contracts + PERMISSION not ENVIRONMENT; correct 3-line `bf69eb73…`); residual **Class B** |
+| Generation 3 | **IN PROGRESS** — theme 1 **implemented** (v0.4.0) **used** (RW-071 / RW-073); theme 2 **implemented** (v0.4.1) **used** (RW-073); theme 3 **planned / scoped**, slice A **v0.4.2** |
 | Generations 4–5 | **NOT STARTED** |
 | Needle | optional / **off** (`tool_router=existing`; ADR-001) |
 | `max_plan_tasks` | **16** (unchanged) |
@@ -54,7 +57,7 @@ Cycle evidence, not this file: [MATURATION_CYCLE_REPORT.md](MATURATION_CYCLE_REP
 |---|---|---|---|
 | **1** | Foundation | v0.2.0, v0.2.1, v0.2.2, **v0.2.3** | **COMPLETE** |
 | **2** | Capability Expansion | v0.3.x | **COMPLETE** (theme 1 → **v0.3.0**; theme 2 → **v0.3.1** used RW-066/068; theme 3 → **v0.3.2**; use campaign RW-068 PASS / RW-069 FAIL) |
-| **3** | Autonomous Agent Maturity | v0.4.x | **IN PROGRESS** (theme 1 → **v0.4.0** used RW-071; theme 2 → **v0.4.1**) |
+| **3** | Autonomous Agent Maturity | v0.4.x | **IN PROGRESS** (theme 1 → **v0.4.0** used RW-071 / RW-073; theme 2 → **v0.4.1** used RW-073; theme 3 planned / scoped, slice A → **v0.4.2**) |
 | **4** | Production Scale | v0.5.x | **NOT STARTED** |
 | **5** | 1.0 | v1.0.0 | **NOT STARTED** |
 
@@ -62,8 +65,10 @@ Enter the next generation only after the previous one has been **released, used,
 measured gaps**. Class B rows are the input to that decision. They do not start the
 generation by themselves — a theme must be **accepted**. Gen2 themes 1–3 shipped and
 were used (v0.3.2 campaign). Gen3 theme 1 is **accepted and implemented**
-(v0.4.0) and **used** (RW-071). Gen3 theme 2 is **accepted and implemented**
-(v0.4.1). Gen4–5 stay closed until Gen3 has been released and used.
+(v0.4.0) and **used** (RW-071 / RW-073). Gen3 theme 2 is **accepted and
+implemented** (v0.4.1) and **used** (RW-073). Gen3 theme 3 is **planned /
+scoped**; slice A (ASCII-tree `package_dir`) is **implemented** (v0.4.2).
+Gen4–5 stay closed until Gen3 has been released and used.
 
 ---
 
@@ -256,10 +261,13 @@ redesign, and do not start v0.4.0 without an accepted first theme.
 More reliable multi-step execution, recovery, planning, and long-horizon work.
 
 **Status:** **in progress.** Theme 1 — **path-aligned checks / package layout** —
-is **implemented as v0.4.0** and **live-confirmed** (RW-071). Theme 2 —
-**multi-file coding under tight budgets** — is **implemented as v0.4.1**.
-Package **0.4.0 → 0.4.1**. Live RW-071 Class B artifact quality (wrong 1-line
-input, empty package `summary.json`, 11B@12) is **not** claimed fixed.
+is **implemented as v0.4.0** and **live-confirmed** (RW-071; RW-073 disk/tasks).
+Theme 2 — **multi-file coding under tight budgets** — is **implemented as
+v0.4.1** and **live-confirmed** (RW-073). Theme 3 — **longer-horizon /
+multi-step reliability** — is **planned / scoped**. Slice A (ASCII-tree
+`package_dir`) is **implemented as v0.4.2** (theme-1 follow-up). Package
+**0.4.1 → 0.4.2**. Live RW-073 Class B (missing `summary.json`, weak tests,
+budget on permission / fake `DONE`) is **not** claimed fixed.
 
 Do not pre-design Gen3 from Gen1 Class B rows alone. Do not skip Gen2 (Gen2 is
 now complete). Do not treat a FAIL row as an automatic architecture rewrite.
@@ -298,14 +306,16 @@ Release gates must still be green (pytest, `rad doctor --offline`,
 | Evidence | RW-069 / F-20260918-31 (A2 watch); deterministic RW-070 / F-20260918-32; live use RW-071 / F-20260918-33 |
 | What it is not | Not a control-plane rewrite. Not Needle-as-default. Not a cap raise. Not Gen3 theme 2 (that is v0.4.1). Not a claim that live 11B RW-069 / RW-071 now PASS. Not a remap of check *kinds* (F-26). Fallback *tasks* stay check-less (F-17). |
 
-A package-layout goal (`under text_analyzer/`, `text_analyzer/{…}`, or two or
-more files sharing one non-`tests` directory prefix) is the source of truth for
-layout. RAD joins bare `file_exists` / `json_valid` / … paths and bare
-`test_*.py` in `shell_ok` commands to that directory so first writes under the
-package can verify without a false VALIDATION retry that flattens files to the
-workspace root. Directed paths (`pkg/foo.json`, `tests/check_stats.py`) are
-kept. A single `pkg/foo.py` mention is not a layout. The verifier does **not**
-guess a package dir at check time.
+A package-layout goal (`under text_analyzer/`, `text_analyzer/{…}`, two or
+more files sharing one non-`tests` directory prefix, or an ASCII / box-drawing
+tree `text_analyzer/` + `├── file`) is the source of truth for layout. RAD
+joins bare `file_exists` / `json_valid` / … paths and bare `test_*.py` in
+`shell_ok` commands to that directory so first writes under the package can
+verify without a false VALIDATION retry that flattens files to the workspace
+root. Directed paths (`pkg/foo.json`, `tests/check_stats.py`) are kept. A
+single `pkg/foo.py` mention is not a layout. Markdown dash lists are not a
+tree. The verifier does **not** guess a package dir at check time. ASCII-tree
+recognition shipped as **v0.4.2** (RW-073 / RW-074).
 
 ### Accepted second build — multi-file contracts under tight budgets (v0.4.1)
 
@@ -326,17 +336,43 @@ check noise is TOOL/VALIDATION coding repair — not Repair-prerequisite
 ENVIRONMENT thrash. Genuine `command not found` stays ENVIRONMENT. The
 verifier still evaluates the stored path honestly.
 
+### Theme 3 — planned / scoped (longer-horizon); slice A shipped as v0.4.2
+
+| field | value |
+|---|---|
+| Status | **PLANNED / SCOPED**. Slice A **IMPLEMENTED** in this change (package **0.4.2**) |
+| Theme | **Longer-horizon / multi-step reliability** |
+| Version | Theme 3 itself is **not** a full v0.4.x redesign. Slice A is **v0.4.2** |
+| Loop (slice A) | ASCII / box-drawing tree goal → `infer_package_dir` → join inferred (and LLM root-only) objective checks to that directory, same as `under pkg/` |
+| Evidence | RW-073 / F-20260918-35 (live FAIL; theme 1–2 live; ASCII-tree obj-checks bare); deterministic RW-074 / F-20260918-36 |
+| What it is not | Not a control-plane rewrite. Not Needle-as-default. Not a cap raise. Not a claim that live 11B RW-073 now PASS. Not first-task-thrash / checkpoint redesign. Not a remap of check *kinds* (F-26). Fallback *tasks* stay check-less (F-17). |
+
+**Entry rule:** themes 1–2 are measured (done). Build only with an accepted
+first slice. Slice A is accepted because investigate-first **confirmed Class
+A**: RAD should join objective inferred checks the same way as task checks for
+tree layouts. Remaining candidate sub-themes stay **planned**, not built:
+
+1. Progress past first-task thrash without wasting budget on blocked `rm -rf` /
+   unknown `DONE` tool (RW-073 burned 12 tools on permission / fake DONE before
+   later package tasks ran).
+2. Multi-step checkpoint so later files still get attempts when an early task
+   burns retries.
+
+Do **not** invent a long-horizon redesign from those Class B budget/quality
+rows. Label slice A honestly: **theme-1 follow-up** (package_dir inference),
+shipped under Gen3 theme 3 slice A / v0.4.2.
+
 ### Themes (evidence-backed; priority order)
 
-Grounded in RW-068 / RW-069 / RW-071 and the residual RW-058 / RW-059 family
-(F-20260918-15 / 16 / 19 / 31 / 33). Simple coding **PASS** on v0.3.2 is **not** a
-Gen3 hole (B3).
+Grounded in RW-068 / RW-069 / RW-071 / RW-073 and the residual RW-058 / RW-059
+family (F-20260918-15 / 16 / 19 / 31 / 33 / 35). Simple coding **PASS** on
+v0.3.2 is **not** a Gen3 hole (B3).
 
 | # | theme | status | what the evidence showed | rows |
 |---|---|---|---|---|
-| 1 | **Path-aligned checks / package layout** | **IMPLEMENTED** — v0.4.0; **used** RW-071 | Task checks required workspace-root `input.txt` while first successful writes were under `text_analyzer/` → VALIDATION_FAILURE → retry flattened files to root → layout thrash. Confirmed as planner/infer emission + LLM-check acceptance (not just 11B). Live RW-071: path-alignment **Y**, no root pollution. | RW-069; RW-070 (scripted); RW-071 (live use); related path confusion on RW-058 |
-| 2 | **Multi-file coding under tight budgets** | **IMPLEMENTED** — v0.4.1 | `text_analyzer` @ tools=**12** still FAIL on live 11B (RW-071): wrong 1-line input (sha256 `9bf9660f…`), empty package `summary.json`, ENVIRONMENT mkdir-already-exists thrash. Stronger artifact contracts + already-exists not ENVIRONMENT. Does not raise default max-tools. | RW-071; RW-072 (scripted); RW-069; RW-058 / RW-059 family (F-15 / F-16 / F-19) |
-| 3 | **Longer-horizon / multi-step reliability** | **later** | Roadmap Gen3 intent (more reliable multi-step execution, recovery, planning, long-horizon work). Enter **only after** themes 1–2 have measured wins. | — |
+| 1 | **Path-aligned checks / package layout** | **IMPLEMENTED** — v0.4.0; **used** RW-071 / RW-073 | Task checks required workspace-root `input.txt` while first successful writes were under `text_analyzer/` → VALIDATION_FAILURE → retry flattened files to root → layout thrash. Confirmed as planner/infer emission + LLM-check acceptance (not just 11B). Live RW-071 / RW-073: path-alignment **Y** on disk/tasks; no root pollution. ASCII-tree `infer_package_dir` miss closed as v0.4.2. | RW-069; RW-070 (scripted); RW-071 / RW-073 (live use); RW-074 (scripted ASCII-tree); related path confusion on RW-058 |
+| 2 | **Multi-file coding under tight budgets** | **IMPLEMENTED** — v0.4.1; **used** RW-073 | `text_analyzer` @ tools=**12** still FAIL on live 11B. RW-073: contracts **present** (`json_valid`, `file_line_count`, `shell_ok`); mkdir already-exists → **PERMISSION** not ENVIRONMENT; correct 3-line `bf69eb73…`. Residual: missing `summary.json`, weak tests, budget on permission / fake `DONE`. Does not raise default max-tools. | RW-071; RW-072 (scripted); RW-073 (live use); RW-069; RW-058 / RW-059 family (F-15 / F-16 / F-19) |
+| 3 | **Longer-horizon / multi-step reliability** | **PLANNED / SCOPED** — slice A **IMPLEMENTED** as v0.4.2 (theme-1 follow-up) | RW-073 burns 12 tools on first-task retries (permission / fake DONE) before later package tasks run. ASCII-tree goals missed `infer_package_dir` so merged objective contracts stayed bare. Slice A: join those checks for tree layouts. Remaining: first-task thrash; multi-step checkpoint. No long-horizon redesign. | RW-073; RW-074 (scripted slice A) |
 
 ### Closed / not automatic Gen3 work
 
@@ -344,23 +380,26 @@ These are **not** a license to raise caps or enable Needle from this change:
 
 | id | claim | result |
 |---|---|---|
-| A1 | Reopen budget→`needs_user` as Class A | **Do not reopen** without new proof. RW-069 exhausted 12 tools with incomplete work; same honest stop as historical Class B investigations (F-21). |
-| A2 | Check path vs write path (root vs package dir) | **Class A confirmed** as v0.4.0. **Live-confirmed** on RW-071 (path-alignment Y; no root pollution). Live 11B artifact quality remains Class B. |
-| A3 | DONE pollution refuse | **Already works.** RW-068 tool refused a `DONE:` path. Keep regression coverage; not a v0.4.x theme. |
+| A1 | Reopen budget→`needs_user` as Class A | **Do not reopen** without new proof. RW-069 / RW-073 exhausted 12 tools with incomplete work; same honest stop as historical Class B investigations (F-21). |
+| A2 | Check path vs write path (root vs package dir) | **Class A confirmed** as v0.4.0. **Live-confirmed** on RW-071 / RW-073 disk+task checks (path-alignment Y; no root pollution). Live 11B artifact quality remains Class B. |
+| A4 | ASCII-tree `infer_package_dir` miss | **Class A confirmed** as v0.4.2 (theme-1 follow-up / theme 3 slice A). RW-073: inferred objective contracts were bare `summary.json` / `input.txt` while task checks used `text_analyzer/`. Patched. |
+| A3 | DONE pollution refuse | **Already works.** RW-068 tool refused a `DONE:` path. RW-073 model called unknown tool `DONE` → error; verifier still failed; false DONE **0**. Keep regression coverage; not a remaining theme-3 slice. |
 | B3 | Simple verified coding loop | **Stable PASS** on v0.3.2 (RW-068 llm plan@1). Not a Gen3 hole. |
-| F-17 / F-18 / F-21 / F-26 | Prior closed non-gates | **Stay closed.** Theme 2 does not add checks to fallback *tasks* (F-17) and does not remap check *kinds* (F-26). Genuine `command not found` stays ENVIRONMENT (F-18). |
+| F-17 / F-18 / F-21 / F-26 | Prior closed non-gates | **Stay closed.** Slice A does not add checks to fallback *tasks* (F-17) and does not remap check *kinds* (F-26). Genuine `command not found` stays ENVIRONMENT (F-18). |
 
 This patch is **not** a claim that live 11B text_analyzer now completes under
 tools=12. Residual is **Class B** capacity/quality (11B under the historical
-12-tool bound). Theme 2 ships the contracts and already-exists classification
-so weak artifacts fail earlier with useful structure.
+12-tool bound; RW-073 missing `summary.json`, weak tests, first-task thrash).
+Slice A only closes the ASCII-tree package_dir hole.
 
 ### Accepting a further v0.4.x theme
 
 A short written decision that names the theme, the evidence rows, the invariant
 that must not move (Needle off; caps unchanged unless proven; models propose /
 RAD decides; false DONE **0**), and the 0.4.x change. Theme 2 is implemented
-(v0.4.1). Theme 3 (longer-horizon) still needs that.
+(v0.4.1). Theme 3 is **planned / scoped**; slice A shipped (v0.4.2). Remaining
+theme-3 slices (first-task thrash, multi-step checkpoint) still need that
+decision — do not invent a long-horizon redesign from Class B budget rows.
 
 ---
 
@@ -387,7 +426,7 @@ acceptable for a public baseline).
 | doc | role |
 |---|---|
 | [MATURATION_CYCLE_REPORT.md](MATURATION_CYCLE_REPORT.md) | Cycle-by-cycle evidence and decisions |
-| [REAL_WORLD_TASK_MATRIX.md](REAL_WORLD_TASK_MATRIX.md) | Disk-checked task rows (do not rewrite RW-058–070) |
+| [REAL_WORLD_TASK_MATRIX.md](REAL_WORLD_TASK_MATRIX.md) | Disk-checked task rows (do not rewrite RW-058–072) |
 | [REAL_WORLD_FAILURE_LEDGER.md](REAL_WORLD_FAILURE_LEDGER.md) | A/B/C findings |
 | [ADR-001-NEEDLE-TOOL-ROUTER.md](ADR-001-NEEDLE-TOOL-ROUTER.md) | Needle stays optional / off |
 | [CONTROL-PLANE.md](CONTROL-PLANE.md) | Shipped control-plane behaviour |

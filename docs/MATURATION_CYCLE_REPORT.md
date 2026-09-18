@@ -6,6 +6,141 @@ Default `Budget.tool_calls` remains **60**.
 
 ---
 
+# Cycle 12 — RW-073 live v0.4.1 retest + Gen3 theme 3 scoped + ASCII-tree package_dir / v0.4.2 (2026-09-18)
+
+**Date:** 2026-09-18
+**Baseline:** `origin/main` `387bd83a` (tag **v0.4.1**, package **0.4.1**)
+**Package at start:** `0.4.1`
+**This branch:** `cursor/rw073-theme3-5ac1` — package **0.4.2**
+**Architecture:** control plane preserved. Needle stays off. Caps unchanged.
+RW-058–072 are **not rewritten**. F-17 / F-18 / F-21 / F-26 stay closed.
+
+## Part A — live use (RW-073)
+
+Live NVIDIA NIM 11B text_analyzer on v0.4.1 (`obj_d8bd898a`, home
+`/tmp/rad_prod_rw073_46da6971`, `--max-tasks 8 --max-tools 12`, Needle off).
+Authoritative facts from the operator report. This agent did not re-run NIM.
+
+| item | value |
+|------|--------|
+| Verdict | **FAIL** — `needs_user` (tools 12/12). **Not** E2E PASS |
+| vs RW-071 | Theme 1 **Y** (disk/tasks; no root pollution). Theme 2 **Y** (contracts + PERMISSION not ENVIRONMENT; correct 3-line `bf69eb73…`). Same Class B stop |
+| Disk | 3-line `input.txt` sha256 `bf69eb73…`; package `summary.json` **missing**; tests lack count assertions |
+| Repair | PERMISSION → `retry_with_hint` (mkdir exists then `rm -rf` blocked; fake `DONE` tool). **No** ENVIRONMENT Repair-prerequisite insert |
+| False DONE | **0** |
+| Class | **B** residual (11B/budget). ASCII-tree obj-check paths are Class A (Part C), not this live stop |
+
+## Part B — Gen3 theme 3 plan (docs)
+
+Update ROADMAP Gen3 theme 3 from not-started / later to **planned / scoped**:
+
+- Longer-horizon / multi-step reliability under tight budgets
+- Evidence: RW-073 burns 12 tools on first-task retries (permission / DONE tool)
+  before later package tasks run
+- Candidate sub-themes: (1) progress past first-task thrash without wasting
+  budget on blocked `rm -rf` / unknown DONE tool; (2) ASCII-tree `package_dir`
+  for objective inferred checks (slice A — Class A, this change); (3)
+  multi-step checkpoint so later files still get attempts when early task
+  burns retries
+
+Entry rule: themes 1–2 measured (done). Build only with an accepted first
+slice. Remaining slices (1) and (3) stay planned — do **not** invent a
+long-horizon redesign.
+
+## Part C — investigate-first (ASCII-tree `infer_package_dir`)
+
+Question: should RAD join objective inferred checks the same way as task
+checks for ASCII-tree layouts (`text_analyzer/` + `├── file`)?
+
+| probe | result |
+|---|---|
+| `infer_package_dir` on RW-073 ASCII tree | **None** (pre-patch). Needs `under text_analyzer/` or two+ `text_analyzer/foo` mentions |
+| `infer_coding_checks` on that tree | **emitted** bare `summary.json` + `input.txt` lines=3 + `python3 test_analyzer.py` (pre-patch) |
+| Same goal with `under text_analyzer/` | `text_analyzer/`; contracts already package-prefixed |
+| LLM RW-073 plan (prefixed task checks + `file_min_bytes` README) | merge added **bare** inferred contracts next to prefixed LLM objective checks (pre-patch) |
+| word_counter / single `pkg/foo.py` / `sources/` + root `answer.md` / dash-list / `docs/` tree | still **None** (must stay None) |
+| Live RW-073 remaining | missing `summary.json`, weak tests, tools 12/12 on permission / fake DONE — **Class B** residual |
+
+**Class A confirmed** for ASCII-tree package-layout detection. RAD should
+join inferred (and LLM root-only) objective checks the same way as
+`under pkg/`. Live 11B quality / first-task thrash stay Class B (remaining
+theme-3 slices, later). Prompt-only 11B quality is **not** the patch.
+
+## Part D — product (slice A)
+
+Smallest detector expansion in `infer_package_dir`: `pkg/` on its own line
+followed by two or more box-drawing / `|--` children. Join uses the existing
+`align_checks` path. Check *kinds* unchanged (F-26). Fallback *tasks* stay
+check-less (F-17). Label: **theme-1 follow-up / Gen3 theme 3 slice A**.
+
+Does **not** raise `Budget.tool_calls` (60) or `max_plan_tasks` (16). Does
+**not** claim live 11B text_analyzer@12 now PASS.
+
+## What changed
+
+- Product: `rad/control/codingloop.py` (`_ascii_tree_package_dir`)
+- Tests: `tests/test_ascii_tree_package_dir.py`
+- Docs: ROADMAP Gen3 theme 3 **planned / scoped**, slice A **implemented**;
+  ledger F-35 / F-36; matrix RW-073 / RW-074; this cycle
+- Package **0.4.1 → 0.4.2**
+
+## What did not change
+
+- Needle default `existing` / off
+- `max_plan_tasks` default **16**
+- `Budget.tool_calls` default **60**
+- False completion remains **0**
+- RW-058–072 ledger/matrix rows
+- Control plane shape PLAN→PERMISSION→BUDGET→EXECUTE→OBSERVE→VERIFY→RECOVER
+- F-17 / F-18 / F-21 / F-26 closed; A1 budget→needs_user **not reopened**
+- Live 11B text_analyzer **not** claimed PASS
+- Path-aligned checks (v0.4.0) and multi-file contracts (v0.4.1) preserved
+- Remaining theme-3 slices (first-task thrash, checkpoint) **not** built
+
+## Class A / B / C (this cycle)
+
+| class | this record |
+|---|---|
+| **A** | **F-20260918-36** — ASCII-tree `infer_package_dir` miss. Patched. |
+| **B** | **F-20260918-35** — RW-073 live 11B incompleteness (missing summary.json, weak tests, tools=12 on permission / fake DONE). |
+| **C** | none proven. `live_nim` may BLOCKED. |
+
+## Quality gates (this branch)
+
+Isolated homes `/tmp/rad-v042-gate` (doctor, acceptance) and `/tmp/rad-v042-rw` (realworld).
+
+| gate | result |
+|------|--------|
+| `rad version` | pending this branch |
+| `python3 -m pytest -q` | pending this branch |
+| `rad doctor --offline` | pending this branch |
+| `rad acceptance` | pending this branch |
+| `rad realworld` | pending this branch |
+| Needle default | **PASS** (`existing`) — asserted in tests |
+| Caps | **PASS** `max_plan_tasks` 16; `Budget.tool_calls` 60 — asserted in tests |
+| False DONE | **PASS** (scripted 0) — asserted in tests |
+| Package | **0.4.2** |
+| Live NIM this patch | not re-run; RW-073 facts from the operator report. Suite `live_nim` **BLOCKED** (no keys here) |
+
+## Remaining limitations
+
+1. Live NVIDIA NIM on 11B may still fail Class B (model / budget) on
+   text_analyzer@12. This release joins ASCII-tree objective checks; it does
+   not make 11B complete the package under tools=12.
+2. Default planner cap is **16**. Default tool budget is **60**.
+3. Longer-horizon first-task thrash and multi-step checkpoint remain Gen3
+   theme 3 planned slices (not this patch).
+
+## Roadmap pointer
+
+Operating spine: [ROADMAP.md](ROADMAP.md). **Generation 1 is complete**
+(v0.2.0–v0.2.3). **Generation 2 is complete** (v0.3.0–v0.3.2). **Generation 3
+is in progress:** path-aligned checks **v0.4.0** (used RW-071 / RW-073);
+multi-file contracts **v0.4.1** (used RW-073); theme 3 **planned / scoped**,
+slice A **implemented as v0.4.2**. Gen4–5 are not started.
+
+---
+
 # Cycle 11 — RW-071 live v0.4.0 retest + Gen3 theme 2 multi-file contracts / v0.4.1 (2026-09-18)
 
 **Date:** 2026-09-18

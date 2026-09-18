@@ -5,11 +5,12 @@ When an objective is coding/verification-shaped, RAD infers disk checks
 repairable validation failure. A `DONE:` line is never an artifact path
 or a substitute for the file.
 
-Package-layout goals (e.g. files under `text_analyzer/`) get check paths
-joined to that directory so root-only checks cannot thrash a package write
-(RW-069 / Gen3 theme 1). Multi-file goals also infer exact line-count and
-non-empty JSON contracts so weak artifacts cannot become VERIFIED (RW-071 /
-Gen3 theme 2). Fallback *tasks* stay check-less (F-17).
+Package-layout goals (e.g. files under `text_analyzer/`, or an ASCII tree
+`text_analyzer/` + `├── file`) get check paths joined to that directory so
+root-only checks cannot thrash a package write (RW-069 / RW-073 / Gen3
+theme 1). Multi-file goals also infer exact line-count and non-empty JSON
+contracts so weak artifacts cannot become VERIFIED (RW-071 / Gen3 theme 2).
+Fallback *tasks* stay check-less (F-17).
 """
 from __future__ import annotations
 
@@ -38,6 +39,16 @@ _PKG_UNDER_RE = re.compile(
 _PKG_BRACE_RE = re.compile(r"\b([A-Za-z_][\w.-]*)/\{")
 _PKG_FILE_RE = re.compile(r"\b([A-Za-z_][\w.-]*)/(?:[\w.-]+/)*[\w.-]+\.\w+")
 _SKIP_PKG_DIRS = frozenset({"tests", "test", "docs", "doc"})
+# ASCII / box-drawing tree: `pkg/` on its own line, then ├── / └── / |-- children.
+_TREE_HEAD_RE = re.compile(r"^[ \t]*([A-Za-z_][\w.-]*)/[ \t]*$")
+_TREE_BRANCH_RE = re.compile(
+    r"^[ \t]*(?:"
+    r"(?:[│|][ \t]*)?[├└]─{1,4}"
+    r"|"
+    r"(?:\|--|`--|\+--)"
+    r")[ \t]+(\S+)"
+)
+_TREE_CONT_RE = re.compile(r"^[ \t]*[│|]+[ \t]*$")
 _BARE_TEST_IN_CMD_RE = re.compile(r"(?<![/\w.-])(test_\w+\.py)\b", re.I)
 
 BROKEN_ARTIFACT_KINDS = frozenset({
@@ -86,11 +97,39 @@ def repair_hint(failed_checks: Iterable[Dict[str, Any]]) -> str:
     )
 
 
+def _ascii_tree_package_dir(blob: str) -> Optional[str]:
+    """`pkg/` on its own line followed by two or more tree children (`├── file`).
+
+    Markdown dash lists (`- file`) are not a tree. `tests/` / `docs/` heads are
+    skipped. A single child is not a layout (same bar as two `pkg/foo` mentions).
+    """
+    lines = (blob or "").splitlines()
+    for i, line in enumerate(lines):
+        m = _TREE_HEAD_RE.match(line)
+        if not m:
+            continue
+        name = m.group(1)
+        if name.lower() in _SKIP_PKG_DIRS:
+            continue
+        files: List[str] = []
+        for later in lines[i + 1:]:
+            if not later.strip() or _TREE_CONT_RE.match(later):
+                continue
+            bm = _TREE_BRANCH_RE.match(later)
+            if not bm:
+                break
+            files.append(bm.group(1))
+        if len(files) >= 2:
+            return name + "/"
+    return None
+
+
 def infer_package_dir(goal: str, criteria: Optional[List[str]] = None) -> Optional[str]:
     """Directory the goal names as the package layout, or None for workspace-root files.
 
     Prefers an explicit `under pkg/` or `pkg/{…}` layout, else a unique
-    non-test directory prefix that appears on **two or more** mentioned files.
+    non-test directory prefix that appears on **two or more** mentioned files,
+    else an ASCII / box-drawing tree (`pkg/` + `├── file` children).
     A single `pkg/foo.py` mention is not a layout (`tests/` alone is never one).
     """
     blob = (goal or "") + "\n" + "\n".join(criteria or [])
@@ -106,7 +145,7 @@ def infer_package_dir(goal: str, criteria: Optional[List[str]] = None) -> Option
     # tree may live at the workspace root — realworld coding / multi_agent).
     if len(uniq) == 1 and len(dirs) >= 2:
         return uniq[0] + "/"
-    return None
+    return _ascii_tree_package_dir(blob)
 
 
 def align_rel_path(path: str, package_dir: Optional[str]) -> str:
