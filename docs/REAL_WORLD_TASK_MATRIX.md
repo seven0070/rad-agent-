@@ -4,19 +4,98 @@ Factual rows from maturation cycles on disk-checked evidence.
 Architecture frozen. Needle stays experimental / off. Not AGI.
 Operating spine: [ROADMAP.md](ROADMAP.md). Gen1 complete on 0.2.3; Gen2 in progress.
 Verified coding loop is **implemented as v0.3.0** (RW-064). Live NIM retest of that
-loop is **RW-065**. Plan-timeout resilience is **implemented as v0.3.1** (RW-066).
-Do not rewrite RW-058–065.
+loop is **RW-065**. Plan-timeout resilience is **implemented as v0.3.1** (scripted
+RW-066 / F-27). Live NIM retest of v0.3.1 is **RW-066** (this file; operator
+production run). Budget-aware planning is **implemented as v0.3.2** (RW-067).
+Do not rewrite RW-058–065. Scripted theme-2 RW-066 (F-27) is preserved.
 
 Every `VERIFIED` / `completed` cell is from the control-plane verifier **and** a disk
 check (file exists / contents / hash). A model `DONE:` line is never enough.
 
 Status vocabulary: **PASS** | **FAIL** | **BLOCKED** | **NOT TESTED**.
 
-Gen2 / v0.3.1 (plan-timeout resilience) is at the top, then v0.3.0 (verified coding
-loop) and the live NIM retest (RW-065). Post-Cycle 4 production use (package **0.2.3**,
-no bump) and Cycles 4–2 follow. RW-058–065 are **not rewritten**.
+Live NIM use of v0.3.1 (RW-066) and Gen2 / v0.3.2 (budget-aware planning, RW-067)
+are at the top, then v0.3.1 scripted theme 2 and v0.3.0. RW-058–065 are **not rewritten**.
+
+# Live NIM retest of v0.3.1 (RW-066)
+
+Lane: operator production `rad objective run` on **v0.3.1** (tag `v0.3.1`,
+`50d98e26`). Needle `existing` / off. `max_plan_tasks` **16**. Default
+`Budget.tool_calls` **60** (this run used `--max-tasks 4 --max-tools 12`).
+RW-058–065 are **not rewritten**. Scripted theme-2 ship evidence remains the
+existing RW-066 planning row (F-27) below. This section records the live
+production retest the operator labeled RW-066.
+
+Authoritative live facts: operator report for `obj_e74d9fad` /
+`/tmp/rad_prod_rw066_0b0bb188`.
+
+| id | Date | Category | Objective | #tasks | #actions | Tools | Result | Verification | Recovery | Failure class | Notes |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| RW-066 | 2026-09-18 IST 19:17:44–19:19:18 | coding (live NIM) — v0.3.1 word_counter retest vs RW-065 | word_counter.py + result.json (`words==2`) + test_word_counter.py + tests pass; no DONE: pollution; `--max-tasks 4 --max-tools 12`; Needle `existing` / off | `PLAN_CREATED` **source=fallback** **attempts=2** (1 mega-task, 0 task checks); t_8e202435 CANCELLED; repair t_4f398815 CANCELLED | tools 12/12; model calls 9/80; retries 1/6; wall ~94s event / spent 41.8s | 12/12 exhausted | **PASS** vs success criteria (`completed` / **VERIFIED**); disk matched | objective **VERIFIED** (`json_valid` result.json; `shell_ok` python3 test_word_counter.py, 2 tests OK). Task verify FAILED then cancelled: “objective machine checks already satisfied (budget exhausted)” | Gen2 **YES** — `RECOVERY_DECISION` `strategy=repair` `failure_class=ENVIRONMENT_FAILURE`; repair wrote fixed `word_counter.py` + valid `result.json`; budget cut mid further writes | **B** residual (11B plan/coding@12). Theme 2 **live-confirmed**. Low-urgency CANCELLED+VERIFIED UX when objective checks already satisfied | Provider nvidia / `meta/llama-3.2-11b-vision-instruct`. Home `/tmp/rad_prod_rw066_0b0bb188`; `obj_e74d9fad`. Disk: `word_counter.py` YES (space-count+1 → 2); `result.json` **valid** `{"words": 2}`; `test_word_counter.py` YES; host tests **PASS** (2 OK); DONE pollution **NONE**. False DONE **0**. vs RW-065: **better E2E** (065 `needs_user` / tests FAIL). Caps unchanged. Needle OFF. Theme 3 still relevant (tools exhausted mid-repair). |
+
+### RW-066 vs RW-065 (same 11B / tools=12 control)
+
+| | RW-065 (v0.3.0) | RW-066 (v0.3.1 live) |
+|---|---|---|
+| home | `/tmp/rad_prod_rw065_ab0919b2` | `/tmp/rad_prod_rw066_0b0bb188` |
+| objective id | `obj_efed5285` | `obj_e74d9fad` |
+| model | NIM 11B `meta/llama-3.2-11b-vision-instruct` | same |
+| `--max-tasks` / `--max-tools` | 4 / 12 | 4 / 12 |
+| Needle | `existing` / off | `existing` / off |
+| PLAN source | **llm** (4 tasks w/ checks) | **fallback** (1 mega-task, 0 task checks) |
+| PLAN attempts | *(field absent)* | **2** then fallback |
+| Gen2 repair insert | **YES** | **YES** |
+| `result.json` | valid `{"words": 2}` | valid `{"words": 2}` |
+| Tests (host) | **FAIL** (NameError / broken counter) | **PASS** (2 OK) |
+| DONE pollution | NO | NO |
+| false DONE | **0** | **0** |
+| final status | `needs_user` / FAIL | **`completed` / VERIFIED** |
+| end-to-end PASS | No | **Yes** |
+| class | **B** (F-25); json_valid-on-.py **NOT CONFIRMED** (F-26) | **B** residual (11B@12); theme 2 live-confirmed |
+
+| metric | value |
+|---|---|
+| Package (live run) | **0.3.1** (tag `v0.3.1` / `50d98e26`) |
+| Theme 2 (plan-timeout resilience) | **used / live-confirmed** — `attempts=2` then `source=fallback` |
+| Theme 1 (verified coding loop) | **used** — repair YES; valid JSON; tests PASS; no DONE pollution |
+| Residual | **Class B** — 11B plan/coding@12; tools 12/12 mid-repair; CANCELLED+VERIFIED when objective checks already satisfied (low urgency; not false DONE) |
+| RW-058–065 | preserved (not rewritten) |
+| Scripted RW-066 (F-27) | preserved (theme 2 ship evidence) |
+| Default max-tools / max-tasks | **unchanged** (this run used `--max-tasks 4 --max-tools 12` only) |
+| Needle | **OFF** (`existing`) |
+| False completion | **0** |
+| Recommendation | Record **PASS**. Theme 3 (budget-aware planning) still relevant; do not raise caps. |
+
+# Gen2 — v0.3.2 budget-aware planning (RW-067)
+
+Lane: Cloud Agent, deterministic/scripted. Live NIM optional (BLOCKED if no key).
+Package **0.3.1 → 0.3.2**. Needle `existing` / off. `max_plan_tasks` **16**.
+Default `Budget.tool_calls` **60**. Default plan retries **1** (hard cap 3).
+F-17 fallback contract **unchanged** (goal-only clause split, cap 7, no checks).
+F-21 leftover-work contract **unchanged** (≤3-task LLM graphs are not compacted).
+Does **not** claim live 11B Class B coding is solved. Does **not** reopen F-17 / F-26.
+
+| id | Date | Category | Objective | #tasks | #actions | Tools | Result | Verification | Recovery | Failure class | Notes |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| RW-067 | 2026-09-18 | planning (scripted) — budget-aware planning | Fat 8-task LLM plan vs remaining N=6 tools; fallback 7-clause vs N=4 | fat→fit: 2 llm tasks with checks (estimated 4 ≤ 6); fallback compact: 2 tasks, no checks | plan only (plus bounded drive for false-DONE) | default **60** unchanged | **PASS** fat-then-fit is selected; two fat plans pick cheaper; fallback compact fits N; small 3-task LLM plan with remaining=1 stays 3 (F-21); default-60 fallback stays 7 | LLM path keeps checks; compacted fallback UNVERIFIED; objective not VERIFIED without checks | n/a (plan-time select/compact, not recovery) | capability (Gen2 theme 3) | Tests `tests/test_budget_aware_planning.py`. Needle OFF. Caps unchanged. False DONE **0**. F-17 / F-21 / F-26 preserved. Live NIM not required. |
+
+| metric | value |
+|---|---|
+| Package | **0.3.2** |
+| Theme | Gen2 #3 budget-aware planning |
+| Needle | **OFF** (`existing`) |
+| `max_plan_tasks` | **16** unchanged |
+| Default tool budget | **60** unchanged |
+| Default plan retries | **1** (hard cap **3**) |
+| False completion | **0** |
+| RW-058–065 | preserved (not rewritten) |
+| Scripted RW-066 (F-27) | preserved |
+| Live RW-066 | preserved (PASS; residual Class B) |
+| Live NIM this patch | **BLOCKED** if no key — not a live PASS claim for theme 3 |
+| Claim all Class B coding solved | **NO** |
 
 # Gen2 — v0.3.1 plan-timeout resilience (RW-066)
+
 
 Lane: Cloud Agent, deterministic/scripted. Live NIM optional (BLOCKED if no key).
 Package **0.3.0 → 0.3.1**. Needle `existing` / off. `max_plan_tasks` **16**.

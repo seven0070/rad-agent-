@@ -2,7 +2,7 @@
 
 Living log of **measured** RAD failures found in live or reconstructed use.
 Architecture is frozen. Needle stays experimental and off by default. This is not AGI/ASI.
-Operating spine: [ROADMAP.md](ROADMAP.md) (adopted 2026-09-18). Gen1 complete on 0.2.3; Gen2 in progress. Verified coding loop is **implemented as v0.3.0** (F-20260918-24 / RW-064). Live retest **RW-065**. Plan-timeout resilience is **implemented as v0.3.1** (F-20260918-27 / RW-066). This ledger is evidence. Do not rewrite RW-058–065.
+Operating spine: [ROADMAP.md](ROADMAP.md) (adopted 2026-09-18). Gen1 complete on 0.2.3; Gen2 in progress. Verified coding loop is **implemented as v0.3.0** (F-20260918-24 / RW-064). Live retest **RW-065**. Plan-timeout resilience is **implemented as v0.3.1** (F-20260918-27 / scripted RW-066) and **used** (live RW-066 / F-20260918-28). Budget-aware planning is **implemented as v0.3.2** (F-20260918-29 / RW-067). This ledger is evidence. Do not rewrite RW-058–065. Scripted RW-066 (F-27) is preserved.
 
 No secrets belong here: never paste API keys, vault contents, account tokens, or full
 provider payloads. Paths under `/tmp/…` and objective ids are fine.
@@ -991,6 +991,112 @@ python3 -m pytest -q tests/test_plan_timeout_resilience.py tests/test_f17_fallba
 | Needle | **OFF** (`existing`) |
 | False completion | **0** |
 | Live NIM | **BLOCKED** (no NVIDIA keys) — not a live PASS claim |
+
+## Live NIM retest of v0.3.1 (RW-066) — 2026-09-18
+
+Operator production `rad objective run` on package **0.3.1** (tag `v0.3.1`,
+`50d98e26`). Same 11B / `--max-tasks 4 --max-tools 12` control as RW-065.
+Needle **OFF**. Caps **not** raised. Scripted theme-2 RW-066 (F-27) is **not
+rewritten**. RW-058–065 facts are **not rewritten**. F-17 / F-18 / F-26 stay
+closed. Theme 2 is **live-confirmed** (`attempts=2` → `source=fallback`).
+Residual Class B remains (tools 12/12 mid-repair). Not a claim that all Class B
+coding is solved.
+
+Authoritative facts: operator report `obj_e74d9fad` /
+`/tmp/rad_prod_rw066_0b0bb188`.
+
+### F-20260918-28 — live 11B word_counter on v0.3.1 **PASS** (RW-066)
+
+| field | value |
+|---|---|
+| class | **B** residual (11B plan/coding@12). Theme 2 live-confirmed (capability used). Not a re-open of F-17 / F-26. Not false DONE |
+| status | **recorded** — live **PASS** (`completed` / **VERIFIED**); disk matched; host tests OK |
+| found in | post-v0.3.1 production use (RW-066), rad v0.3.1, 2026-09-18 IST ~19:17–19:19 |
+| fixed in | — not a product patch from this record. Live outcome improved vs RW-065 without a new control-plane hole. Theme 3 (budget-aware planning) addresses residual tool-exhaustion, shipped separately as v0.3.2 / F-29 |
+| lane | live production `objective run` (NIM 11B) |
+| objective / test | RW-065-shaped word_counter; `obj_e74d9fad`; `--auto --max-tasks 4 --max-tools 12`; Needle `existing` / off |
+| disk | `word_counter.py` YES (returns 2); `result.json` valid `{"words": 2}`; `test_word_counter.py` YES; host `python3 test_word_counter.py` **PASS** (2 OK); DONE pollution **NONE** |
+| expected | Record live use of v0.3.1. Do not invent disk facts. False DONE **0** |
+| actual | Status **`completed`**; objective **VERIFIED** (`json_valid` + `shell_ok` tests). `PLAN_CREATED` **source=fallback** **attempts=2** (theme 2 path). Gen2 **repair YES** (`ENVIRONMENT_FAILURE` → `t_4f398815`). Tools **12/12** exhausted; tasks **CANCELLED** with “objective machine checks already satisfied (budget exhausted)”. vs RW-065: better E2E (065 was `needs_user` / tests FAIL). False DONE **0** |
+| notes | Theme 2 live-confirmed on NIM 11B for this control. Primary residual **Class B**: LLM plan failed both attempts → mega-task fallback; 11B thrash on `result.json`; budget cut mid-repair. Low-urgency CANCELLED+VERIFIED UX when objective checks already pass — not a false DONE (disk matched). Caps unchanged. Needle OFF. Do not raise max-tools to “fix” this. |
+
+Reproduction (redacted; live NIM; operator home):
+
+```
+RAD_HOME=/tmp/rad_prod_rw066_0b0bb188 rad objective run "<word_counter goal>" --auto --max-tasks 4 --max-tools 12
+# obj_e74d9fad → completed / VERIFIED; PLAN_CREATED source=fallback attempts=2
+# result.json valid {"words": 2}; host tests PASS; no DONE pollution; false DONE 0
+```
+
+| gate | result |
+|---|---|
+| Live run | **PASS** (operator report; this agent did not re-run NIM) |
+| Package (live) | **0.3.1** |
+| RW-058–065 | preserved |
+| Scripted RW-066 / F-27 | preserved |
+| F-20260918-28 | **Class B residual** + theme 2 **used** |
+| Class A this record | **NO** |
+| 16-task cap | **UNCHANGED** |
+| Default tool budget | **UNCHANGED** (60); this run used `--max-tools 12` only |
+| Needle | **OFF** (`existing`) |
+| False completion | **0** |
+| Recommendation | Record **PASS**. Theme 3 still relevant. Do not claim all Class B coding is solved. |
+
+## Gen2 / v0.3.2 — Budget-aware planning (RW-067) — 2026-09-18
+
+Generation 2 capability expansion, **third accepted theme**. Package **0.3.1 → 0.3.2**.
+Control plane preserved (models propose / RAD decides). Needle **OFF**. Caps **not**
+raised (`max_plan_tasks` 16, `Budget.tool_calls` 60). Default plan retries **1**
+(hard cap 3). RW-058–065 facts are **not rewritten**. Scripted RW-066 (F-27) and
+live RW-066 (F-28) are **not rewritten**. F-17 / F-18 / F-21 / F-26 stay closed.
+
+Product: when remaining tool budget is known, a *fat* plan (more tasks than fit
+at 2 tools/task, **and** more than 3 tasks) is retried with a budget nudge; the
+cheaper graph is selected. Exhausted fallback graphs that are still fat are
+compacted. LLM graphs are never silently compacted (F-21 leftover-work:
+partial progress then `needs_user` / already-satisfied `VERIFIED`). A model
+`DONE:` is never completion. This does **not** claim live 11B Class B coding
+would now always PASS.
+
+### F-20260918-29 — budget-aware planning (select a plan that fits N)
+
+| field | value |
+|---|---|
+| class | **capability** (Gen2 theme 3). Not a re-open of F-17 / F-21 / F-26. Not a cap raise. Not a claim that RW-059/065/066 live 11B incompleteness is gone |
+| status | **shipped in v0.3.2** |
+| found in | product-owner accepted theme after RW-059 Case B (doubling tools 12→24 did not complete), RW-065/066 tools 12/12 exhausted (066 still VERIFIED via objective checks but cancelled mid-repair) |
+| fixed in | **v0.3.2** — `Planner.plan(tool_budget=)` prompt + fat-plan retry (`PLAN_BUDGET_NUDGE`) + cheapest-candidate select; fallback compact via `rad/control/budgetplan.py`; `PLAN_CREATED` records `tool_budget` / `estimated_tools` / `compacted` / `fit`. LLM graphs not compacted. Caps unchanged |
+| lane | deterministic / scripted (MUST). Live NIM optional; theme 3 is not claimed as a live PASS |
+| objective / test | `tests/test_budget_aware_planning.py`; coding-loop + plan-timeout + F-21 budget regressions still pass |
+| disk | n/a (plan-time). Scripted: 8-task fat then 2-task fit → selected 2, estimated 4 ≤ 6. Fallback 7 vs remaining 4 → compacted to 2, no checks. 3-task LLM remaining=1 stays 3. Compacted fallback + `DONE:` is not VERIFIED |
+| expected | fat plan that would burn >N tools → emit/select a plan that fits N (or fail honestly); false DONE **0**; caps/Needle unchanged |
+| actual | fat-then-fit selected (`source=llm`, checks kept). Two fat plans pick cheaper, not compacted. Fallback compact fits N (F-17 no checks). Default budget 60: 7-clause fallback unchanged. F-21 3-task leftover preserved |
+| notes | Cost model `TOOLS_PER_TASK=2` is an estimate, not a new cap. Small graphs may exceed remaining tools by contract (F-21). Intra-task write/test thrash (RW-059 19× write_file) is **not** claimed solved — that would be an executor redesign. Planning LLM calls still not charged to `Budget.model_calls`. Needle off. Caps unchanged. |
+
+Reproduction:
+
+```
+python3 -m pytest -q tests/test_budget_aware_planning.py tests/test_plan_timeout_resilience.py tests/test_verified_coding_loop.py tests/test_class_a_budget_investigation.py
+# fat then fit → 2 tasks, estimated 4 ≤ 6
+# fallback 7 vs remaining 4 → compacted 2, no checks
+# 3-task LLM remaining=1 → still 3 (F-21)
+```
+
+| gate | result |
+|---|---|
+| `python3 -m pytest -q` | **415 passed** in 9.02s |
+| `rad doctor --offline` | READY — 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR (`RAD_HOME=/tmp/rad-v032-gate`) |
+| `rad acceptance` | **50/50 PASSED** (`/tmp/rad-v032-gate/acceptance/20260918-140012_gate.json`) |
+| `rad realworld` | **PASS** 10/11 + 1 BLOCKED — `/tmp/rad-v032-rw/realworld/20260918-140035_realworld.json` |
+| Package | **0.3.2** |
+| RW-058–065 | preserved |
+| Scripted RW-066 / F-27 | preserved |
+| Live RW-066 / F-28 | preserved (PASS; Class B residual) |
+| 16-task cap | **UNCHANGED** |
+| Default tool budget | **UNCHANGED** (60) |
+| Needle | **OFF** (`existing`) |
+| False completion | **0** |
+| Live NIM this patch | **BLOCKED** if no NVIDIA keys — not a live PASS claim for theme 3 |
 
 ## How to add a finding
 
