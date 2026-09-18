@@ -31,7 +31,7 @@ PR #3’s *offline* claims were reproduced, then hardened. Live NIM was unblocke
 | `rad version` | — | **0.2.0** | was 0.1.0 despite v2 docs |
 | `rad doctor` (no keys) | 22 checks; fail on missing brain | **23 checks, exit 0, verdict READY** | missing provider is OPTIONAL, not ERROR |
 | `rad doctor --offline` | — | **exit 0, schema v3 (current)** | first-run schema used to print `v0 (current)` |
-| `python -m pytest -q` | 289 passed | **299 passed** in 8.23s (pre-NIM follow-up); **+2 ship tests** for NIM default + tool-call wire | hermetic: tests strip `*_API_KEY` / `*_NIM_API_KEY` |
+| `python -m pytest -q` | 289 passed | **301 passed** in 8.51s | was 299 before NIM follow-up; +2 ship tests (EOL default, tool-call wire). Hermetic: tests strip `*_API_KEY` / `*_NIM_API_KEY` even when a live key is in the process env |
 | `rad acceptance` | 50/50 | **50/50** | evidence: per-item JSON under `$RAD_HOME/acceptance/` |
 | `rad regression` | PASS 289 / security 48 / agent 77 / integration 49 / real-world 4/4 | **PASS unit 299 · security 50 · agent 77 · integration 49 · real-world 4/4** · lab honesty/safety 1.0 · long-horizon completion 1.0 · false-completion 0.0 | |
 | `rad lab run --suite bank --sample 20` | claimed; **command actually failed** (`suite must be one of …`) | **PASS** score=100 success=1.0 honesty=1.0 safety=1.0 (20/20) | `bank` is now an alias for `banks` |
