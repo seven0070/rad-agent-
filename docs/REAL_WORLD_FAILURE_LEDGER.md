@@ -376,6 +376,58 @@ Same condition as F-20260918-07 / F-20260918-10. Offline reconstruction still `r
 | New Class A this run | **F-20260918-11** — 0.2.3 grader fix |
 | Needle | default `existing`; **NOT** turned on |
 
+## This maturation run (2026-09-18, cycle 4 — v0.2.3 already live)
+
+Environment: Cloud Agent VM, **no** `NVIDIA_NIM_API_KEY` / `NVIDIA_API_KEY`.
+`origin/main` tip `d121c3f8875cb01e816bb5f7df66e62ee26e1eba` (PR #9 / Release `v0.2.3`). Package **0.2.3**
+at start **and** at end — **Release: PASS**, not re-cut, no 0.2.x bump. Needle remains default-off.
+Not AGI. Not v0.3.0. Planner cap left at 16. Task log: `docs/REAL_WORLD_TASK_MATRIX.md` cycle 4.
+
+### F-20260918-13 — live NIM Class A retest (cycle 4)
+
+| field | value |
+|---|---|
+| class | C |
+| status | **BLOCKED** |
+| found in | this cycle (RW-047; suite `live_nim`) |
+| lane | live NVIDIA NIM |
+| expected | with `NVIDIA_NIM_API_KEY` / `NVIDIA_API_KEY`: budget-boundary + artifact-exists → VERIFIED; artifact-missing → not VERIFIED |
+| actual | both env vars **absent** — live lane not run |
+
+Same condition as F-20260918-07 / F-20260918-10 / F-20260918-12. Offline reconstruction still `rad realworld --only overdecompose,false_success`. That is **not** a substitute for a live 11B run.
+
+| gate | result |
+|---|---|
+| GitHub Release `v0.2.3` | **PASS** — tag peels to `d121c3f`; package 0.2.3; URL live; not re-cut |
+| `rad version` | **v0.2.3** |
+| `python -m pytest -q` | **328 passed** in 9.01s |
+| `rad doctor --offline` | **20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR**, verdict READY, exit 0 (`/tmp/rad-c4-gate`) |
+| `rad acceptance` | **50/50 PASSED** (`/tmp/rad-c4-gate/acceptance/20260918-072850_gate.json`) |
+| `rad realworld` | **10 passed / 1 BLOCKED / 0 failed** |
+| Live NIM Class A | **BLOCKED** |
+| Action ramp 1/3/5/10 tasks | **VERIFIED** on disk |
+| 20 sequential actions (one task) | **VERIFIED** (20/20 files) |
+| 16 sequential planned tasks | **VERIFIED** (RW-055) |
+| 17 / 20 sequential planned tasks | **FAILED** at default `max_plan_tasks=16` — documented limit, not patched |
+| New Class A this run | **none** — no 0.2.x code bump |
+| Needle | default `existing`; **NOT** turned on |
+| Evidence for v0.3.0 | **none** |
+| Planner-cap encounters vs useful-work failures | **2 / 0** (RW-054, RW-056 hit 16; no product row failed *because* of the cap) |
+| Recommendation | **Outcome A — continue 0.2.x** |
+
+### Decision gate (this cycle only)
+
+| # | question | answer |
+|---|---|---|
+| A | v0.2.3 stable? | **YES** — gates pass; useful campaign **VERIFIED**; false completion **0**; release not re-cut |
+| B | Recurring Class A? | **NO** — none this cycle; RW-057 grader/verifier parity **PASS** |
+| C | Cap prevents useful work? | **NO** — planner hit 16 twice; useful work used 1–3 tasks |
+| D | 11B still model limitation? | **NOT TESTED** this cycle (no NIM keys). Prior F-20260918-04 remains Class B on the ledger only |
+| E | Needle earned default? | **NO** — stays `existing` |
+| F | NIM | **BLOCKED** (F-20260918-13) |
+| G | Proven architectural gap? | **NO** |
+| H | v0.3.0 justified? | **NO** |
+
 ## How to add a finding
 
 1. Reproduce with disk checks (file exists / hash / contents). Quote status + verification, not model prose.
