@@ -310,6 +310,63 @@ and does not justify designing v0.3.0.
 
 ---
 
+# Research + artifact — RW-060 vs text_analyzer (2026-09-18)
+
+**Date:** 2026-09-18 (IST ~14:25–14:27 for RW-060)
+**Package:** `0.2.3` — **no bump**. Not v0.2.4. Not v0.3.0.
+**Architecture:** frozen. Needle stays optional/off. `max_plan_tasks` left at **16**.
+Default max-tools **not** raised.
+
+Docs-only record. No RAD code change. RW-058 / RW-059 are preserved exactly as
+historical text_analyzer evidence. Class A candidates from RW-059 stay parked
+(not this record).
+
+## Short comparison
+
+Same 11B NIM model (`meta/llama-3.2-11b-vision-instruct`); same `--max-tasks 8`;
+Needle `existing` / off. RW-060 is a **research + artifact** objective, not a
+coding layout. Tool budget for this run was `--max-tools 16` (not a default raise).
+
+| | RW-058 (coding) | RW-059 (coding, extra tools) | RW-060 (research + artifact) |
+|---|---|---|---|
+| home | `/tmp/rad_prod_text_analyzer_live_a787512c` | `/tmp/rad_prod_rw059_b48e7b56` | `/tmp/rad_prod_rw060_eb0192` |
+| objective | `obj_4e219224` | `obj_e1419520` | `obj_b114afd4` |
+| `--max-tools` | 12 | 24 | 16 |
+| wall | ~103s IST ~13:39–13:41 | ~106s IST ~14:02–14:04 | ~110s IST ~14:25–14:27 |
+| tools | 12/12 | 24/24 | 16/16 |
+| model calls | 7/80 | 25/80 | 18/80 |
+| status | `needs_user` / **FAIL** | `needs_user` / **FAIL** | `needs_user` / **FAIL** |
+| false DONE | **0** | **0** | **0** |
+| disk | incomplete `text_analyzer/` layout; `summary.json` missing under the dir | five paths present; invalid JSON + wrong counts; tests `13!=6` | `pathlib_reference/README.md` EXISTS sha256 `48f0d39b…`; `pathlib_reference.md` 162 B stub; sections 3–9 FAIL; 0 examples; no docs.python.org fetch |
+
+Interpretation: the 11B+tool-budget failure is **not coding-only**. Research also
+stops at the budget with a thin placeholder instead of a sourced, sectioned
+deliverable. Same Class B family as F-20260918-04 / F-20260918-15 / F-20260918-16.
+
+## Class A / B / C
+
+| class | this record |
+|---|---|
+| **A** | **none this PR.** Parked suspects F-20260918-17 / F-20260918-18 remain **open/investigate**. Do **not** claim fixed. No v0.2.4. |
+| **B** | **F-20260918-20** — pathlib reference stub; sections 3–9 FAIL; 0 examples; no docs.python.org fetch; tools 16/16; `needs_user`. Pattern generalizes vs RW-058/059. |
+| **C** | none new (NIM key present). |
+
+## Decision
+
+- **Outcome A continues** — stay on 0.2.x.
+- Needle stays **off**.
+- Default max-tools / max-tasks **unchanged**.
+- Cap **16** unchanged.
+- **No v0.2.4** (no Class A fix).
+- No architecture change. Not v0.3.0.
+
+## Evidence for v0.3.0
+
+**None.** A second live 11B Class B on a research workload is not a missing
+control-plane stage and does not justify designing v0.3.0.
+
+---
+
 # Cycle 3 — v0.2.3 (2026-09-18)
 
 **Date:** 2026-09-18

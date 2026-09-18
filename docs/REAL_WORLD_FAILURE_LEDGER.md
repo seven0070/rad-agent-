@@ -582,6 +582,53 @@ RAD_HOME=/tmp/rad_prod_rw059_b48e7b56  # rad v0.2.3; nvidia / meta/llama-3.2-11b
 | Evidence for v0.3.0 | **none** |
 | Recommendation | **Outcome A — continue 0.2.x** |
 
+## Research + artifact (RW-060) — 2026-09-18
+
+Operator production follow-up on package **0.2.3**. Separate research + artifact
+objective (not a rewrite of RW-058 / RW-059). Architecture frozen. Needle remains
+default-off. Planner cap left at 16. Default max-tools **not** raised. Class A
+candidates from RW-059 stay **parked** (open/investigate; **not this PR**).
+**No 0.2.x bump.** Not AGI. Not v0.3.0.
+Task log: `docs/REAL_WORLD_TASK_MATRIX.md` RW-060.
+
+### F-20260918-20 — live 11B research+artifact pathlib reference stub
+
+| field | value |
+|---|---|
+| class | B |
+| status | documented |
+| found in | post-Cycle 4 production use (RW-060), rad v0.2.3, 2026-09-18 IST ~14:25–14:27 |
+| fixed in | — not a RAD hole; 11B limitation. Same family as F-20260918-04 / F-20260918-15 / F-20260918-16. **No v0.2.4.** Default max-tools / max-tasks **not** raised |
+| lane | live NVIDIA NIM `meta/llama-3.2-11b-vision-instruct` |
+| objective / test | `obj_b114afd4` — Real-World Research + Artifact (pathlib reference); `--max-tasks 8 --max-tools 16`; Needle `existing` / off |
+| disk | `pathlib_reference/README.md` **EXISTS** sha256 `48f0d39b…`; `pathlib_reference.md` **EXISTS** but **162 B stub** — sections 3–9 **FAIL**, 0 examples; no docs.python.org fetch |
+| expected | substantive pathlib reference with required sections and examples, sourced (including docs.python.org); `VERIFIED` only from machine checks |
+| actual | status `needs_user` / **FAIL** vs success criteria — **NOT DONE**, **not VERIFIED** complete. Tools 16/16 exhausted; model calls 18/80; wall ~110s. Home `/tmp/rad_prod_rw060_eb0192`. False DONE **0** |
+| notes | Pattern **generalizes** beyond the text_analyzer coding runs: a research workload also fails under 11B+tool budget before a substantive deliverable. **Not Class A**: RAD stopped at the tool budget; verifier did not rubber-stamp. **Not Class C**: NIM key present. Class A candidates F-20260918-17 / F-20260918-18 remain parked. Outcome A continues. Needle off. Cap 16 unchanged. No architecture change. |
+
+Reproduction (redacted):
+
+```
+RAD_HOME=/tmp/rad_prod_rw060_eb0192  # rad v0.2.3; nvidia / meta/llama-3.2-11b-vision-instruct
+# --max-tasks 8 --max-tools 16; Needle existing/off
+# obj_b114afd4 → needs_user; tools 16/16; pathlib_reference.md 162B stub; sections 3–9 FAIL
+```
+
+| gate | result |
+|---|---|
+| Package | **0.2.3** — no bump; **no v0.2.4** |
+| RW-058 | preserved as historical evidence (F-20260918-15 Class B; tools 12/12) |
+| RW-059 | preserved as historical evidence (F-20260918-16 / F-20260918-19 Class B; tools 24/24) |
+| RW-060 vs RW-058/059 | research + artifact also `needs_user` / FAIL; tool budget exhausted (16/16); false DONE **0** |
+| Class A this record | **none** — parked F-20260918-17 / F-20260918-18 stay **open/investigate**; **not this PR** |
+| Class B | **F-20260918-20** (pathlib stub / no docs.python.org fetch; research workload under 11B+tool budget) |
+| Class C | **none** (NIM key present) |
+| Default max-tools / max-tasks | **unchanged** (RW-060 used `--max-tasks 8 --max-tools 16` for this run only) |
+| Needle | default `existing`; **NOT** turned on |
+| `max_plan_tasks` | **16** unchanged |
+| Evidence for v0.3.0 | **none** |
+| Recommendation | **Outcome A — continue 0.2.x** |
+
 ## How to add a finding
 
 1. Reproduce with disk checks (file exists / hash / contents). Quote status + verification, not model prose.
