@@ -6,6 +6,92 @@ Default `Budget.tool_calls` remains **60**.
 
 ---
 
+# Cycle 10 — Gen3 theme 1 path-aligned checks / v0.4.0 (2026-09-18)
+
+**Date:** 2026-09-18
+**Baseline:** `origin/main` `3f59f8b5` (after PR #23; package **0.3.2**)
+**Package at start:** `0.3.2`
+**This branch:** `cursor/path-aligned-checks-93f8` — package **0.4.0**
+**Architecture:** control plane preserved. Needle stays off. Caps unchanged.
+RW-058–069 are **not rewritten**. F-17 / F-21 / F-26 stay closed.
+
+## Part A — investigate-first (RW-069 A2)
+
+Question: does RAD incorrectly emit or accept machine checks whose paths
+disagree with the planned write layout for multi-file/package objectives?
+
+| probe | result |
+|---|---|
+| `infer_coding_checks` on `under text_analyzer/` / brace-list | **emitted** root `summary.json` + `python3 test_analyzer.py` (pre-patch) |
+| `TEST_FILE_RE` on `text_analyzer/test_analyzer.py` | dropped the package prefix (pre-patch) |
+| LLM plan with root `input.txt` + package writes | accepted as written (F-26-style); verifier honestly failed the root path → VALIDATION `retry_with_hint` |
+| Verifier cwd / path join | workspace-relative only; no package-dir guess at check time |
+| Live RW-069 remaining | wrong 1-line input, missing package `summary.json`, weak tests, tools 12/12 — **Class B** residual |
+
+**Class A confirmed** for emission + acceptance of root-only checks on a named
+package layout. Wrong 1-line input / missing summary.json / tools=12 stay
+Class B (Gen3 theme 2, later). Prompt-only 11B quality is **not** the patch.
+
+## Part B — product
+
+Join bare check paths (and bare `test_*.py` in `shell_ok`) to the package
+directory named by `under pkg/`, `pkg/{…}`, or two-or-more files sharing one
+non-`tests` prefix. LLM ingest uses the same join. Check *kinds* unchanged
+(F-26). Fallback *tasks* stay check-less (F-17). A single `pkg/foo.py` mention
+is not a layout (realworld coding / multi_agent).
+
+## What changed
+
+- Product: `rad/control/codingloop.py`, `rad/control/planner.py`
+- Tests: `tests/test_path_aligned_checks.py`
+- Docs: ROADMAP Gen3 theme 1 **implemented**; ledger F-32; matrix RW-070; this cycle
+- Package **0.3.2 → 0.4.0**
+
+## What did not change
+
+- Needle default `existing` / off
+- `max_plan_tasks` default **16**
+- `Budget.tool_calls` default **60**
+- False completion remains **0**
+- RW-058–069 ledger/matrix rows
+- Control plane shape PLAN→PERMISSION→BUDGET→EXECUTE→OBSERVE→VERIFY→RECOVER
+- F-17 / F-18 / F-21 / F-26 closed; A1 budget→needs_user **not reopened**
+- Live 11B text_analyzer **not** claimed PASS
+
+## Class A / B / C (this cycle)
+
+| class | this record |
+|---|---|
+| **A** | **F-20260918-32** — root-only checks vs package write layout. Patched. |
+| **B** | RW-069 residual (wrong input, missing package summary.json, weak tests, tools=12). Theme 2 later. |
+| **C** | none proven. `live_nim` may BLOCKED. |
+
+## Quality gates (this branch)
+
+Isolated homes `/tmp/rad-v040-gate` (doctor, acceptance) and `/tmp/rad-v040-rw` (realworld).
+
+| gate | result |
+|------|--------|
+| `rad version` | **pending** |
+| `python3 -m pytest -q` | **PASS** 435 passed (pre-gate local) |
+| `rad doctor --offline` | pending |
+| `rad acceptance` | pending |
+| `rad realworld` | pending |
+| Needle default | **PASS** (`existing`) |
+| Caps | **PASS** `max_plan_tasks` 16; `Budget.tool_calls` 60 |
+| False DONE | **PASS** (scripted 0) |
+| Package | **0.4.0** |
+| Live NIM this patch | not re-run; RW-069 facts preserved |
+
+## Roadmap pointer
+
+Operating spine: [ROADMAP.md](ROADMAP.md). **Generation 1 is complete**
+(v0.2.0–v0.2.3). **Generation 2 is complete** (v0.3.0–v0.3.2). **Generation 3
+is in progress:** path-aligned checks **implemented as v0.4.0**. Gen4–5 are
+not started.
+
+---
+
 # Cycle 9 — RW-068/069 v0.3.2 use campaign + Gen3 v0.4.x scope (2026-09-18)
 
 **Date:** 2026-09-18

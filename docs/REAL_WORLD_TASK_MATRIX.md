@@ -7,7 +7,8 @@ on 0.3.0–0.3.2. Verified coding loop is **implemented as v0.3.0** (RW-064). Li
 retest of that loop is **RW-065**. Plan-timeout resilience is **implemented as v0.3.1**
 (scripted RW-066 / F-27) and **used** (live RW-066). Budget-aware planning is
 **implemented as v0.3.2** (RW-067). Live NIM use of v0.3.2 is **RW-068** (PASS) and
-**RW-069** (FAIL). Do not rewrite RW-058–067. Scripted theme-2 RW-066 (F-27) is preserved.
+**RW-069** (FAIL). Path-aligned checks are **implemented as v0.4.0** (RW-070). Do not
+rewrite RW-058–069. Scripted theme-2 RW-066 (F-27) is preserved.
 
 Every `VERIFIED` / `completed` cell is from the control-plane verifier **and** a disk
 check (file exists / contents / hash). A model `DONE:` line is never enough.
@@ -16,7 +17,17 @@ Status vocabulary: **PASS** | **FAIL** | **BLOCKED** | **NOT TESTED**.
 
 Live NIM use of v0.3.2 (RW-068 / RW-069) is at the top, then live v0.3.1 (RW-066)
 and Gen2 / v0.3.2 (budget-aware planning, RW-067), then v0.3.1 scripted theme 2
-and v0.3.0. RW-058–067 are **not rewritten**.
+and v0.3.0. RW-058–069 are **not rewritten**.
+
+# Gen3 — v0.4.0 path-aligned checks (RW-070)
+
+Lane: deterministic / scripted on **v0.4.0**. Needle `existing` / off.
+`max_plan_tasks` **16**. Default `Budget.tool_calls` **60**. RW-058–069 are
+**not rewritten**. Package **0.3.2 → 0.4.0**. Live NIM not re-run.
+
+| id | Date | Category | Objective | #tasks | #actions | Tools | Result | Verification | Recovery | Failure class | Notes |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| RW-070 | 2026-09-18 | coding (scripted) — path-aligned checks | production-shaped `text_analyzer/` layout; LLM plan emits root-only `file_exists input.txt` + `json_valid summary.json`; scripted writes land under `text_analyzer/` | 1 planned (LLM) | write package files once | default **60** unchanged | **PASS** (aligned checks VERIFIED; no root pollution) | objective **VERIFIED** from package paths; workspace-root `input.txt` / `summary.json` **absent** | none (first attempt VERIFIED; no VALIDATION retry thrash; not ENVIRONMENT) | **A** (Gen3 theme 1) | Tests `test_path_aligned_checks_*`. False DONE **0**. Fallback tasks still have no checks (F-17); check *kinds* not remapped (F-26). Word_counter root paths unchanged. Single `pkg/foo.py` is not a layout. Needle OFF. Caps unchanged. Live NIM not required. RW-069 Class B live facts preserved. |
 
 # Live NIM use of v0.3.2 (RW-068 / RW-069)
 

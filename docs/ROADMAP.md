@@ -9,10 +9,10 @@ redesign the control plane.
 **v0.3.0** and **used** (RW-065; RW-068). Theme 2 — **plan-timeout
 resilience** — shipped as **v0.3.1** and **used** (live RW-066 **PASS**;
 RW-068 llm/1). Theme 3 — **budget-aware planning** — shipped as **v0.3.2**.
-v0.3.2 use campaign is **done** (RW-068 **PASS**, RW-069 **FAIL**). Needle
-stays off. Caps unchanged. Generation 3 is **planned / scoped** (not started
-as a build). Generations 4–5 are **not started**. This patch does **not**
-implement v0.4.0 and does **not** bump the package.
+v0.3.2 use campaign is **done** (RW-068 **PASS**, RW-069 **FAIL**). Generation 3
+theme 1 — **path-aligned checks / package layout** — is **implemented as
+v0.4.0**. Needle stays off. Caps unchanged. This patch does **not** claim live
+11B RW-069 would now PASS. Generations 4–5 are **not started**.
 
 ```
 build → test → validate → release → use → discover gaps → build the next version
@@ -27,12 +27,12 @@ Stability with no code change is a valid result.
 
 | item | value |
 |---|---|
-| Generation in production | **Gen2 complete** — v0.3.2 on `main` (`387776dc` / tag `v0.3.2`); Gen1 baseline remains tagged `v0.2.3` @ `d121c3f` |
-| Package / tag on `main` | **0.3.2** / annotated tag `v0.3.2` @ `387776dc` (this branch does **not** bump) |
-| This change | **docs** — record RW-068 **PASS** + RW-069 **FAIL**; scope Gen3 v0.4.x. **No product code. No v0.4.0.** |
-| Generation 2 | **COMPLETE** — theme 1 **v0.3.0** (used RW-065 / RW-068); theme 2 **v0.3.1** (used live RW-066 / RW-068); theme 3 **v0.3.2** (scripted RW-067; used in this campaign) |
-| Latest use (RW-068 / RW-069) | Live NIM 11B: word_counter **PASS** `completed` / VERIFIED (plan **llm/1**); text_analyzer **FAIL** `needs_user` (Class B @ tools=12) |
-| Generation 3 | **PLANNED / SCOPED** — not started as a build; first v0.4.0 theme not yet accepted |
+| Generation in production | **Gen3 in progress** — this change is **v0.4.0**; Gen2 complete on `main` (`387776dc` / tag `v0.3.2`); Gen1 baseline remains tagged `v0.2.3` @ `d121c3f` |
+| Package / tag on `main` | **0.3.2** / annotated tag `v0.3.2` @ `387776dc` (this branch bumps the package to **0.4.0**) |
+| This change | **v0.4.0** — path-aligned checks / package layout (Gen3 theme 1) |
+| Generation 2 | **COMPLETE** — theme 1 **v0.3.0** (used RW-065 / RW-068); theme 2 **v0.3.1** (used live RW-066 / RW-068); theme 3 **v0.3.2** (scripted RW-067; used RW-068 / RW-069) |
+| Latest use (RW-068 / RW-069) | Live NIM 11B: word_counter **PASS** `completed` / VERIFIED (plan **llm/1**); text_analyzer **FAIL** `needs_user` (Class B @ tools=12) — facts preserved |
+| Generation 3 | **IN PROGRESS** — theme 1 **implemented** (v0.4.0); themes 2–3 still candidates |
 | Generations 4–5 | **NOT STARTED** |
 | Needle | optional / **off** (`tool_router=existing`; ADR-001) |
 | `max_plan_tasks` | **16** (unchanged) |
@@ -52,15 +52,15 @@ Cycle evidence, not this file: [MATURATION_CYCLE_REPORT.md](MATURATION_CYCLE_REP
 |---|---|---|---|
 | **1** | Foundation | v0.2.0, v0.2.1, v0.2.2, **v0.2.3** | **COMPLETE** |
 | **2** | Capability Expansion | v0.3.x | **COMPLETE** (theme 1 → **v0.3.0**; theme 2 → **v0.3.1** used RW-066/068; theme 3 → **v0.3.2**; use campaign RW-068 PASS / RW-069 FAIL) |
-| **3** | Autonomous Agent Maturity | v0.4.x | **PLANNED / SCOPED** (not started as a build) |
+| **3** | Autonomous Agent Maturity | v0.4.x | **IN PROGRESS** (theme 1 → **v0.4.0**) |
 | **4** | Production Scale | v0.5.x | **NOT STARTED** |
 | **5** | 1.0 | v1.0.0 | **NOT STARTED** |
 
 Enter the next generation only after the previous one has been **released, used, and has
 measured gaps**. Class B rows are the input to that decision. They do not start the
 generation by themselves — a theme must be **accepted**. Gen2 themes 1–3 shipped and
-were used (v0.3.2 campaign). Gen3 stays **unbuilt** until Sanath accepts a first
-v0.4.0 theme. Gen4–5 stay closed until Gen3 has been released and used.
+were used (v0.3.2 campaign). Gen3 theme 1 is **accepted and implemented**
+(v0.4.0). Gen4–5 stay closed until Gen3 has been released and used.
 
 ---
 
@@ -248,30 +248,32 @@ redesign, and do not start v0.4.0 without an accepted first theme.
 
 ---
 
-## Generation 3 — Autonomous Agent Maturity — PLANNED / SCOPED (v0.4.x)
+## Generation 3 — Autonomous Agent Maturity — IN PROGRESS (v0.4.x)
 
 More reliable multi-step execution, recovery, planning, and long-horizon work.
 
-**Status:** **planned / scoped** from the v0.3.2 use campaign (RW-068 **PASS**,
-RW-069 **FAIL**). **Not started** as a build. Package stays **0.3.2**. This
-patch does **not** implement v0.4.0.
+**Status:** **in progress.** Theme 1 — **path-aligned checks / package layout** —
+is **implemented as v0.4.0**. Package **0.3.2 → 0.4.0**. Live RW-069 Class B
+artifact quality (wrong 1-line input, missing package `summary.json`, weak tests)
+is **not** claimed fixed.
 
 Do not pre-design Gen3 from Gen1 Class B rows alone. Do not skip Gen2 (Gen2 is
 now complete). Do not treat a FAIL row as an automatic architecture rewrite.
 
-### Entry criteria (how Gen3 may open)
+### Entry criteria (how Gen3 opened)
 
-Gen3 **build** starts only when **all** of the following are true:
+Gen3 **build** starts only when **all** of the following are true. They are true
+for this theme:
 
 1. **Gen2 complete (0.3.0–0.3.2) — DONE.** Verified coding loop (v0.3.0),
    plan-timeout resilience (v0.3.1), budget-aware planning (v0.3.2) shipped.
    v0.3.2 use campaign recorded (RW-068 **PASS**, RW-069 **FAIL**).
-2. Sanath **accepts a first v0.4.0 theme** — an explicit decision, not implied
-   by a `needs_user` / FAIL row.
-3. That theme is grounded in **measured Gen2-use gaps** (this campaign), not in
+2. Sanath **accepts a first v0.4.0 theme** — **Done:** path-aligned checks /
+   package layout (Gen3 theme 1).
+3. That theme is grounded in **measured Gen2-use gaps** (RW-069 A2 watch), not in
    a reconstructed offline story and not in a closed non-gate.
-4. **Class A only when proven.** Class B is **not** an automatic architecture
-   rewrite.
+4. **Class A only when proven.** Investigate-first confirmed RAD emits and
+   accepts root-only machine checks that disagree with a named package layout.
 5. Needle stays **OFF**. Caps (`max_plan_tasks` **16**, default
    `Budget.tool_calls` **60**) unchanged unless a proven product need is
    documented.
@@ -281,6 +283,26 @@ Gen3 **build** starts only when **all** of the following are true:
 Release gates must still be green (pytest, `rad doctor --offline`,
 `rad acceptance`, `rad realworld`). `live_nim` may be BLOCKED.
 
+### Accepted first build — path-aligned checks / package layout (v0.4.0)
+
+| field | value |
+|---|---|
+| Status | **IMPLEMENTED** in this change (package **0.4.0**) |
+| Theme | **Path-aligned checks / package layout** |
+| Version | **v0.4.0** |
+| Loop | package-layout goal → bare check paths joined to that directory; LLM root-only checks remapped the same way; verifier still evaluates the stored path honestly |
+| Evidence | RW-069 / F-20260918-31 (A2 watch); deterministic RW-070 / F-20260918-32 |
+| What it is not | Not a control-plane rewrite. Not Needle-as-default. Not a cap raise. Not Gen3 theme 2 (multi-file efficiency). Not a claim that live 11B RW-069 now PASS. Not a remap of check *kinds* (F-26). Fallback *tasks* stay check-less (F-17). |
+
+A package-layout goal (`under text_analyzer/`, `text_analyzer/{…}`, or two or
+more files sharing one non-`tests` directory prefix) is the source of truth for
+layout. RAD joins bare `file_exists` / `json_valid` / … paths and bare
+`test_*.py` in `shell_ok` commands to that directory so first writes under the
+package can verify without a false VALIDATION retry that flattens files to the
+workspace root. Directed paths (`pkg/foo.json`, `tests/check_stats.py`) are
+kept. A single `pkg/foo.py` mention is not a layout. The verifier does **not**
+guess a package dir at check time.
+
 ### Themes (evidence-backed; priority order)
 
 Grounded in RW-068 / RW-069 and the residual RW-058 / RW-059 family
@@ -289,31 +311,31 @@ Gen3 hole (B3).
 
 | # | theme | status | what the evidence showed | rows |
 |---|---|---|---|---|
-| 1 | **Path-aligned checks / package layout** | **candidate** (A2 watch; not proven Class A) | Task checks required workspace-root `input.txt` while first successful writes were under `text_analyzer/` → VALIDATION_FAILURE → retry flattened files to root → layout thrash. Candidate if reproducible as planner/check emission bug (not just 11B). | RW-069; related path confusion on RW-058 |
+| 1 | **Path-aligned checks / package layout** | **IMPLEMENTED** — v0.4.0 | Task checks required workspace-root `input.txt` while first successful writes were under `text_analyzer/` → VALIDATION_FAILURE → retry flattened files to root → layout thrash. Confirmed as planner/infer emission + LLM-check acceptance (not just 11B). | RW-069; RW-070 (scripted); related path confusion on RW-058 |
 | 2 | **Multi-file coding under tight budgets** | **candidate** (Class B) | `text_analyzer` @ tools=**12** still FAIL: wrong 1-line input (sha256 `9bf9660f…` vs expected 3-line `bf69eb73…`), missing package `summary.json`, weak tests, layout thrash. Optional **tools=24** baseline later (not run this campaign) to separate budget starvation from planning/repair quality. Efficiency / stronger artifact contracts. | RW-069; RW-058 / RW-059 family (F-15 / F-16 / F-19) |
 | 3 | **Longer-horizon / multi-step reliability** | **later** | Roadmap Gen3 intent (more reliable multi-step execution, recovery, planning, long-horizon work). Enter **only after** themes 1–2 have measured wins. | — |
 
 ### Closed / not automatic Gen3 work
 
-These are **not** a license to start v0.4.0 from this docs change:
+These are **not** a license to raise caps or enable Needle from this change:
 
 | id | claim | result |
 |---|---|---|
 | A1 | Reopen budget→`needs_user` as Class A | **Do not reopen** without new proof. RW-069 exhausted 12 tools with incomplete work; same honest stop as historical Class B investigations (F-21). |
-| A2 | Check path vs write path (root vs package dir) | **Watch / candidate theme 1.** Not confirmed as a control-plane defect. Do not patch as Class A from this record. |
+| A2 | Check path vs write path (root vs package dir) | **Class A confirmed** in this change. RAD emitted/accepted root-only checks for package-layout goals. Patched as v0.4.0. Live 11B artifact quality remains Class B. |
 | A3 | DONE pollution refuse | **Already works.** RW-068 tool refused a `DONE:` path. Keep regression coverage; not a v0.4.0 theme. |
 | B3 | Simple verified coding loop | **Stable PASS** on v0.3.2 (RW-068 llm plan@1). Not a Gen3 hole. |
-| F-17 / F-18 / F-21 / F-26 | Prior closed non-gates | **Stay closed** unless new disk evidence changes the class. |
+| F-17 / F-18 / F-21 / F-26 | Prior closed non-gates | **Stay closed.** Path alignment does not add checks to fallback *tasks* (F-17) and does not remap check *kinds* (F-26). |
 
-Ship blocker from this campaign: **none** proven Class A. Residual is **Class B**
-capacity/quality (multi-file under the historical 12-tool bound).
+This patch is **not** a claim that live 11B text_analyzer now completes under
+tools=12. Residual is **Class B** capacity/quality (multi-file under the
+historical 12-tool bound) — Gen3 theme 2, later.
 
-### Accepting the first v0.4.0 theme
+### Accepting a further v0.4.x theme
 
-A short written decision that names the theme, the evidence rows (RW-069 and
-kin), the invariant that must not move (Needle off; caps unchanged unless
-proven; models propose / RAD decides; false DONE **0**), and the 0.4.x change.
-Until that decision exists, Gen3 remains **scoped only**.
+A short written decision that names the theme, the evidence rows, the invariant
+that must not move (Needle off; caps unchanged unless proven; models propose /
+RAD decides; false DONE **0**), and the 0.4.x change. Theme 2 still needs that.
 
 ---
 
@@ -340,7 +362,7 @@ acceptable for a public baseline).
 | doc | role |
 |---|---|
 | [MATURATION_CYCLE_REPORT.md](MATURATION_CYCLE_REPORT.md) | Cycle-by-cycle evidence and decisions |
-| [REAL_WORLD_TASK_MATRIX.md](REAL_WORLD_TASK_MATRIX.md) | Disk-checked task rows (do not rewrite RW-058–067) |
+| [REAL_WORLD_TASK_MATRIX.md](REAL_WORLD_TASK_MATRIX.md) | Disk-checked task rows (do not rewrite RW-058–069) |
 | [REAL_WORLD_FAILURE_LEDGER.md](REAL_WORLD_FAILURE_LEDGER.md) | A/B/C findings |
 | [ADR-001-NEEDLE-TOOL-ROUTER.md](ADR-001-NEEDLE-TOOL-ROUTER.md) | Needle stays optional / off |
 | [CONTROL-PLANE.md](CONTROL-PLANE.md) | Shipped control-plane behaviour |

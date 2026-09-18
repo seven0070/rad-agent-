@@ -4,6 +4,9 @@ LLM-backed when a brain is online; deterministic fallback otherwise (the
 fallback produces one task per clause and no checks, which the Verifier will
 correctly report as UNVERIFIED rather than pretending).
 
+Bare check paths on a package-layout goal are joined to that package directory
+(RW-069). Check *kinds* are never silently remapped (F-26).
+
 A transient LLM plan failure (timeout, empty, malformed, non-JSON, empty graph)
 is retried a bounded number of times for a structured JSON plan *before*
 falling back. Fallback still splits `obj.goal` only (F-17); it never parses
@@ -29,7 +32,7 @@ from rad.control.budgetplan import (
     max_fit_tasks,
     pick_cheapest,
 )
-from rad.control.codingloop import infer_coding_checks
+from rad.control.codingloop import align_checks, infer_coding_checks, infer_package_dir
 from rad.control.graph import TaskGraph
 from rad.control.objectives import Objective
 from rad.control.tasks import Check, Task
@@ -53,6 +56,8 @@ Check kinds (exactly these):
 For coding / test / JSON-result goals always include json_valid on every .json artifact and
 shell_ok (or shell_output) for the test command (pytest / python3 test_*.py). Never treat a
 DONE: line as a file path. A model claiming DONE is not completion.
+If the goal places files under a directory (e.g. pkg/ or text_analyzer/), check paths MUST
+use that prefix (pkg/input.txt not input.txt).
 
 GOAL: {goal}
 SUCCESS CRITERIA:
@@ -123,6 +128,7 @@ class Planner:
         """
         attempts = 0
         candidates: List[Dict[str, Any]] = []
+        pkg = infer_package_dir(obj.goal, obj.success_criteria)
         if self.llm:
             prompt = PLAN_PROMPT.format(
                 goal=obj.goal,
@@ -137,7 +143,7 @@ class Planner:
                 try:
                     raw = self.llm(prompt if not extra else prompt + extra)
                     d = _json_obj(raw)
-                    g, oc = self._graph_from(obj.id, d)
+                    g, oc = self._graph_from(obj.id, d, package_dir=pkg)
                     if not g.tasks:
                         last_fat = False
                         continue
@@ -179,7 +185,8 @@ class Planner:
                 workspace=self.workspace,
                 tool_budget=budget_prompt_line(tool_budget)))
             d = _json_obj(raw)
-            g, _ = self._graph_from(obj.id, d, allowed_deps={t.id for t in done})
+            g, _ = self._graph_from(obj.id, d, allowed_deps={t.id for t in done},
+                                    package_dir=infer_package_dir(obj.goal, obj.success_criteria))
             cap = max_fit_tasks(tool_budget)
             if cap is not None and is_fat(len(g.tasks), tool_budget):
                 g, _, _ = compact_graph(g, cap)
@@ -188,7 +195,8 @@ class Planner:
             return None
 
     # ------------------------------------------------------------ helpers
-    def _graph_from(self, oid: str, d: Dict[str, Any], allowed_deps: Optional[set] = None):
+    def _graph_from(self, oid: str, d: Dict[str, Any], allowed_deps: Optional[set] = None,
+                    package_dir: Optional[str] = None):
         items = d.get("tasks") or []
         idmap: Dict[str, str] = {}
         tasks: List[Task] = []
@@ -200,7 +208,7 @@ class Planner:
             # capability selection: an optional specialist agent can own a task (rad.agents roles)
             t.agent = str(it.get("agent") or "").strip()
             idmap[str(it.get("id", t.id))] = t.id
-            t.checks = _checks(it.get("checks") or [])
+            t.checks = align_checks(_checks(it.get("checks") or []), package_dir)
             t._raw_deps = [str(x) for x in (it.get("depends_on") or [])]  # type: ignore[attr-defined]
             tasks.append(t)
         for t in tasks:
@@ -225,7 +233,7 @@ class Planner:
             except Exception:
                 for i, tid in enumerate(g.order):        # linearise
                     g.tasks[tid].depends_on = [g.order[i - 1]] if i else []
-        return g, _checks(d.get("objective_checks") or [])
+        return g, align_checks(_checks(d.get("objective_checks") or []), package_dir)
 
     def _fallback(self, obj: Objective) -> TaskGraph:
         parts = re.split(r"\b(?:and then|then|;|, and)\b|\.(?=\s|$)", obj.goal, flags=re.I)
