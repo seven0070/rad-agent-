@@ -3,6 +3,10 @@
 Architecture frozen. Models propose; RAD decides. Needle stays optional/off. Not v0.3.0.
 `max_plan_tasks` default remains **16** unless a measured product need requires a documented config key.
 
+## Roadmap pointer
+
+Operating spine: [ROADMAP.md](ROADMAP.md). **Generation 1 is complete** (v0.2.0–v0.2.3; production baseline **0.2.3**). **Generation 2 is not started.** Next is Gen2 (v0.3.x capability expansion) only when a Class B theme is accepted from measured Gen1 production use — not because a cycle report exists, and not as a control-plane redesign. Cycle sections below that record “Evidence for v0.3.0: none” still stand: those rows are not a missing control-plane stage.
+
 ---
 
 # Cycle 4 — v0.2.3 already live (2026-09-18)

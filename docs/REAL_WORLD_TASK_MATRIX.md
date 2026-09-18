@@ -2,6 +2,7 @@
 
 Factual rows from maturation cycles on disk-checked evidence.
 Architecture frozen. Needle stays experimental / off. Not AGI. No v0.3.0.
+Operating spine: [ROADMAP.md](ROADMAP.md) (adopted 2026-09-18). Gen1 complete on 0.2.3; Gen2 not started. Do not rewrite RW-058–063.
 
 Every `VERIFIED` / `completed` cell is from the control-plane verifier **and** a disk
 check (file exists / contents / hash). A model `DONE:` line is never enough.
