@@ -63,7 +63,7 @@ Sequential `write_file` through the real control plane. Disk-verified each index
 |---|---|
 | Suite runnable PASS | 10/10 (plus 1 BLOCKED live NIM) |
 | False completion (VERIFIED without the artifact) | **0** |
-| Independent lab-grader false negatives on RW-020 / RW-021 (pre-fix) | **2** (Class A; fixed) |
+| Independent lab-grader false negatives on RW-020 / RW-021 (pre-fix) | **2** (Class A; **fixed** — post-fix `rad realworld` research/coding graders all `ok`) |
 | 20 sequential *actions* | **VERIFIED** (RW-017) |
 | 20 sequential *planned tasks* at default cap | **FAILED** at 16 (RW-016) — documented limit |
 | Live NIM | **BLOCKED** |

@@ -84,17 +84,18 @@ Pinned in `tests/test_lab.py` and `tests/test_realworld.py`. Full gate commands 
 
 ## Quality gates (actually run)
 
-Filled after the commands below were executed on this branch (isolated `/tmp/rad-v022-gate`).
+Isolated home `/tmp/rad-v022-gate`. Only items actually run are marked PASS.
 
 | gate | result |
 |---|---|
-| `rad version` | **v0.2.2** |
-| `python -m pytest -q` | *(run on this branch; see follow-up commit if counts land after the first push)* |
-| `rad doctor --offline` | *(same)* |
-| `rad acceptance` | *(same)* |
-| `rad realworld` | *(same)* |
+| `rad version` | **PASS** v0.2.2 |
+| `python -m pytest -q` | **PASS** 327 passed in 8.13s (326 on v0.2.1 + 1 grader regression) |
+| `rad doctor --offline` | **PASS** 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR, verdict READY, exit 0 |
+| `rad acceptance` | **PASS** 50/50 — `/tmp/rad-v022-gate/acceptance/20260918-064950_gate.json` |
+| `rad realworld` | **PASS** 10/11 + 1 BLOCKED — `/tmp/rad-v022-gate/realworld/20260918-064950_realworld.json`. Research/coding `graders=` now all `ok` |
 | Live NIM Class A | **BLOCKED** |
 | Needle default | **PASS** (still `existing`) |
+| Class A grader probe | **PASS** `{key}` and `{contains}` score `ok: True`; `{expect}` still works |
 | Secrets in git | **PASS** (inspected) |
 | DONE semantics | **PASS** (RW-007, RW-009, RW-022) |
 | Architecture freeze | **PASS** |

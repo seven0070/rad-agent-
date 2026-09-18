@@ -306,10 +306,10 @@ Same condition as F-20260918-07. Offline reconstruction still `rad realworld --o
 | gate | result |
 |---|---|
 | `rad version` | **v0.2.2** (after the Class A bump) |
-| `python -m pytest -q` | see `docs/MATURATION_CYCLE_REPORT.md` (actually run on this branch) |
-| `rad doctor --offline` | see maturation report |
-| `rad acceptance` | see maturation report |
-| `rad realworld` | **10 passed / 1 BLOCKED / 0 failed** on the 0.2.1 baseline; re-run after the grader fix |
+| `python -m pytest -q` | **327 passed** in 8.13s |
+| `rad doctor --offline` | **20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR**, verdict READY, exit 0 (`/tmp/rad-v022-gate`) |
+| `rad acceptance` | **50/50 PASSED** (`/tmp/rad-v022-gate/acceptance/20260918-064950_gate.json`) |
+| `rad realworld` | **10 passed / 1 BLOCKED / 0 failed** after the grader fix; research/coding independent graders now `ok` |
 | Live NIM Class A | **BLOCKED** |
 | Action ramp 1/3/5/10 tasks | **VERIFIED** on disk |
 | 20 sequential actions (one task) | **VERIFIED** (20/20 files) |
