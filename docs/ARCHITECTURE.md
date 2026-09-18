@@ -45,3 +45,4 @@ lab/runs/   evolution/{candidates/,log.jsonl}   backups/   logs/api.jsonl   keys
 ## Known limits (honest)
 No OS-level sandbox for shell; hard-block patterns are regexes. Lab suites are small and fixed.
 Agent memory isolation is recorded, not enforced. Storage is files, not a DB (by design; migrations exist).
+Optional Needle tool-router (`RAD_TOOL_ROUTER=needle`) may propose calls only; it is off by default and never sovereign.

@@ -44,7 +44,7 @@ CONFIG_TYPES: Dict[str, Tuple[type, ...]] = {
     "watch_every_min": (int, float), "custom_providers": (list,), "allow_outside_workspace": (bool,),
     "plan_infer_done": (bool,), "objective_parallel": (int,), "accept_unverified_done": (bool,),
     "evolution_require_approval": (bool,), "evolution_suite": (str,), "allow_api_fix": (bool,), "api_port": (int,),
-    "allow_localhost_web": (bool,),
+    "allow_localhost_web": (bool,), "tool_router": (str,),
 }
 CONFIG_RANGES: Dict[str, Tuple[Any, Any]] = {
     "max_tool_rounds": (1, 50), "max_context_chars": (2000, 400000), "memory_k": (0, 50),
@@ -53,6 +53,7 @@ CONFIG_RANGES: Dict[str, Tuple[Any, Any]] = {
 CONFIG_ENUMS: Dict[str, set] = {
     "edge0_tier": {"10b", "35b"}, "tts": {"auto", "piper", "openai", "off"}, "stt": {"auto", "whisper", "openai", "off"},
     "evolution_suite": {"smoke", "long", "adversarial", "all"},
+    "tool_router": {"existing", "needle"},
 }
 
 

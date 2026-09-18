@@ -52,7 +52,7 @@ Illegal transitions raise. Every transition is on `task.history` and in the even
 | ENVIRONMENT (not found / no module) | insert a **repair task** once, then retry_with_hint, then ask_user |
 | VALIDATION / TOOL / UNKNOWN | retry_with_hint (explicit failed-check feedback) → replan once → ask_user |
 
-Bounded by `task.max_attempts` (3), one repair/replan per task, and the objective's retry budget.
+When a tool or retry budget is exhausted the controller does **not** treat a model `DONE:` as success. If the graph is already complete, or remaining tasks / objective_checks are already proven by machine checks, it falls through to `_verify_objective` (the 11B over-decompose case where the file is on disk). Otherwise the objective ends `needs_user`. Unmet checks still cannot become `VERIFIED`.
 
 ## Persistence / resume
 Checkpoint after every task: `objective.json`, `tasks.json`, `CHECKPOINT` event. `resume()`

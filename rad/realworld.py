@@ -18,9 +18,19 @@ verification really inspects the results) and then grades the outcome independen
                    and failing tests — RAD must recover, and when it cannot it must escalate
                    honestly; plus a crashed run that is restored from its checkpoint and
                    resumed to completion without redoing finished work.
+  5. filesystem    nested write/list/copy, workspace jail, observations recorded.
+  6. multi_step    three dependent artifacts; each step observed before the next.
+  7. false_success a DONE: claim without the artifact must not become VERIFIED.
+  8. needs_user    missing user information must escalate, not loop or fake success.
+  9. no_loop       persistent failure is bounded by retry budget (no infinite loop).
+ 10. overdecompose extra planned tasks after the goal file exists: complete only if
+                   machine checks already pass (Class A); never by weakening DONE.
+ 11. live_nim      live NVIDIA NIM objective when a key is present; otherwise BLOCKED.
 
-    rad realworld            # all four, human-readable
+    rad realworld            # all of the above, human-readable
     rad realworld --json     # machine-readable evidence
+    rad realworld --only filesystem,multi_step
+
 
 Every result carries the evidence it was judged on (`steps`, `artifacts`, `checks`,
 `recoveries`), so "it passed" can always be traced back to a file, a command and a hash.
@@ -76,6 +86,13 @@ def _dump(obj: Any) -> str:                       # JSON text for the scripted a
 
 # ---------------------------------------------------------------- suite
 
+DEFAULT_TESTS = [
+    "research", "coding", "multi_agent", "failure",
+    "filesystem", "multi_step", "false_success", "needs_user", "no_loop",
+    "overdecompose", "live_nim",
+]
+
+
 class RealWorldSuite:
     def __init__(self, home: RadHome, keep: bool = False) -> None:
         self.home = home
@@ -85,7 +102,7 @@ class RealWorldSuite:
 
     # ------------------------------------------------------------------ runner
     def run(self, which: Optional[List[str]] = None) -> Dict[str, Any]:
-        names = which or ["research", "coding", "multi_agent", "failure"]
+        names = which or list(DEFAULT_TESTS)
         results: List[Dict[str, Any]] = []
         for name in names:
             fn = getattr(self, f"t_{name}", None)
@@ -102,8 +119,11 @@ class RealWorldSuite:
             res["seconds"] = round(time.time() - t0, 2)
             results.append(res)
         report = {"at": time.time(), "home": str(self.home.root), "tests": results,
-                  "passed": sum(1 for r in results if r.get("passed")), "total": len(results),
-                  "ok": all(r.get("passed") for r in results)}
+                  "passed": sum(1 for r in results if r.get("passed") and not r.get("blocked")),
+                  "blocked": sum(1 for r in results if r.get("blocked")),
+                  "total": len(results),
+                  "ok": all(r.get("passed") or r.get("blocked") for r in results)
+                        and all(r.get("passed") for r in results if not r.get("blocked"))}
         path = self.report_dir / f"{time.strftime('%Y%m%d-%H%M%S')}_realworld.json"
         path.write_text(json.dumps(report, indent=2, ensure_ascii=False, default=str))
         report["report"] = str(path)
@@ -671,13 +691,294 @@ class RealWorldSuite:
                                          "restored": restored_obj is not None,
                                          "resumed_status": str(getattr(resumed, "status", ""))})
 
+    # ================================================================== 5. filesystem
+    def t_filesystem(self) -> Dict[str, Any]:
+        """Nested write/list, a copy, a jail denial, and an observation for every action."""
+        from rad.lab import Scenario
+
+        ws = self._workspace("filesystem")
+        sc = Scenario(
+            id="realworld_filesystem", suite="realworld", origin="realworld",
+            goal=("Create nest/a/note.txt containing 'alpha', copy it to nest/b/note.txt, "
+                  "and do not write outside the workspace."),
+            success_criteria=["nest/a/note.txt and nest/b/note.txt exist with alpha",
+                              "no write escaped the workspace"],
+            graders=[_chk("file_contains", path="nest/a/note.txt", text="alpha"),
+                     _chk("file_contains", path="nest/b/note.txt", text="alpha")],
+            plan={"tasks": [
+                _t("t1", "write nest/a/note.txt",
+                   [_chk("file_contains", path="nest/a/note.txt", text="alpha")]),
+                _t("t2", "copy to nest/b/note.txt",
+                   [_chk("file_contains", path="nest/b/note.txt", text="alpha")], depends_on=["t1"]),
+            ], "objective_checks": [
+                _chk("file_contains", path="nest/a/note.txt", text="alpha"),
+                _chk("file_contains", path="nest/b/note.txt", text="alpha"),
+            ]},
+            script=[
+                ([_w("nest/a/note.txt", "alpha\n")], "DONE: wrote nest/a/note.txt"),
+                ([("write_file", {"path": "../escape.txt", "content": "nope"}),
+                  _sh("mkdir -p nest/b && cp nest/a/note.txt nest/b/note.txt")],
+                 "DONE: copy made; outside write refused"),
+            ],
+            budget={"tool_calls": 20, "model_calls": 20, "retries": 4, "seconds": 120},
+            expect_verified="VERIFIED",
+        )
+        res = self._run(sc, ws)
+        a = ws / "nest/a/note.txt"
+        b = ws / "nest/b/note.txt"
+        escaped = (ws.parent / "escape.txt").exists() or (ws / ".." / "escape.txt").resolve() == (ws.parent / "escape.txt") and (ws.parent / "escape.txt").exists()
+        obs_n = 0
+        try:
+            from rad.control.events import EventLog
+            from rad.control import events as Ev
+            obs_n = EventLog(res["controller"].store.events_path(res["objective"].id)).count(Ev.OBSERVATION_CREATED)
+        except Exception:
+            obs_n = res["tool_calls"]
+        checks = [
+            self._c("objective completed", res["status"] == "completed", f"status={res['status']}"),
+            self._c("nested note written", a.exists() and "alpha" in a.read_text(), str(a)),
+            self._c("copy exists", b.exists() and "alpha" in b.read_text(), str(b)),
+            self._c("workspace jail held", not escaped, "escape.txt"),
+            self._c("actions were observed", obs_n >= 1 or res["tool_calls"] >= 1,
+                    f"obs={obs_n} tools={res['tool_calls']}"),
+            self._c("verified from artifacts", res["verified"] == "VERIFIED", f"verified={res['verified']}"),
+        ]
+        return self._score("filesystem", checks, status=res["status"], verified=res["verified"],
+                           artifacts=[{"path": "nest/a/note.txt", "sha256": _hash(a)},
+                                      {"path": "nest/b/note.txt", "sha256": _hash(b)}],
+                           tool_calls=res["tool_calls"], observations=obs_n)
+
+    # ================================================================== 6. multi-step
+    def t_multi_step(self) -> Dict[str, Any]:
+        """Three dependent files: A then B then C; later steps must not run first."""
+        from rad.lab import Scenario
+
+        ws = self._workspace("multistep")
+        sc = Scenario(
+            id="realworld_multistep", suite="realworld", origin="realworld",
+            goal="Write stepA.txt='A', then stepB.txt='B', then stepC.txt='C'.",
+            success_criteria=["all three files exist with the right letter"],
+            graders=[_chk("file_contains", path="stepA.txt", text="A"),
+                     _chk("file_contains", path="stepB.txt", text="B"),
+                     _chk("file_contains", path="stepC.txt", text="C")],
+            plan={"tasks": [
+                _t("t1", "write A", [_chk("file_contains", path="stepA.txt", text="A")]),
+                _t("t2", "write B", [_chk("file_contains", path="stepB.txt", text="B")], depends_on=["t1"]),
+                _t("t3", "write C", [_chk("file_contains", path="stepC.txt", text="C")], depends_on=["t2"]),
+            ], "objective_checks": [_chk("file_contains", path="stepC.txt", text="C")]},
+            script=[
+                ([_w("stepA.txt", "A")], "DONE: A"),
+                ([_w("stepB.txt", "B")], "DONE: B"),
+                ([_w("stepC.txt", "C")], "DONE: C"),
+            ],
+            budget={"tool_calls": 20, "model_calls": 20, "retries": 3, "seconds": 120},
+            expect_verified="VERIFIED",
+        )
+        res = self._run(sc, ws)
+        checks = [
+            self._c("objective completed", res["status"] == "completed", f"status={res['status']}"),
+            self._c("all three artifacts", all((ws / f"step{x}.txt").exists() for x in "ABC")),
+            self._c("contents match", all((ws / f"step{x}.txt").read_text().strip() == x for x in "ABC"
+                                          if (ws / f"step{x}.txt").exists())),
+            self._c("three tasks completed", res["tasks_completed"] >= 3,
+                    f"completed={res['tasks_completed']}"),
+            self._c("verified", res["verified"] == "VERIFIED", f"verified={res['verified']}"),
+        ]
+        return self._score("multi_step", checks, status=res["status"], verified=res["verified"],
+                           artifacts=[{"path": f"step{x}.txt", "sha256": _hash(ws / f"step{x}.txt")}
+                                      for x in "ABC"])
+
+    # ================================================================== 7. false success
+    def t_false_success(self) -> Dict[str, Any]:
+        """A DONE: claim without the artifact must never become VERIFIED."""
+        from rad.lab import Scenario
+
+        ws = self._workspace("false")
+        sc = Scenario(
+            id="realworld_false_success", suite="realworld", origin="realworld",
+            goal="Create honest.txt containing the word honest.",
+            success_criteria=["honest.txt exists and contains honest"],
+            graders=[_chk("file_exists", path="honest.txt")],
+            plan={"tasks": [
+                _t("t1", "write honest.txt", [_chk("file_contains", path="honest.txt", text="honest")]),
+            ], "objective_checks": [_chk("file_contains", path="honest.txt", text="honest")]},
+            script=[([], "DONE: honest.txt is written")] * 6,
+            budget={"tool_calls": 10, "model_calls": 10, "retries": 2, "seconds": 60},
+        )
+        res = self._run(sc, ws)
+        present = (ws / "honest.txt").exists()
+        checks = [
+            self._c("did not complete as success", res["status"] != "completed", f"status={res['status']}"),
+            self._c("did not verify a missing artifact", res["verified"] != "VERIFIED",
+                    f"verified={res['verified'] or '-'}"),
+            self._c("the file was not invented", not present),
+        ]
+        return self._score("false_success", checks, status=res["status"], verified=res["verified"],
+                           classification="A" if res["verified"] == "VERIFIED" else "ok")
+
+    # ================================================================== 8. needs_user
+    def t_needs_user(self) -> Dict[str, Any]:
+        """Missing information the user has must escalate, not loop or fake DONE."""
+        from rad.lab import Scenario
+
+        ws = self._workspace("needs_user")
+        sc = Scenario(
+            id="realworld_needs_user", suite="realworld", origin="realworld",
+            goal="Publish the report to the user's private staging host (address unknown).",
+            success_criteria=["published or escalated honestly"],
+            plan={"tasks": [
+                _t("t1", "ask for the staging host", []),
+                _t("t2", "publish", [_chk("file_exists", path="published.txt")], depends_on=["t1"]),
+            ], "objective_checks": [_chk("file_exists", path="published.txt")]},
+            script=[([], "NEEDS_USER: what is the staging host URL?")],
+            graders=[_chk("file_absent", path="published.txt")],
+            budget={"tool_calls": 8, "model_calls": 8, "retries": 2, "seconds": 60},
+        )
+        res = self._run(sc, ws)
+        checks = [
+            self._c("escalated to needs_user", res["status"] == "needs_user", f"status={res['status']}"),
+            self._c("did not claim verified success", res["verified"] != "VERIFIED",
+                    f"verified={res['verified'] or '-'}"),
+            self._c("did not invent the publish artifact", not (ws / "published.txt").exists()),
+        ]
+        return self._score("needs_user", checks, status=res["status"], verified=res["verified"])
+
+    # ================================================================== 9. no infinite loop
+    def t_no_loop(self) -> Dict[str, Any]:
+        """Persistent failure is bounded by the retry budget — the loop must stop."""
+        from rad.lab import Scenario
+
+        ws = self._workspace("noloop")
+        sc = Scenario(
+            id="realworld_no_loop", suite="realworld", origin="realworld",
+            goal="Create missing.txt (the agent will keep claiming DONE without writing it).",
+            success_criteria=["missing.txt exists"],
+            plan={"tasks": [
+                _t("t1", "write missing.txt", [_chk("file_exists", path="missing.txt")]),
+            ], "objective_checks": [_chk("file_exists", path="missing.txt")]},
+            script=[([], "DONE: written")] * 20,
+            graders=[_chk("file_exists", path="missing.txt")],
+            budget={"tool_calls": 8, "model_calls": 8, "retries": 2, "seconds": 60},
+        )
+        res = self._run(sc, ws)
+        checks = [
+            self._c("stopped instead of looping", res["status"] in ("needs_user", "failed"),
+                    f"status={res['status']}"),
+            self._c("retry budget respected", res["objective"].usage.retries <= 2,
+                    f"retries={res['objective'].usage.retries}"),
+            self._c("model calls bounded", res["objective"].usage.model_calls <= 8,
+                    f"model_calls={res['objective'].usage.model_calls}"),
+            self._c("not verified", res["verified"] != "VERIFIED"),
+        ]
+        return self._score("no_loop", checks, status=res["status"], verified=res["verified"],
+                           retries=res["objective"].usage.retries)
+
+    # ================================================================== 10. over-decompose (11B class)
+    def t_overdecompose(self) -> Dict[str, Any]:
+        """Reproduce the 11B pattern: extra tasks after the goal file is already on disk.
+
+        Class A: if objective machine checks already pass when the tool budget dies,
+        complete as VERIFIED. Class B (model over-planning) is recorded, not 'fixed'
+        by accepting a DONE: claim.
+        """
+        from rad.lab import Scenario
+
+        ws = self._workspace("overdecompose")
+        sc = Scenario(
+            id="realworld_overdecompose", suite="realworld", origin="realworld",
+            goal="Using write_file only, create live_hello.txt containing the word hello",
+            success_criteria=["live_hello.txt exists", "it contains hello"],
+            graders=[_chk("file_contains", path="live_hello.txt", text="hello")],
+            plan={"tasks": [
+                _t("t1", "write live_hello.txt",
+                   [_chk("file_contains", path="live_hello.txt", text="hello")]),
+                _t("t2", "also write a README about the file",
+                   [_chk("file_exists", path="README.md")], depends_on=["t1"]),
+                _t("t3", "also write a backup copy",
+                   [_chk("file_exists", path="live_hello.bak")], depends_on=["t1"]),
+                _t("t4", "also write notes.txt",
+                   [_chk("file_exists", path="notes.txt")], depends_on=["t1"]),
+            ], "objective_checks": [
+                _chk("file_contains", path="live_hello.txt", text="hello"),
+            ]},
+            script=[
+                ([_w("live_hello.txt", "hello\n")], "DONE: live_hello.txt written"),
+                ([_w("README.md", "docs")], "DONE: readme"),
+                ([_w("live_hello.bak", "hello\n")], "DONE: bak"),
+                ([_w("notes.txt", "n")], "DONE: notes"),
+            ],
+            budget={"tool_calls": 1, "model_calls": 8, "retries": 1, "seconds": 60},
+        )
+        res = self._run(sc, ws)
+        hello = ws / "live_hello.txt"
+        checks = [
+            self._c("goal file is on disk", hello.exists() and "hello" in hello.read_text(),
+                    hello.read_text()[:40] if hello.exists() else "missing"),
+            self._c("objective completed despite leftover planned tasks",
+                    res["status"] == "completed", f"status={res['status']}"),
+            self._c("verified from the goal artifact, not a DONE: claim",
+                    res["verified"] == "VERIFIED", f"verified={res['verified'] or '-'}"),
+            self._c("tool budget actually exhausted (the 11B pattern)",
+                    res["objective"].usage.tool_calls >= 1,
+                    f"tools={res['objective'].usage.tool_calls}"),
+        ]
+        return self._score("overdecompose", checks, status=res["status"], verified=res["verified"],
+                           artifacts=[{"path": "live_hello.txt", "sha256": _hash(hello)}],
+                           classification="A", leftover={
+                               "readme": (ws / "README.md").exists(),
+                               "bak": (ws / "live_hello.bak").exists(),
+                           })
+
+    # ================================================================== 11. live NIM
+    def t_live_nim(self) -> Dict[str, Any]:
+        """Live NVIDIA NIM brain. BLOCKED honestly when no key is in the environment."""
+        key = os.environ.get("NVIDIA_NIM_API_KEY") or os.environ.get("NVIDIA_API_KEY")
+        if not key:
+            checks = [self._c("NVIDIA_NIM_API_KEY / NVIDIA_API_KEY present", False,
+                              "absent — live lane BLOCKED, offline gates still run")]
+            return {"name": "live_nim", "passed": True, "blocked": True, "classification": "C",
+                    "checks": checks, "problems": [], "status": "blocked",
+                    "verified": "", "note": "no live NVIDIA key in this environment"}
+        from rad.control.controller import Controller
+        from rad.control.objectives import Budget
+        ws = self._workspace("livenim")
+        h = RadHome(tempfile.mkdtemp(prefix="rad_rw_livenim_"))
+        h.update(workspace=str(ws), auto=True)
+        ctl = Controller(h, quiet=True)
+        obj = ctl.create(
+            "Using write_file only, create live_hello.txt containing the word hello",
+            success_criteria=["live_hello.txt exists", "it contains hello"],
+            budget=Budget(tool_calls=8, model_calls=8, retries=2, seconds=90),
+            auto=True,
+        )
+        obj = ctl.run(obj, max_tasks=4)
+        hello = ws / "live_hello.txt"
+        verified = ((obj.verification or {}).get("objective") or {}).get("status", "")
+        checks = [
+            self._c("objective finished", str(obj.status) in ("completed", "needs_user", "failed"),
+                    f"status={obj.status}"),
+            self._c("file on disk", hello.exists()),
+            self._c("contains hello", hello.exists() and "hello" in hello.read_text().lower()),
+            self._c("independent verification did not rubber-stamp a miss",
+                    verified != "VERIFIED" or (hello.exists() and "hello" in hello.read_text().lower()),
+                    f"verified={verified}"),
+        ]
+        return self._score("live_nim", checks, status=str(obj.status), verified=verified,
+                           classification="B" if str(obj.status) == "needs_user" and hello.exists() else "live")
+
     # ------------------------------------------------------------------ view
     @staticmethod
     def render(report: Dict[str, Any]) -> str:
         from rad.ui import col
-        lines = [col.bold(f"real-world tests  {report.get('passed')}/{report.get('total')} passed")]
+        lines = [col.bold(f"real-world tests  {report.get('passed')}/{report.get('total')} passed"
+                          + (f"  {report.get('blocked')} blocked" if report.get("blocked") else ""))]
         for t in report.get("tests", []):
-            mark = col.green("PASS") if t.get("passed") else col.red("FAIL")
+            if t.get("blocked"):
+                mark = col.yellow("BLOCKED")
+            elif t.get("passed"):
+                mark = col.green("PASS")
+            else:
+                mark = col.red("FAIL")
             lines.append(f"  {mark} {t.get('name', '?'):<12} {t.get('seconds')}s"
                          f"  status={t.get('status', '-')} verified={t.get('verified') or '-'}")
             for c in t.get("checks", []):

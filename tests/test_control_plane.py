@@ -311,6 +311,72 @@ def test_tool_call_budget_stops_run(home, ws, scripted):
     assert EventLog(ctl.store.events_path(obj.id)).count(E.BUDGET_EXCEEDED) == 1
 
 
+def test_budget_exhaust_after_graph_complete_still_verifies(home, ws, scripted):
+    """Class A: a finished graph must not be reported needs_user just because the last
+    tool call filled the budget. Verification still has to pass."""
+    plan = {"tasks": [
+        {"id": "t1", "text": "a", "depends_on": [],
+         "checks": [{"kind": "file_exists", "args": {"path": "a.txt"}}]},
+        {"id": "t2", "text": "b", "depends_on": ["t1"],
+         "checks": [{"kind": "file_exists", "args": {"path": "b.txt"}}]},
+    ], "objective_checks": [{"kind": "file_exists", "args": {"path": "b.txt"}}]}
+    scripted.script = [
+        ([("write_file", {"path": "a.txt", "content": "a"})], "DONE: a"),
+        ([("write_file", {"path": "b.txt", "content": "b"})], "DONE: b"),
+    ]
+    ctl = _ctl(home, scripted, plan)
+    obj = ctl.run(ctl.create("ab", budget=Budget(tool_calls=2)))
+    assert obj.status == ObjectiveStatus.COMPLETED, obj.failure
+    assert (obj.verification or {}).get("objective", {}).get("status") == "VERIFIED"
+    assert EventLog(ctl.store.events_path(obj.id)).count(E.BUDGET_EXCEEDED) == 1
+
+
+def test_overdecompose_budget_completes_when_objective_checks_pass(home, ws, scripted):
+    """11B pattern: extra planned tasks, goal file already on disk, tool budget dies.
+
+    Completing is allowed only because objective machine checks pass — not because
+    the model said DONE.
+    """
+    plan = {"tasks": [
+        {"id": "t1", "text": "write hello", "depends_on": [],
+         "checks": [{"kind": "file_contains", "args": {"path": "live_hello.txt", "text": "hello"}}]},
+        {"id": "t2", "text": "also write README", "depends_on": ["t1"],
+         "checks": [{"kind": "file_exists", "args": {"path": "README.md"}}]},
+        {"id": "t3", "text": "also write backup", "depends_on": ["t1"],
+         "checks": [{"kind": "file_exists", "args": {"path": "hello.bak"}}]},
+    ], "objective_checks": [
+        {"kind": "file_contains", "args": {"path": "live_hello.txt", "text": "hello"}},
+    ]}
+    scripted.script = [
+        ([("write_file", {"path": "live_hello.txt", "content": "hello\n"})], "DONE: hello"),
+        ([("write_file", {"path": "README.md", "content": "x"})], "DONE: readme"),
+    ]
+    ctl = _ctl(home, scripted, plan)
+    obj = ctl.run(ctl.create("hello", budget=Budget(tool_calls=1)))
+    assert obj.status == ObjectiveStatus.COMPLETED, obj.failure
+    assert (obj.verification or {}).get("objective", {}).get("status") == "VERIFIED"
+    assert (ws / "live_hello.txt").read_text().strip() == "hello"
+    g = ctl.load_graph(obj)
+    leftover = [t for t in g.tasks.values() if t.text.startswith("also")]
+    assert leftover and all(t.status == TaskStatus.CANCELLED for t in leftover)
+
+
+def test_budget_exhaust_without_met_checks_still_needs_user(home, ws, scripted):
+    """Do not weaken DONE: exhausted budget + unmet checks stays needs_user."""
+    plan = {"tasks": [
+        {"id": "t1", "text": "write hello", "depends_on": [],
+         "checks": [{"kind": "file_contains", "args": {"path": "live_hello.txt", "text": "hello"}}]},
+    ], "objective_checks": [
+        {"kind": "file_contains", "args": {"path": "live_hello.txt", "text": "hello"}},
+    ]}
+    scripted.script = [([("list_dir", {})], "DONE: I thought about it")] * 4
+    ctl = _ctl(home, scripted, plan)
+    obj = ctl.run(ctl.create("hello", budget=Budget(tool_calls=1, retries=1)))
+    assert obj.status == ObjectiveStatus.NEEDS_USER
+    assert (obj.verification or {}).get("objective", {}).get("status") != "VERIFIED"
+    assert not (ws / "live_hello.txt").exists()
+
+
 def test_retry_budget_is_respected(home, ws, scripted):
     plan = {"tasks": [{"id": "t1", "text": "x", "depends_on": [],
                        "checks": [{"kind": "file_exists", "args": {"path": "x"}}]}]}

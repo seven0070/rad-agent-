@@ -81,7 +81,8 @@ Global: `--home <dir>` (or `RAD_HOME`), `--quiet`, `--json` where noted.
 | `rad benchmark` | capability battery — is Rad smarter? now it's a number |
 | `rad evaluate` | model evaluation battery: planning/memory/long-context/research/instruction/safety/recovery + history + promotion gate |
 | `rad regression` | unit/integration/security/agent tests + live agent and long-horizon benchmark subset, with a pass/fail verdict |
-| `rad realworld` | end-to-end acceptance tests: research, coding, multi-agent, failure recovery |
+| `rad realworld` | end-to-end tests: research, coding, multi-agent, failure, filesystem, multi-step, honesty, live NIM |
+| `rad needle-eval` | optional existing vs Needle tool-router measurements (Needle never required) |
 | `rad acceptance` | the 50-item acceptance gate: every requirement demonstrated by running code, with per-item evidence |
 | `rad evolve` | gated evolution: rad evolve <direction> / list / approve/reject/rollback <id> / verify / from-lab |
 | `rad brain` | brain candidates + promotion protocol (verified evolution) |

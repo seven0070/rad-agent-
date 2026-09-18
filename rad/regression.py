@@ -82,7 +82,7 @@ class RegressionSystem:
                 "results": rep.get("results", [])}
 
     def _realworld(self) -> Dict[str, Any]:
-        """The four end-to-end acceptance tests (research, coding, multi-agent, failure recovery)."""
+        """The end-to-end real-world suite (research, coding, filesystem, honesty, …)."""
         from rad.realworld import RealWorldSuite
         rep = RealWorldSuite(self.home).run()
         return {"ok": rep["ok"], "passed": rep["passed"], "total": rep["total"],

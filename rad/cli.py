@@ -969,6 +969,22 @@ def cmd_realworld(args) -> int:
     return 0 if rep.get("ok") else 2
 
 
+def cmd_needle_eval(args) -> int:
+    """Optional Needle vs existing tool-router measurements. Never requires Needle."""
+    from rad.needle_bench import render, run_bench
+    home = _home(args)
+    info("  measuring existing vs Needle tool-router (Needle is optional; missing engine is BLOCKED)…")
+    rep = run_bench(home)
+    if args.json:
+        print(json.dumps(rep, indent=2, default=str))
+    else:
+        print(render(rep))
+    if not rep.get("isolation_ok"):
+        fail("  isolation checks failed — Needle must not execute or bypass the gate")
+        return 2
+    return 0
+
+
 def cmd_status(args) -> int:
     """One screen: what RAD owns right now — objectives, jobs, memory, providers, storage."""
     from rad.control.objectives import ObjectiveStore
@@ -1511,12 +1527,17 @@ def build_parser() -> argparse.ArgumentParser:
     rg.set_defaults(fn=cmd_regression)
 
     rwp = sub.add_parser("realworld", help="end-to-end acceptance tests: research, coding, "
-                                           "multi-agent, failure recovery")
+                                           "multi-agent, failure, filesystem, multi-step, honesty")
     rwp.add_argument("--only", default=None,
-                     help="comma list: research,coding,multi_agent,failure")
+                     help="comma list: research,coding,multi_agent,failure,filesystem,multi_step,"
+                          "false_success,needs_user,no_loop,overdecompose,live_nim")
     rwp.add_argument("--json", action="store_true")
     rwp.add_argument("--keep", action="store_true", help="keep the temporary workspaces")
     rwp.set_defaults(fn=cmd_realworld)
+
+    ne = sub.add_parser("needle-eval", help="optional Needle vs existing tool-router measurements")
+    ne.add_argument("--json", action="store_true")
+    ne.set_defaults(fn=cmd_needle_eval)
 
     stp = sub.add_parser("status", help="one screen: objectives, memory, brain, jobs, background, schema")
     stp.add_argument("--json", action="store_true")

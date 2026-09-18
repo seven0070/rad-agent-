@@ -41,6 +41,7 @@ DEFAULTS: Dict[str, Any] = {
     "evolution_suite": "smoke",     # lab suite used as the promotion gate
     "allow_api_fix": False,         # let GET /v1/doctor?fix=1 apply repairs
     "api_port": 7331,
+    "tool_router": "existing",      # existing | needle (optional experimental; never sovereign)
 }
 
 
