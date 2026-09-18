@@ -11,9 +11,9 @@ done, nothing checks, nothing survives a crash. The control plane inverts that:
 | `objectives.py` | `Objective` (goal, criteria, budget/usage, status) + `ObjectiveStore` (disk) |
 | `tasks.py` | `Task` with explicit state machine, `Check` (machine-verifiable condition) |
 | `graph.py` | `TaskGraph` DAG: ready-set, doom propagation, optional branches, cycle check |
-| `planner.py` | LLM → task graph *with checks*; bounded retry (default 1) on timeout/empty/malformed JSON *before* fallback; fat plans retried/selected to fit remaining tool budget; deterministic fallback without a brain (goal clause-split, no checks — F-17; compacted when still fat); coding goals infer `json_valid` / test `shell_ok` as *objective* checks (fallback *tasks* stay check-less) |
+| `planner.py` | LLM → task graph *with checks*; bounded retry (default 1) on timeout/empty/malformed JSON *before* fallback; fat plans retried/selected to fit remaining tool budget; deterministic fallback without a brain (goal clause-split, no checks — F-17; compacted when still fat); coding goals infer `json_valid` / test `shell_ok` as *objective* checks (fallback *tasks* stay check-less); package-layout goals get check paths joined to the named directory (RW-069) |
 | `budgetplan.py` | budget-aware planning helpers: remaining tools, 2-tools/task estimate, fat vs small (F-21), fallback compact |
-| `codingloop.py` | verified coding loop helpers: coding-goal detection, DONE: pollution, broken-artifact repair hints |
+| `codingloop.py` | verified coding loop helpers: coding-goal detection, DONE: pollution, broken-artifact repair hints, package-dir path alignment |
 | `controller.py` | lifecycle: create / plan / run / resume / pause / cancel; the drive loop |
 | `observer.py` | `Observation` per tool call, `Artifact` registry (sha256, versions, lineage) |
 | `verifier.py` | tool → checks → artifacts → objective; result is `VERIFIED` / `FAILED` / `UNVERIFIED` |

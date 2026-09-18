@@ -2,7 +2,7 @@
 
 Living log of **measured** RAD failures found in live or reconstructed use.
 Architecture is frozen. Needle stays experimental and off by default. This is not AGI/ASI.
-Operating spine: [ROADMAP.md](ROADMAP.md) (adopted 2026-09-18). Gen1 complete on 0.2.3; **Gen2 complete** on 0.3.0–0.3.2. Verified coding loop is **implemented as v0.3.0** (F-20260918-24 / RW-064). Live retest **RW-065**. Plan-timeout resilience is **implemented as v0.3.1** (F-20260918-27 / scripted RW-066) and **used** (live RW-066 / F-20260918-28). Budget-aware planning is **implemented as v0.3.2** (F-20260918-29 / RW-067). Live NIM use of v0.3.2 is **RW-068 PASS** (F-20260918-30) and **RW-069 FAIL** (F-20260918-31). This ledger is evidence. Do not rewrite RW-058–067. Scripted RW-066 (F-27) is preserved.
+Operating spine: [ROADMAP.md](ROADMAP.md) (adopted 2026-09-18). Gen1 complete on 0.2.3; **Gen2 complete** on 0.3.0–0.3.2. Verified coding loop is **implemented as v0.3.0** (F-20260918-24 / RW-064). Live retest **RW-065**. Plan-timeout resilience is **implemented as v0.3.1** (F-20260918-27 / scripted RW-066) and **used** (live RW-066 / F-20260918-28). Budget-aware planning is **implemented as v0.3.2** (F-20260918-29 / RW-067). Live NIM use of v0.3.2 is **RW-068 PASS** (F-20260918-30) and **RW-069 FAIL** (F-20260918-31). Path-aligned checks are **implemented as v0.4.0** (F-20260918-32 / RW-070). This ledger is evidence. Do not rewrite RW-058–069. Scripted RW-066 (F-27) is preserved.
 
 No secrets belong here: never paste API keys, vault contents, account tokens, or full
 provider payloads. Paths under `/tmp/…` and objective ids are fine.
@@ -1170,6 +1170,55 @@ RAD_HOME=/tmp/rad_prod_rw069_89512dd9 rad objective run "<text_analyzer goal>" -
 | Needle | **OFF** (`existing`) |
 | False completion | **0** |
 | Recommendation | Record RW-068 **PASS** + RW-069 **FAIL**. Gen2 complete enough to **scope** Gen3; do not implement v0.4.0 until a first theme is accepted. |
+
+## Gen3 / v0.4.0 — Path-aligned checks / package layout (RW-070) — 2026-09-18
+
+Generation 3 autonomous-agent maturity, **first accepted theme**. Package
+**0.3.2 → 0.4.0**. Control plane preserved (models propose / RAD decides). Needle
+**OFF**. Caps **not** raised (`max_plan_tasks` 16, `Budget.tool_calls` 60).
+RW-058–069 facts are **not rewritten**. F-17 / F-18 / F-21 / F-26 stay closed.
+A1 (budget→needs_user as Class A) is **not reopened**.
+
+Product: when a coding goal names a package layout, RAD joins bare machine-check
+paths to that directory (and remaps LLM root-only checks the same way) so package
+writes are not failed as missing root files. The verifier still evaluates the
+stored path honestly. A model `DONE:` is never completion.
+
+### F-20260918-32 — path-aligned checks (package layout)
+
+| field | value |
+|---|---|
+| class | **A** (RAD emitted and accepted root-only checks that disagree with a named package layout). Capability (Gen3 theme 1). Not a re-open of RW-069 live 11B artifact quality (wrong 1-line input, missing package `summary.json`, weak tests) |
+| status | **shipped in v0.4.0** |
+| found in | RW-069 / F-20260918-31 A2 watch (v0.3.2 live 11B text_analyzer); investigate-first on `3f59f8b5` |
+| fixed in | **v0.4.0** — `infer_package_dir` + path join in `rad/control/codingloop.py`; LLM check ingest in `Planner._graph_from`; PLAN_PROMPT asks for package-prefixed check paths. Check *kinds* not remapped (F-26). Fallback *tasks* stay check-less (F-17). Verifier does not guess a package dir at check time |
+| lane | deterministic / scripted (MUST). Live NIM not re-run |
+| objective / test | `tests/test_path_aligned_checks.py`; RW-070 |
+| disk | scripted: package writes under `text_analyzer/` + LLM root-only `input.txt` / `summary.json` checks → checks become `text_analyzer/…` → first attempt **VERIFIED**. No workspace-root `input.txt` / `summary.json`. Unaligned verifier `file_exists input.txt` while the file is under the package is still an honest fail (VALIDATION, not ENVIRONMENT) |
+| expected | Checks for files under a package dir use that package-relative path; scripted package writes + root-only checks are corrected without false ENVIRONMENT/VALIDATION thrash; false DONE **0** |
+| actual | infer joins brace-list / `under pkg/` / 2+ common-prefix files; LLM root checks remapped; word_counter root paths unchanged; single `pkg/foo.py` is not a layout (realworld coding / multi_agent preserved); fallback tasks check-less |
+| notes | Live RW-069 remains Class B on artifact quality and tools=12. This PR does **not** claim that live 11B text_analyzer would now PASS. A1 not reopened. Needle off. Caps unchanged. |
+
+Reproduction:
+
+```
+python3 -m pytest -q tests/test_path_aligned_checks.py
+# package writes + root-only LLM checks → VERIFIED; no root pollution; false DONE 0
+```
+
+| gate | result |
+|---|---|
+| `python3 -m pytest -q` | **435 passed** in 8.60s |
+| `rad doctor --offline` | READY — 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR (`RAD_HOME=/tmp/rad-v040-gate`) |
+| `rad acceptance` | **50/50 PASSED** (`/tmp/rad-v040-gate/acceptance/20260918-144259_gate.json`) |
+| `rad realworld` | **10 passed / 1 BLOCKED / 0 failed** (`live_nim` BLOCKED; `/tmp/rad-v040-rw/realworld/20260918-144303_realworld.json`) |
+| Package | **0.4.0** |
+| RW-058–069 | preserved |
+| 16-task cap | **UNCHANGED** |
+| Default tool budget | **UNCHANGED** (60) |
+| Needle | **OFF** (`existing`) |
+| False completion | **0** |
+| Live NIM this patch | **BLOCKED** (no NVIDIA keys) — not a live PASS claim for RW-069 |
 
 ## How to add a finding
 
