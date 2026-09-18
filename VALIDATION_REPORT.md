@@ -39,6 +39,7 @@ PR #3’s *offline* claims were reproduced, then hardened. Prefer this RC over `
 | `rad realworld` | 4/4 | **4/4 VERIFIED** (research, coding, multi_agent, failure+crash-resume) | |
 | Real LLM provider | not run (no key) | **BLOCKED** | no `*_API_KEY` / vault / `.env` / local engine in this environment |
 | Clean install again | — | **PASS** | second venv, `rad doctor --offline` READY |
+| GitHub Actions CI (3.10, 3.12) | none on RC | **PASS** (this PR) | install + doctor --offline + pytest + acceptance |
 
 ### Doctor (fresh home, no keys, network on)
 
@@ -72,7 +73,7 @@ All ten areas passed (runtime, control, state, memory, agents, security, routing
 7. **Local-engine probe** uses `probe_local()` (no `/v1/v1/models` on Edge0/LM Studio URLs).
 8. **Sandbox check** added to doctor (sudo + keys hard-deny + workspace jail).
 9. **Version synced to 0.2.0** (`rad/__init__.py`, `pyproject.toml`, MCP clientInfo, banner).
-10. **CI** — `.github/workflows/ci.yml` (Python 3.10 & 3.12: install, doctor --offline, pytest, acceptance).
+10. **CI** — `.github/workflows/ci.yml` (Python 3.10 & 3.12: install, doctor --offline, pytest, acceptance). Both matrix jobs on this PR completed **success**.
 11. **Docs** match reality: `rad.json` not `config.json`, 23 doctor checks, Python 3.9+, `bank` suite, hidden `watcher`, [QUICKSTART](docs/QUICKSTART.md).
 12. **Snapshot restore** uses `tarfile` `filter="data"` on Python that supports it.
 
