@@ -4,6 +4,13 @@ Every tool call goes through `Policy.decide()` inside `run_tool` (the single enf
 point; sub-agents, the control plane and the REPL all end up there).
 
     decision = HARD-DENY  |  DENY  |  ASK  |  LIMITED  |  ALLOW
+               | SCOPE_VIOLATION | UNAUTHORIZED
+
+Authority profiles (SAFE/STANDARD/AUTONOMOUS/UNRESTRICTED/CUSTOM) resolve into
+grants/scopes/confirmation that this gate consults. They do not replace it.
+STANDARD is a passthrough so existing behaviour is unchanged.
+--auto (and AUTONOMOUS/UNRESTRICTED confirmation=never) only converts ASK into
+ALLOW. They never touch DENY, LIMITED, SCOPE_VIOLATION, UNAUTHORIZED or the hard layer.
 
 Two layers:
 
@@ -15,7 +22,8 @@ Two layers:
                "effect": "ASK"|"ALLOW"|"DENY"|"LIMITED", "limits": {...}}
                First matching rule wins; then per-capability default; then built-in default.
 
---auto only converts ASK into ALLOW. It never touches DENY, LIMITED or the hard layer.
+--auto only converts ASK into ALLOW (confirmation policy = never). It never
+touches DENY, LIMITED, SCOPE_VIOLATION, UNAUTHORIZED or the hard layer.
 Every decision is appended to ~/.rad/audit.jsonl (who, what, why, decided-by).
 """
 from __future__ import annotations
@@ -32,7 +40,9 @@ from typing import Any, Dict, List, Optional
 from rad.home import RadHome, _write_json
 
 ALLOW, ASK, LIMITED, DENY, HARD_DENY = "ALLOW", "ASK", "LIMITED", "DENY", "HARD_DENY"
+SCOPE_VIOLATION, UNAUTHORIZED = "SCOPE_VIOLATION", "UNAUTHORIZED"
 EFFECTS = (ALLOW, ASK, LIMITED, DENY)
+DENIED_EFFECTS = (DENY, HARD_DENY, SCOPE_VIOLATION, UNAUTHORIZED)
 
 # capability names shared with rad.agents
 CAP_READ, CAP_WRITE, CAP_SHELL, CAP_WEB, CAP_VISION, CAP_SPAWN, CAP_MCP = (
@@ -191,7 +201,7 @@ class Decision:
 
     @property
     def denied(self) -> bool:
-        return self.effect in (DENY, HARD_DENY)
+        return self.effect in (DENY, HARD_DENY, SCOPE_VIOLATION, UNAUTHORIZED)
 
 
 class Policy:
@@ -276,6 +286,10 @@ class Policy:
                agent_caps: Optional[List[str]] = None, path: Optional[Path] = None,
                tool: str = "") -> Decision:
         self._refresh()
+        from rad.authority import Authority, normalize_cap
+        capability = normalize_cap(capability)
+        auth = Authority(self.home)
+        auth_auto = auth.confirmation_is_automatic()
         # 1. hard layer — nothing below can override
         if capability == CAP_SHELL and (why := hard_check_shell(resource)):
             return Decision(HARD_DENY, why, "hard")
@@ -290,6 +304,20 @@ class Policy:
         # 2. agent capability envelope (a sub-agent can only narrow, never widen)
         if agent_caps is not None and capability not in agent_caps:
             return Decision(DENY, f"agent lacks capability {capability}", "agent")
+        # 2b. authority grants / scopes. STANDARD is a passthrough (no extra deny/scope).
+        #     Confirmation NEVER is applied only to ASK, never as a grant widening.
+        if not auth.allows_capability(capability):
+            return Decision(UNAUTHORIZED,
+                            f"authority profile {auth.state.profile} does not grant {capability}",
+                            "authority")
+        if path is not None and capability in (CAP_READ, CAP_WRITE) and not auth.path_in_scope(path):
+            return Decision(SCOPE_VIOLATION,
+                            f"path outside authority scope ({auth.state.profile})", "authority")
+        if capability in (CAP_WEB, CAP_BROWSER):
+            from urllib.parse import urlparse
+            host = (urlparse(resource).hostname or "").lower()
+            if host and not auth.host_in_scope(host):
+                return Decision(SCOPE_VIOLATION, f"host {host} outside authority scope", "authority")
         # 3. web allowlist (soft, but explicit)
         if capability in (CAP_WEB, CAP_BROWSER) and self._data.get("web_allow"):
             from urllib.parse import urlparse
@@ -297,18 +325,34 @@ class Policy:
             if not any(host == d or host.endswith("." + d) for d in self._data["web_allow"]):
                 return Decision(DENY, f"host {host} not in web_allow", "rule")
         # 4. rules, first match wins
+        limits: Dict[str, Any] = {}
+        matched_rule = False
         for i, r in enumerate(self.rules):
             if r.capability == capability and (fnmatch.fnmatch(resource, r.match) or (tool and fnmatch.fnmatch(tool, r.match))):
                 eff = r.effect
-                if eff == ASK and auto:
-                    return Decision(ALLOW, f"rule#{i} {r.match!r} ASK → auto", "rule", r.limits)
-                return Decision(eff, f"rule#{i} {r.match!r}" + (f" ({r.note})" if r.note else ""), "rule", r.limits)
-        # 5. default
-        eff = self.default_for(capability)
-        by = "default" if capability in self._data["defaults"] else "builtin"
-        if eff == ASK and auto:
-            return Decision(ALLOW, f"{by} ASK → auto", by)
-        return Decision(eff, f"{by} {eff}", by)
+                by = "rule"
+                reason = f"rule#{i} {r.match!r}" + (f" ({r.note})" if r.note else "")
+                limits = r.limits
+                matched_rule = True
+                break
+        else:
+            # 5. default
+            eff = self.default_for(capability)
+            by = "default" if capability in self._data["defaults"] else "builtin"
+            reason = f"{by} {eff}"
+        # 5b. authority floor — more restrictive profile effect wins (SAFE web ASK over builtin ALLOW).
+        #     Never widens a DENY/LIMITED. STANDARD returns None here.
+        auth_eff = auth.effect_for(capability)
+        _rank = {DENY: 3, LIMITED: 2, ASK: 1, ALLOW: 0}
+        if auth_eff is not None and _rank.get(auth_eff, 0) > _rank.get(eff, 0):
+            eff = auth_eff
+            by = "authority"
+            reason = f"authority {auth.state.profile} {eff}"
+        # 6. confirmation policy (--auto or profile NEVER) converts ASK only
+        if eff == ASK and (auto or auth_auto):
+            why = "ASK → auto" if auto else "ASK → confirmation never"
+            return Decision(ALLOW, f"{reason} {why}" if matched_rule else f"{by} {why}", by, limits)
+        return Decision(eff, reason if matched_rule or by == "authority" else f"{by} {eff}", by, limits)
 
     # ---- audit
     def audit(self, capability: str, resource: str, decision: Decision, *, tool: str = "",
@@ -341,7 +385,12 @@ class Policy:
         return out
 
     def explain(self) -> str:
-        lines = ["Policy (first matching rule wins; --auto only turns ASK into ALLOW; hard layer is not configurable):"]
+        lines = ["Policy (first matching rule wins; --auto / confirmation=never only turns ASK into ALLOW; hard layer is not configurable):"]
+        try:
+            from rad.authority import Authority
+            lines.append(f"  authority     {Authority(self.home).state.profile}")
+        except Exception:
+            pass
         for cap in BUILTIN_DEFAULTS:
             d = self.default_for(cap)
             src = "" if cap not in self._data["defaults"] else "  (configured)"

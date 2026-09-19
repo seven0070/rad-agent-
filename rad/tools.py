@@ -330,7 +330,7 @@ def _gate(ctx: ToolCtx, capability: str, resource: str, prompt: str, *, path: Op
           tool: str = "") -> Dict[str, Any]:
     """Single permission gate. Returns the decision's limits on ALLOW/LIMITED; raises otherwise.
     ASK → ctx.confirm; a declined confirm is audited as DENY."""
-    from rad.policy import ALLOW, ASK, DENY, HARD_DENY, LIMITED
+    from rad.policy import ALLOW, ASK, DENY, HARD_DENY, LIMITED, SCOPE_VIOLATION, UNAUTHORIZED
     pol = ctx.policy()
     d = pol.decide(capability, resource, auto=ctx.auto, agent_caps=ctx.agent_caps, path=path, tool=tool)
     ctx.last_decision = {"cap": capability, "resource": str(resource)[:300], "effect": d.effect,
@@ -339,6 +339,12 @@ def _gate(ctx: ToolCtx, capability: str, resource: str, prompt: str, *, path: Op
     if d.effect == HARD_DENY:
         pol.audit(capability, resource, d, tool=tool, actor=ctx.actor, outcome="blocked")
         raise PolicyDenied(f"BLOCKED by safety policy ({d.reason}) — this cannot be enabled; ask the user to do it themselves.")
+    if d.effect == UNAUTHORIZED:
+        pol.audit(capability, resource, d, tool=tool, actor=ctx.actor, outcome="unauthorized")
+        raise PolicyDenied(f"UNAUTHORIZED by authority profile ({d.reason}).")
+    if d.effect == SCOPE_VIOLATION:
+        pol.audit(capability, resource, d, tool=tool, actor=ctx.actor, outcome="scope_violation")
+        raise PolicyDenied(f"SCOPE_VIOLATION ({d.reason}).")
     if d.effect == DENY:
         pol.audit(capability, resource, d, tool=tool, actor=ctx.actor, outcome="denied")
         raise PolicyDenied(f"DENIED by policy ({d.reason}).")
