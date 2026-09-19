@@ -46,7 +46,8 @@ operator workflow) is **implemented as v0.5.2** (scripted RW-092 / RW-093).
 RW-094 / RW-095). **G4-7** (coding artifact completeness / named
 package-file contracts) is **implemented as v0.5.4** (scripted RW-096 /
 RW-097). **G4-6** (cost/budget reporting) is **implemented as v0.5.5**
-(scripted RW-098 / RW-099). Package is **0.5.5**. **No
+(scripted RW-098 / RW-099). Gen4 is **complete (scripted)**; **G4-4
+parked** (no measured hole). Package stays **0.5.5**. **No
 per-slice GitHub Release.** Do not rewrite RW-058–099.
 
 Every `VERIFIED` / `completed` cell is from the control-plane verifier **and** a disk
@@ -78,7 +79,8 @@ cleared; xxd ENVIRONMENT Class A **CONFIRMED**), then scripted RW-086
 G4-3 is **shipped** as v0.5.2 (scripted); **Version 5 pack** shipped.
 G4-5 is **shipped** as v0.5.3 (scripted RW-094 / RW-095). **G4-7** is
 **shipped** as v0.5.4 (scripted RW-096 / RW-097). **G4-6** is
-**shipped** as v0.5.5 (scripted RW-098 / RW-099). RW-058–099 are **not rewritten**.
+**shipped** as v0.5.5 (scripted RW-098 / RW-099). Gen4 is
+**complete (scripted)**; G4-4 **parked**. RW-058–099 are **not rewritten**.
 
 # Scripted cost/budget reporting (RW-098 / RW-099)
 
