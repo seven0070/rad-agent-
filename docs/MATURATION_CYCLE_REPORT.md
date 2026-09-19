@@ -6,6 +6,74 @@ Default `Budget.tool_calls` remains **60**.
 
 ---
 
+# Cycle 18 — v0.4.6 Gen3 theme 3 slice E1 (task-boundary yield) (2026-09-18)
+
+**Date:** 2026-09-18
+**Baseline:** `origin/main` `e8172cca` (merge PR #31; package **0.4.5**)
+**Package at start:** `0.4.5`
+**This branch:** `cursor/e1-task-boundary-yield-37ad` — package **0.4.6**
+**Architecture:** control plane preserved. Needle stays off. Caps unchanged.
+**Kind:** product patch + scripted evidence. RW-058–082 are **not rewritten**.
+
+## Why this cycle
+
+Slice E was **SCOPED / PLANNED** on Cycle 17. This cycle **accepts and implements
+E1**: yield a stuck in-flight task at a task boundary and dispatch leftover
+tools to later independent READY work via existing `CheckpointManager` +
+`Scheduler`. Driver: RW-081 (first task VERIFIED; second burned remaining
+tools; later file PENDING; `needs_user` @ 12/12).
+
+## What changed
+
+| piece | change |
+|---|---|
+| `TaskYield` (`rad/control/budgets.py`) | Distinct from `BudgetExceeded`: leftover tools remain |
+| `leftover_tool_reserve` (`budgetplan.py`) | 1 tool per later independent unattempted READY task |
+| `Executor.reserve_tools` | Raise `TaskYield` before charging a reserved leftover tool |
+| `Controller._drive` / `_yield_task` | Sequential tasks reserve leftover; park `RETRYING` + checkpoint |
+| `Scheduler.runnable` | Prefer non-yielded READY work so leftover reaches later files |
+| Persistence | Existing `checkpoint.json` / `tasks.json` (`verification.yielded`). No new format |
+
+## Decision
+
+| item | value |
+|---|---|
+| Package | **0.4.6** |
+| Slice E1 | **ACCEPTED + IMPLEMENTED** |
+| E2 / E3 | still candidates (linear `depends_on` unchanged) |
+| Thrash Class A chase | **Paused** after RW-081 NOT CONFIRMED |
+| Live 11B text_analyzer@12 | **not** claimed PASS |
+| Invariants | Needle OFF; caps 16/60; false DONE 0; no redesign; no cap raise as the fix |
+
+## Quality gates (this branch)
+
+Isolated homes `/tmp/rad-e1-gate` (doctor, acceptance) and `/tmp/rad-e1-rw` (realworld).
+
+| gate | result |
+|------|--------|
+| `rad version` | **PASS** v0.4.6 |
+| `python3 -m pytest -q` | **PASS** 530 passed in 9.93s |
+| `rad doctor --offline` | **PASS** 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR, verdict READY, exit 0 |
+| `rad acceptance` | **PASS** 50/50 — `/tmp/rad-e1-gate/acceptance/20260918-174516_gate.json` |
+| `rad realworld` | **PASS** 10/11 + 1 BLOCKED — `/tmp/rad-e1-rw/realworld/20260918-174520_realworld.json` |
+| Needle default | **PASS** (`existing`) |
+| Caps | **PASS** `max_plan_tasks` 16; `Budget.tool_calls` 60 |
+| Package | **0.4.6** |
+| Live NIM this patch | not re-run; suite `live_nim` **BLOCKED** (no keys here) |
+
+## Remaining limitations
+
+1. Live 11B text_analyzer@12 remains Class B FAIL. This cycle does not change that.
+2. E1 does not rewrite linear `depends_on` (E2). Chained later files stay unready.
+3. Premature-test ENVIRONMENT Class A remains unit-confirmed (RW-080), not live-hit.
+
+## Roadmap pointer
+
+Operating spine: [ROADMAP.md](ROADMAP.md). **Generation 3 in progress.** Theme 3
+slice E1 **IMPLEMENTED** as **v0.4.6**. Gen4–5 are not started.
+
+---
+
 # Cycle 17 — Scope Gen3 theme 3 slice E (multi-step checkpoint); stay 0.4.5 (2026-09-18)
 
 **Date:** 2026-09-18

@@ -86,7 +86,7 @@ def _ob(task: Task, out: str, status: str = "error", tool: str = "run_shell",
 # ---------------------------------------------------------------- architecture freeze
 
 def test_first_task_thrash_does_not_raise_caps_or_enable_needle(home):
-    assert __version__ == "0.4.5"
+    assert __version__ == "0.4.6"
     assert Budget().tool_calls == 60
     assert int(home.cfg.get("max_plan_tasks", 16) or 16) == 16
     assert Planner(None, str(home.workspace())).max_tasks == 16

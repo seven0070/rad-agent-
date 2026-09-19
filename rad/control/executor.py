@@ -25,7 +25,7 @@ from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional
 
 from rad.control import events as E
-from rad.control.budgets import BudgetExceeded, BudgetManager
+from rad.control.budgets import BudgetExceeded, BudgetManager, TaskYield
 from rad.control.observer import Observer, classify_output
 
 # tools that change the environment → snapshot the workspace around them
@@ -69,6 +69,8 @@ class Executor:
         self._base_runner = tool_runner or self._default_runner
         self._session_runner: Optional[Callable[..., str]] = None
         self.actions: List[ActionResult] = []
+        #: hold this many tool calls for later independent READY work (E1)
+        self.reserve_tools: int = 0
 
     # ------------------------------------------------------------------ wiring
     @staticmethod
@@ -105,6 +107,14 @@ class Executor:
                 ex = self.budgets.check()
                 if ex is not None:
                     raise ex
+                reserve = int(getattr(self, "reserve_tools", 0) or 0)
+                if reserve:
+                    rem = self.budgets.remaining("tool_calls")
+                    if rem != float("inf") and rem <= reserve:
+                        raise TaskYield(
+                            f"yield leftover-budget: remaining {int(rem)} tool(s) "
+                            "reserved for later READY work"
+                        )
                 self.budgets.charge_tool()
 
         # 1 — capability

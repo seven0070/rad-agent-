@@ -14,7 +14,9 @@ transition by the `CheckpointManager`, and status transitions go through the
 Older behaviour is unchanged: a crash mid-task is recovered on `resume()`, a
 false "DONE" is caught by the Verifier and retried with explicit feedback, and a
 run that cannot make progress ends in NEEDS_USER with a reason instead of
-pretending to be complete.
+pretending to be complete. When a stuck in-flight task would burn leftover
+tools, the drive loop yields at a task boundary and dispatches later
+independent READY work under the same cap (slice E1).
 """
 from __future__ import annotations
 
@@ -26,8 +28,8 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
 from rad.control import events as E
-from rad.control.budgetplan import remaining_tool_calls
-from rad.control.budgets import BudgetExceeded, BudgetManager
+from rad.control.budgetplan import leftover_tool_reserve, remaining_tool_calls
+from rad.control.budgets import BudgetExceeded, BudgetManager, TaskYield
 from rad.control.checkpoints import CheckpointManager
 from rad.control.events import EventLog
 from rad.control.executor import Executor
@@ -350,8 +352,14 @@ class Controller:
                     return obj
                 tasks = batch.tasks
                 if len(tasks) == 1:
-                    one(tasks[0])
+                    rem = remaining_tool_calls(obj)
+                    executor.reserve_tools = leftover_tool_reserve(graph, tasks[0], rem)
+                    try:
+                        one(tasks[0])
+                    finally:
+                        executor.reserve_tools = 0
                 else:
+                    executor.reserve_tools = 0
                     log.emit(E.TASK_STATUS, obj.id, status="parallel", tasks=[t.id for t in tasks])
                     with ThreadPoolExecutor(max_workers=len(tasks), thread_name_prefix="rad-task") as pool:
                         futs = [pool.submit(one, t) for t in tasks]
@@ -408,6 +416,7 @@ class Controller:
         session._rad_current_task = task.id  # type: ignore[attr-defined]
         error = ""
         reply = ""
+        yielded = False
         prompt = self._task_prompt(obj, graph, task, hint)
         try:
             if session.requirements is not None:
@@ -430,6 +439,8 @@ class Controller:
                     log.emit(E.MODEL_CALLED, obj.id, task.id, purpose="usage",
                              tokens=tokens, rounds=usage.get("rounds", 1),
                              provider=getattr(session, "last_provider", ""))
+        except TaskYield:
+            yielded = True
         except BudgetExceeded:
             raise
         except Exception as e:
@@ -490,6 +501,10 @@ class Controller:
         task.transition(TaskStatus.FAILED, f"verification {ver['status']}: {ver['summary'][:200]}")
         log.emit(E.TASK_FAILED, obj.id, task.id, verification=ver["status"], summary=ver["summary"][:400])
         self._record_agent_run(obj, task, reply or error, "failed", ver)
+        if yielded or self._should_yield(obj, graph, task, budgets):
+            with lock:
+                self._yield_task(obj, graph, task, log, budgets)
+            return
         with lock:
             self._recover(obj, graph, task, observer, recovery, repairs, log, verification=ver,
                           budgets=budgets, executor=executor)
@@ -551,6 +566,9 @@ class Controller:
                 obj.usage.retries += 1
 
         if d.strategy in ("retry", "retry_with_hint", "switch_tool", "switch_model"):
+            if self._should_yield(obj, graph, task, budgets):
+                self._yield_task(obj, graph, task, log, budgets)
+                return
             spend_retry()
             if d.strategy == "switch_model":
                 self._switch_model(session_hint=d.data.get("avoid"), log=log, obj=obj, task=task)
@@ -558,6 +576,9 @@ class Controller:
             task.transition(TaskStatus.RETRYING, d.reason)
             return
         if d.strategy == "rollback":
+            if self._should_yield(obj, graph, task, budgets):
+                self._yield_task(obj, graph, task, log, budgets)
+                return
             restored = self._rollback(observer, d.data.get("path", ""), log=log, obj=obj, task=task)
             if restored:
                 spend_retry()
@@ -569,6 +590,9 @@ class Controller:
             d = Decision("retry_with_hint" if task.can_retry else "ask_user", d.failure_class,
                          "rollback was not possible — " + d.reason, hint=d.hint)
         if d.strategy == "repair":
+            if self._should_yield(obj, graph, task, budgets):
+                self._yield_task(obj, graph, task, log, budgets)
+                return
             repairs[task.id] = repairs.get(task.id, 0) + 1
             spend_retry()
             if d.failure_class == FailureClass.ENVIRONMENT:
@@ -588,6 +612,9 @@ class Controller:
             log.emit(E.TASK_CREATED, obj.id, fix.id, text=fix.text, repair_for=task.id)
             return
         if d.strategy == "spawn_specialist":
+            if self._should_yield(obj, graph, task, budgets):
+                self._yield_task(obj, graph, task, log, budgets)
+                return
             role = d.data.get("role") or self._pick_role(task, d.failure_class)
             if role and (budgets is None or budgets.remaining("agents") > 0):
                 if budgets is not None:
@@ -600,6 +627,9 @@ class Controller:
                 log.emit(E.AGENT_STARTED, obj.id, task.id, agent=role, reason=d.reason)
                 return
         if d.strategy == "replan":
+            if self._should_yield(obj, graph, task, budgets):
+                self._yield_task(obj, graph, task, log, budgets)
+                return
             repairs[task.id] = repairs.get(task.id, 0) + 1
             planner = self._planner()
             new = planner.replan(obj, graph, task, d.hint or d.reason,
@@ -675,6 +705,43 @@ class Controller:
                 return "writer"
             return "reviewer"
         return ""
+
+    # ------------------------------------------------------------ leftover-budget yield (E1)
+    def _should_yield(self, obj: Objective, graph: TaskGraph, task: Task,
+                      budgets: Optional[BudgetManager] = None) -> bool:
+        """True when another retry of ``task`` would burn leftover tools later READY work needs."""
+        if budgets is not None:
+            r = budgets.remaining("tool_calls")
+            rem: Optional[int] = None if r == float("inf") else int(r)
+        else:
+            rem = remaining_tool_calls(obj)
+        reserve = leftover_tool_reserve(graph, task, rem)
+        if reserve <= 0 or rem is None:
+            return False
+        return int(rem) <= reserve
+
+    def _yield_task(self, obj: Objective, graph: TaskGraph, task: Task, log: EventLog,
+                    budgets: Optional[BudgetManager] = None,
+                    note: str = "yield leftover-budget") -> None:
+        """Checkpoint a stuck task as RETRYING so the scheduler can dispatch later READY work."""
+        if task.status == TaskStatus.RUNNING:
+            task.transition(TaskStatus.OBSERVING, note)
+        if task.status == TaskStatus.OBSERVING:
+            task.transition(TaskStatus.VERIFYING, note)
+        if task.status == TaskStatus.VERIFYING:
+            task.transition(TaskStatus.FAILED, note)
+        if task.status == TaskStatus.FAILED:
+            task.transition(TaskStatus.RETRYING, note)
+        ver = dict(task.verification or {})
+        ver["yielded"] = True
+        if note and not ver.get("hint"):
+            ver["hint"] = note
+        task.verification = ver
+        leftover = remaining_tool_calls(obj)
+        log.emit(E.TASK_STATUS, obj.id, task.id, status=task.status, yielded=True,
+                 leftover_tools=leftover, note=note)
+        self._checkpoint(obj, graph, log, note)
+        self._say(f"  ↷ yield leftover-budget ({leftover if leftover is not None else '∞'} tools) → later READY")
 
     # ------------------------------------------------------------ budget vs. already-done work
     def _on_budget(self, obj: Objective, graph: TaskGraph, log: EventLog, reason: str,
@@ -867,7 +934,7 @@ class Controller:
     def _checkpoint(self, obj: Objective, graph: TaskGraph, log: EventLog, note: str = "") -> None:
         cp = self.checkpoints.save(obj, graph, note)
         log.emit(E.CHECKPOINT, obj.id, status=obj.status, tasks=graph.summary(),
-                 usage=obj.usage.to_dict(), seq=cp["seq"])
+                 usage=obj.usage.to_dict(), seq=cp["seq"], note=note)
 
     def _stuck_reason(self, graph: TaskGraph) -> str:
         bad = [t for t in graph.tasks.values()

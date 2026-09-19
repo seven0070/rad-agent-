@@ -38,6 +38,20 @@ class BudgetExceeded(Exception):
         self.kind = kind
 
 
+class TaskYield(Exception):
+    """Stop this in-flight task so leftover tool budget can reach later READY work.
+
+    Distinct from ``BudgetExceeded``: the objective is not out of tools. The
+    current task is checkpointed and the drive loop dispatches independent
+    READY work under the same cap (Gen3 theme 3 slice E1).
+    """
+
+    def __init__(self, reason: str = "yield leftover-budget") -> None:
+        super().__init__(reason)
+        self.reason = reason
+        self.kind = "tool_calls"
+
+
 @dataclass
 class BudgetSnapshot:
     account: Dict[str, Dict[str, float]]

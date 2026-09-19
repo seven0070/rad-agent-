@@ -12,7 +12,7 @@ done, nothing checks, nothing survives a crash. The control plane inverts that:
 | `tasks.py` | `Task` with explicit state machine, `Check` (machine-verifiable condition) |
 | `graph.py` | `TaskGraph` DAG: ready-set, doom propagation, optional branches, cycle check |
 | `planner.py` | LLM → task graph *with checks*; bounded retry (default 1) on timeout/empty/malformed JSON *before* fallback; fat plans retried/selected to fit remaining tool budget; deterministic fallback without a brain (goal clause-split, no checks — F-17; compacted when still fat); coding goals infer `json_valid` / test `shell_ok` / exact `file_line_count` as *objective* checks and merge them into LLM plans that omitted them (fallback *tasks* stay check-less); package-layout goals get check paths joined to the named directory including ASCII-tree `pkg/` layouts (RW-069 / RW-073) |
-| `budgetplan.py` | budget-aware planning helpers: remaining tools, 2-tools/task estimate, fat vs small (F-21), fallback compact |
+| `budgetplan.py` | budget-aware planning helpers: remaining tools, 2-tools/task estimate, fat vs small (F-21), fallback compact; leftover-tool reserve for intra-run yield (E1) |
 | `codingloop.py` | verified coding loop helpers: coding-goal detection, DONE: pollution, broken-artifact repair hints, package-dir path alignment, merge of omitted json/line-count/test contracts |
 | `controller.py` | lifecycle: create / plan / run / resume / pause / cancel; the drive loop |
 | `observer.py` | `Observation` per tool call, `Artifact` registry (sha256, versions, lineage) |
@@ -67,9 +67,11 @@ already pass can close without a model call.
 
 Crash-resume is **shipped** (`CheckpointManager`, `rad objective resume`;
 acceptance gate 14). Intra-run yield so later independent READY tasks still get
-attempts when an early task burns remaining tools is **not** built — that is
-Gen3 theme 3 slice E, **SCOPED / PLANNED** in [ROADMAP.md](ROADMAP.md). Do not
-treat crash-resume as that gap, and do not invent a second persistence stack.
+≥1 attempt when an early sequential task would burn remaining tools is
+**implemented as v0.4.6** (theme 3 slice E1; `TaskYield` + leftover-tool
+reserve + `Scheduler` skip of yielded tasks). Same `checkpoint.json` format.
+Linear `depends_on` is unchanged (E2). Do not treat crash-resume with a raised
+budget as that gap, and do not invent a second persistence stack.
 
 ## Parallelism (Phase 3)
 Ready tasks with satisfied dependencies run concurrently up to `objective_parallel`
