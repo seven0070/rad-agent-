@@ -43,7 +43,10 @@ as v0.5.1** (scripted RW-090 / RW-091). **G4-3** (live-use campaign /
 operator workflow) is **implemented as v0.5.2** (scripted RW-092 / RW-093).
 **Version 5 pack** shipped as GitHub Release **v0.5.2**. **G4-5**
 (fallback / LLM plan quality) is **implemented as v0.5.3** (scripted
-RW-094 / RW-095). **No per-slice GitHub Release.** Do not rewrite RW-058–093.
+RW-094 / RW-095). Recommended next **G4-7** (coding artifact
+completeness / named package-file contracts) is **listed, not
+accepted**. Package stays **0.5.3**. **No per-slice GitHub Release.**
+Do not rewrite RW-058–095.
 
 Every `VERIFIED` / `completed` cell is from the control-plane verifier **and** a disk
 check (file exists / contents / hash). A model `DONE:` line is never enough.
@@ -64,8 +67,8 @@ free-model loop **paused**), then live OpenRouter RW-085 (**FAIL**; Class C
 cleared; xxd ENVIRONMENT Class A **CONFIRMED**), then scripted RW-086
 (v0.4.7), then live NIM RW-084 (**BLOCKED Class C**), then scripted RW-083.
 G4-3 is **shipped** as v0.5.2 (scripted); **Version 5 pack** shipped.
-G4-5 is **shipped** as v0.5.3 (scripted RW-094 / RW-095). RW-058–093 are
-**not rewritten**.
+G4-5 is **shipped** as v0.5.3 (scripted RW-094 / RW-095). Recommended
+next **G4-7** is listed, not accepted. RW-058–095 are **not rewritten**.
 
 # Scripted LLM plan quality (RW-094 / RW-095)
 

@@ -6,6 +6,106 @@ Default `Budget.tool_calls` remains **60**.
 
 ---
 
+# Cycle 32 — Scope G4-7 coding artifact completeness; stay 0.5.3 (2026-09-19)
+
+**Date:** 2026-09-19
+**Baseline:** `origin/main` `b8b67a43a00a8bdba164b5a4c7e250a35db30122` (merge PR #45; package **0.5.3**)
+**Package at start:** `0.5.3`
+**This branch:** `cursor/g4-7-artifact-completeness-scope-f6ee` — package **0.5.3** (no bump)
+**Architecture:** control plane preserved. Needle stays off. Caps unchanged.
+**Kind:** docs / scope only. No `rad/` product change. RW-058–095 are **not rewritten**.
+**Release:** **none** — Version 5 packing doctrine: merge-only; pack again only when Sanath asks. GitHub Release **Version 5** / tag **v0.5.2** still covers G4-1–G4-3 only.
+
+## Why this cycle
+
+**G4-5** shipped as **v0.5.3** (PR #45; scripted RW-094 / RW-095). Version 5
+pack remains GitHub Release **v0.5.2** (G4-1 / G4-2 / G4-3). G4-1 closed
+pause. G4-2 closed safe resume. G4-3 closed the operator-use path. G4-5
+closed plan-*structure* (near-JSON recover + compact coding retry). Both
+live free paths remain **paused**. Live E1–E3 confirmation is **deferred**.
+F-17 stays closed.
+
+Investigate-first after G4-5: the highest-leverage **product** gap is
+not MCP, not a cost dashboard, and not another “wait for live
+confirmation” theme. G4-3 already shipped the campaign playbook. Running
+it is operator work when a provider recovers — not a package bump while
+NIM / OpenRouter free stay paused. Cycle 24 residual Class B after
+fallback PLAN is **incomplete package artifacts** (RW-081 empty `{}`
+summary + SyntaxError test; RW-085 / RW-086 missing README/tests +
+alt-schema summary). `infer_coding_checks` already contracts
+`json_valid` / test `shell_ok` / `file_line_count` — not named
+README.md / analyzer.py `file_exists`, not `json_field` for required
+keys. Empty `{}` is valid JSON. False DONE **0**. G4-4 / G4-6 **ids
+kept** (no hole / no live-use data). New id **G4-7**.
+
+## Alternatives considered
+
+| candidate | decision |
+|---|---|
+| Coding artifact completeness / named package-file contracts | **Recommended next (G4-7 / v0.5.4).** Evidence-backed (RW-081 / RW-085 / RW-086). Scriptable without a recovered brain. F-17 stays closed. Does not invent Class A for 403/429 |
+| Extensibility / MCP (G4-4) | No measured hole. Already first-class. **Id kept** |
+| Cost/budget reporting (G4-6) | Dashboard without Version 5 live-use data. G4-2 already surfaces last Class C + Retry-After. Free remaining-quota not in API until 429. **Id kept** |
+| Larger workload / longer-horizon *product* | E1–E3 already shipped scripted. Caps 16/60 stay closed (A1 / F-21). RW-059 showed 12→24 still exhausted |
+| Live confirmation of Version 5 / G4-5 path | G4-3 playbook already ships. Gates remain paused. Operator campaign when a provider recovers — not a new product theme |
+| Residual Class B “11B quality / free-model thrash” as a grab-bag | Thrash Class A patched or F-44 **NOT CONFIRMED**. G4-7 is the contract slice, not “make 11B pass” |
+
+## Code findings (lightweight; no patch)
+
+| existing | role | gap vs post-G4-5 residual |
+|---|---|---|
+| `infer_coding_checks` | `json_valid` / test `shell_ok` / `file_line_count` (cap 6) | Named README.md / analyzer.py get no `file_exists`; named summary keys get no `json_field` |
+| `codingloop` repair | broken JSON / failing tests insert one repair | `{}` is valid JSON — odd schema (RW-081 / RW-086) does not trip `json_valid` |
+| `Planner._fallback` (F-17) | clause-split, cap 7, no checks | Do not add checks to fallback *tasks* |
+| G4-5 `_json_obj` + `PLAN_CODING_RETRY` | near-JSON recover / compact retry | **Closed** scripted (RW-094 / RW-095). Live confirmation deferred |
+| `rad health` + CAMPAIGN_PLAYBOOK | operator wait/rotate/resume/run | Closed for G4-3. Residual live campaign is operator work |
+| `rad connect` / MCP | already first-class | No measured hole (G4-4) |
+| `rad cost` | paid 14-day spend | No live use data (G4-6) |
+
+## Decision
+
+| item | value |
+|---|---|
+| Package | **0.5.3** (no 0.5.4) |
+| Gen3 | **COMPLETE (scripted)** (unchanged). Live E1–E3 **deferred** |
+| Gen4 | **IN PROGRESS**. **G4-5 shipped** as **v0.5.3**. **Version 5 pack** still **v0.5.2** (G4-1–G4-3). **G4-7 listed, not accepted** |
+| Recommended next v0.5.4 candidate | **G4-7** — coding artifact completeness / named package-file contracts (see ROADMAP). **Not** accepted here |
+| Other candidates | G4-4 extensibility (not next — no hole); G4-6 cost/budget (waits on live use data) |
+| Next product work | Waits for an accepted v0.5.4 theme |
+| Packing | Merge-only. **No per-slice GitHub Release.** Pack again only when Sanath asks |
+| Invariants | Needle OFF; caps 16/60; false DONE 0; no redesign; Class C is not a product patch; no live PASS claim; F-17 stays closed |
+
+## Quality gates (this branch)
+
+Isolated homes `/tmp/rad-g47-scope-gate` (doctor, acceptance) and `/tmp/rad-g47-scope-rw` (realworld).
+
+| gate | result |
+|------|--------|
+| `rad version` | **PASS** v0.5.3 |
+| `python3 -m pytest -q` | **PASS** 624 passed in 12.24s |
+| `rad doctor --offline` | **PASS** 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR, verdict READY, exit 0 |
+| `rad acceptance` | **PASS** 50/50 — `/tmp/rad-g47-scope-gate/acceptance/20260919-070854_gate.json` |
+| `rad realworld` | **PASS** 10/11 + 1 BLOCKED — `/tmp/rad-g47-scope-rw/realworld/20260919-070855_realworld.json` |
+| Needle default | **PASS** (`existing`) — unchanged |
+| Caps | **PASS** `max_plan_tasks` 16; `Budget.tool_calls` 60 — unchanged |
+| Package | **0.5.3** (no bump) |
+| Release / tag | **none** — Version 5 packing doctrine |
+| Live this patch | not re-run; suite `live_nim` **BLOCKED** (Class C) |
+
+## Remaining limitations
+
+1. Live text_analyzer@12 remains Class B FAIL. This cycle does not change that.
+2. E1/E2/E3 are scripted only. Live confirmation **deferred**.
+3. Both live free paths remain **paused**. G4-7 is scoped so a later accept can strengthen named-file / JSON-field *objective* contracts — not a live PASS.
+4. G4-7 is listed, not accepted.
+
+## Roadmap pointer
+
+Operating spine: [ROADMAP.md](ROADMAP.md). **Generation 4 in progress.**
+**G4-5 implemented as v0.5.3.** Recommended next **G4-7** listed, not
+accepted. Stay **0.5.3**. Gen5 is not started.
+
+---
+
 # Cycle 31 — G4-5 fallback / LLM plan quality; v0.5.3 (2026-09-19)
 
 **Date:** 2026-09-19
