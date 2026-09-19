@@ -87,53 +87,37 @@ def test_rw100_first_run_docs_match_package_1_0_0(capsys):
 
 def test_rw100_wheel_and_sdist_build_without_credentials(tmp_path):
     """RW-100: PEP 517 wheel + sdist exist for Version 1 assets. No token."""
+    install = subprocess.run(
+        [sys.executable, "-m", "pip", "install", "build", "-q"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert install.returncode == 0, install.stdout + install.stderr
     dist = tmp_path / "dist"
-    proc = subprocess.run(
-        [
-            sys.executable,
-            "-m",
-            "pip",
-            "wheel",
-            str(ROOT),
-            "-w",
-            str(dist),
-            "--no-deps",
-            "--no-build-isolation",
-        ],
-        check=False,
-        capture_output=True,
-        text=True,
-    )
-    assert proc.returncode == 0, proc.stdout + proc.stderr
-    wheels = list(dist.glob("rad_agent-1.0.0-*.whl"))
-    assert wheels, sorted(p.name for p in dist.iterdir())
-    sdist_proc = subprocess.run(
-        [
-            sys.executable,
-            "-m",
-            "pip",
-            "install",
-            "build",
-            "-q",
-        ],
-        check=False,
-        capture_output=True,
-        text=True,
-    )
-    assert sdist_proc.returncode == 0, sdist_proc.stdout + sdist_proc.stderr
-    out_dir = tmp_path / "sdist"
-    out_dir.mkdir()
     build = subprocess.run(
-        [sys.executable, "-m", "build", "--sdist", "--outdir", str(out_dir), str(ROOT)],
+        [
+            sys.executable,
+            "-m",
+            "build",
+            "--wheel",
+            "--sdist",
+            "--outdir",
+            str(dist),
+            str(ROOT),
+        ],
         check=False,
         capture_output=True,
         text=True,
     )
     assert build.returncode == 0, build.stdout + build.stderr
-    sdists = list(out_dir.glob("rad_agent-1.0.0.tar.gz")) + list(
-        out_dir.glob("rad-agent-1.0.0.tar.gz")
+    names = sorted(p.name for p in dist.iterdir())
+    wheels = list(dist.glob("rad_agent-1.0.0-*.whl"))
+    sdists = list(dist.glob("rad_agent-1.0.0.tar.gz")) + list(
+        dist.glob("rad-agent-1.0.0.tar.gz")
     )
-    assert sdists, sorted(p.name for p in out_dir.iterdir())
+    assert wheels, names
+    assert sdists, names
 
 
 # ---------------------------------------------------------------- RW-101 1.0 honesty bar
