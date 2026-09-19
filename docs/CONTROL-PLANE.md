@@ -90,8 +90,10 @@ with free-first rotation. Theme **G4-2** is **implemented as v0.5.1** —
 catalog vs inference health, last-Class-C persist, live-gate resume; not a
 control-plane rewrite. Theme **G4-3** is **implemented as v0.5.2** —
 skip-blocked doctor / `rad health` operator workflow; **Version 5 pack**
-shipped as GitHub Release **v0.5.2**. Recommended next **G4-5**
-(fallback / LLM plan quality) is listed, not accepted — see
+shipped as GitHub Release **v0.5.2**. Theme **G4-5** is **implemented as
+v0.5.3** — near-JSON LLM plan recovery and compact coding-plan retry so
+RW-085/086-shaped misses are less often clause-carve; F-17 fallback
+*tasks* stay check-less. **No per-slice GitHub Release** — see
 [ROADMAP.md](ROADMAP.md).
 
 ## Parallelism (Phase 3)

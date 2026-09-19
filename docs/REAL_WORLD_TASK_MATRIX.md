@@ -41,9 +41,9 @@ provider recovers. Gen4 **G4-1** is **implemented as v0.5.0** (scripted
 RW-089). **G4-2** (live-gate resume / provider health) is **implemented
 as v0.5.1** (scripted RW-090 / RW-091). **G4-3** (live-use campaign /
 operator workflow) is **implemented as v0.5.2** (scripted RW-092 / RW-093).
-**Version 5 pack** shipped as GitHub Release **v0.5.2**. Recommended next
-**v0.5.3** candidate **G4-5** (fallback / LLM plan quality) is listed
-in [ROADMAP.md](ROADMAP.md), **not accepted**. Do not rewrite RW-058–093.
+**Version 5 pack** shipped as GitHub Release **v0.5.2**. **G4-5**
+(fallback / LLM plan quality) is **implemented as v0.5.3** (scripted
+RW-094 / RW-095). **No per-slice GitHub Release.** Do not rewrite RW-058–093.
 
 Every `VERIFIED` / `completed` cell is from the control-plane verifier **and** a disk
 check (file exists / contents / hash). A model `DONE:` line is never enough.
@@ -64,8 +64,18 @@ free-model loop **paused**), then live OpenRouter RW-085 (**FAIL**; Class C
 cleared; xxd ENVIRONMENT Class A **CONFIRMED**), then scripted RW-086
 (v0.4.7), then live NIM RW-084 (**BLOCKED Class C**), then scripted RW-083.
 G4-3 is **shipped** as v0.5.2 (scripted); **Version 5 pack** shipped.
-G4-5 is **scoped** (listed, not accepted) — no new RW row. RW-058–093 are
+G4-5 is **shipped** as v0.5.3 (scripted RW-094 / RW-095). RW-058–093 are
 **not rewritten**.
+
+# Scripted LLM plan quality (RW-094 / RW-095)
+
+Lane: scripted planner + controller (no NIM / no OpenRouter) on
+**v0.5.3**. Needle `existing` / off. Caps unchanged. **Not** a live PASS.
+
+| id | date | task | goal (short) | plan | steps | tools | result | disk / verify | ENVIRONMENT? | class | notes |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| RW-094 | 2026-09-19 | plan (scripted) — near-JSON recovered as llm (RW-085/086 shape) | text_analyzer/ 4-clause coding goal; fenced / trailing-comma / tasks-array JSON | 3 coding tasks with checks | parse recover | default **60** unchanged; scripted remaining=12 | **PASS** (`source=llm` attempts=1; checks kept; not clause-carve) | n/a (plan-time); false DONE **0** | **N** | capability (Gen4 G4-5; F-17 stays closed) | Tests `test_llm_plan_quality.py`. Needle OFF. Caps unchanged. No live PASS claim. |
+| RW-095 | 2026-09-19 | plan (scripted) — compact coding retry after a miss | Same RW-085-shaped goal; timeout then valid JSON | 3 coding tasks with checks | 2 plan attempts | remaining=12 | **PASS** (`source=llm` attempts=2; `PLAN_CODING_RETRY` used; exhausted still 4 check-less fallback tasks) | n/a (plan-time); `DONE:` not VERIFIED; false DONE **0** | **N** | capability (Gen4 G4-5; F-17 stays closed) | Tests `test_llm_plan_quality.py`. Needle OFF. Caps unchanged. No live PASS claim. |
 
 # Scripted live-use campaign / operator workflow (RW-092 / RW-093)
 

@@ -16,6 +16,12 @@ model prose. Independent later file-write clauses get empty ``depends_on``
 so they stay READY while an earlier fallback task is stuck (E2 / RW-087).
 Run / verify / read consume steps still chain.
 
+Near-JSON LLM replies (markdown fences, trailing commas, a top-level tasks
+array, extra braces after the first object) are recovered as ``source=llm``
+so a usable coding graph is not discarded into clause-carve (G4-5 / RW-094).
+Coding-goal retries use a compact JSON skeleton instead of the full prompt
+(G4-5 / RW-095). Exhausted retries still ``_fallback(obj)`` with no checks.
+
 When a remaining tool budget is known, a *fat* plan (more tasks than fit at
 2 tools/task, and more than 3 tasks) is retried with a budget nudge; the
 cheaper graph is selected. Exhausted fallback graphs that are still fat are
@@ -37,6 +43,7 @@ from rad.control.budgetplan import (
     pick_cheapest,
 )
 from rad.control.codingloop import (
+    CODING_MARKERS_RE,
     align_checks,
     infer_coding_checks,
     infer_package_dir,
@@ -139,6 +146,24 @@ PLAN_BUDGET_NUDGE = (
     "(each task costs at least 2 tool calls). Prefer 1-3 tasks. No prose."
 )
 
+# Compact coding-plan retry (G4-5). The first attempt still uses PLAN_PROMPT.
+# After a miss, a short skeleton is more likely to yield a structured graph
+# under tight budgets than re-sending the full prompt (RW-085 / RW-086).
+PLAN_CODING_RETRY = """You are the planner of an autonomous agent. Previous reply was not usable JSON.
+Decompose this coding goal into 2-4 file-write tasks that fit the tool budget (each task at least 2 tool calls).
+Independent package files must use empty depends_on. Every task needs machine-checkable checks.
+json_valid on every .json. shell_ok for test_*.py. Check paths MUST use the package prefix when one is named.
+No mkdir-only tasks. No pip. No xxd/hexdump. No extra README unless the goal requires it.
+Reply ONLY with JSON. No prose, no markdown fences.
+
+GOAL: {goal}
+PACKAGE: {package_dir}
+TOOL BUDGET: {tool_budget}
+WORKSPACE: {workspace}
+
+{{"tasks":[{{"id":"t1","text":"...","depends_on":[],"checks":[{{"kind":"file_exists","args":{{"path":"pkg/file"}}}}]}}],"objective_checks":[{{"kind":"json_valid","args":{{"path":"pkg/summary.json"}}}}]}}
+"""
+
 REPLAN_PROMPT = """You are replanning part of an autonomous agent's work after failures.
 GOAL: {goal}
 COMPLETED TASKS:
@@ -195,9 +220,16 @@ class Planner:
             last_fat = False
             for i in range(1 + self.retries):
                 attempts += 1
-                extra = PLAN_BUDGET_NUDGE if last_fat else (PLAN_RETRY_NUDGE if i else "")
+                if last_fat:
+                    call = prompt + PLAN_BUDGET_NUDGE
+                elif i and _coding_goal(obj, pkg):
+                    call = _coding_retry_prompt(obj, self.workspace, tool_budget, pkg) + PLAN_RETRY_NUDGE
+                elif i:
+                    call = prompt + PLAN_RETRY_NUDGE
+                else:
+                    call = prompt
                 try:
-                    raw = self.llm(prompt if not extra else prompt + extra)
+                    raw = self.llm(call)
                     d = _json_obj(raw)
                     g, oc = self._graph_from(obj.id, d, package_dir=pkg)
                     if not g.tasks:
@@ -324,8 +356,114 @@ def _checks(items: List[Dict[str, Any]]) -> List[Check]:
     return out
 
 
+def _coding_goal(obj: Objective, package_dir: Optional[str]) -> bool:
+    """True when a compact coding-plan retry is the right second attempt."""
+    if package_dir:
+        return True
+    blob = " ".join([obj.goal or "", *(obj.success_criteria or [])])
+    return bool(CODING_MARKERS_RE.search(blob))
+
+
+def _coding_retry_prompt(obj: Objective, workspace: str,
+                         tool_budget: Optional[int],
+                         package_dir: Optional[str]) -> str:
+    return PLAN_CODING_RETRY.format(
+        goal=obj.goal,
+        package_dir=package_dir or "(none)",
+        tool_budget=budget_prompt_line(tool_budget),
+        workspace=workspace,
+    )
+
+
+def _strip_trailing_commas(blob: str) -> str:
+    """Drop trailing commas before } or ] outside of strings (small-model JSON)."""
+    out: List[str] = []
+    in_str = False
+    esc = False
+    i = 0
+    n = len(blob)
+    while i < n:
+        ch = blob[i]
+        if in_str:
+            out.append(ch)
+            if esc:
+                esc = False
+            elif ch == "\\":
+                esc = True
+            elif ch == '"':
+                in_str = False
+            i += 1
+            continue
+        if ch == '"':
+            in_str = True
+            out.append(ch)
+            i += 1
+            continue
+        if ch == ",":
+            j = i + 1
+            while j < n and blob[j] in " \t\r\n":
+                j += 1
+            if j < n and blob[j] in "}]":
+                i += 1
+                continue
+        out.append(ch)
+        i += 1
+    return "".join(out)
+
+
+def _balanced_json(raw: str) -> str:
+    """First balanced object or array in raw. Does not parse model prose."""
+    start = None
+    depth = 0
+    in_str = False
+    esc = False
+    for i, ch in enumerate(raw):
+        if start is None:
+            if ch in "{[":
+                start = i
+                depth = 1
+            continue
+        if in_str:
+            if esc:
+                esc = False
+            elif ch == "\\":
+                esc = True
+            elif ch == '"':
+                in_str = False
+            continue
+        if ch == '"':
+            in_str = True
+            continue
+        if ch in "{[":
+            depth += 1
+        elif ch in "}]":
+            depth -= 1
+            if depth == 0:
+                return raw[start:i + 1]
+    raise ValueError("no JSON in plan")
+
+
 def _json_obj(raw: str) -> Dict[str, Any]:
-    m = re.search(r"\{.*\}", raw or "", re.S)
-    if not m:
+    """Parse a structured plan object. Recover near-JSON; reject prose.
+
+    G4-5: markdown fences, trailing commas, a top-level tasks array, and
+    extra braces after the first object used to discard a usable coding
+    graph into ``source=fallback``. Prose / timeout text / empty still
+    raise so ``_fallback`` stays goal-only (F-17).
+    """
+    text = (raw or "").strip()
+    if not text:
         raise ValueError("no JSON in plan")
-    return json.loads(m.group(0))
+    fence = re.search(r"```(?:json)?\s*([\s\S]*?)```", text, re.I)
+    if fence and fence.group(1).strip():
+        text = fence.group(1).strip()
+    blob = _strip_trailing_commas(_balanced_json(text))
+    try:
+        data = json.loads(blob)
+    except json.JSONDecodeError as exc:
+        raise ValueError("no JSON in plan") from exc
+    if isinstance(data, list):
+        return {"tasks": data}
+    if isinstance(data, dict):
+        return data
+    raise ValueError("no JSON in plan")
