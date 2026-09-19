@@ -1,34 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  ApiError,
-  AuthoritySnapshot,
-  ObjectiveRow,
-  RadClient,
-  Settings,
-  Status,
-  TaskRow,
-} from "./api";
-import {
-  apiBase,
-  apiToken,
-  backendInfo,
-  backendStart,
-  backendStop,
-  isTauri,
-} from "./backend";
-
-type Page = "chat" | "objectives" | "tasks" | "permissions" | "settings";
-
-const PAGES: { id: Page; label: string }[] = [
-  { id: "chat", label: "Chat" },
-  { id: "objectives", label: "Objectives" },
-  { id: "tasks", label: "Tasks" },
-  { id: "permissions", label: "Permissions" },
-  { id: "settings", label: "Settings" },
-];
+import { useCallback, useEffect, useState } from "react";
+import { ApiError, AuthoritySnapshot, ObjectiveRow, RadClient, Status, TaskRow } from "./api";
+import { apiBase, apiToken, backendInfo, backendStart, backendStop, isTauri } from "./backend";
 
 export default function App() {
-  const [page, setPage] = useState<Page>("chat");
   const [client, setClient] = useState<RadClient | null>(null);
   const [status, setStatus] = useState<Status | null>(null);
   const [auth, setAuth] = useState<AuthoritySnapshot | null>(null);
@@ -55,13 +29,12 @@ export default function App() {
     try {
       if (isTauri()) {
         const info = await backendInfo();
-        let token = "";
         try {
           await backendStart(info.port || 7331);
         } catch {
           /* may already be running externally */
         }
-        token = await apiToken();
+        const token = await apiToken();
         if (!token) throw new Error("no API token — start `rad serve` once to create ~/.rad/api.token");
         await connect(apiBase(info.port || 7331), token);
         return;
@@ -94,6 +67,8 @@ export default function App() {
       await backendStop();
     } finally {
       setClient(null);
+      setStatus(null);
+      setAuth(null);
       setBackend("down");
     }
   }, []);
@@ -101,25 +76,30 @@ export default function App() {
   const model = status?.chain?.[0] || "no brain";
 
   return (
-    <div className="app">
-      <aside className="sidebar">
-        <div className="brand">
-          RAD Desktop
-          <span>0.1.0-alpha · authority foundation</span>
+    <div className="app-shell">
+      <header className="topbar">
+        <div>
+          <div className="eyebrow">RAD Desktop 0.1</div>
+          <h1>Minimal app layer</h1>
         </div>
-        <nav className="nav">
-          {PAGES.map((p) => (
-            <button
-              key={p.id}
-              className={page === p.id ? "active" : ""}
-              onClick={() => setPage(p.id)}
-            >
-              {p.label}
+        <div className="topbar-actions">
+          <span>
+            <i className={`dot ${backend === "connected" ? "ok" : "off"}`} />
+            {backend === "connected" ? "backend connected" : backend}
+          </span>
+          <span className={`pill ${auth?.profile || "STANDARD"}`}>{auth?.profile || "—"}</span>
+          <button className="btn ghost" onClick={() => void boot()}>
+            Reconnect
+          </button>
+          {isTauri() && backend === "connected" && (
+            <button className="btn ghost" onClick={() => void shutdown()}>
+              Shut down
             </button>
-          ))}
-        </nav>
-      </aside>
-      <main className="main">
+          )}
+        </div>
+      </header>
+
+      <main className="main simple-main">
         {backend !== "connected" || !client || !auth ? (
           <Connect
             backend={backend}
@@ -132,34 +112,9 @@ export default function App() {
             onManual={() => connect(manualBase, manualToken).catch((e) => setError(String(e)))}
           />
         ) : (
-          <Surface
-            page={page}
-            client={client}
-            auth={auth}
-            status={status}
-            onAuth={setAuth}
-            onRefresh={refresh}
-          />
+          <Dashboard client={client} auth={auth} status={status} model={model} onRefresh={refresh} />
         )}
       </main>
-      <footer className="status">
-        <span>
-          <i className={`dot ${backend === "connected" ? "ok" : "off"}`} />
-          {backend === "connected" ? "backend connected" : backend}
-        </span>
-        <span className={`pill ${auth?.profile || "STANDARD"}`}>{auth?.profile || "—"}</span>
-        <span>{model}</span>
-        <span>
-          budget {auth?.budgets.tool_calls ?? 60} tools / {auth?.budgets.model_calls ?? 80} model
-        </span>
-        <span style={{ marginLeft: "auto" }}>
-          {isTauri() && (
-            <button className="btn ghost" style={{ padding: "2px 8px" }} onClick={() => void shutdown()}>
-              shut down
-            </button>
-          )}
-        </span>
-      </footer>
     </div>
   );
 }
@@ -175,11 +130,11 @@ function Connect(props: {
   onManual: () => void;
 }) {
   return (
-    <div className="connect">
-      <h1>Connect to RAD</h1>
+    <div className="connect minimal-width">
+      <h2>Connect to RAD</h2>
       <p className="lead">
-        Desktop is a surface over the existing Python API. It cannot run tools, raise budgets,
-        or bypass Policy.decide.
+        This desktop app is only a small surface over the existing Python API. Tools still run in the
+        backend control plane.
       </p>
       {props.error && <p className="err">{props.error}</p>}
       <div className="card">
@@ -190,7 +145,7 @@ function Connect(props: {
       <div className="card">
         <label>API base</label>
         <input value={props.manualBase} onChange={(e) => props.setManualBase(e.target.value)} />
-        <label style={{ marginTop: 10 }}>Bearer token</label>
+        <label style={{ marginTop: 10 }}>API token</label>
         <input
           value={props.manualToken}
           onChange={(e) => props.setManualToken(e.target.value)}
@@ -206,69 +161,141 @@ function Connect(props: {
   );
 }
 
-function Surface(props: {
-  page: Page;
+function Dashboard(props: {
   client: RadClient;
   auth: AuthoritySnapshot;
   status: Status | null;
-  onAuth: (a: AuthoritySnapshot) => void;
+  model: string;
   onRefresh: () => Promise<void>;
 }) {
-  switch (props.page) {
-    case "chat":
-      return <Chat client={props.client} />;
-    case "objectives":
-      return <Objectives client={props.client} />;
-    case "tasks":
-      return <Tasks client={props.client} />;
-    case "permissions":
-      return <Permissions client={props.client} auth={props.auth} onAuth={props.onAuth} />;
-    case "settings":
-      return <SettingsPage client={props.client} status={props.status} onRefresh={props.onRefresh} />;
-    default: {
-      const _n: never = props.page;
-      return <p className="err">unknown page {_n}</p>;
+  const [objectives, setObjectives] = useState<ObjectiveRow[]>([]);
+  const [tasks, setTasks] = useState<TaskRow[]>([]);
+  const [feedError, setFeedError] = useState("");
+
+  const load = useCallback(async () => {
+    setFeedError("");
+    try {
+      const [objectiveData, taskData] = await Promise.all([
+        props.client.objectives(true),
+        props.client.tasks(),
+        props.onRefresh(),
+      ]);
+      setObjectives(objectiveData.objectives);
+      setTasks(taskData.tasks);
+    } catch (e) {
+      setFeedError(e instanceof Error ? e.message : String(e));
     }
-  }
+  }, [props]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  return (
+    <div className="dashboard">
+      <section className="hero card">
+        <div>
+          <div className="eyebrow">Surface over rad serve</div>
+          <h2>Minimal desktop view for chat, objectives, and task status.</h2>
+        </div>
+        <div className="hero-grid">
+          <Metric label="Profile" value={props.auth.profile} />
+          <Metric label="Model" value={props.model} />
+          <Metric
+            label="Objective summary"
+            value={`${props.status?.objectives?.total ?? 0} total · ${props.status?.objectives?.open_tasks ?? 0} open tasks`}
+          />
+          <Metric
+            label="Budget"
+            value={`${props.auth.budgets.tool_calls} tools · ${props.auth.budgets.model_calls} model`}
+          />
+        </div>
+        <div className="row">
+          <button className="btn ghost" onClick={() => void load()}>
+            Refresh
+          </button>
+          <span className="lead compact">{props.auth.blurb}</span>
+        </div>
+        {feedError && <p className="err">{feedError}</p>}
+      </section>
+
+      <section className="dashboard-grid">
+        <ChatCard client={props.client} />
+        <ObjectivesCard client={props.client} objectives={objectives} onCreated={load} />
+      </section>
+
+      <section className="dashboard-grid secondary">
+        <ListCard
+          title="Recent objectives"
+          empty="No active objectives"
+          items={objectives.slice(0, 6).map((objective) => ({
+            key: objective.id,
+            title: objective.goal,
+            meta: `${objective.status} · ${objective.verification || "unverified"}`,
+          }))}
+        />
+        <ListCard
+          title="Recent tasks"
+          empty="No tasks yet"
+          items={tasks.slice(0, 8).map((task) => ({
+            key: `${task.objective_id || "root"}-${task.id}`,
+            title: task.title || task.text || task.id,
+            meta: `${task.status} · ${task.verification?.status || "unverified"}`,
+          }))}
+        />
+      </section>
+    </div>
+  );
 }
 
-function Chat({ client }: { client: RadClient }) {
+function Metric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="metric">
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
+  );
+}
+
+function ChatCard({ client }: { client: RadClient }) {
   const [text, setText] = useState("");
-  const [msgs, setMsgs] = useState<Array<{ who: "user" | "jerry"; text: string }>>([]);
+  const [messages, setMessages] = useState<Array<{ who: "user" | "rad"; text: string }>>([]);
   const [busy, setBusy] = useState(false);
+
   const send = async () => {
-    const t = text.trim();
-    if (!t || busy) return;
+    const trimmed = text.trim();
+    if (!trimmed || busy) return;
     setText("");
-    setMsgs((m) => [...m, { who: "user", text: t }]);
+    setMessages((current) => [...current, { who: "user", text: trimmed }]);
     setBusy(true);
     try {
-      const r = await client.chat(t);
-      setMsgs((m) => [...m, { who: "jerry", text: r.reply }]);
+      const reply = await client.chat(trimmed);
+      setMessages((current) => [...current, { who: "rad", text: reply.reply }]);
     } catch (e) {
-      setMsgs((m) => [...m, { who: "jerry", text: e instanceof Error ? e.message : String(e) }]);
+      setMessages((current) => [
+        ...current,
+        { who: "rad", text: e instanceof Error ? e.message : String(e) },
+      ]);
     } finally {
       setBusy(false);
     }
   };
+
   return (
-    <div className="chat">
-      <h1>Jerry</h1>
-      <p className="lead">
-        Operator layer over the RAD session. Tools still pass Policy.decide and the executor.
-        Jerry cannot run a private tool path.
-      </p>
-      <div className="msgs">
-        {msgs.length === 0 && (
-          <div className="bubble jerry">Ask anything. Objectives you create go through the control plane.</div>
+    <div className="card panel">
+      <h2>Chat</h2>
+      <p className="lead">Send a message to the existing RAD backend.</p>
+      <div className="msgs compact-feed">
+        {messages.length === 0 && (
+          <div className="bubble rad">Messages stay in the existing backend session.</div>
         )}
-        {msgs.map((m, i) => (
-          <div key={i} className={`bubble ${m.who}`}>
-            {m.text}
+        {messages.map((message, index) => (
+          <div key={`${message.who}-${index}`} className={`bubble ${message.who}`}>
+            {message.text}
           </div>
         ))}
       </div>
-      <div className="row">
+      <div className="row stack-mobile">
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
@@ -278,279 +305,86 @@ function Chat({ client }: { client: RadClient }) {
               void send();
             }
           }}
-          placeholder="Message Jerry…"
+          placeholder="Message RAD…"
         />
         <button className="btn" disabled={busy} onClick={() => void send()}>
-          Send
+          {busy ? "Sending…" : "Send"}
         </button>
       </div>
     </div>
   );
 }
 
-function Objectives({ client }: { client: RadClient }) {
-  const [rows, setRows] = useState<ObjectiveRow[]>([]);
-  const [goal, setGoal] = useState("");
-  const [detail, setDetail] = useState<string>("");
-  const [err, setErr] = useState("");
-  const load = useCallback(async () => {
-    const r = await client.objectives();
-    setRows(r.objectives);
-  }, [client]);
-  useEffect(() => {
-    void load();
-  }, [load]);
-  const create = async () => {
-    setErr("");
-    try {
-      const o = await client.createObjective(goal);
-      setGoal("");
-      setDetail(o.note || (o.started ? "started" : "created PENDING"));
-      await load();
-    } catch (e) {
-      setErr(e instanceof ApiError ? e.message : String(e));
-    }
-  };
-  const inspect = async (id: string) => {
-    const t = await client.trace(id);
-    setDetail(JSON.stringify({ verification: t.verification, tasks: t.tasks }, null, 2));
-  };
-  return (
-    <div>
-      <h1>Objectives</h1>
-      <p className="lead">Existing control plane. Desktop displays objectives, tasks and verification — it is not a React task engine.</p>
-      <div className="card">
-        <label>New objective</label>
-        <input value={goal} onChange={(e) => setGoal(e.target.value)} placeholder="goal" />
-        <div className="row" style={{ marginTop: 10 }}>
-          <button className="btn" onClick={() => void create()}>
-            Create
-          </button>
-          <button className="btn ghost" onClick={() => void load()}>
-            Refresh
-          </button>
-        </div>
-        {err && <p className="err">{err}</p>}
-        {detail && <pre className="lead" style={{ whiteSpace: "pre-wrap" }}>{detail}</pre>}
-      </div>
-      <div className="card">
-        <table>
-          <thead>
-            <tr>
-              <th>id</th>
-              <th>status</th>
-              <th>verification</th>
-              <th>goal</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((o) => (
-              <tr key={o.id} onClick={() => void inspect(o.id)} style={{ cursor: "pointer" }}>
-                <td>{o.id.slice(0, 12)}</td>
-                <td>{o.status}</td>
-                <td>{o.verification || "—"}</td>
-                <td>{o.goal}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
-function Tasks({ client }: { client: RadClient }) {
-  const [rows, setRows] = useState<TaskRow[]>([]);
-  useEffect(() => {
-    void client.tasks().then((r) => setRows(r.tasks));
-  }, [client]);
-  return (
-    <div>
-      <h1>Tasks</h1>
-      <p className="lead">Read-only view of control-plane tasks and their verification status.</p>
-      <div className="card">
-        <table>
-          <thead>
-            <tr>
-              <th>status</th>
-              <th>verified</th>
-              <th>task</th>
-              <th>objective</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((t) => (
-              <tr key={`${t.objective_id}-${t.id}`}>
-                <td>{t.status}</td>
-                <td>{t.verification?.status || "—"}</td>
-                <td>{t.title || t.text || t.id}</td>
-                <td>{t.goal || t.objective_id}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
-function Permissions({
-  client,
-  auth,
-  onAuth,
-}: {
+function ObjectivesCard(props: {
   client: RadClient;
-  auth: AuthoritySnapshot;
-  onAuth: (a: AuthoritySnapshot) => void;
+  objectives: ObjectiveRow[];
+  onCreated: () => Promise<void>;
 }) {
-  const [profile, setProfile] = useState(auth.profile);
-  const [confirmU, setConfirmU] = useState(false);
-  const [err, setErr] = useState("");
-  const [ok, setOk] = useState("");
-  const apply = async () => {
-    setErr("");
-    setOk("");
+  const [goal, setGoal] = useState("");
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [creating, setCreating] = useState(false);
+
+  const create = async () => {
+    const trimmed = goal.trim();
+    if (!trimmed || creating) return;
+    setCreating(true);
+    setError("");
+    setMessage("");
     try {
-      const next = await client.setAuthority({
-        profile,
-        confirm_unrestricted: profile === "UNRESTRICTED" ? confirmU : undefined,
-      });
-      onAuth(next);
-      setOk(`profile ${next.profile}`);
+      const created = await props.client.createObjective(trimmed);
+      setGoal("");
+      setMessage(created.note || (created.started ? "Objective started" : "Objective created"));
+      await props.onCreated();
     } catch (e) {
-      setErr(e instanceof Error ? e.message : String(e));
+      setError(e instanceof ApiError ? e.message : String(e));
+    } finally {
+      setCreating(false);
     }
   };
-  const groups = useMemo(() => Object.entries(auth.capabilities), [auth]);
+
   return (
-    <div>
-      <h1>Permissions</h1>
-      <p className="lead">
-        Authority is what is allowed. Scope is how far. Confirmation is whether to ask.
-        Budget and Policy.decide stay in the Python core.
-      </p>
-      {auth.unrestricted && (
-        <div className="banner">
-          UNRESTRICTED is explicitly user-authorized autonomy — not a hidden or “unsafe by
-          definition” path. Hard layer, executor, budgets, audit, provenance and verification remain.
-        </div>
-      )}
-      <div className="card">
-        <label>Authority profile</label>
-        <select value={profile} onChange={(e) => setProfile(e.target.value as typeof profile)}>
-          {["SAFE", "STANDARD", "AUTONOMOUS", "UNRESTRICTED", "CUSTOM"].map((p) => (
-            <option key={p} value={p}>
-              {p}
-            </option>
-          ))}
-        </select>
-        <p className="lead" style={{ marginTop: 10 }}>{auth.blurb}</p>
-        {profile === "UNRESTRICTED" && (
-          <label>
-            <input
-              type="checkbox"
-              checked={confirmU}
-              onChange={(e) => setConfirmU(e.target.checked)}
-              style={{ width: "auto", marginRight: 8 }}
-            />
-            I explicitly authorize UNRESTRICTED autonomy within configured scope
-          </label>
-        )}
-        <div className="row" style={{ marginTop: 12 }}>
-          <button className={profile === "UNRESTRICTED" ? "btn warn" : "btn"} onClick={() => void apply()}>
-            Apply profile
-          </button>
-        </div>
-        {err && <p className="err">{err}</p>}
-        {ok && <p className="ok">{ok}</p>}
+    <div className="card panel">
+      <h2>Objectives</h2>
+      <p className="lead">Create a new objective and watch the active queue.</p>
+      <label>New objective</label>
+      <input value={goal} onChange={(e) => setGoal(e.target.value)} placeholder="Ship a minimal desktop layer" />
+      <div className="row" style={{ marginTop: 12 }}>
+        <button className="btn" disabled={creating} onClick={() => void create()}>
+          {creating ? "Creating…" : "Create"}
+        </button>
       </div>
-      <div className="card">
-        <label>Confirmation</label>
-        <div>{auth.confirmation} {auth.confirmation_is_automatic ? "(ASK→ALLOW; DENY/hard/budget unchanged)" : ""}</div>
-        <label style={{ marginTop: 10 }}>Scope</label>
-        <div>
-          workspace_only={String(auth.scopes.workspace_only)}
-          {auth.scopes.extra_paths.length ? ` extra=${auth.scopes.extra_paths.join(", ")}` : ""}
-          {auth.scopes.hosts.length ? ` hosts=${auth.scopes.hosts.join(", ")}` : ""}
-        </div>
-        <label style={{ marginTop: 10 }}>Budget (existing defaults — not raised)</label>
-        <div>
-          tools {auth.budgets.tool_calls} · model {auth.budgets.model_calls} · retries {auth.budgets.retries}
-        </div>
-      </div>
-      <div className="grid">
-        {groups.map(([name, info]) => (
-          <div key={name} className={`cap ${info.granted ? "" : "denied"}`}>
-            <b>{name}</b>
-            <div className="eff">
-              {info.effect} → {info.capability}
-            </div>
+      {error && <p className="err">{error}</p>}
+      {message && <p className="ok">{message}</p>}
+      <div className="mini-list">
+        {props.objectives.slice(0, 5).map((objective) => (
+          <div key={objective.id} className="mini-item">
+            <strong>{objective.goal}</strong>
+            <span>{objective.status}</span>
           </div>
         ))}
+        {props.objectives.length === 0 && <p className="lead compact">No active objectives</p>}
       </div>
     </div>
   );
 }
 
-function SettingsPage({
-  client,
-  status,
-  onRefresh,
-}: {
-  client: RadClient;
-  status: Status | null;
-  onRefresh: () => Promise<void>;
+function ListCard(props: {
+  title: string;
+  empty: string;
+  items: Array<{ key: string; title: string; meta: string }>;
 }) {
-  const [s, setS] = useState<Settings | null>(null);
-  const [err, setErr] = useState("");
-  useEffect(() => {
-    void client.settings().then(setS);
-  }, [client]);
-  if (!s) return <p className="lead">Loading settings…</p>;
-  const save = async () => {
-    setErr("");
-    try {
-      const next = await client.setSettings({
-        workspace: s.workspace,
-        free_lock: s.free_lock,
-        model: s.model,
-        force_provider: s.force_provider,
-      });
-      setS(next);
-      await onRefresh();
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : String(e));
-    }
-  };
   return (
-    <div>
-      <h1>Settings</h1>
-      <p className="lead">{s.note}</p>
-      <div className="card">
-        <label>Workspace</label>
-        <input value={s.workspace} onChange={(e) => setS({ ...s, workspace: e.target.value })} />
-        <label style={{ marginTop: 10 }}>Pinned model</label>
-        <input value={s.model || ""} onChange={(e) => setS({ ...s, model: e.target.value || null })} />
-        <label style={{ marginTop: 10 }}>
-          <input
-            type="checkbox"
-            checked={s.free_lock}
-            onChange={(e) => setS({ ...s, free_lock: e.target.checked })}
-            style={{ width: "auto", marginRight: 8 }}
-          />
-          free-lock (paid providers impossible)
-        </label>
-        <div className="row" style={{ marginTop: 12 }}>
-          <button className="btn" onClick={() => void save()}>
-            Save
-          </button>
-        </div>
-        {err && <p className="err">{err}</p>}
-      </div>
-      <div className="card">
-        <div>Home: {status?.home}</div>
-        <div>Needle / tool_router: {s.tool_router} (off unless you set it in CLI)</div>
-        <div>Version: {status?.version}</div>
+    <div className="card panel">
+      <h2>{props.title}</h2>
+      <div className="mini-list">
+        {props.items.length === 0 && <p className="lead compact">{props.empty}</p>}
+        {props.items.map((item) => (
+          <div key={item.key} className="mini-item">
+            <strong>{item.title}</strong>
+            <span>{item.meta}</span>
+          </div>
+        ))}
       </div>
     </div>
   );
