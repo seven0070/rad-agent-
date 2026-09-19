@@ -56,10 +56,10 @@ Isolated homes `/tmp/rad-gen4-scope-gate` (doctor, acceptance) and `/tmp/rad-gen
 | gate | result |
 |------|--------|
 | `rad version` | **PASS** v0.4.9 |
-| `python3 -m pytest -q` | *(recorded after this write)* |
-| `rad doctor --offline` | *(recorded after this write)* |
-| `rad acceptance` | *(recorded after this write)* |
-| `rad realworld` | *(recorded after this write)* |
+| `python3 -m pytest -q` | **PASS** 569 passed in 11.62s |
+| `rad doctor --offline` | **PASS** 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR, verdict READY, exit 0 |
+| `rad acceptance` | **PASS** 50/50 — `/tmp/rad-gen4-scope-gate/acceptance/20260919-053618_gate.json` |
+| `rad realworld` | **PASS** 10/11 + 1 BLOCKED — `/tmp/rad-gen4-scope-rw/realworld/20260919-053622_realworld.json` |
 | Needle default | **PASS** (`existing`) |
 | Caps | **PASS** `max_plan_tasks` 16; `Budget.tool_calls` 60 |
 | Package | **0.4.9** (no bump) |
