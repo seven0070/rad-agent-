@@ -2647,10 +2647,10 @@ text_analyzer@12 now PASS.
 
 | gate | result |
 |---|---|
-| `python -m pytest -q` | pending (run after commit) |
-| `rad doctor --offline` | pending |
-| `rad acceptance` | pending |
-| `rad realworld` | pending |
+| `python -m pytest -q` | **652 passed** in 14.34s |
+| `rad doctor --offline` | READY — 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR (`RAD_HOME=/tmp/rad-g51-gate`) |
+| `rad acceptance` | **50/50 PASSED** (`/tmp/rad-g51-gate/acceptance/20260919-080947_gate.json`) |
+| `rad realworld` | **10 passed / 1 BLOCKED / 0 failed** (`live_nim` BLOCKED; `/tmp/rad-g51-rw/realworld/20260919-081002_realworld.json`) |
 | Package | **1.0.0** |
 | Release / tag | **none** — Version 1 pack after Sanath merges |
 | Live this patch | **not re-run** — not a live PASS claim |
