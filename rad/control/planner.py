@@ -12,7 +12,9 @@ silently remapped (F-26).
 A transient LLM plan failure (timeout, empty, malformed, non-JSON, empty graph)
 is retried a bounded number of times for a structured JSON plan *before*
 falling back. Fallback still splits `obj.goal` only (F-17); it never parses
-model prose.
+model prose. Independent later file-write clauses get empty ``depends_on``
+so they stay READY while an earlier fallback task is stuck (E2 / RW-087).
+Run / verify / read consume steps still chain.
 
 When a remaining tool budget is known, a *fat* plan (more tasks than fit at
 2 tools/task, and more than 3 tasks) is retried with a budget nudge; the
@@ -47,6 +49,43 @@ from rad.control.tasks import Check, Task
 DEFAULT_PLAN_RETRIES = 1   # one retry after the first failure (2 attempts)
 MAX_PLAN_RETRIES = 3       # hard cap — never an unbounded plan loop
 
+# Independent later package-file clauses (E2 / RW-087). Fallback used to
+# linearly chain every clause (depends_on=[prev]). That made later file
+# writes unready while an early task was stuck, so E1 leftover reserve
+# was 0. Distinct file-write clauses get empty depends_on; run/verify/read
+# consume steps still chain. F-17 stays: goal-only split, cap 7, no checks.
+_FILE_EXT = r"py|txt|json|md|toml|ya?ml|ini|cfg|csv|html|rst"
+_FILE_OR_LAYOUT = re.compile(
+    rf"(?:\b[\w./-]+\.(?:{_FILE_EXT})\b|"
+    r"\b(?:file|files|package|layout|directory|folder|project|"
+    r"readme|input|summary|tests?)\b)",
+    re.I,
+)
+_WRITE_VERB = re.compile(
+    r"\b(?:write|create|add|implement|emit|put|save|draft|make|touch)\b",
+    re.I,
+)
+_SEQUENTIAL = re.compile(
+    r"\b(?:run|verify|read|check|execute|prove|assert|inspect|review)\b"
+    r".{0,48}\b(?:tests?|it|them|back|result|checks?|file|output)\b|"
+    r"\b(?:run|verify|execute)\s+the\s+tests\b|"
+    r"\bread\s+it\s+back\b|"
+    r"\bverify\s+the\s+result\b",
+    re.I,
+)
+
+
+def independent_file_clause(text: str) -> bool:
+    """True when a fallback clause is a distinct file write, not a consume step."""
+    t = (text or "").strip()
+    if not t:
+        return False
+    if _SEQUENTIAL.search(t):
+        return False
+    if _WRITE_VERB.search(t) and _FILE_OR_LAYOUT.search(t):
+        return True
+    return bool(re.search(rf"\b[\w./-]+\.(?:{_FILE_EXT})\b", t, re.I))
+
 PLAN_PROMPT = """You are the planner of an autonomous agent. Decompose the goal into the smallest set of concrete tasks that covers the success criteria (typically 2-6; never more than 16).
 A single-file write or one-command goal is 1-3 tasks. Do not invent extra review, backup, polish, README, or documentation tasks unless the criteria require them.
 Each task must be independently executable with tools (shell, read/write files in the workspace, web search/fetch).
@@ -73,6 +112,7 @@ write_file creates parent directories. Prefer fewer tasks that each write and ve
 Do not mkdir a path write_file already created.
 Do not run tests (python test_*.py / pytest) before those test files exist. Write files first, then run tests.
 For stdlib-only coding, do not call xxd/hexdump (or other optional host checksum utilities) to inspect files. Use write_file, read_file, or python hashlib.
+Independent package-file writes (distinct files that do not run/verify prior work) must use empty depends_on. Do not linearly chain later files behind an earlier write. Sequential run/verify/read steps may still depend_on the prior task.
 For "exact N-line" files include file_line_count.
 
 GOAL: {goal}
@@ -257,7 +297,10 @@ class Planner:
         g = TaskGraph()
         prev = None
         for s in steps:
-            t = Task.new(obj.id, s, depends_on=[prev] if prev else [])
+            deps: List[str] = []
+            if prev and not independent_file_clause(s):
+                deps = [prev]
+            t = Task.new(obj.id, s, depends_on=deps)
             g.add(t)
             prev = t.id
         return g

@@ -2,7 +2,7 @@
 
 Living log of **measured** RAD failures found in live or reconstructed use.
 Architecture is frozen. Needle stays experimental and off by default. This is not AGI/ASI.
-Operating spine: [ROADMAP.md](ROADMAP.md) (adopted 2026-09-18). Gen1 complete on 0.2.3; **Gen2 complete** on 0.3.0–0.3.2. Verified coding loop is **implemented as v0.3.0** (F-20260918-24 / RW-064). Live retest **RW-065**. Plan-timeout resilience is **implemented as v0.3.1** (F-20260918-27 / scripted RW-066) and **used** (live RW-066 / F-20260918-28). Budget-aware planning is **implemented as v0.3.2** (F-20260918-29 / RW-067). Live NIM use of v0.3.2 is **RW-068 PASS** (F-20260918-30) and **RW-069 FAIL** (F-20260918-31). Path-aligned checks are **implemented as v0.4.0** (F-20260918-32 / RW-070). Live NIM retest of v0.4.0 is **RW-071 FAIL** (F-20260918-33; theme 1 live-confirmed). Multi-file contracts under tight budgets are **implemented as v0.4.1** (F-20260918-34 / RW-072). Live NIM retest of v0.4.1 is **RW-073 FAIL** (F-20260918-35; theme 1/2 live-confirmed). ASCII-tree `package_dir` is **implemented as v0.4.2** (F-20260918-36 / RW-074). Live NIM retest of v0.4.2 is **RW-075 FAIL** (F-20260918-37; ASCII-tree obj-checks live-confirmed). First-task thrash is **implemented as v0.4.3** (F-20260918-38 / RW-076). Live NIM retest of v0.4.3 is **RW-077 FAIL** (F-20260918-39; pip/DONE Class A **live-consistent**; mkdir File-exists action noise is F-40). mkdir already-exists action noise is **implemented as v0.4.4** (F-20260918-40 / RW-078). Live NIM retest of v0.4.4 is **RW-079 FAIL** (F-20260918-41; mkdir File-exists **not live-hit**; premature-test ENVIRONMENT is F-42). Premature-test ENVIRONMENT is **implemented as v0.4.5** (F-20260918-42 / RW-080). Live NIM retest of v0.4.5 is **RW-081 FAIL** (F-20260918-43; mkdir File-exists **live Y**; premature-test ENVIRONMENT **not live-hit**; pip/echo + root pollution residual). Pip thrash + root `analyzer.py` pollution Class A is **NOT CONFIRMED** (F-20260918-44 / scripted RW-082). Task-boundary yield / leftover-budget dispatch is **implemented as v0.4.6** (F-20260918-45 / scripted RW-083). Live NIM retest of v0.4.6 is **RW-084 BLOCKED Class C** (F-20260919-46; HTTP **403 Authorization failed** on all `chat/completions`; `/v1/models` **200**; tools **0/12**; E1 leftover-budget yield **not live-tested**). Live OpenRouter free retest of v0.4.6 is **RW-085 FAIL** (F-20260919-47; tools **11/12**; `xxd` ENVIRONMENT repair; E1 **not live**). Missing optional checksum/hex utility ENVIRONMENT is **Class A CONFIRMED** and **implemented as v0.4.7** (F-20260919-48 / scripted RW-086). Live OpenRouter free retest of v0.4.7 is **RW-086 FAIL** (F-20260919-49; tools **12/12**; xxd Class A thrash **CLEARED**; E1 **not live**; late HTTP **429** `free-models-per-day`). Live OpenRouter free-model loop is **paused** until `free-models-per-day` rate limit resets. Live NIM loop remains **paused** (Class C). This ledger is evidence. Do not rewrite RW-058–085. Scripted RW-066 (F-27) is preserved.
+Operating spine: [ROADMAP.md](ROADMAP.md) (adopted 2026-09-18). Gen1 complete on 0.2.3; **Gen2 complete** on 0.3.0–0.3.2. Verified coding loop is **implemented as v0.3.0** (F-20260918-24 / RW-064). Live retest **RW-065**. Plan-timeout resilience is **implemented as v0.3.1** (F-20260918-27 / scripted RW-066) and **used** (live RW-066 / F-20260918-28). Budget-aware planning is **implemented as v0.3.2** (F-20260918-29 / RW-067). Live NIM use of v0.3.2 is **RW-068 PASS** (F-20260918-30) and **RW-069 FAIL** (F-20260918-31). Path-aligned checks are **implemented as v0.4.0** (F-20260918-32 / RW-070). Live NIM retest of v0.4.0 is **RW-071 FAIL** (F-20260918-33; theme 1 live-confirmed). Multi-file contracts under tight budgets are **implemented as v0.4.1** (F-20260918-34 / RW-072). Live NIM retest of v0.4.1 is **RW-073 FAIL** (F-20260918-35; theme 1/2 live-confirmed). ASCII-tree `package_dir` is **implemented as v0.4.2** (F-20260918-36 / RW-074). Live NIM retest of v0.4.2 is **RW-075 FAIL** (F-20260918-37; ASCII-tree obj-checks live-confirmed). First-task thrash is **implemented as v0.4.3** (F-20260918-38 / RW-076). Live NIM retest of v0.4.3 is **RW-077 FAIL** (F-20260918-39; pip/DONE Class A **live-consistent**; mkdir File-exists action noise is F-40). mkdir already-exists action noise is **implemented as v0.4.4** (F-20260918-40 / RW-078). Live NIM retest of v0.4.4 is **RW-079 FAIL** (F-20260918-41; mkdir File-exists **not live-hit**; premature-test ENVIRONMENT is F-42). Premature-test ENVIRONMENT is **implemented as v0.4.5** (F-20260918-42 / RW-080). Live NIM retest of v0.4.5 is **RW-081 FAIL** (F-20260918-43; mkdir File-exists **live Y**; premature-test ENVIRONMENT **not live-hit**; pip/echo + root pollution residual). Pip thrash + root `analyzer.py` pollution Class A is **NOT CONFIRMED** (F-20260918-44 / scripted RW-082). Task-boundary yield / leftover-budget dispatch is **implemented as v0.4.6** (F-20260918-45 / scripted RW-083). Live NIM retest of v0.4.6 is **RW-084 BLOCKED Class C** (F-20260919-46; HTTP **403 Authorization failed** on all `chat/completions`; `/v1/models` **200**; tools **0/12**; E1 leftover-budget yield **not live-tested**). Live OpenRouter free retest of v0.4.6 is **RW-085 FAIL** (F-20260919-47; tools **11/12**; `xxd` ENVIRONMENT repair; E1 **not live**). Missing optional checksum/hex utility ENVIRONMENT is **Class A CONFIRMED** and **implemented as v0.4.7** (F-20260919-48 / scripted RW-086). Live OpenRouter free retest of v0.4.7 is **RW-086 FAIL** (F-20260919-49; tools **12/12**; xxd Class A thrash **CLEARED**; E1 **not live**; late HTTP **429** `free-models-per-day`). Independent later package files is **implemented as v0.4.8** (F-20260919-50 / scripted RW-087). Live OpenRouter free-model loop is **paused** until `free-models-per-day` rate limit resets. Live NIM loop remains **paused** (Class C). This ledger is evidence. Do not rewrite RW-058–086. Scripted RW-066 (F-27) is preserved.
 
 No secrets belong here: never paste API keys, vault contents, account tokens, or full
 provider payloads. Paths under `/tmp/…` and objective ids are fine.
@@ -2000,6 +2000,49 @@ RAD_HOME=/tmp/rad_prod_rw086_81609c3b rad objective run "<ASCII-tree text_analyz
 | False completion | **0** |
 | Live OpenRouter this patch | **FAIL** recorded; free-model loop **paused** until `free-models-per-day` resets — not a live PASS claim |
 | Live NIM this patch | **BLOCKED Class C** (RW-084; loop remains **paused**) |
+
+## Gen3 / v0.4.8 — Independent later package files (RW-087) — 2026-09-19
+
+Generation 3 autonomous-agent maturity, **theme 3 slice E2**. Package
+**0.4.7 → 0.4.8**. Control plane preserved (models propose / RAD decides). Needle
+**OFF**. Caps **not** raised (`max_plan_tasks` 16, `Budget.tool_calls` 60).
+RW-058–086 facts are **not rewritten**. F-17 / F-18 / F-21 / F-26 stay closed.
+A1 (budget→needs_user as Class A) is **not reopened**. E1 TaskYield and xxd
+Class A (v0.4.7) are **preserved**.
+
+Product: fallback clause-split no longer linearly chains independent later
+file-write clauses. Those tasks get empty `depends_on` so `graph.ready()` /
+E1 leftover reserve can dispatch them while an early task is stuck under a
+tight `--max-tools` budget. Run / verify / read consume steps still chain.
+Explicit LLM `depends_on` chains are not rewritten. Fallback *tasks* stay
+check-less (F-17). A model `DONE:` is never completion. Does **not** claim
+live text_analyzer@12 now PASS.
+
+### F-20260919-50 — fallback linear `depends_on` starves later independent files
+
+| field | value |
+|---|---|
+| class | **capability** (Gen3 theme 3 slice E2). Investigate-first: control-plane hole in fallback *emission*, not a missing scheduler primitive. E1 leftover reserve is 0 when later tasks wait on the in-flight one. `optional` only unblocks after FAILED/BLOCKED/CANCELLED, not RETRYING. Not a re-open of live RW-086 artifact quality |
+| status | **shipped in v0.4.8** |
+| found in | RW-085 / F-20260919-47 and live RW-086 / F-20260919-49 (`source=fallback` chain; later package files 0 attempts); ROADMAP E2 candidate (PR #31) |
+| fixed in | **v0.4.8** — `independent_file_clause` + empty `depends_on` on distinct fallback file writes in `_fallback`. Consume/verify/read still chains. F-17 check-less / cap 7 / goal-only split preserved. Explicit LLM chains unchanged |
+| lane | scripted planner + controller (no NIM / no OpenRouter) |
+| objective / test | `tests/test_independent_later_files.py`; RW-087 |
+| disk | scripted: `first.txt` + `later.txt` on disk while early consume thrashes; later fallback file ≥1 attempt; missing JSON still **not** VERIFIED |
+| expected | later independent file task can run while an early fallback task is stuck under the same `--max-tools` cap; false DONE **0** |
+| actual | fallback later file is READY (`depends_on=[]`); E1 yield parks the stuck task; later file VERIFIED on its own `write_file`; objective not VERIFIED without remaining contracts |
+| notes | Live RW-086 remains Class B+C on free-model quality, fallback PLAN, and late **429**. This PR does **not** claim that live text_analyzer would now PASS. A1 not reopened. E1 live still **not confirmed**. Needle off. Caps unchanged. |
+
+```
+# scripted RW-087 — later independent fallback file still gets ≥1 attempt
+python3 -m pytest -q tests/test_independent_later_files.py
+```
+
+| gate | this PR |
+|---|---|
+| `python3 -m pytest -q` | pending this commit (558 unit tests locally before docs/gates) |
+| Package | **0.4.8** |
+| Live this patch | **not re-run** — not a live PASS claim for RW-085 / RW-086 |
 
 ## How to add a finding
 

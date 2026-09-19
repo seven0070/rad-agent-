@@ -113,7 +113,7 @@ def _ob(task: Task, out: str, status: str = "error", tool: str = "run_shell",
 # ---------------------------------------------------------------- architecture freeze
 
 def test_pip_root_pollution_investigation_does_not_raise_caps_or_enable_needle(home):
-    assert __version__ == "0.4.7"
+    assert __version__ == "0.4.8"
     assert Budget().tool_calls == 60
     assert int(home.cfg.get("max_plan_tasks", 16) or 16) == 16
     assert Planner(None, str(home.workspace())).max_tasks == 16

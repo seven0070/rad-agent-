@@ -16,7 +16,9 @@ false "DONE" is caught by the Verifier and retried with explicit feedback, and a
 run that cannot make progress ends in NEEDS_USER with a reason instead of
 pretending to be complete. When a stuck in-flight task would burn leftover
 tools, the drive loop yields at a task boundary and dispatches later
-independent READY work under the same cap (slice E1).
+independent READY work under the same cap (slice E1). Fallback later
+file-write clauses are independent (empty ``depends_on``) as of slice E2
+so they can enter that READY set.
 """
 from __future__ import annotations
 
