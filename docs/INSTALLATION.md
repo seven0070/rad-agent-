@@ -12,19 +12,84 @@
   `pip install "playwright"` (real browser driving + screenshots), `kuzu` (graph mirror for the
   world model), `autogen` (team backend), `pypdf`/`python-docx` (document reading).
 
-## Install
+## Public 1.0 install (product path)
+
+Package **1.0.0**. `rad version` prints **1.0.0**. Needle stays **OFF**. Caps
+(`max_plan_tasks` **16**, default `Budget.tool_calls` **60**) unchanged. False
+`DONE:` **0**. Class C (NIM 403 / OpenRouter 429) is **unblock the environment**,
+not a product patch. Do **not** invent remaining-quota. Live text_analyzer@12 is
+**not** claimed PASS.
+
+The public install is a **wheel or sdist from GitHub Release Version 1 /
+tag `v1.0.0`**. That release is **not** created in the G5-1 implementation PR —
+Sanath packs Version 1 after merge (see [Version 1 packing](#version-1-packing-sanath)
+below). Until those assets exist, use the [contributor checkout](#contributor-checkout).
+
+```bash
+python3 -m venv .venv && . .venv/bin/activate
+pip install https://github.com/seven0070/rad-agent-/releases/download/v1.0.0/rad_agent-1.0.0-py3-none-any.whl
+rad version          # prints 1.0.0
+rad doctor --offline
+```
+
+sdist equivalent (same tag, after the pack):
+
+```bash
+pip install https://github.com/seven0070/rad-agent-/releases/download/v1.0.0/rad_agent-1.0.0.tar.gz
+```
+
+From the annotated tag (no wheel required; still after Sanath tags `v1.0.0`):
+
+```bash
+pip install "rad-agent @ git+https://github.com/seven0070/rad-agent-.git@v1.0.0"
+```
+
+PyPI `pip install rad-agent` is **not** claimed. `pyproject.toml` is PyPI-ready
+(classifiers, URLs, empty runtime deps). Publishing to PyPI needs a token Sanath
+owns — this tree does **not** store that token.
+
+`rad` works without a key, without a local engine and without network access: it will tell you
+plainly when it has no brain (`rad providers`), and every control-plane test in the acceptance gate
+runs offline.
+
+## Contributor checkout
+
+Source checkout remains the path for development and for installs **before**
+Version 1 assets exist:
 
 ```bash
 git clone https://github.com/seven0070/rad-agent-.git && cd rad-agent-
 python3 -m venv .venv && . .venv/bin/activate
 pip install -e .                 # or: pip install -e ".[dev]" for the test suite
-rad version
+rad version                      # prints 1.0.0
 rad doctor                       # READY / WARNING / OPTIONAL / ERROR — 23 checks
 ```
 
-`rad` works without a key, without a local engine and without network access: it will tell you
-plainly when it has no brain (`rad providers`), and every control-plane test in the acceptance gate
-runs offline.
+## Version 1 packing (Sanath)
+
+**Do not** cut the GitHub Release or tag from a G5-1 implementation PR. After
+that PR merges to `main`, pack **one Version 1 / 1.0** at tag **v1.0.0**:
+
+1. Checkout the merge commit on `main`. Confirm `rad version` prints `v1.0.0`.
+2. Build installable assets (no secrets; `dist/` is gitignored):
+
+   ```bash
+   python3 -m venv .venv-pack && . .venv-pack/bin/activate
+   pip install -U pip build
+   python -m build
+   ls dist/
+   # rad_agent-1.0.0-py3-none-any.whl
+   # rad_agent-1.0.0.tar.gz
+   ```
+
+3. Create GitHub Release **Version 1**, tag **`v1.0.0`**, target = that merge
+   commit. Attach **both** files from `dist/`. Do **not** upload API keys,
+   vault files, `.env`, or tokens.
+4. Optional later: `twine upload dist/*` to PyPI with Sanath’s token. Not
+   required for Version 1; the GitHub Release assets are the public install
+   path.
+
+`pip install -e ".[pack]"` installs `build` only.
 
 ## Where RAD keeps state
 

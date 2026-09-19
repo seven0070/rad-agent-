@@ -49,16 +49,20 @@ package-file contracts) is **implemented as v0.5.4** (scripted RW-096 /
 RW-097). **G4-6** (cost/budget reporting) is **implemented as v0.5.5**
 (scripted RW-098 / RW-099). Gen4 is **complete (scripted)**; **G4-4
 parked** (no measured hole). **Version 5 pack** is GitHub Release
-**Version 5** / tag **v0.5.5** (0.5.0–0.5.5). Package stays **0.5.5**.
-First Gen5 theme **G5-1** (public / product-grade 1.0 baseline) is
-listed, not accepted. Do not rewrite RW-058–099.
+**Version 5** / tag **v0.5.5** (0.5.0–0.5.5). Package on the 1.0 line is
+**1.0.0**. First Gen5 theme **G5-1** (public / product-grade 1.0 baseline)
+is **accepted and implemented as v1.0.0** (scripted RW-100 / RW-101).
+**No GitHub Release / tag** in that change — Sanath packs Version 1 after
+merge. Do not rewrite RW-058–099.
 
 Every `VERIFIED` / `completed` cell is from the control-plane verifier **and** a disk
 check (file exists / contents / hash). A model `DONE:` line is never enough.
 
 Status vocabulary: **PASS** | **FAIL** | **BLOCKED** | **NOT TESTED**.
 
-Scripted G4-6 (RW-098 / RW-099) is at the top (**PASS**; persisted
+Scripted G5-1 (RW-100 / RW-101) is at the top (**PASS**; public 1.0
+install / docs honesty / honesty bar; no live PASS required), then
+scripted G4-6 (RW-098 / RW-099) (**PASS**; persisted
 `Usage` rollup on `rad cost`; remaining-quota not invented; no live
 PASS required), then
 scripted G4-7 (RW-096 / RW-097) (**PASS**; named
@@ -84,8 +88,19 @@ G4-3 is **shipped** as v0.5.2 (scripted); **Version 5 pack** is tag
 G4-5 is **shipped** as v0.5.3 (scripted RW-094 / RW-095). **G4-7** is
 **shipped** as v0.5.4 (scripted RW-096 / RW-097). **G4-6** is
 **shipped** as v0.5.5 (scripted RW-098 / RW-099). Gen4 is
-**complete (scripted)**; G4-4 **parked**. **G5-1** is **scoped**
-(listed, not accepted) — no new RW row. RW-058–099 are **not rewritten**.
+**complete (scripted)**; G4-4 **parked**. **G5-1** is **shipped** as
+v1.0.0 (scripted RW-100 / RW-101). **No GitHub Release / tag** in that
+change. RW-058–099 are **not rewritten**.
+
+# Scripted public 1.0 baseline (RW-100 / RW-101)
+
+Lane: scripted docs + packaging (no NIM / no OpenRouter) on **v1.0.0**.
+Needle `existing` / off. Caps unchanged. **Not** a live PASS.
+
+| id | date | task | goal (short) | plan | steps | tools | result | disk / verify | ENVIRONMENT? | class | notes |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| RW-100 | 2026-09-19 | install (scripted) — public 1.0 path + first-run docs match `rad version` 1.0.0 | QUICKSTART no longer prints 0.4.1; Version 1 wheel URL documented; wheel/sdist buildable without credentials | n/a (docs + PEP 517) | pip wheel + python -m build --sdist | default **60** unchanged | **PASS** (`rad version` v1.0.0; QUICKSTART `prints 1.0.0`; wheel `rad_agent-1.0.0-*.whl`) | `docs/QUICKSTART.md` / `docs/INSTALLATION.md` / `dist/` | **N** | capability (Gen5 G5-1; no PyPI token; no release in this PR) | Tests `test_public_1_0_baseline.py`. Needle OFF. Caps unchanged. No live PASS claim. |
+| RW-101 | 2026-09-19 | honesty (scripted) — 1.0 bar locked (false DONE 0, Needle OFF, caps 16/60, Class C, F-17) | ROADMAP / README lock public 1.0 invariants; fallback *tasks* stay check-less | n/a | Planner._fallback + docs | remaining=n/a | **PASS** (Needle `existing`; max_plan_tasks 16; Budget.tool_calls 60; 7 check-less fallback tasks; remaining-quota not invented) | ROADMAP G5-1 ACCEPTED + IMPLEMENTED as v1.0.0; no GitHub Release in this PR | **N** | capability (Gen5 G5-1; F-17 stays closed) | Tests `test_public_1_0_baseline.py`. Needle OFF. Caps unchanged. No live PASS claim. |
 
 # Scripted cost/budget reporting (RW-098 / RW-099)
 
