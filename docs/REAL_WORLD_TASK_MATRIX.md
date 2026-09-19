@@ -41,7 +41,9 @@ provider recovers. Gen4 **G4-1** is **implemented as v0.5.0** (scripted
 RW-089). **G4-2** (live-gate resume / provider health) is **implemented
 as v0.5.1** (scripted RW-090 / RW-091). **G4-3** (live-use campaign /
 operator workflow) is **implemented as v0.5.2** (scripted RW-092 / RW-093).
-Do not rewrite RW-058–093.
+**Version 5 pack** shipped as GitHub Release **v0.5.2**. Recommended next
+**v0.5.3** candidate **G4-5** (fallback / LLM plan quality) is listed
+in [ROADMAP.md](ROADMAP.md), **not accepted**. Do not rewrite RW-058–093.
 
 Every `VERIFIED` / `completed` cell is from the control-plane verifier **and** a disk
 check (file exists / contents / hash). A model `DONE:` line is never enough.
@@ -61,7 +63,9 @@ Class A thrash **CLEARED**; E1 not live; late **429** `free-models-per-day`;
 free-model loop **paused**), then live OpenRouter RW-085 (**FAIL**; Class C
 cleared; xxd ENVIRONMENT Class A **CONFIRMED**), then scripted RW-086
 (v0.4.7), then live NIM RW-084 (**BLOCKED Class C**), then scripted RW-083.
-G4-3 is **shipped** as v0.5.2 (scripted). RW-058–091 are **not rewritten**.
+G4-3 is **shipped** as v0.5.2 (scripted); **Version 5 pack** shipped.
+G4-5 is **scoped** (listed, not accepted) — no new RW row. RW-058–093 are
+**not rewritten**.
 
 # Scripted live-use campaign / operator workflow (RW-092 / RW-093)
 
