@@ -1,0 +1,76 @@
+name: Desktop Installers
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "desktop/**"
+      - "rad/**"
+      - ".github/workflows/desktop-installers.yml"
+  release:
+    types: [published]
+
+jobs:
+  build-installers:
+    name: ${{ matrix.platform.name }}
+    runs-on: ${{ matrix.platform.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - name: linux
+            runner: ubuntu-latest
+            artifact: rad-desktop-linux
+            bundle_glob: desktop/src-tauri/target/release/bundle/**/*
+          - name: macos
+            runner: macos-latest
+            artifact: rad-desktop-macos
+            bundle_glob: desktop/src-tauri/target/release/bundle/**/*
+          - name: windows
+            runner: windows-latest
+            artifact: rad-desktop-windows
+            bundle_glob: desktop/src-tauri/target/release/bundle/**/*
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Linux bundle dependencies
+        if: matrix.platform.name == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf
+
+      - name: Install desktop dependencies
+        working-directory: desktop
+        run: npm ci
+
+      - name: Build installer bundles
+        working-directory: desktop
+        run: npm run tauri:build
+
+      - name: Upload bundle artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.platform.artifact }}
+          path: ${{ matrix.platform.bundle_glob }}
+          if-no-files-found: error

@@ -24,6 +24,13 @@ Browser-only (no Tauri): `VITE_RAD_TOKEN=$(cat ~/.rad/api.token) npm run dev` th
 - It no longer requires a separately installed `rad` Python package for the desktop flow.
 - It still requires a local Python 3.9+ runtime unless you additionally bundle Python at packaging time.
 
+## Installers
+
+- Run `npm run tauri:build` inside `/home/runner/work/rad-agent-/rad-agent-/desktop` to build installers for the current OS.
+- Bundles are emitted under `desktop/src-tauri/target/release/bundle/`.
+- Cross-platform installers are produced in GitHub Actions by `.github/workflows/desktop-installers.yml`.
+- The workflow builds Linux, macOS, and Windows bundles on native runners and uploads each OS bundle as an artifact.
+
 ## Security boundary
 
 - Frontend talks only to `/v1/*` (chat, objectives, authority, settings, tasks, events).
