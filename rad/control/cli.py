@@ -414,6 +414,60 @@ def cmd_policy(args) -> int:
     return 1
 
 
+def cmd_authority(args) -> int:
+    from rad.authority import PROFILES, Authority
+    from rad.policy import Policy
+    home = RadHome(args.home)
+    auth = Authority(home)
+    a = args.authority_action
+    if a == "show":
+        if getattr(args, "json", False):
+            print(json.dumps(auth.snapshot(), indent=2, default=str))
+        else:
+            print(auth.explain())
+        return 0
+    if a == "set":
+        if not args.authority_args:
+            fail(f"usage: rad authority set <{'|'.join(PROFILES)}> [--i-authorize-unrestricted]"); return 1
+        profile = args.authority_args[0]
+        caps = {}
+        for item in (args.cap or []):
+            if "=" not in item:
+                fail(f"bad --cap {item!r} (want capability=EFFECT)"); return 1
+            k, v = item.split("=", 1)
+            caps[k.strip()] = v.strip()
+        scopes = None
+        if args.extra_path or args.workspace_only is not None:
+            scopes = auth.state.scopes.to_dict()
+            if args.workspace_only is not None:
+                scopes["workspace_only"] = True
+            if args.extra_path:
+                scopes["extra_paths"] = list(args.extra_path)
+        try:
+            auth.set_profile(profile, confirm_unrestricted=bool(args.i_authorize_unrestricted),
+                             capabilities=caps or None, scopes=scopes,
+                             confirmation=args.confirmation, actor="user")
+        except ValueError as e:
+            fail(str(e)); return 1
+        ok(f"authority profile {auth.state.profile}")
+        if not getattr(args, "json", False):
+            print(auth.explain())
+        else:
+            print(json.dumps(auth.snapshot(), indent=2, default=str))
+        return 0
+    if a == "test":
+        if len(args.authority_args) < 2:
+            fail("usage: rad authority test <capability> <resource…>"); return 1
+        cap = args.authority_args[0]
+        res = " ".join(args.authority_args[1:])
+        from pathlib import Path as _P
+        d = Policy(home).decide(cap, res, auto=bool(getattr(args, "auto", False)),
+                                path=_P(res) if cap.startswith("fs.") or cap.startswith("filesystem.") else None)
+        print(f"  {d.effect}  ({d.by}: {d.reason})  profile={auth.state.profile}")
+        return 0
+    return 1
+
+
 def cmd_audit(args) -> int:
     from rad.policy import Policy
     home = RadHome(args.home)
@@ -489,7 +543,8 @@ def add_parsers(sub) -> None:
     ob.add_argument("obj_args", nargs="*")
     ob.add_argument("--criteria", action="append", help="success criterion (repeatable)")
     ob.add_argument("--constraint", action="append", help="constraint (repeatable)")
-    ob.add_argument("--auto", action="store_true", help="hands act without confirmation")
+    ob.add_argument("--auto", action="store_true",
+                    help="confirmation policy = never (ASK→ALLOW only; not a policy bypass)")
     ob.add_argument("--active", action="store_true", help="list: only active objectives")
     ob.add_argument("--max-tasks", type=int, default=None, help="stop after N tasks (resume later)")
     ob.add_argument("--max-tools", type=int, default=None, help="tool-call budget")
@@ -536,6 +591,20 @@ def add_parsers(sub) -> None:
     pp.add_argument("--limits", default=None, help='JSON, e.g. \'{"timeout": 30, "max_bytes": 20000}\'')
     pp.add_argument("--note", default=None); pp.add_argument("--auto", action="store_true")
     pp.set_defaults(fn=cmd_policy)
+
+    auu = sub.add_parser("authority", help="authority profile: SAFE/STANDARD/AUTONOMOUS/UNRESTRICTED/CUSTOM")
+    auu.add_argument("authority_action", nargs="?", default="show",
+                     choices=["show", "set", "test"])
+    auu.add_argument("authority_args", nargs="*")
+    auu.add_argument("--i-authorize-unrestricted", action="store_true",
+                     help="required to select UNRESTRICTED (explicit user authorization)")
+    auu.add_argument("--confirmation", default=None, choices=["ask", "never"])
+    auu.add_argument("--cap", action="append", default=None,
+                     help="CUSTOM: capability=EFFECT (repeatable)")
+    auu.add_argument("--workspace-only", dest="workspace_only", action="store_true", default=None)
+    auu.add_argument("--extra-path", action="append", default=None)
+    auu.add_argument("--json", action="store_true")
+    auu.set_defaults(fn=cmd_authority)
 
     au = sub.add_parser("audit", help="permission decisions log")
     au.add_argument("-n", type=int, default=40); au.add_argument("--effect", default=None)
