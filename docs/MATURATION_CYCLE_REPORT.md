@@ -6,6 +6,108 @@ Default `Budget.tool_calls` remains **60**.
 
 ---
 
+# Cycle 36 — Scope Gen4 closeout / Gen5 entry; stay 0.5.5 (2026-09-19)
+
+**Date:** 2026-09-19
+**Baseline:** `origin/main` `91810955fb5cec2494e481b485ff0a5f893012a5` (merge PR #49; package **0.5.5**)
+**Package at start:** `0.5.5`
+**This branch:** `cursor/gen4-closeout-gen5-entry-a949` — package **0.5.5** (no bump)
+**Architecture:** control plane preserved. Needle stays off. Caps unchanged.
+**Kind:** docs / scope only. No `rad/` product change. RW-058–099 are **not rewritten**.
+**Release:** **none** — Version 5 packing doctrine: merge-only; pack again only when Sanath asks. GitHub Release **Version 5** / tag **v0.5.2** still covers G4-1–G4-3 only.
+
+## Why this cycle
+
+**G4-6** shipped as **v0.5.5** (PR #49; scripted RW-098 / RW-099). Version 5
+pack remains GitHub Release **v0.5.2** (G4-1 / G4-2 / G4-3). G4-1 closed
+pause. G4-2 closed safe resume. G4-3 closed the operator-use path. G4-5
+closed plan-*structure*. G4-7 closed named-file / JSON-field *objective*
+contracts. G4-6 closed spend visibility (`rad cost` rollup of persisted
+`Usage`). Both live free paths remain **paused**. Live E1–E3 and Version 5
+/ G4-5 / G4-7 / G4-6 confirmation is **deferred**. F-17 / F-26 stay closed.
+
+Investigate-first after G4-6: the highest-leverage next step is **not**
+MCP, not another “wait for live confirmation” package theme, not a
+residual Class B grab-bag, and not a v0.5.6. Cycle 24’s remaining
+*product* Class B list (fallback PLAN, incomplete packages) is **closed
+scripted**. The Production Scale leftover (spend visibility) is **closed
+scripted**. Remaining 11B incompleteness without a contract hole is
+evidence, not a theme. G4-3 already shipped the campaign playbook.
+Running it is operator work when a provider recovers — not a package bump
+while NIM / OpenRouter free stay paused. **G4-4 parked** (no hole). Do
+**not** invent G4-8. Do **not** invent remaining-quota. Mark Gen4
+**complete (scripted)** with the same live-confirmation caveat Gen3 used.
+Scope **Gen5 entry criteria** (listed, not accepted). Stay **0.5.5**.
+
+## Alternatives considered
+
+| candidate | decision |
+|---|---|
+| Gen4 closeout / Gen5 entry (docs) | **Recommended next.** Evidence-backed: Cycle 24 remaining product Class B closed scripted (G4-5 / G4-7); Production Scale leftover closed scripted (G4-6); G4-4 still no hole; live confirmation is G4-3 operator work while gates paused. Stay **0.5.5**. No v0.5.6. Gen5 not started |
+| Extensibility / MCP (G4-4) | No measured hole. Already first-class. **Parked.** Do not force-build |
+| Larger workload / longer-horizon *product* | E1–E3 already shipped scripted. Caps 16/60 stay closed (A1 / F-21). RW-059 showed 12→24 still exhausted |
+| Live confirmation of Version 5 / G4-5 / G4-7 / G4-6 path | G4-3 playbook already ships. Gates remain paused. Operator campaign when a provider recovers — not a new product theme |
+| Residual Class B after G4-5 + G4-6 + G4-7 | Contract holes closed scripted. Remaining 11B incompleteness without a contract hole is evidence, not a theme. Do not invent G4-8 |
+| Residual Class B “11B quality / free-model thrash” as a grab-bag | Thrash Class A patched or F-44 **NOT CONFIRMED**. 429 is Class C |
+| A v0.5.6 docs-only bump | No product change. Stay **0.5.5**. Pack again only when Sanath asks |
+
+## Code findings (lightweight; no patch)
+
+| existing | role | gap vs post-G4-6 residual |
+|---|---|---|
+| `infer_coding_checks` | named-file `file_exists` + `json_field` (cap 8) | **Closed** scripted (RW-096 / RW-097). Live confirmation deferred |
+| G4-5 `_json_obj` + `PLAN_CODING_RETRY` | near-JSON recover / compact retry | **Closed** scripted (RW-094 / RW-095). Live confirmation deferred |
+| `Planner._fallback` (F-17) | clause-split, cap 7, no checks | Do not add checks to fallback *tasks* |
+| `rad health` + CAMPAIGN_PLAYBOOK | operator wait/rotate/resume/run | Closed for G4-3. Residual live campaign is operator work |
+| `rad connect` / MCP | already first-class | No measured hole (**G4-4 parked**) |
+| `rad cost` / `ObjectiveStore.usage_rollup` | paid 14-day + persisted Usage rollup | **Closed** scripted (RW-098 / RW-099). Remaining-quota not invented |
+| E1 / E2 / E3 | leftover dispatch / independent files / retry stop | Scripted. Live confirmation waits on Class C recovery |
+
+## Decision
+
+| item | value |
+|---|---|
+| Package | **0.5.5** (no 0.5.6) |
+| Gen3 | **COMPLETE (scripted)** (unchanged). Live E1–E3 **deferred** |
+| Gen4 | **COMPLETE (scripted)**. **G4-6 shipped** as **v0.5.5**. **Version 5 pack** still **v0.5.2** (G4-1–G4-3). **G4-4 parked** (no hole) |
+| Recommended next | **Gen5 entry criteria** (see ROADMAP). **Not** accepted here. Gen5 **not started** |
+| Other candidates | G4-4 extensibility (parked — no hole). Do not invent G4-8 |
+| Next product work | Waits for proven Class A on 0.5.5, or an accepted v1.0.0 theme after Gen4-use / remaining-gaps judgment |
+| Packing | Merge-only. **No per-slice GitHub Release.** Pack again only when Sanath asks |
+| Invariants | Needle OFF; caps 16/60; false DONE 0; no redesign; Class C is not a product patch; no live PASS claim; F-17 / F-26 stay closed; remaining-quota not invented |
+
+## Quality gates (this branch)
+
+Isolated homes `/tmp/rad-g4-closeout-gate` (doctor, acceptance) and `/tmp/rad-g4-closeout-rw` (realworld).
+
+| gate | result |
+|------|--------|
+| `rad version` | **PASS** v0.5.5 |
+| `python3 -m pytest -q` | **PASS** 646 passed in 11.71s |
+| `rad doctor --offline` | **PASS** 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR, verdict READY, exit 0 |
+| `rad acceptance` | **PASS** 50/50 — `/tmp/rad-g4-closeout-gate/acceptance/20260919-075122_gate.json` |
+| `rad realworld` | **PASS** 10/11 + 1 BLOCKED — `/tmp/rad-g4-closeout-rw/realworld/20260919-075123_realworld.json` |
+| Needle default | **PASS** (`existing`) — unchanged |
+| Caps | **PASS** `max_plan_tasks` 16; `Budget.tool_calls` 60 — unchanged |
+| Package | **0.5.5** (no bump) |
+| Release / tag | **none** — Version 5 packing doctrine |
+| Live this patch | not re-run; suite `live_nim` **BLOCKED** (Class C) |
+
+## Remaining limitations
+
+1. Live text_analyzer@12 remains Class B FAIL. This cycle does not change that.
+2. E1/E2/E3 are scripted only. Live confirmation **deferred**.
+3. Both live free paths remain **paused**. Version 5 / G4-5 / G4-7 / G4-6 have not been live-confirmed together.
+4. Gen5 entry is listed, not accepted. Gen5 is not started.
+
+## Roadmap pointer
+
+Operating spine: [ROADMAP.md](ROADMAP.md). **Generation 4 complete (scripted).**
+Recommended next **Gen5 entry** listed, not accepted. Stay **0.5.5**. Gen5 is
+not started.
+
+---
+
 # Cycle 35 — G4-6 cost/budget reporting; v0.5.5 (2026-09-19)
 
 **Date:** 2026-09-19
