@@ -6,6 +6,76 @@ Default `Budget.tool_calls` remains **60**.
 
 ---
 
+# Cycle 38 — G5-1 public / product-grade 1.0 baseline / v1.0.0 (2026-09-19)
+
+**Date:** 2026-09-19
+**Baseline:** `origin/main` `c662b4d9198c1c54e3ac16a1abc7894ddf5ca37a` (merge PR #51; package **0.5.5**; GitHub Release **Version 5** / tag **v0.5.5** covers 0.5.0–0.5.5)
+**Package at start:** `0.5.5`
+**This branch:** `cursor/g5-1-public-1.0-ba44` — package **1.0.0**
+**Architecture:** control plane preserved. Needle stays off. Caps unchanged.
+**Kind:** G5-1 implementation. Scripted RW-100 / RW-101. RW-058–099 are **not rewritten**.
+**Release:** **none**. **No GitHub Release / tag.** Sanath packs **Version 1** after merge.
+
+## Why this cycle
+
+G5-1 was **accepted** (Cycle 37 listed it; this change implements it).
+Gen4 is **complete (scripted)** on v0.5.0–v0.5.5. **Version 5 pack** is
+tag **v0.5.5**. Measured gap vs a public 1.0: git clone +
+`pip install -e .`; Version 5 GitHub Release has no installable assets;
+QUICKSTART still said `rad version` prints **0.4.1**. Honesty bar
+(false DONE **0**, Needle OFF, caps 16/60, Class C doctrine, F-17 / F-26
+closed) was the 0.5.x gate, not yet locked as a public 1.0 bar.
+
+Smallest patch: package **0.5.5 → 1.0.0**; PyPI-ready metadata; document
+install from Version 1 wheel/sdist (Sanath attaches assets after merge);
+fix first-run docs; lock the honesty bar; scripted RW-100 / RW-101.
+Do **not** stall on live NIM/OpenRouter. Do **not** raise caps. Do **not**
+unpark G4-4. Do **not** invent Class A for 403/429. Do **not** invent
+remaining-quota. Do **not** cut a GitHub Release in this PR.
+
+## Decision
+
+| item | value |
+|---|---|
+| Package | **1.0.0** |
+| Gen3 | **COMPLETE (scripted)** (unchanged). Live E1–E3 **deferred** |
+| Gen4 | **COMPLETE (scripted)**. **Version 5 pack** tag **v0.5.5** (0.5.0–0.5.5). **G4-4 parked** |
+| Gen5 | **IN PROGRESS**. **G5-1** accepted + implemented as **v1.0.0** (RW-100 / RW-101) |
+| Packing | **No GitHub Release / tag in this PR.** Sanath packs **one Version 1 / 1.0** at tag **v1.0.0** after merge (wheel + sdist) |
+| Invariants | Needle OFF; caps 16/60; false DONE 0; no redesign; Class C is not a product patch; no live PASS claim; F-17 / F-26 stay closed; remaining-quota not invented |
+
+## Quality gates (this branch)
+
+Isolated homes `/tmp/rad-g51-gate` (doctor, acceptance) and `/tmp/rad-g51-rw` (realworld).
+
+| gate | result |
+|------|--------|
+| `rad version` | **PASS** v1.0.0 |
+| `python3 -m pytest -q` | pending (run after commit) |
+| `rad doctor --offline` | pending |
+| `rad acceptance` | pending |
+| `rad realworld` | pending |
+| Needle default | **PASS** (`existing`) — unchanged |
+| Caps | **PASS** `max_plan_tasks` 16; `Budget.tool_calls` 60 — unchanged |
+| Package | **1.0.0** |
+| Release / tag | **none** — Version 1 pack after Sanath merges |
+| Live this patch | not re-run; suite `live_nim` **BLOCKED** (Class C) |
+
+## Remaining limitations
+
+1. Live text_analyzer@12 remains Class B FAIL. This cycle does not change that.
+2. E1/E2/E3 and Version 5 / G4-5 / G4-7 / G4-6 are scripted only. Live confirmation **deferred**.
+3. Both live free paths remain **paused**.
+4. Version 1 GitHub Release / tag is **not** this PR. Wheel/sdist attach is Sanath after merge.
+5. PyPI `pip install rad-agent` is **not** claimed (no token in tree).
+
+## Roadmap pointer
+
+Operating spine: [ROADMAP.md](ROADMAP.md). **Generation 5 in progress.**
+**G5-1** shipped as **v1.0.0**. **No GitHub Release in this PR.**
+
+---
+
 # Cycle 37 — Scope G5-1 public / product-grade 1.0 baseline; stay 0.5.5 (2026-09-19)
 
 **Date:** 2026-09-19

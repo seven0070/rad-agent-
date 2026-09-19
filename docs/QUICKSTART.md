@@ -7,11 +7,23 @@ Install RAD, confirm it is healthy, then give it a real objective.
 Requires Python 3.9+ (3.11 or 3.12 recommended). The core has **no mandatory
 dependencies**.
 
+**Public 1.0 path** (after Sanath packs GitHub Release **Version 1** /
+tag **v1.0.0** with wheel + sdist assets — **not** this PR):
+
+```bash
+python3 -m venv .venv && . .venv/bin/activate
+pip install https://github.com/seven0070/rad-agent-/releases/download/v1.0.0/rad_agent-1.0.0-py3-none-any.whl
+rad version          # prints 1.0.0
+```
+
+Until that release exists, install from a clone of this tree (contributor /
+pre-pack path):
+
 ```bash
 git clone https://github.com/seven0070/rad-agent-.git && cd rad-agent-
 python3 -m venv .venv && . .venv/bin/activate
 pip install -e .
-rad version          # prints 0.4.1
+rad version          # prints 1.0.0
 ```
 
 On Debian/Ubuntu, `python3 -m venv` needs the `python3-venv` package

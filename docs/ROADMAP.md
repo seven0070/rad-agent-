@@ -28,11 +28,12 @@ scale: cost/budget reporting) is **accepted and implemented as v0.5.5**
 (no measured hole). **Version 5 pack** is GitHub Release **Version 5** /
 tag **v0.5.5** @ `08cf33893d309981c5f75bef260bca87f5c47d29` (covers
 **0.5.0–0.5.5** / G4-1–G4-3 + G4-5–G4-7 + G4-6). Tag **v0.5.2** remains
-the earlier G4-1–G4-3 pack. Package stays **0.5.5**. Do **not** claim
-live text_analyzer@12 PASS. Generation 5 is **not started**. Recommended
-next is **G5-1** — public / product-grade 1.0 baseline (listed, not
-accepted; proposed **v1.0.0** only when accepted). No **v0.5.6**. F-17 /
-F-26 stay closed.
+the earlier G4-1–G4-3 pack. Generation 5 is **in progress**. Theme
+**G5-1** (public / product-grade 1.0 baseline) is **accepted and
+implemented as v1.0.0** (scripted RW-100 / RW-101). Package **1.0.0**.
+**No GitHub Release / tag in this change** — Sanath packs **Version 1**
+after merge. Do **not** claim live text_analyzer@12 PASS. F-17 / F-26
+stay closed. Class C is not a product patch. Remaining-quota not invented.
 
 ```
 build → test → validate → release → use → discover gaps → build the next version
@@ -47,16 +48,16 @@ Stability with no code change is a valid result.
 
 | item | value |
 |---|---|
-| Generation in production | **Gen4 complete (scripted)** — **v0.5.5** (G4-6). G4-7 remains **v0.5.4**. G4-5 remains **v0.5.3**. G4-3 remains **v0.5.2**. G4-2 remains **v0.5.1**. G4-1 remains **v0.5.0**. Gen3 remains **complete (scripted)** on 0.4.0–0.4.9. Last live-use with **working inference** is **RW-086** on tag `v0.4.7` @ `850aaf9c` (OpenRouter free; then **429**); prior working-inference row is RW-085 on tag `v0.4.6` @ `8f09be58`; v0.4.6 live NIM attempt is RW-084 **BLOCKED Class C**; last NIM working-inference row remains RW-081 on `v0.4.5` @ `32e9fe87`; Gen2 complete on `387776dc` / tag `v0.3.2`; Gen1 baseline remains tagged `v0.2.3` @ `d121c3f` |
-| Package / tag on `main` | **0.5.5** (this change — **no bump**). GitHub Release **Version 5** / tag `v0.5.5` @ `08cf33893d309981c5f75bef260bca87f5c47d29` packs **0.5.0–0.5.5**. Tag `v0.5.2` @ `d534bd30384e9f582ca6c08562a6b2cd555fb793` remains the earlier G4-1–G4-3 pack. Tag `v0.5.1` @ `2d4c8b6dd2e75b191a33913b93eb7d77acd3be6b` (merge PR #41) is G4-2. Tag `v0.5.0` @ `d194b8ffc763fc00ad58273e5dd8f0203442041d` (merge PR #39) is G4-1. Tag `v0.4.9` @ `05ea0df302aa6bfd15eccfb84341aeed75d6e1d0` is E3. Tag `v0.4.7` @ `850aaf9c3a931a5ba119bdbb6ec73ae4a6fa73e9` remains the live RW-086 run |
-| This change | **docs / scope only** — record **Version 5 pack** now tag **v0.5.5** (0.5.0–0.5.5); scope first Gen5 theme **G5-1** public / product-grade 1.0 baseline as proposed **v1.0.0** (listed, not accepted). Stay **0.5.5**. **No v0.5.6.** **No v1.0.0 bump.** **No GitHub Release** |
+| Generation in production | **Gen5 in progress** — **v1.0.0** (G5-1). Gen4 remains **complete (scripted)** on 0.5.0–0.5.5 (G4-6 **v0.5.5**; G4-7 **v0.5.4**; G4-5 **v0.5.3**; G4-3 **v0.5.2**; G4-2 **v0.5.1**; G4-1 **v0.5.0**). Gen3 remains **complete (scripted)** on 0.4.0–0.4.9. Last live-use with **working inference** is **RW-086** on tag `v0.4.7` @ `850aaf9c` (OpenRouter free; then **429**); prior working-inference row is RW-085 on tag `v0.4.6` @ `8f09be58`; v0.4.6 live NIM attempt is RW-084 **BLOCKED Class C**; last NIM working-inference row remains RW-081 on `v0.4.5` @ `32e9fe87`; Gen2 complete on `387776dc` / tag `v0.3.2`; Gen1 baseline remains tagged `v0.2.3` @ `d121c3f` |
+| Package / tag on `main` | **1.0.0** (this change). **No GitHub Release / tag in this PR.** Version 5 pack remains GitHub Release **Version 5** / tag `v0.5.5` @ `08cf33893d309981c5f75bef260bca87f5c47d29` (0.5.0–0.5.5). Sanath packs **Version 1** / tag **v1.0.0** after merge (wheel + sdist assets). Tag `v0.5.2` @ `d534bd30384e9f582ca6c08562a6b2cd555fb793` remains the earlier G4-1–G4-3 pack. Tag `v0.5.1` @ `2d4c8b6dd2e75b191a33913b93eb7d77acd3be6b` (merge PR #41) is G4-2. Tag `v0.5.0` @ `d194b8ffc763fc00ad58273e5dd8f0203442041d` (merge PR #39) is G4-1. Tag `v0.4.9` @ `05ea0df302aa6bfd15eccfb84341aeed75d6e1d0` is E3. Tag `v0.4.7` @ `850aaf9c3a931a5ba119bdbb6ec73ae4a6fa73e9` remains the live RW-086 run |
+| This change | **G5-1 accepted + implemented** as **v1.0.0** (scripted RW-100 / RW-101): public install path + first-run docs honesty + 1.0 honesty bar. **No GitHub Release / tag.** Version 1 pack after Sanath merges |
 | Generation 2 | **COMPLETE** — theme 1 **v0.3.0** (used RW-065 / RW-068); theme 2 **v0.3.1** (used live RW-066 / RW-068); theme 3 **v0.3.2** (scripted RW-067; used RW-068 / RW-069) |
 | Latest use (RW-086) | Live OpenRouter free text_analyzer on v0.4.7 **FAIL** `needs_user` @ tools **12/12**: provider **openrouter** / `nvidia/nemotron-3.5-lightning:free`; `$0`; PLAN `source=fallback` attempts=2; task1 **COMPLETED** + task2 attempts=1; E1 **not live** (0 TaskYield). xxd Class A ENVIRONMENT thrash **CLEARED** (0 xxd / 0 ENVIRONMENT / 0 repair). Residual Class **B+C** (fallback plan, missing tests/README, odd summary + late HTTP **429** `free-models-per-day`). False DONE **0** |
 | Live OpenRouter free loop | **PAUSED** until `free-models-per-day` rate limit resets (RW-086). Do not treat further free-model retries as product Class B until rate clears |
 | Live NIM loop | **PAUSED / Class C blocked** (RW-084). E1 live gate still **not confirmed**. Scripted RW-083 remains unit evidence |
 | Generation 3 | **COMPLETE (scripted)** — theme 1 **implemented** (v0.4.0) **used** (RW-071 / RW-073 / RW-075 / RW-077 / RW-079 / RW-081 / RW-085 / RW-086); theme 2 **implemented** (v0.4.1) **used** (RW-073 / RW-075 / RW-077 / RW-079 / RW-081 / RW-085 / RW-086); theme 3 slices A–D **v0.4.2–v0.4.5** **used** (RW-075 / RW-077 / RW-079 / RW-081; mkdir live Y on RW-081); slice E1 **v0.4.6** **implemented** (scripted RW-083; live **not confirmed** on RW-084/085/086); slice F **v0.4.7** **implemented** (xxd ENVIRONMENT; scripted RW-086; live RW-086 thrash **CLEARED**); slice E2 **v0.4.8** **implemented** (scripted RW-087; live **not confirmed**); slice E3 **v0.4.9** **implemented** (scripted RW-088; live **not confirmed**). Live E1–E3 confirmation **deferred** until a provider recovers |
 | Generation 4 | **COMPLETE (scripted)** — **G4-1** as **v0.5.0** (scripted RW-089); **G4-2** as **v0.5.1** (scripted RW-090 / RW-091); **G4-3** as **v0.5.2** (scripted RW-092 / RW-093); **Version 5 pack** shipped; **G4-5** as **v0.5.3** (scripted RW-094 / RW-095); **G4-7** as **v0.5.4** (scripted RW-096 / RW-097); **G4-6** as **v0.5.5** (scripted RW-098 / RW-099). **G4-4 parked** (no measured hole). Live confirmation **deferred** |
-| Generation 5 | **NOT STARTED** — entry listed, not accepted. First theme **G5-1** listed, not accepted |
+| Generation 5 | **IN PROGRESS** — **G5-1** as **v1.0.0** (scripted RW-100 / RW-101). **No GitHub Release / tag in this change** — Version 1 pack after Sanath merges |
 | Needle | optional / **off** (`tool_router=existing`; ADR-001) |
 | `max_plan_tasks` | **16** (unchanged) |
 | Default `Budget.tool_calls` | **60** (unchanged) |
@@ -77,7 +78,7 @@ Cycle evidence, not this file: [MATURATION_CYCLE_REPORT.md](MATURATION_CYCLE_REP
 | **2** | Capability Expansion | v0.3.x | **COMPLETE** (theme 1 → **v0.3.0**; theme 2 → **v0.3.1** used RW-066/068; theme 3 → **v0.3.2**; use campaign RW-068 PASS / RW-069 FAIL) |
 | **3** | Autonomous Agent Maturity | v0.4.x | **COMPLETE (scripted)** (theme 1 → **v0.4.0**; theme 2 → **v0.4.1**; theme 3 slices A–D → **v0.4.2–v0.4.5**; slice E1 → **v0.4.6**; slice F → **v0.4.7**; slice E2 → **v0.4.8**; slice E3 → **v0.4.9**; live E1–E3 **deferred**) |
 | **4** | Production Scale | v0.5.x | **COMPLETE (scripted)** (G4-1 → **v0.5.0**; G4-2 → **v0.5.1**; G4-3 → **v0.5.2** Version 5 pack; G4-5 → **v0.5.3**; G4-7 → **v0.5.4**; G4-6 → **v0.5.5**; G4-4 parked; live confirmation deferred) |
-| **5** | 1.0 | v1.0.0 | **NOT STARTED** (entry listed, not accepted; **G5-1** listed, not accepted) |
+| **5** | 1.0 | v1.0.0 | **IN PROGRESS** (G5-1 → **v1.0.0**; Version 1 pack after Sanath merges; no release in the implementation PR) |
 
 Enter the next generation only after the previous one has been **released, used, and has
 measured gaps**. Class B rows are the input to that decision. They do not start the
@@ -112,11 +113,11 @@ implemented** as **v0.5.3** (scripted RW-094 / RW-095). **G4-7**
 **G4-6** (cost/budget reporting) is **accepted and implemented** as
 **v0.5.5** (scripted RW-098 / RW-099). **G4-4 parked** (no measured
 hole). **Version 5 pack** is GitHub Release **Version 5** / tag
-**v0.5.5** (0.5.0–0.5.5). Remaining measured gaps are **Gen5 candidates**
-(or operator live-use), not further 0.5.x themes, unless a **proven
-Class A** appears on 0.5.5. First Gen5 theme **G5-1** (public /
-product-grade 1.0 baseline) is **listed, not accepted**. Gen5 stays
-closed until Sanath accepts that v1.0.0 theme.
+**v0.5.5** (0.5.0–0.5.5). Remaining measured gaps on 0.5.x are operator
+live-use or proven Class A, not a G4-8. First Gen5 theme **G5-1**
+(public / product-grade 1.0 baseline) is **accepted and implemented as
+v1.0.0** (scripted RW-100 / RW-101). **No GitHub Release / tag** in that
+change — Sanath packs Version 1 after merge.
 
 ---
 
@@ -596,9 +597,10 @@ contracts) is **accepted and implemented as v0.5.4** (scripted RW-096 /
 RW-097). Theme **G4-6** (cost/budget reporting) is **accepted and
 implemented as v0.5.5** (scripted RW-098 / RW-099). **G4-4** (MCP /
 extensibility) is **parked** — still no measured hole; do **not**
-force-build it. Package stays **0.5.5**. **Version 5 pack** is GitHub
-Release **Version 5** / tag **v0.5.5** @ `08cf338` (covers
-**0.5.0–0.5.5**). Tag **v0.5.2** remains the earlier G4-1–G4-3 pack.
+force-build it. **Version 5 pack** is GitHub Release **Version 5** /
+tag **v0.5.5** @ `08cf338` (covers **0.5.0–0.5.5**). Tag **v0.5.2**
+remains the earlier G4-1–G4-3 pack. Package on the 1.0 line is **1.0.0**
+(G5-1).
 Gen4 slices were merge-only until Sanath packed. Same loop. Same A/B/C
 rules. Same gates. Needle stays **OFF**. Caps (`max_plan_tasks` **16**,
 default `Budget.tool_calls` **60**) unchanged.
@@ -709,9 +711,9 @@ remaining-quota. Do **not** stall Gen4 on Class C. **G4-6** is now
 Investigate-first after G4-6: there is **no** remaining measured
 product hole that is a Gen4 theme. **Gen4 closeout / Gen5 entry**
 shipped (Cycle 36 / PR #50). **Version 5 pack** updated as GitHub
-Release **Version 5** / tag **v0.5.5** (0.5.0–0.5.5). Recommended next
-is **G5-1** (listed, not accepted). Stay **0.5.5**. No **v0.5.6**. No
-**v1.0.0** from this scope.
+Release **Version 5** / tag **v0.5.5** (0.5.0–0.5.5). First Gen5 theme
+**G5-1** is **accepted and implemented as v1.0.0**. **No GitHub Release
+/ tag** in that change.
 
 | id | theme | live providers? | status |
 |---|---|---|---|
@@ -1121,18 +1123,21 @@ G4-7 / G4-6 not live-confirmed together, historical 11B incompleteness
 without a contract hole) are **Gen5 candidates or operator campaign
 work**, not a G4-8. Do not invent a long-horizon redesign from Class B
 budget rows. Do not invent remaining-quota. Do not invent Class A for
-403/429. Stay **0.5.5**. Recommended next is **G5-1** (see Generation 5).
+403/429. Further 0.5.x is Class A only when proven. Gen5 **G5-1** is
+**accepted and implemented as v1.0.0** (see Generation 5).
 
 ---
 
-## Generation 5 — 1.0 — NOT STARTED (v1.0.0)
+## Generation 5 — 1.0 — IN PROGRESS (v1.0.0)
 
 Stable public / product-grade baseline.
 
-**Status:** **not started.** Entry criteria are **listed, not accepted**.
-First theme **G5-1** (public / product-grade 1.0 baseline) is **listed,
-not accepted, not implemented**. Do **not** implement v1.0.0 in this
-change. Package stays **0.5.5**.
+**Status:** **in progress.** Theme **G5-1** (public / product-grade 1.0
+baseline) is **accepted and implemented as v1.0.0** (scripted RW-100 /
+RW-101). Package **1.0.0**. **No GitHub Release / tag in this change** —
+Sanath packs **one Version 1 / 1.0** at tag **v1.0.0** after merge
+(wheel + sdist assets). Live confirmation of Version 5 remains an
+entry *caveat*, not a missing G5-1 hole.
 
 1.0 is a generation, not a marketing tag: it still requires the loop
 (`build → test → validate → release → use → discover that the remaining
@@ -1152,8 +1157,8 @@ Gen5 **build** starts only when **all** of the following are true:
    **live use** has not happened (last working-inference row remains
    **RW-086** on **v0.4.7**).
 2. Sanath **accepts a first v1.0.0 theme** — not implied by a
-   `needs_user` / FAIL / 429 / 403 row, and not implied by this scope.
-   **Not done.** Recommended first theme is **G5-1** below.
+   `needs_user` / FAIL / 429 / 403 row, and not implied by the scope PR.
+   **Done:** G5-1 (public / product-grade 1.0 baseline).
 3. That theme is grounded in **measured Gen4-use gaps** after the
    Version 5 path has been used, **or** in an explicit decision that
    remaining gaps are acceptable for a public baseline. Scripted
@@ -1185,33 +1190,39 @@ Release gates must still be green (pytest, `rad doctor --offline`,
   the G4-3 playbook — an entry *caveat* / remaining-gaps input, not
   G5-1 itself).
 
-### Version 1 / 1.0 packing (proposed)
+### Version 1 / 1.0 packing
 
 Gen4 used **Version 5 packing**: merge-only sub-versions (`0.5.0`–
 `0.5.5`) until Sanath asked to pack. That pack is now GitHub Release
-**Version 5** / tag **v0.5.5** (0.5.0–0.5.5).
+**Version 5** / tag **v0.5.5** (0.5.0–0.5.5). Version 5 GitHub Releases
+have **no installable assets**.
 
 Gen5 / the 1.0 line is different because **v1.0.0 is the public
 baseline**, not another production-scale series:
 
 | rule | meaning |
 |---|---|
-| First theme **is** the pack | When G5-1 is accepted and shipped, cut **one Version 1 / 1.0 pack** at tag **v1.0.0**. Do not start a merge-only `1.0.0` / `1.0.1` / … series *before* that public baseline exists |
-| This scope PR | Stay **0.5.5**. Do **not** cut a GitHub Release. Do **not** bump to 1.0.0 |
+| First theme **is** the pack | G5-1 ships as package **1.0.0**. Sanath cuts **one Version 1 / 1.0 pack** at tag **v1.0.0** after merge, with wheel + sdist assets (see `INSTALLATION.md`). Do not start a merge-only `1.0.0` / `1.0.1` / … series *before* that public baseline exists |
+| This implementation PR | Package **1.0.0**. **No GitHub Release / tag.** Do **not** upload secrets |
 | Further 1.0.x | **Class A only when proven** on the 1.0 line. Merge those; pack into Version 1 later only when Sanath asks (same ask-to-pack rule as Version 5, after the baseline exists) |
-| Not | Per-slice GitHub Releases for G5-1. A v0.5.6 “docs bump.” Treating 1.0.0 as marketing while remaining gaps are unjudged |
+| Not | A GitHub Release from this PR. A v0.5.6 “docs bump.” Treating 1.0.0 as marketing while remaining gaps are unjudged. Inventing a PyPI token |
 
-### Code findings (lightweight; no patch)
+Exact asset steps (Sanath, after merge): `python -m build` → attach
+`dist/rad_agent-1.0.0-py3-none-any.whl` and `dist/rad_agent-1.0.0.tar.gz`
+to GitHub Release **Version 1** / tag **v1.0.0**. Users then
+`pip install` the wheel URL. PyPI upload is optional later; not claimed.
 
-What is already in tree vs a **public / product-grade 1.0 baseline**.
-Do not invent a second control plane, do not unpark MCP, do not raise
-caps, and do not invent Class A for 403/429.
+### Code findings (closed by G5-1)
+
+What was already in tree vs a **public / product-grade 1.0 baseline**,
+and what this change closed. Do not invent a second control plane, do
+not unpark MCP, do not raise caps, and do not invent Class A for 403/429.
 
 | already in tree | role | gap vs public 1.0 |
 |---|---|---|
-| GitHub Release **Version 5** / tag **v0.5.5** | Gen4 pack (0.5.0–0.5.5) | **Closed for Gen4 packing.** Release has **no installable assets**. Not a PyPI package |
-| `INSTALLATION.md` / `QUICKSTART.md` | git clone + `pip install -e .` | **Public install hole.** First-run is source-checkout, not a product install. QUICKSTART still says `rad version` prints **0.4.1** while package is **0.5.5** — docs drift vs the packed line |
-| Release gates | pytest, `rad doctor --offline`, `rad acceptance` (50), `rad realworld` | **Closed as the 0.5.x bar.** Not yet locked as a *public 1.0 honesty bar* (false DONE **0**, Needle OFF, caps 16/60, no live PASS claim, Class C is not a product patch) |
+| GitHub Release **Version 5** / tag **v0.5.5** | Gen4 pack (0.5.0–0.5.5) | **Closed for Gen4 packing.** Release has **no installable assets**. Version 1 pack (after merge) attaches wheel + sdist |
+| `INSTALLATION.md` / `QUICKSTART.md` | git clone + `pip install -e .` | **Closed for 1.0 honesty (RW-100).** Public path is the Version 1 wheel; QUICKSTART prints **1.0.0**; contributor checkout remains for pre-pack / dev |
+| Release gates | pytest, `rad doctor --offline`, `rad acceptance` (50), `rad realworld` | **Locked as the public 1.0 honesty bar (RW-101):** false DONE **0**, Needle OFF, caps 16/60, no live PASS claim, Class C is not a product patch, F-17 / F-26 stay closed |
 | G4-3 `rad health` + CAMPAIGN_PLAYBOOK | pause / resume / wait / rotate / run | **Closed for operator workflow.** Residual live campaign is operator work when a provider recovers — not G5-1 |
 | G4-5 / G4-7 / G4-6 | plan structure, named-file contracts, spend rollup | **Closed scripted** (RW-094–099). Live confirmation deferred. Remaining 11B incompleteness without a contract hole is evidence, not a 1.0 theme |
 | `rad connect` / MCP | already first-class; acceptance handshakes | No measured hole (**G4-4 parked**) |
@@ -1228,25 +1239,25 @@ Class A patch for 403/429.
 
 | id | theme | live providers? | status |
 |---|---|---|---|
-| **G5-1** | Public / product-grade 1.0 baseline (install, docs, honesty bar) | **No** for the scripted/docs gate. Prefer G4-3 soak when a brain recovers; live PASS is **not** required to *scope* or to *accept* remaining gaps | **recommended first v1.0.0 candidate — not accepted** |
+| **G5-1** | Public / product-grade 1.0 baseline (install, docs, honesty bar) | **No** for the scripted/docs gate. Prefer G4-3 soak when a brain recovers; live PASS is **not** required to ship | **ACCEPTED + IMPLEMENTED** as **v1.0.0** (scripted RW-100 / RW-101). **No GitHub Release / tag** in this PR |
 | Live confirmation / production soak of Version 5 path | Operator campaign when NIM / OpenRouter free recover | **not G5-1.** G4-3 playbook already ships. Cycle 36 refused this as a package theme. Remains an entry *caveat* / remaining-gaps input |
 | Unpark G4-4 MCP | No | **not a theme** (no measured hole) |
 | Cap policy / longer-horizon product | No | **not a theme** (A1 / F-21; E1–E3 shipped; RW-059) |
 | Residual 11B quality / free-model thrash grab-bag | Live confirmation deferred | **not a theme** (no contract hole; F-44 **NOT CONFIRMED**; 429 is Class C) |
 | Stability / false-DONE gates as a standalone slice | No | **part of G5-1’s honesty bar**, not a second theme. False DONE already **0** |
 
-#### G5-1 — Public / product-grade 1.0 baseline (recommended first)
+#### G5-1 — ACCEPTED + IMPLEMENTED (public / product-grade 1.0 baseline)
 
 | field | value |
 |---|---|
-| Status | **CANDIDATE**. Recommended first Gen5 theme. **Not accepted. Not implemented.** |
+| Status | **ACCEPTED + IMPLEMENTED** as **v1.0.0** (scripted RW-100 / RW-101). **No GitHub Release / tag** — Sanath packs Version 1 after merge |
 | Theme | **Public / product-grade 1.0 baseline** — install, first-run / docs honesty, 1.0 honesty gates, Version 1 pack at **v1.0.0** |
-| Version | Proposed **v1.0.0** (package bump only when accepted). This scope PR stays **0.5.5** |
+| Version | **v1.0.0** |
 | Problem | Gen4 product contract holes are **closed scripted** (G4-5 / G4-7 / G4-6). Version 5 is **packed** at tag **v0.5.5** (0.5.0–0.5.5). 1.0 is defined as a **stable public / product-grade baseline**, not another executor slice. Measured gap vs that definition: install is git clone + editable pip (`INSTALLATION.md`); the Version 5 GitHub Release has no installable assets; QUICKSTART still claims `rad version` prints **0.4.1**; the 0.5.x honesty gates are not yet locked as a public 1.0 bar. Live confirmation of the Version 5 path has not happened (last working inference **RW-086** on **v0.4.7**) — that is the loop’s **use** step and a Gen5 entry *caveat*, not a missing control-plane hole |
-| Entry | Gen4 complete (scripted) on 0.5.0–0.5.5 — **DONE**. Version 5 pack tag **v0.5.5** — **DONE**. Sanath accepts G5-1 as v1.0.0, including an explicit remaining-gaps judgment for a public baseline (deferred live confirmation as caveat; historical 11B Class B without a contract hole stays evidence). Prefer the G4-3 campaign when a provider recovers; live **PASS** is **not** required to accept. Grounded in Gen5’s named purpose, INSTALLATION / QUICKSTART vs the packed line, Cycle 36 closeout (no G4-8), and entry criterion 3 — not in a FAIL row as automatic rewrite. Class C stays Class C. F-17 / F-26 stay closed |
-| Non-goals | Inventing a product Class A for 403/429. Remaining-quota. Unparking MCP (G4-4). Raising caps (`max_plan_tasks` **16**, default `Budget.tool_calls` **60`) as “1.0 scale.” Claiming live text_analyzer@12 PASS. Reopening F-17 / F-21 / F-26. Adding checks to fallback *tasks*. Rubber-stamp VERIFIED. Remapping `write_file` / `echo >` (F-44). A new executor slice (E4). A new telemetry stack / SQLite. A control-plane rewrite. Needle on. A **v0.5.6** bump. Cutting v1.0.0 from this scope PR. Treating `/v1/models` **200** as inference entitlement. Making live confirmation itself the product theme while gates stay paused |
+| Entry | Gen4 complete (scripted) on 0.5.0–0.5.5 — **DONE**. Version 5 pack tag **v0.5.5** — **DONE**. Sanath accepts G5-1 as v1.0.0, including an explicit remaining-gaps judgment for a public baseline (deferred live confirmation as caveat; historical 11B Class B without a contract hole stays evidence). Prefer the G4-3 campaign when a provider recovers; live **PASS** is **not** required to ship. Grounded in Gen5’s named purpose, INSTALLATION / QUICKSTART vs the packed line, Cycle 36 closeout (no G4-8), Cycle 37 scope (PR #51), and entry criterion 3 — not in a FAIL row as automatic rewrite. Class C stays Class C. F-17 / F-26 stay closed |
+| Non-goals | Inventing a product Class A for 403/429. Remaining-quota. Unparking MCP (G4-4). Raising caps (`max_plan_tasks` **16**, default `Budget.tool_calls` **60`) as “1.0 scale.” Claiming live text_analyzer@12 PASS. Reopening F-17 / F-21 / F-26. Adding checks to fallback *tasks*. Rubber-stamp VERIFIED. Remapping `write_file` / `echo >` (F-44). A new executor slice (E4). A new telemetry stack / SQLite. A control-plane rewrite. Needle on. A **v0.5.6** bump. A GitHub Release / tag in this PR. Treating `/v1/models` **200** as inference entitlement. Making live confirmation itself the product theme while gates stay paused |
 | Needs live providers | **No** for the scripted/docs gate. Live soak prefers a recovered brain (G4-3 playbook) and is **not** a live PASS claim |
-| What it is not | Not Gen4 leftover numbering. Not “wait forever” for Class C. Not PyPI-as-fantasy without an accepted remaining-gaps judgment. Not a second health probe. Not packing Version 5 again |
+| What it is not | Not Gen4 leftover numbering. Not “wait forever” for Class C. Not inventing a PyPI token. Not a second health probe. Not packing Version 5 again. Not a live PASS claim |
 
 **Why this one first (investigated alternatives):**
 
@@ -1260,7 +1271,7 @@ Class A patch for 403/429.
 | Stability / regression / false-DONE gates as a standalone theme | False DONE already **0**. Release gates already green on 0.5.5. Locking that bar for a public baseline is **part of G5-1**, not a second product slice |
 | Operational runbooks / `needs_user` UX polish | G4-1 / G4-2 / G4-3 already shipped pause / resume / skip-blocked doctor / `rad health`. Residual copy is not a measured hole |
 
-**Acceptance gates (when accepted — not this change):**
+**Acceptance gates (this change):**
 
 | gate | meaning |
 |---|---|
@@ -1268,20 +1279,25 @@ Class A patch for 403/429.
 | Doctor | `rad doctor --offline` |
 | Acceptance | `rad acceptance` |
 | Real-world suite | `rad realworld` (`live_nim` may stay BLOCKED) |
-| Public install / docs | first-run path matches package **1.0.0**; QUICKSTART / INSTALLATION do not advertise a stale `rad version`; no live PASS claim in public docs |
-| Honesty bar | Needle **OFF**; caps **16/60** unless a proven product need is documented; false DONE **0**; Class C is not a product patch; F-17 / F-26 stay closed |
-| Packing | **one Version 1 / 1.0 pack** at tag **v1.0.0** when this theme ships — not a pre-1.0 GitHub Release from the scope PR |
+| Public install / docs | first-run path matches package **1.0.0**; QUICKSTART / INSTALLATION do not advertise a stale `rad version`; no live PASS claim in public docs (RW-100) |
+| Honesty bar | Needle **OFF**; caps **16/60** unless a proven product need is documented; false DONE **0**; Class C is not a product patch; F-17 / F-26 stay closed (RW-101) |
+| Packing | package **1.0.0**; **no GitHub Release / tag in this PR** — Sanath packs **one Version 1 / 1.0** at tag **v1.0.0** after merge |
 | Invariants | no live PASS claim; remaining-quota not invented; MCP not force-built; no cap raise as the theme |
 
-### Accepting the first v1.0.0 theme
+**What shipped:** package **1.0.0**; PyPI-ready metadata (`classifiers`,
+URLs, `pack` extra for `build`); QUICKSTART / INSTALLATION / README
+public wheel path + contributor checkout; Version 1 packing steps for
+Sanath (wheel + sdist; no secrets); 1.0 honesty bar locked in ROADMAP /
+README / gates narrative; scripted RW-100 / RW-101.
 
-A short written decision that names **G5-1**, the evidence (Gen4 complete
-scripted; Version 5 packed at **v0.5.5**; INSTALLATION / QUICKSTART vs
-public baseline; remaining-gaps judgment), the invariant that must not
-move (Needle off; caps unchanged unless proven; models propose / RAD
-decides; false DONE **0**; Class C is not a product patch; F-17 / F-26
-closed), and the 1.0.0 change. G5-1 is listed, not accepted. Do not
-start v1.0.0 from this scope PR. Stay **0.5.5**.
+### Accepting a further v1.0.x theme
+
+A short written decision that names the theme, the evidence rows, the
+invariant that must not move (Needle off; caps unchanged unless proven;
+models propose / RAD decides; false DONE **0**; Class C is not a product
+patch; F-17 / F-26 closed), and the 1.0.x change. **G5-1** is shipped as
+**v1.0.0**. Further 1.0.x is **Class A only when proven**. **No GitHub
+Release / tag in this PR.** Version 1 pack after Sanath merges.
 
 ---
 
@@ -1290,7 +1306,7 @@ start v1.0.0 from this scope PR. Stay **0.5.5**.
 | doc | role |
 |---|---|
 | [MATURATION_CYCLE_REPORT.md](MATURATION_CYCLE_REPORT.md) | Cycle-by-cycle evidence and decisions |
-| [REAL_WORLD_TASK_MATRIX.md](REAL_WORLD_TASK_MATRIX.md) | Disk-checked task rows (do not rewrite RW-058–099) |
+| [REAL_WORLD_TASK_MATRIX.md](REAL_WORLD_TASK_MATRIX.md) | Disk-checked task rows (do not rewrite RW-058–099; RW-100 / RW-101 are G5-1) |
 | [REAL_WORLD_FAILURE_LEDGER.md](REAL_WORLD_FAILURE_LEDGER.md) | A/B/C findings |
 | [ADR-001-NEEDLE-TOOL-ROUTER.md](ADR-001-NEEDLE-TOOL-ROUTER.md) | Needle stays optional / off |
 | [CONTROL-PLANE.md](CONTROL-PLANE.md) | Shipped control-plane behaviour |

@@ -12,7 +12,7 @@ runs commands with your confirmation, and **teaches itself new skills from a sin
   __ / \  |  _ \/ |      / \
  / _` __ \| |_) | | /\/\ / _ \
  \__,_||_|____/|_|/__/__\_/ \_\
-   v0.5.5 — open door, free first, self-evolving
+   v1.0.0 — open door, free first, self-evolving
 ```
 
 ---
@@ -64,7 +64,7 @@ local engines → free cloud tiers (round-robin) → paid (unless free-lock)
 * Everything is reported: `rad [groq] …`
 * Optional experimental tool router: `RAD_TOOL_ROUTER=needle` lets [Needle](https://github.com/cactus-compute/needle)
   *propose* tool names/args. Default remains `existing`. Needle never executes tools, never
-  bypasses permission/sandbox/budget/verification, and stays **off** in v0.5.5
+  bypasses permission/sandbox/budget/verification, and stays **off** in v1.0.0
   (`RAD_TOOL_ROUTER=existing`). `rad needle-eval` is the measurement path; it is not a default.
 
 ## Human-inspired memory
@@ -214,6 +214,19 @@ Watchers are detached processes; notifications land in `~/.rad/notifications.md`
 ## Install
 
 Requires Python 3.9+ (3.11 or 3.12 recommended). No mandatory dependencies (stdlib-only core).
+Package **1.0.0**. `rad version` prints **1.0.0**. Needle **OFF**. Caps **16/60**.
+False DONE **0**. Live text_analyzer@12 is **not** claimed PASS.
+
+**Public 1.0** (after Sanath packs GitHub Release **Version 1** / tag **v1.0.0**
+with wheel + sdist — **not** this PR):
+
+```bash
+python3 -m venv .venv && source .venv/bin/activate
+pip install https://github.com/seven0070/rad-agent-/releases/download/v1.0.0/rad_agent-1.0.0-py3-none-any.whl
+rad version
+```
+
+Contributor / pre-pack checkout:
 
 ```bash
 git clone https://github.com/seven0070/rad-agent- && cd rad-agent-
@@ -359,7 +372,9 @@ Inside chat: `/help /good /bad /remember /recall /evolve /use /free /auto /cost 
 
 ## Windows
 
-Rad runs on Windows (10/11) out of the box — `python -m venv .venv`, `pip install -e .`, done.
+Rad runs on Windows (10/11) out of the box — public 1.0: `pip install` the
+`v1.0.0` wheel from GitHub Release **Version 1** (after Sanath packs).
+Contributor checkout: `python -m venv .venv`, `pip install -e .`, done.
 
 * **Local engine**: `winget install Ollama.Ollama` — Ollama on Windows uses your **NVIDIA GPU**
   automatically. `ollama pull llama3.2:3b` and Rad picks it up at boot. LM Studio works too.
@@ -386,7 +401,7 @@ and how to add a tool, a scenario or a migration.
 
 ## Roadmap
 
-Operating spine (Gen1–Gen5, the build → test → validate → release → use → discover gaps loop): [docs/ROADMAP.md](docs/ROADMAP.md). Gen1 complete on 0.2.3; Gen2 complete on 0.3.0–0.3.2; Gen3 **complete (scripted)** on 0.4.0–0.4.9; Gen4 **complete (scripted)** on 0.5.0–0.5.5 — **G4-1** implemented as v0.5.0 (scripted RW-089); **G4-2** live-gate resume / provider health observability **implemented as v0.5.1** (scripted RW-090 / RW-091); **G4-3** live-use campaign / operator workflow **implemented as v0.5.2** (scripted RW-092 / RW-093). **G4-5** fallback / LLM plan quality **implemented as v0.5.3** (scripted RW-094 / RW-095). **G4-7** coding artifact completeness / named package-file contracts **implemented as v0.5.4** (scripted RW-096 / RW-097). **G4-6** cost/budget reporting **implemented as v0.5.5** (scripted RW-098 / RW-099). **G4-4 parked** (no measured hole). **Version 5 pack** is GitHub Release **Version 5** / tag **v0.5.5** (0.5.0–0.5.5). Package stays **0.5.5**. Gen5 **not started**. First theme **G5-1** (public / product-grade 1.0 baseline) is **listed, not accepted** (proposed **v1.0.0** only when accepted). Live E1–E3 confirmation **deferred**; live text_analyzer@12 **not** claimed PASS; NIM Class C paused (RW-084); OpenRouter free paused (RW-086 429). Needle **OFF**. Caps **16/60**. The list below is a product-idea backlog, not a generation commitment.
+Operating spine (Gen1–Gen5, the build → test → validate → release → use → discover gaps loop): [docs/ROADMAP.md](docs/ROADMAP.md). Gen1 complete on 0.2.3; Gen2 complete on 0.3.0–0.3.2; Gen3 **complete (scripted)** on 0.4.0–0.4.9; Gen4 **complete (scripted)** on 0.5.0–0.5.5 — **G4-1** implemented as v0.5.0 (scripted RW-089); **G4-2** live-gate resume / provider health observability **implemented as v0.5.1** (scripted RW-090 / RW-091); **G4-3** live-use campaign / operator workflow **implemented as v0.5.2** (scripted RW-092 / RW-093). **G4-5** fallback / LLM plan quality **implemented as v0.5.3** (scripted RW-094 / RW-095). **G4-7** coding artifact completeness / named package-file contracts **implemented as v0.5.4** (scripted RW-096 / RW-097). **G4-6** cost/budget reporting **implemented as v0.5.5** (scripted RW-098 / RW-099). **G4-4 parked** (no measured hole). **Version 5 pack** is GitHub Release **Version 5** / tag **v0.5.5** (0.5.0–0.5.5). Gen5 **in progress**. First theme **G5-1** (public / product-grade 1.0 baseline) is **accepted and implemented as v1.0.0** (scripted RW-100 / RW-101). Package **1.0.0**. **No GitHub Release / tag in this change** — Sanath packs **Version 1** after merge. Honesty bar: false DONE **0**; Needle **OFF**; caps **16/60**; F-17 / F-26 closed; Class C is not a product patch; remaining-quota not invented. Live E1–E3 confirmation **deferred**; live text_analyzer@12 **not** claimed PASS; NIM Class C paused (RW-084); OpenRouter free paused (RW-086 429). The list below is a product-idea backlog, not a generation commitment.
 
 LoRA fine-tune of Rad's personality into Edge0 weights · expert pruning/distillation for lighter
 35b · web/phone face · remote-MCP tool execution hardening · multi-user sessions ·

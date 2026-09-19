@@ -100,9 +100,12 @@ cannot VERIFIED; F-17 stays closed. Theme **G4-6** is **implemented as
 v0.5.5** — `rad cost` rolls up persisted per-objective `Usage`
 (`tool_calls` / `model_calls` / `money_usd` / `tokens`) across
 `objective.json`; remaining-quota is not invented; G4-2 last Class C is
-untouched. Package is **0.5.5**. First Gen5 theme **G5-1** (public /
-product-grade 1.0 baseline) is listed, not accepted — see
-[ROADMAP.md](ROADMAP.md).
+untouched. Package is **1.0.0**. First Gen5 theme **G5-1** (public /
+product-grade 1.0 baseline) is **accepted and implemented as v1.0.0**
+(scripted RW-100 / RW-101). **No GitHub Release / tag in that change** —
+Sanath packs Version 1 after merge. Honesty bar: false DONE **0**; Needle
+**OFF**; caps **16/60**; F-17 / F-26 closed; Class C is not a product
+patch — see [ROADMAP.md](ROADMAP.md).
 
 ## Parallelism (Phase 3)
 Ready tasks with satisfied dependencies run concurrently up to `objective_parallel`

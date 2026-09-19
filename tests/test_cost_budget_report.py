@@ -36,7 +36,7 @@ from rad.toolrouter import resolve_tool_router
 # ---------------------------------------------------------------- architecture freeze
 
 def test_g46_does_not_raise_caps_or_enable_needle(home):
-    assert __version__ == "0.5.5"
+    assert __version__ == "1.0.0"
     assert Budget().tool_calls == 60
     assert int(home.cfg.get("max_plan_tasks", 16) or 16) == 16
     assert Planner(None, str(home.workspace())).max_tasks == 16

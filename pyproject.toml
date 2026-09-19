@@ -4,13 +4,32 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rad-agent"
-version = "0.5.5"
+version = "1.0.0"
 description = "Rad — an open, self-evolving, free-first AI agent with a human-inspired mind"
 readme = "README.md"
 requires-python = ">=3.9"
 license = { file = "LICENSE" }
-authors = [{ name = "Rad" }]
+authors = [{ name = "Sanath S Patil" }]
+keywords = ["agent", "llm", "rad", "free-first", "control-plane"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/seven0070/rad-agent-"
+Repository = "https://github.com/seven0070/rad-agent-"
+Issues = "https://github.com/seven0070/rad-agent-/issues"
+Releases = "https://github.com/seven0070/rad-agent-/releases"
 
 [project.optional-dependencies]
 vault = ["cryptography>=41"]
@@ -18,6 +37,7 @@ cloud = ["google-auth>=2", "google-auth-oauthlib>=1", "google-api-python-client>
 voice = ["faster-whisper>=1.0", "sounddevice>=0.4", "piper-tts>=1.2"]
 agi = ["autogen-agentchat>=0.4", "kuzu>=0.9"]
 dev = ["pytest>=7"]
+pack = ["build>=1.2"]
 
 [project.scripts]
 rad = "rad.cli:main"
