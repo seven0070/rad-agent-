@@ -6,6 +6,107 @@ Default `Budget.tool_calls` remains **60**.
 
 ---
 
+# Cycle 34 — Scope G4-6 cost/budget reporting; stay 0.5.4 (2026-09-19)
+
+**Date:** 2026-09-19
+**Baseline:** `origin/main` `3e9f313966e0ff07a6eb246f02716fb803d52308` (merge PR #47; package **0.5.4**)
+**Package at start:** `0.5.4`
+**This branch:** `cursor/g4-6-cost-budget-scope-d57f` — package **0.5.4** (no bump)
+**Architecture:** control plane preserved. Needle stays off. Caps unchanged.
+**Kind:** docs / scope only. No `rad/` product change. RW-058–097 are **not rewritten**.
+**Release:** **none** — Version 5 packing doctrine: merge-only; pack again only when Sanath asks. GitHub Release **Version 5** / tag **v0.5.2** still covers G4-1–G4-3 only.
+
+## Why this cycle
+
+**G4-7** shipped as **v0.5.4** (PR #47; scripted RW-096 / RW-097). Version 5
+pack remains GitHub Release **v0.5.2** (G4-1 / G4-2 / G4-3). G4-1 closed
+pause. G4-2 closed safe resume. G4-3 closed the operator-use path. G4-5
+closed plan-*structure*. G4-7 closed named-file / JSON-field *objective*
+contracts. Both live free paths remain **paused**. Live E1–E3 confirmation
+is **deferred**. F-17 stays closed.
+
+Investigate-first after G4-7: the highest-leverage **Production Scale**
+gap is not MCP, not another “wait for live confirmation” theme, and not
+a residual Class B grab-bag. G4-3 already shipped the campaign playbook.
+Running it is operator work when a provider recovers — not a package bump
+while NIM / OpenRouter free stay paused. Cycle 24’s remaining *product*
+Class B list (fallback PLAN, incomplete packages) is **closed scripted**.
+Remaining 11B incompleteness without a contract hole is evidence, not a
+theme. Cycles 30–32 deferred **G4-6** as “wait for Version 5 live-use
+data” so G4-5 / G4-7 could ship. That was a **priority deferral**, not a
+missing API. Per-objective `Usage` already persists; `rad cost` is
+paid-14-day only. Scripted/offline runs already write those records.
+**G4-4 id kept** (no hole). **G4-6 id kept** (do not invent G4-8 for the
+same work).
+
+## Alternatives considered
+
+| candidate | decision |
+|---|---|
+| Cost/budget reporting | **Recommended next (G4-6 / v0.5.5).** Evidence-backed (Cycle 24 `rad cost` paid-only; RW-086 `$0` / tools 12/12; existing `Objective.usage` not rolled up). Scriptable without a recovered brain. Do not invent remaining-quota. Does not invent Class A for 403/429 |
+| Extensibility / MCP (G4-4) | No measured hole. Already first-class. **Id kept** |
+| Larger workload / longer-horizon *product* | E1–E3 already shipped scripted. Caps 16/60 stay closed (A1 / F-21). RW-059 showed 12→24 still exhausted |
+| Live confirmation of Version 5 / G4-5 / G4-7 path | G4-3 playbook already ships. Gates remain paused. Operator campaign when a provider recovers — not a new product theme |
+| Residual Class B after G4-5 + G4-7 (plan quality + artifact contracts) | G4-5 / G4-7 closed those contract holes scripted. Remaining 11B incompleteness without a contract hole is evidence, not a theme. Do not invent G4-8 |
+| Residual Class B “11B quality / free-model thrash” as a grab-bag | Thrash Class A patched or F-44 **NOT CONFIRMED**. 429 is Class C |
+
+## Code findings (lightweight; no patch)
+
+| existing | role | gap vs post-G4-7 residual |
+|---|---|---|
+| `infer_coding_checks` | named-file `file_exists` + `json_field` (cap 8) | **Closed** scripted (RW-096 / RW-097). Live confirmation deferred |
+| G4-5 `_json_obj` + `PLAN_CODING_RETRY` | near-JSON recover / compact retry | **Closed** scripted (RW-094 / RW-095). Live confirmation deferred |
+| `Planner._fallback` (F-17) | clause-split, cap 7, no checks | Do not add checks to fallback *tasks* |
+| `rad health` + CAMPAIGN_PLAYBOOK | operator wait/rotate/resume/run | Closed for G4-3. Residual live campaign is operator work |
+| `rad connect` / MCP | already first-class | No measured hole (G4-4) |
+| `rad cost` / `RouterState.cost_report` | paid 14-day token spend | **G4-6 hole.** Free remaining-quota not in API until 429. Per-objective `Usage` persists, not rolled up |
+| `Objective.usage` | tools / model / money / tokens on `objective.json` | One-run banner / `rad inspect` only. No production rollup |
+
+## Decision
+
+| item | value |
+|---|---|
+| Package | **0.5.4** (no 0.5.5) |
+| Gen3 | **COMPLETE (scripted)** (unchanged). Live E1–E3 **deferred** |
+| Gen4 | **IN PROGRESS**. **G4-7 shipped** as **v0.5.4**. **Version 5 pack** still **v0.5.2** (G4-1–G4-3). **G4-6 listed, not accepted** |
+| Recommended next v0.5.5 candidate | **G4-6** — cost/budget reporting (see ROADMAP). **Not** accepted here |
+| Other candidates | G4-4 extensibility (not next — no hole) |
+| Next product work | Waits for an accepted v0.5.5 theme |
+| Packing | Merge-only. **No per-slice GitHub Release.** Pack again only when Sanath asks |
+| Invariants | Needle OFF; caps 16/60; false DONE 0; no redesign; Class C is not a product patch; no live PASS claim; F-17 stays closed |
+
+## Quality gates (this branch)
+
+Isolated homes `/tmp/rad-g46-scope-gate` (doctor, acceptance) and `/tmp/rad-g46-scope-rw` (realworld).
+
+| gate | result |
+|------|--------|
+| `rad version` | **PASS** v0.5.4 |
+| `python3 -m pytest -q` | **PASS** 641 passed in 11.58s |
+| `rad doctor --offline` | **PASS** 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR, verdict READY, exit 0 |
+| `rad acceptance` | **PASS** 50/50 — `/tmp/rad-g46-scope-gate/acceptance/20260919-072716_gate.json` |
+| `rad realworld` | **PASS** 10/11 + 1 BLOCKED — `/tmp/rad-g46-scope-rw/realworld/20260919-072717_realworld.json` |
+| Needle default | **PASS** (`existing`) — unchanged |
+| Caps | **PASS** `max_plan_tasks` 16; `Budget.tool_calls` 60 — unchanged |
+| Package | **0.5.4** (no bump) |
+| Release / tag | **none** — Version 5 packing doctrine |
+| Live this patch | not re-run; suite `live_nim` **BLOCKED** (Class C) |
+
+## Remaining limitations
+
+1. Live text_analyzer@12 remains Class B FAIL. This cycle does not change that.
+2. E1/E2/E3 are scripted only. Live confirmation **deferred**.
+3. Both live free paths remain **paused**. G4-6 is scoped so a later accept can roll up existing per-objective spend — not a live PASS, not remaining-quota.
+4. G4-6 is listed, not accepted.
+
+## Roadmap pointer
+
+Operating spine: [ROADMAP.md](ROADMAP.md). **Generation 4 in progress.**
+**G4-7 implemented as v0.5.4.** Recommended next **G4-6** listed, not
+accepted. Stay **0.5.4**. Gen5 is not started.
+
+---
+
 # Cycle 33 — G4-7 coding artifact completeness; v0.5.4 (2026-09-19)
 
 **Date:** 2026-09-19
