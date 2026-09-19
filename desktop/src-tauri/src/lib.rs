@@ -104,9 +104,7 @@ fn default_home() -> String {
 
 #[tauri::command]
 fn api_token(home: Option<String>) -> Result<String, String> {
-    let root = home
-        .map(PathBuf::from)
-        .unwrap_or_else(default_rad_home);
+    let root = home.map(PathBuf::from).unwrap_or_else(default_rad_home);
     let p = token_path(&root);
     std::fs::read_to_string(&p)
         .map(|s| s.trim().to_string())
@@ -161,13 +159,21 @@ fn backend_start(
     let backend_root = bundled_backend_root(&app)?;
     let python = python_bin();
     let mut cmd = Command::new(&python);
-    cmd.args(["-m", "rad", "serve", "--host", "127.0.0.1", "--port", &port.to_string()])
-        .current_dir(&backend_root)
-        .env("RAD_HOME", &home)
-        .env("PYTHONPATH", python_path(&backend_root)?)
-        .stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .stderr(Stdio::null());
+    cmd.args([
+        "-m",
+        "rad",
+        "serve",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        &port.to_string(),
+    ])
+    .current_dir(&backend_root)
+    .env("RAD_HOME", &home)
+    .env("PYTHONPATH", python_path(&backend_root)?)
+    .stdin(Stdio::null())
+    .stdout(Stdio::null())
+    .stderr(Stdio::null());
     let mut child = cmd
         .spawn()
         .map_err(|e| format!("failed to start bundled rad serve via {python}: {e}"))?;
