@@ -15,9 +15,10 @@ free-model thrash. Generation 4 is **in progress**. First theme **G4-1**
 (live multi-provider / free-provider production doctrine) is **accepted
 and implemented as v0.5.0** (scripted RW-089). Theme **G4-2**
 (live-gate resume / provider health observability) is **accepted
-and implemented as v0.5.1** (scripted RW-090 / RW-091). Package is
-**0.5.1**. Do **not** claim live text_analyzer@12 PASS. Generation 5
-is **not started**.
+and implemented as v0.5.1** (scripted RW-090 / RW-091). Recommended
+next **v0.5.2** candidate **G4-3** (live-use campaign / operator
+workflow) is **listed, not accepted**. Package stays **0.5.1**. Do
+**not** claim live text_analyzer@12 PASS. Generation 5 is **not started**.
 
 ```
 build → test → validate → release → use → discover gaps → build the next version
@@ -33,14 +34,14 @@ Stability with no code change is a valid result.
 | item | value |
 |---|---|
 | Generation in production | **Gen4 in progress** — **v0.5.1** (G4-2). G4-1 remains **v0.5.0**. Gen3 remains **complete (scripted)** on 0.4.0–0.4.9. Last live-use with **working inference** is **RW-086** on tag `v0.4.7` @ `850aaf9c` (OpenRouter free; then **429**); prior working-inference row is RW-085 on tag `v0.4.6` @ `8f09be58`; v0.4.6 live NIM attempt is RW-084 **BLOCKED Class C**; last NIM working-inference row remains RW-081 on `v0.4.5` @ `32e9fe87`; Gen2 complete on `387776dc` / tag `v0.3.2`; Gen1 baseline remains tagged `v0.2.3` @ `d121c3f` |
-| Package / tag on `main` | **0.5.1** (this change). Tag `v0.5.0` @ `d194b8ffc763fc00ad58273e5dd8f0203442041d` (merge PR #39) is G4-1. Tag `v0.4.9` @ `05ea0df302aa6bfd15eccfb84341aeed75d6e1d0` is E3. Tag `v0.4.7` @ `850aaf9c3a931a5ba119bdbb6ec73ae4a6fa73e9` remains the live RW-086 run |
-| This change | **G4-2 implemented** as **v0.5.1** — catalog vs inference health; last Class C persist; live-gate resume |
+| Package / tag on `main` | **0.5.1** (this change — **no bump**). Tag `v0.5.1` @ `2d4c8b6dd2e75b191a33913b93eb7d77acd3be6b` (merge PR #41) is G4-2. Tag `v0.5.0` @ `d194b8ffc763fc00ad58273e5dd8f0203442041d` (merge PR #39) is G4-1. Tag `v0.4.9` @ `05ea0df302aa6bfd15eccfb84341aeed75d6e1d0` is E3. Tag `v0.4.7` @ `850aaf9c3a931a5ba119bdbb6ec73ae4a6fa73e9` remains the live RW-086 run |
+| This change | **docs / scope only** — mark **G4-2 shipped** as **v0.5.1**; scope **G4-3** live-use campaign / operator workflow as recommended next **v0.5.2** (listed, not accepted); stay **0.5.1** |
 | Generation 2 | **COMPLETE** — theme 1 **v0.3.0** (used RW-065 / RW-068); theme 2 **v0.3.1** (used live RW-066 / RW-068); theme 3 **v0.3.2** (scripted RW-067; used RW-068 / RW-069) |
 | Latest use (RW-086) | Live OpenRouter free text_analyzer on v0.4.7 **FAIL** `needs_user` @ tools **12/12**: provider **openrouter** / `nvidia/nemotron-3.5-lightning:free`; `$0`; PLAN `source=fallback` attempts=2; task1 **COMPLETED** + task2 attempts=1; E1 **not live** (0 TaskYield). xxd Class A ENVIRONMENT thrash **CLEARED** (0 xxd / 0 ENVIRONMENT / 0 repair). Residual Class **B+C** (fallback plan, missing tests/README, odd summary + late HTTP **429** `free-models-per-day`). False DONE **0** |
 | Live OpenRouter free loop | **PAUSED** until `free-models-per-day` rate limit resets (RW-086). Do not treat further free-model retries as product Class B until rate clears |
 | Live NIM loop | **PAUSED / Class C blocked** (RW-084). E1 live gate still **not confirmed**. Scripted RW-083 remains unit evidence |
 | Generation 3 | **COMPLETE (scripted)** — theme 1 **implemented** (v0.4.0) **used** (RW-071 / RW-073 / RW-075 / RW-077 / RW-079 / RW-081 / RW-085 / RW-086); theme 2 **implemented** (v0.4.1) **used** (RW-073 / RW-075 / RW-077 / RW-079 / RW-081 / RW-085 / RW-086); theme 3 slices A–D **v0.4.2–v0.4.5** **used** (RW-075 / RW-077 / RW-079 / RW-081; mkdir live Y on RW-081); slice E1 **v0.4.6** **implemented** (scripted RW-083; live **not confirmed** on RW-084/085/086); slice F **v0.4.7** **implemented** (xxd ENVIRONMENT; scripted RW-086; live RW-086 thrash **CLEARED**); slice E2 **v0.4.8** **implemented** (scripted RW-087; live **not confirmed**); slice E3 **v0.4.9** **implemented** (scripted RW-088; live **not confirmed**). Live E1–E3 confirmation **deferred** until a provider recovers |
-| Generation 4 | **IN PROGRESS** — **G4-1** as **v0.5.0** (scripted RW-089); **G4-2 ACCEPTED + IMPLEMENTED** as **v0.5.1** (scripted RW-090 / RW-091). G4-3 / G4-4 / G4-5 remain later candidates |
+| Generation 4 | **IN PROGRESS** — **G4-1** as **v0.5.0** (scripted RW-089); **G4-2** as **v0.5.1** (scripted RW-090 / RW-091). Recommended next **G4-3** listed, **not accepted**. G4-4 / G4-5 / G4-6 remain later candidates |
 | Generation 5 | **NOT STARTED** |
 | Needle | optional / **off** (`tool_router=existing`; ADR-001) |
 | `max_plan_tasks` | **16** (unchanged) |
@@ -61,7 +62,7 @@ Cycle evidence, not this file: [MATURATION_CYCLE_REPORT.md](MATURATION_CYCLE_REP
 | **1** | Foundation | v0.2.0, v0.2.1, v0.2.2, **v0.2.3** | **COMPLETE** |
 | **2** | Capability Expansion | v0.3.x | **COMPLETE** (theme 1 → **v0.3.0**; theme 2 → **v0.3.1** used RW-066/068; theme 3 → **v0.3.2**; use campaign RW-068 PASS / RW-069 FAIL) |
 | **3** | Autonomous Agent Maturity | v0.4.x | **COMPLETE (scripted)** (theme 1 → **v0.4.0**; theme 2 → **v0.4.1**; theme 3 slices A–D → **v0.4.2–v0.4.5**; slice E1 → **v0.4.6**; slice F → **v0.4.7**; slice E2 → **v0.4.8**; slice E3 → **v0.4.9**; live E1–E3 **deferred**) |
-| **4** | Production Scale | v0.5.x | **IN PROGRESS** (G4-1 → **v0.5.0**; G4-2 → **v0.5.1**; G4-3 / G4-4 / G4-5 candidates) |
+| **4** | Production Scale | v0.5.x | **IN PROGRESS** (G4-1 → **v0.5.0**; G4-2 → **v0.5.1**; G4-3 listed, not accepted; G4-4 / G4-5 / G4-6 candidates) |
 | **5** | 1.0 | v1.0.0 | **NOT STARTED** |
 
 Enter the next generation only after the previous one has been **released, used, and has
@@ -87,8 +88,10 @@ implemented** as **v0.4.9** (scripted RW-088). Gen3 is **complete
 (scripted)**. Live E1–E3 confirmation is **deferred** until a provider
 recovers. Gen4 is **in progress**. G4-1 is **accepted and implemented**
 as **v0.5.0**. **G4-2** (live-gate resume / provider health
-observability) is **accepted and implemented** as **v0.5.1**. Gen5 stays closed
-until Gen4 has been released and used.
+observability) is **accepted and implemented** as **v0.5.1**.
+Recommended next **G4-3** (live-use campaign / operator workflow) is
+**listed, not accepted**. Gen5 stays closed until Gen4 has been
+released and used.
 
 ---
 
@@ -559,11 +562,14 @@ after Gen3 maturity themes have measured (scripted) wins.
 free-provider production doctrine** — is **accepted and implemented as
 v0.5.0** (scripted RW-089). Theme **G4-2** (live-gate resume / provider
 health observability) is **accepted and implemented as v0.5.1**
-(scripted RW-090 / RW-091). Package is **0.5.1**. Same loop. Same
-A/B/C rules. Same gates. Needle stays **OFF**. Caps (`max_plan_tasks`
-**16**, default `Budget.tool_calls` **60**) unchanged. Do **not**
-claim live text_analyzer@12 PASS. Live NIM/OpenRouter success is
-**not** a gate. Do **not** invent a Class A patch for 403/429.
+(scripted RW-090 / RW-091). Recommended next **v0.5.2** candidate
+**G4-3** (live-use campaign / operator workflow) is **listed, not
+accepted**. Package stays **0.5.1**. Do **not** implement v0.5.2 in
+this change. Same loop. Same A/B/C rules. Same gates. Needle stays
+**OFF**. Caps (`max_plan_tasks` **16**, default `Budget.tool_calls`
+**60**) unchanged. Do **not** claim live text_analyzer@12 PASS. Live
+NIM/OpenRouter success is **not** a gate. Do **not** invent a Class A
+patch for 403/429.
 
 Live E1–E3 confirmation is **deferred**, not a license to invent the
 next executor slice. Class B rows are input to a theme decision. They
@@ -597,42 +603,50 @@ Release gates must still be green (pytest, `rad doctor --offline`,
 ### Code findings (lightweight; no patch)
 
 What is already in tree vs the measured production-scale gap after
-G4-1. This is **strengthen / use / doctrine**, not invent a second
+G4-2. This is **strengthen / use / doctrine**, not invent a second
 control plane.
 
-| already in tree | role | gap vs measured post-G4-1 use |
+| already in tree | role | gap vs measured post-G4-2 use |
 |---|---|---|
 | `rad/router.py` free-first chain | local → free round-robin → paid (unless free-lock); Class C skip + rotate preferred (v0.5.0) | **Closed for pause doctrine** (RW-089). Live pin + singleton key still cannot invent a second brain — honest pause |
 | `rad/control/recovery.py` | HTTP 429 → `RATE_LIMIT` ask_user; HTTP 403 → AUTH ask_user; Class C before MODEL (v0.5.0) | **Closed for pause doctrine** (RW-089). Mid-run 429 no longer retries as TRANSIENT/MODEL |
-| `Doctor.c_providers` | counts usable chain from key / local probe | **Closed (G4-2 / RW-090).** Catalog-alive ≠ inference-entitled. Doctor **READY** only for inference-entitled brains; a 403-chat pin is WARNING |
-| `probe_local` | local engines: reachable + model list | Cloud catalog vs inference probe ships as `rad/health.py` (`probe_catalog` / `probe_inference`) |
-| `RouterState.failures` | skip Class-C-failed brains this process | **Closed (G4-2 / RW-091).** Last Class C persisted in `~/.rad/provider_health.json`; new `RouterState` hydrates it |
-| `class_c_next_steps` + TROUBLESHOOTING | pause text: rotate key / wait quota / `rad use` | Resume *check* ships (G4-2). `rad objective resume` gates Class C pauses until an inference-entitled brain recovers; Retry-After surfaced when present |
-| `rad cost` / `RouterState.cost_report` | paid 14-day token spend | Free-tier quota / 429 is invisible. Per-objective tool/model budgets are not a production rollup (G4-3) |
-| `rad events` / `trace` / `inspect` / `replay` / `why` | per-objective observability | Enough for one run; not a durable last-Class-C / retry-after surface (G4-2) or a production cost rollup (G4-3) |
-| `Planner._fallback` (F-17) + E2 empty `depends_on` | goal clause-split, cap 7, no checks on fallback *tasks* | Live RW-085 / RW-086: `source=fallback` attempts=2 — not a coding plan. Residual Class B after E1–E3 (G4-5) |
+| `Doctor.c_providers` | READY only for inference-entitled brains (v0.5.1 / RW-090) | **Closed for catalog vs chat.** Residual: online `scan_provider_health` does **not** pass `skip_blocked_inference` — a `rad doctor` re-pings chat while last Class C still blocks. Resume already skips that re-burn (RW-091). On OpenRouter the ping would count against `free-models-per-day` (RW-086) |
+| `rad/health.py` `evaluate_live_gate` | resume denies Class C until an entitled brain recovers | **Closed for resume** (RW-091). Never live-used on v0.5.1. Last working-inference row remains RW-086 on **v0.4.7** |
+| `class_c_next_steps` + TROUBLESHOOTING | pause / resume copy: rotate key / wait quota / `rad use` | Copy ships. Residual is **use**, not more prose. Operator still has no written live campaign that runs G4-1 pause + G4-2 health + deferred E1–E3 together |
+| `rad cost` / `RouterState.cost_report` | paid 14-day token spend | Free-tier quota remaining is not in the API until 429. Per-objective tool/model budgets are not a production rollup (**G4-6**). G4-2 already surfaces last Class C + Retry-After |
+| `rad events` / `trace` / `inspect` / `replay` / `why` | per-objective observability | Enough for one run. Last-Class-C surface ships (G4-2). Cost rollup waits on use data (G4-6) |
+| E1 / E2 / E3 (`TaskYield`, empty fallback `depends_on`, leftover retry stop) | scripted RW-083 / RW-087 / RW-088 | Live **not confirmed** (RW-084 Class C; RW-085/086 fallback chain, 0 TaskYield). Not a missing executor slice — a missing **use** on an entitled brain |
+| `Planner._fallback` (F-17) + E2 empty `depends_on` | goal clause-split, cap 7, no checks on fallback *tasks* | Live RW-085 / RW-086: `source=fallback` attempts=2 — not a coding plan. Residual Class B after E1–E3 (**G4-5**) |
 | `rad connect` / skills / MCP gate; `rad provider add` | MCP + any OpenAI-compatible endpoint already first-class | No measured production row says MCP or custom-provider *absence* is the hole. Acceptance already handshakes MCP |
 
 ### Candidate themes (evidence-backed)
 
-Grounded in RW-084 / RW-085 / RW-086, scripted RW-089, and the residual
-Class B after E1–E3. Do **not** treat a FAIL row as an automatic
-architecture rewrite. Do **not** invent fantasy integrations. Do **not**
-invent a Class A patch for 403/429.
+Grounded in RW-084 / RW-085 / RW-086, scripted RW-089 / RW-090 / RW-091,
+and the residual Class B after E1–E3. Do **not** treat a FAIL row as an
+automatic architecture rewrite. Do **not** invent fantasy integrations.
+Do **not** invent a Class A patch for 403/429.
 
 Cycle 24 listed fallback/LLM plan quality as **G4-2**. After G4-1
 shipped, that residual Class B is **not** the production-scale next
-step (it still needs a recovered brain to confirm). The id **G4-2** is
-reassigned to the live-gate resume / health slice. Fallback plan
-quality is now **G4-5**.
+step. Cycle 26 reassigned **G4-2** to live-gate resume / health
+(now **shipped** as v0.5.1). Fallback plan quality stays **G4-5**.
+
+Cycle 26 listed **G4-3** as “operational scale: longer workloads,
+cost/budget reporting.” After G4-2 shipped, that grab-bag splits:
+longer-horizon *use* (E1–E3 live confirmation on an entitled brain)
+is the production-scale next step and takes **G4-3**; cost/budget
+reporting waits for that use data and is parked as **G4-6**. Do
+**not** raise caps as “scale” (A1 / F-21; RW-059 12→24 still
+exhausted).
 
 | id | theme | live providers? | status |
 |---|---|---|---|
 | **G4-1** | Live multi-provider / free-provider production doctrine | Scripted 403/429 is enough for the doctrine; live confirmation needs a recovered path | **ACCEPTED + IMPLEMENTED** as **v0.5.0** (scripted RW-089) |
 | **G4-2** | Live-gate resume / provider health observability | Scripted catalog-vs-inference + last-Class-C surface is enough to scope/build; live confirmation still deferred | **ACCEPTED + IMPLEMENTED** as **v0.5.1** (scripted RW-090 / RW-091) |
-| **G4-3** | Operational scale: longer workloads, cost/budget reporting | Longer-horizon live needs a recovered provider; reporting can be scripted | later candidate (health/resume slice is G4-2) |
+| **G4-3** | Live-use campaign / operator workflow | Live E1–E3 confirmation needs an entitled brain; doctor skip-blocked / campaign playbook can be scripted | **recommended next v0.5.2 candidate — not accepted** |
 | **G4-4** | Extensibility / integrations (MCP, custom providers) | No — already partially in tree | **not a next theme** (no measured hole) |
 | **G4-5** | Fallback / LLM plan quality under tight budgets | Scripted possible; live confirmation needs a recovered brain | later candidate (Cycle 24 id was G4-2) |
+| **G4-6** | Operational scale: cost/budget reporting | Reporting can be scripted; free-quota *remaining* is not in the API until 429 | later candidate (Cycle 26 G4-3 reporting half) |
 
 #### G4-1 — ACCEPTED + IMPLEMENTED (live multi-provider / free-provider production doctrine)
 
@@ -667,7 +681,7 @@ surfaces the doctrine; `free_lock` still drops paid.
 | Version | **v0.5.1** |
 | Problem | G4-1 closed the **pause**. Production still has no **safe live-use path**. RW-084: `rad doctor` providers **READY** (`1 usable: nvidia`) while `GET /v1/models` **200** and every `chat/completions` **403**. RW-086: working inference then late **429** `free-models-per-day` with no retry-after / last-Class-C surface — operator folklore paused the loop. `RouterState.failures` is in-process only. `rad objective resume` reopens NEEDS_USER and will re-hit the same 403 if the operator guesses. Live E1–E3 confirmation stays **deferred** until a provider is known inference-entitled, not merely catalog-alive |
 | Entry | G4-1 shipped (v0.5.0 / RW-089) — **DONE**. Sanath accepts G4-2 as v0.5.1. Grounded in RW-084 (catalog ≠ chat; doctor READY) / RW-086 (working then 429) / Cycle 25 remaining #3, not in a new catalog. Class C stays Class C. Scripted catalog-vs-inference + last-Class-C / resume-safe surface is enough to **build**; live NIM/OpenRouter success is **not** required |
-| Non-goals | Inventing a product Class A for 403/429. Auto-retry until chat works. Spending paid under `free_lock`. Treating `/v1/models` **200** as inference entitlement. Raising caps. Needle on. Claiming live text_analyzer@12 PASS. Full paid+free cost/budget rollup (that remains G4-3). Fallback plan quality (that is G4-5). A new telemetry stack / SQLite. A control-plane rewrite |
+| Non-goals | Inventing a product Class A for 403/429. Auto-retry until chat works. Spending paid under `free_lock`. Treating `/v1/models` **200** as inference entitlement. Raising caps. Needle on. Claiming live text_analyzer@12 PASS. Full paid+free cost/budget rollup (that remains G4-6). Fallback plan quality (that is G4-5). A new telemetry stack / SQLite. A control-plane rewrite |
 | Needs live providers | **No** for the scripted gate (same pattern as RW-089). Live confirmation of E1–E3 still waits on a recovered inference-entitled brain — G4-2 is the *safe path to try*, not a live PASS claim |
 | What it is not | Not Gen3 theme 4. Not “wait forever.” Not runbook-copy polish of G4-1 `class_c_next_steps`. Not a license to pin paid spend under free-lock. Not a second router |
 
@@ -676,7 +690,7 @@ surfaces the doctrine; `free_lock` still drops paid.
 | alternative | why not G4-2 |
 |---|---|
 | Operational runbooks / `needs_user` UX polish | G4-1 already shipped pause text (`class_c_next_steps`, OPERATIONS, TROUBLESHOOTING, doctor doctrine). Residual is copy, not a measured hole. The measured hole is doctor **READY** on a 403-chat provider (RW-084) |
-| Larger workload / longer-horizon (G4-3) | E1–E3 are scripted, not live. Caps 16/60 stay closed (A1 / F-21). Longer-horizon *use* waits on a recovered provider — which is the G4-2 hole |
+| Larger workload / longer-horizon (then G4-3) | E1–E3 are scripted, not live. Caps 16/60 stay closed (A1 / F-21). Longer-horizon *use* waits on a recovered provider — which was the G4-2 hole; after G4-2 that *use* is G4-3 |
 | Extensibility / MCP (G4-4) | No measured production row. Already first-class in tree |
 | Fallback / LLM plan quality (now G4-5) | Residual Class B (RW-085 / RW-086 `source=fallback`). Cycle 24 already called this **not** the production-scale gate. Live confirmation needs the recovered brain G4-2 is meant to surface safely. F-17 stays closed |
 
@@ -693,22 +707,46 @@ surfaces the doctrine; `free_lock` still drops paid.
 | Scripted 429 | rate-limit / `free-models-per-day` visible without a tool-burning retry (RW-086 shape) |
 | Invariants | Needle **OFF**; caps **16/60**; false DONE **0**; `free_lock` never silent paid; no Class A invented for 403/429; no live PASS claim |
 
-#### G4-3 — Operational scale (longer workloads, cost/budget)
+#### G4-3 — Live-use campaign / operator workflow (recommended next v0.5.2)
 
 | field | value |
 |---|---|
-| Status | **CANDIDATE**. Not accepted. Not the next recommendation (health/resume is G4-2) |
-| Problem | Production use needs to see tool/model/free-quota spend, not only paid `rad cost`. Longer workloads still sit on E1–E3 (scripted, not live). Default caps 16/60 are **not** raised without a measured product need (A1 / F-21 stay closed). Provider *health / resume* is G4-2, not this theme |
-| Entry | Accepted theme naming the report or workload gap. Do not raise default `Budget.tool_calls` because text_analyzer@12 failed. Prefer after G4-2 so longer-horizon *use* has a safe live path |
-| Non-goals | Cap raise as the theme. A new telemetry stack. SQLite. Claiming live long-horizon PASS while E1–E3 are unconfirmed. Re-doing G4-2 catalog-vs-inference |
-| Needs live providers | Reporting can be scripted. Longer-horizon *use* needs a recovered provider |
-| What it is not | Not “raise max-tools to 24 and call it scale.” RW-059 already showed 12→24 still exhausted |
+| Status | **CANDIDATE**. Recommended next **v0.5.2**. **Not accepted. Not implemented.** |
+| Theme | **Live-use campaign / operator workflow** |
+| Version | proposed **v0.5.2** |
+| Problem | G4-1 closed **pause**. G4-2 closed the **safe resume / health** path. Production still has not **used** that path. Last working-inference live row is **RW-086** on tag `v0.4.7` (then 429). E1–E3 remain scripted only (RW-083 / RW-087 / RW-088). G4-1 / G4-2 themselves are scripted (RW-089 / RW-090 / RW-091) — never live-confirmed together. The operating loop’s next step is **use**, not another executor slice and not a cost dashboard. Leftover operator-workflow hole vs G4-2: `rad doctor` (online) calls `scan_provider_health` **without** `skip_blocked_inference`, so a health probe re-hits chat while last Class C still blocks — resume already skips that re-burn (RW-091). On OpenRouter that ping would count against `free-models-per-day` (RW-086) |
+| Entry | G4-1 shipped (v0.5.0 / RW-089) — **DONE**. G4-2 shipped (v0.5.1 / RW-090 / RW-091) — **DONE**. Sanath accepts G4-3 as v0.5.2. Grounded in deferred live E1–E3 (RW-084 Class C; RW-085/086 fallback chain, 0 TaskYield) and the doctor re-ping vs resume skip (`rad/health.py` / `rad/doctor.py`), not in a new catalog. An inference-entitled brain is required for the *live campaign*; the doctor skip-blocked slice can be **scripted** without it (same pattern as RW-090 / RW-091). Class C stays Class C. Live NIM/OpenRouter **PASS** is **not** required to *scope* or to *accept*; honest FAIL / BLOCKED is a valid campaign result |
+| Non-goals | Inventing a product Class A for 403/429. Auto-retry until chat works. Spending paid under `free_lock`. Raising caps (`max_plan_tasks` **16**, default `Budget.tool_calls` **60**). Needle on. Claiming live text_analyzer@12 PASS as a gate. A new executor slice (E4) without live evidence. Reopening F-17 / fallback plan quality (that is G4-5). MCP marketplace (that is G4-4). Full paid+free cost/budget rollup (that is G4-6). A new telemetry stack / SQLite. A control-plane rewrite. Treating `/v1/models` **200** as inference entitlement |
+| Needs live providers | **Yes** for E1–E3 live confirmation. **No** for the scripted doctor skip-blocked / campaign-playbook gate |
+| What it is not | Not Gen3 theme 4. Not “wait forever.” Not runbook-copy polish of G4-2 TROUBLESHOOTING. Not “raise max-tools to 24 and call it scale.” Not a second health probe that re-burns 429 |
+
+**Why this one next (investigated alternatives):**
+
+| alternative | why not G4-3 |
+|---|---|
+| Larger workload / longer-horizon *product* (Cycle 26 G4-3) | E1–E3 already shipped scripted. Caps 16/60 stay closed (A1 / F-21). RW-059 showed 12→24 still exhausted. Longer-horizon *use* **is** this campaign, not a new executor |
+| Extensibility / MCP (G4-4) | No measured production row. Already first-class in tree |
+| Fallback / LLM plan quality (G4-5) | Residual Class B (RW-085 / RW-086 `source=fallback`). Cycle 24 / 26 already called this **not** the production-scale gate. Live confirmation needs the recovered brain this campaign is meant to use. F-17 stays closed |
+| Cost/budget reporting (now G4-6) | `rad cost` is paid-only; G4-2 already surfaces last Class C + Retry-After. A dashboard without a use campaign is inventing telemetry. Wait for use data |
+| Operational runbooks / `needs_user` UX polish | G4-2 already shipped TROUBLESHOOTING / OPERATIONS resume text. Residual copy is not a measured hole. The leftover is doctor re-ping vs resume skip, plus the unused live path |
+
+**Acceptance gates (when accepted — not this change):**
+
+| gate | meaning |
+|---|---|
+| Offline tests | `python -m pytest -q` |
+| Doctor | `rad doctor --offline` |
+| Acceptance | `rad acceptance` |
+| Real-world suite | `rad realworld` (`live_nim` may stay BLOCKED) |
+| Scripted operator loop | last Class C still blocking → `rad doctor` / health scan does **not** re-burn chat (RW-086 quota shape); resume skip preserved (RW-091); `free_lock` never silent paid |
+| Live campaign (when an entitled brain exists) | one bounded objective recorded as an RW row; E1–E3 live **Y / N / BLOCKED** recorded honestly; G4-1 pause + G4-2 resume used if Class C hits mid-run |
+| Invariants | Needle **OFF**; caps **16/60**; false DONE **0**; Class C is not a product patch; no live PASS claim unless disk checks actually pass |
 
 #### G4-4 — Extensibility / integrations (MCP, custom providers)
 
 | field | value |
 |---|---|
-| Status | **NOT a first theme.** Already partially in tree |
+| Status | **NOT a next theme.** Already partially in tree |
 | Problem | None measured. `rad connect` + skill manifests + capability/audit gate ship; acceptance handshakes MCP. `rad provider add` accepts any OpenAI-compatible endpoint. README backlog “remote-MCP hardening” is an **idea**, not an evidence row |
 | Entry | A named production row that MCP/custom-provider *absence or drift* blocked a real objective. Until then: do not invent |
 | Non-goals | Fantasy connector marketplace. Enabling Needle. Per-agent OS sandboxes (already documented as not done on AGENTS.md — not a Gen4 start) |
@@ -719,12 +757,23 @@ surfaces the doctrine; `free_lock` still drops paid.
 
 | field | value |
 |---|---|
-| Status | **CANDIDATE**. Not accepted. Not the next v0.5.1 recommendation. Cycle 24 id was **G4-2** — reassigned so the next production-scale slice can keep that number |
+| Status | **CANDIDATE**. Not accepted. Not the next v0.5.2 recommendation. Cycle 24 id was **G4-2** — reassigned so production-scale slices can keep G4-2 / G4-3 |
 | Problem | After E1–E3, live coding still dies on a weak plan. RW-085 / RW-086: PLAN `source=fallback` attempts=2, clause-split from the goal, not a real coding graph. Residual Class B: incomplete package, odd summary, missing README/tests. F-17 is **closed** (do not add checks to fallback *tasks*) |
-| Entry | Accepted written theme that names the evidence (RW-085 / RW-086 fallback) and the invariant that must not move (F-17; false DONE 0; caps). Investigate-first: LLM-plan success vs fallback *structure* for coding goals — not “add checks to `_fallback` tasks”. Prefer after a recovered brain (G4-2) so live confirmation is possible |
+| Entry | Accepted written theme that names the evidence (RW-085 / RW-086 fallback) and the invariant that must not move (F-17; false DONE 0; caps). Investigate-first: LLM-plan success vs fallback *structure* for coding goals — not “add checks to `_fallback` tasks”. Prefer after a recovered brain (G4-3 live-use) so live confirmation is possible |
 | Non-goals | Reopening F-17 / F-21 / F-26. Rubber-stamp VERIFIED. Cap raise as the primary fix. Claiming 11B quality is solved. Remapping `write_file` / `echo >` (F-44) |
 | Needs live providers | Scripted possible (same pattern as E1–E3). Live confirmation needs a recovered brain |
 | What it is not | Not a Gen3 leftover theme number. Not an automatic accept because fallback appeared twice |
+
+#### G4-6 — Operational scale (cost/budget reporting)
+
+| field | value |
+|---|---|
+| Status | **CANDIDATE**. Not accepted. Not the next recommendation. Cycle 26 id was **G4-3** (reporting half of a grab-bag with longer workloads) |
+| Problem | Production use needs to see tool/model spend, not only paid `rad cost`. Free-tier *remaining* quota is not in the API until HTTP 429 (RW-086). G4-2 already persists last Class C + Retry-After. Per-objective tool/model budgets are not a production rollup. Default caps 16/60 are **not** raised without a measured product need (A1 / F-21 stay closed). Longer-horizon *use* is G4-3, not this theme |
+| Entry | Accepted theme naming the report gap **after** G4-3 use data exists. Do not raise default `Budget.tool_calls` because text_analyzer@12 failed. Do not invent a remaining-quota counter the provider does not expose |
+| Non-goals | Cap raise as the theme. A new telemetry stack. SQLite. Claiming live long-horizon PASS while E1–E3 are unconfirmed. Re-doing G4-2 catalog-vs-inference. Re-doing G4-3 live-use |
+| Needs live providers | Reporting can be scripted. Interpreting free-quota remaining needs a provider that exposes it |
+| What it is not | Not “raise max-tools to 24 and call it scale.” RW-059 already showed 12→24 still exhausted |
 
 ### First v0.5.0 — G4-1 (accepted + implemented)
 
@@ -757,15 +806,33 @@ Retry-After); doctor READY only for inference-entitled brains;
 `rad objective resume` live-gate refuses to re-burn the same 403/429
 until an entitled brain recovers; `free_lock` still drops paid.
 
-Recommended later candidates: G4-3 / G4-4 / G4-5.
+Recommended next **v0.5.2** candidate: **G4-3** (listed, not accepted).
+Later candidates: G4-4 / G4-5 / G4-6.
+
+### Recommended next v0.5.2 — G4-3 (candidate, not accepted)
+
+**G4-3** (live-use campaign / operator workflow) is the recommended
+next slice. It is **listed, not accepted, not implemented**.
+
+Why this one next: G4-1 closed **pause**. G4-2 closed **safe resume**.
+The operating loop’s next step is **use**. E1–E3 and G4-1/G4-2 have
+never been live-confirmed together on an inference-entitled brain.
+The leftover product hole is quota-safe operator workflow (doctor
+re-ping vs resume skip), not a cap raise, not MCP, and not Class B
+plan quality. Scripted doctor skip-blocked is enough to **build** the
+operator-loop slice; live E1–E3 confirmation still waits on a
+recovered brain and is **not** a live PASS claim.
+
+Next product work waits for a written accept. Stay **0.5.1**.
 
 ### Accepting a further v0.5.x theme
 
 A short written decision that names the theme, the evidence rows, the
 invariant that must not move (Needle off; caps unchanged unless proven;
 models propose / RAD decides; false DONE **0**; Class C is not a product
-patch), and the 0.5.x change. G4-2 is shipped as v0.5.1. G4-3 / G4-4 /
-G4-5 remain later candidates.
+patch), and the 0.5.x change. G4-2 is shipped as v0.5.1. G4-3 is
+listed, not accepted. G4-4 / G4-5 / G4-6 remain later candidates.
+Do not start v0.5.2 from this scope PR.
 
 ---
 
@@ -784,7 +851,7 @@ acceptable for a public baseline).
 | doc | role |
 |---|---|
 | [MATURATION_CYCLE_REPORT.md](MATURATION_CYCLE_REPORT.md) | Cycle-by-cycle evidence and decisions |
-| [REAL_WORLD_TASK_MATRIX.md](REAL_WORLD_TASK_MATRIX.md) | Disk-checked task rows (do not rewrite RW-058–089) |
+| [REAL_WORLD_TASK_MATRIX.md](REAL_WORLD_TASK_MATRIX.md) | Disk-checked task rows (do not rewrite RW-058–091) |
 | [REAL_WORLD_FAILURE_LEDGER.md](REAL_WORLD_FAILURE_LEDGER.md) | A/B/C findings |
 | [ADR-001-NEEDLE-TOOL-ROUTER.md](ADR-001-NEEDLE-TOOL-ROUTER.md) | Needle stays optional / off |
 | [CONTROL-PLANE.md](CONTROL-PLANE.md) | Shipped control-plane behaviour |

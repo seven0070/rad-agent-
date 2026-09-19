@@ -6,6 +6,101 @@ Default `Budget.tool_calls` remains **60**.
 
 ---
 
+# Cycle 28 — Scope G4-3 live-use campaign / operator workflow; stay 0.5.1 (2026-09-19)
+
+**Date:** 2026-09-19
+**Baseline:** `origin/main` `2d4c8b6dd2e75b191a33913b93eb7d77acd3be6b` (merge PR #41; package **0.5.1**, tag **v0.5.1**)
+**Package at start:** `0.5.1`
+**This branch:** `cursor/g4-3-live-use-campaign-f0df` — package **0.5.1** (no bump)
+**Architecture:** control plane preserved. Needle stays off. Caps unchanged.
+**Kind:** docs / scope only. No `rad/` product change. RW-058–091 are **not rewritten**.
+
+## Why this cycle
+
+G4-2 shipped as **v0.5.1** (scripted RW-090 / RW-091): doctor READY only
+for inference-entitled brains; last Class C persists; resume live-gates
+403/429 until an entitled brain recovers. G4-1 remains **v0.5.0**
+(scripted RW-089). Both live free paths remain **paused**. Live E1–E3
+confirmation is **deferred**. Cycle 27 left G4-3 / G4-4 / G4-5 as
+unnamed later candidates.
+
+Investigate-first after G4-2: the highest-leverage **production-scale**
+gap is not residual Class B plan quality, not MCP, and not a cost
+dashboard. G4-1 closed **pause**. G4-2 closed **safe resume**. The
+operating loop’s next step is **use**. Last working-inference live row
+is RW-086 on **v0.4.7**. E1–E3 and G4-1/G4-2 have never been
+live-confirmed together. Leftover operator-workflow hole: `rad doctor`
+(online) re-pings chat while last Class C still blocks; resume already
+skips that re-burn (RW-091). On OpenRouter the ping would count against
+`free-models-per-day` (RW-086).
+
+Cycle 26’s G4-3 grab-bag (longer workloads + cost/budget) splits:
+longer-horizon *use* takes **G4-3**; cost/budget reporting parks as
+**G4-6**.
+
+## Alternatives considered
+
+| candidate | decision |
+|---|---|
+| Live-use campaign / operator workflow | **Recommended next (G4-3 / v0.5.2).** Evidence-backed. Doctor skip-blocked is scriptable. Live E1–E3 confirmation needs an entitled brain. Does not invent Class A for 403/429 |
+| Larger workload / longer-horizon *product* | E1–E3 already shipped scripted. Caps 16/60 stay closed (A1 / F-21). *Use* is G4-3, not a new executor |
+| Extensibility / MCP (G4-4) | No measured hole. Already first-class |
+| Fallback / LLM plan quality (G4-5) | Residual Class B. Not the production-scale gate. Needs the recovered brain G4-3 is meant to use |
+| Cost/budget reporting (now G4-6) | Dashboard without use data. G4-2 already surfaces last Class C + Retry-After |
+
+## Code findings (lightweight; no patch)
+
+| existing | role | gap vs post-G4-2 |
+|---|---|---|
+| `Doctor.c_providers` | READY only if inference-entitled | Online scan does not pass `skip_blocked_inference`. Doctor re-pings chat while last Class C blocks |
+| `evaluate_live_gate` | resume skip-blocked | Closed for resume (RW-091). Never live-used on v0.5.1 |
+| E1 / E2 / E3 | scripted leftover dispatch | Live not confirmed (RW-084/085/086). Missing **use**, not a missing slice |
+| `rad cost` | paid 14-day spend | Free remaining-quota not in API until 429 (G4-6) |
+| `Planner._fallback` (F-17) | clause-split, no checks | Residual Class B (G4-5), not this theme |
+
+## Decision
+
+| item | value |
+|---|---|
+| Package | **0.5.1** (no 0.5.2) |
+| Gen3 | **COMPLETE (scripted)** (unchanged). Live E1–E3 **deferred** |
+| Gen4 | **IN PROGRESS**. **G4-1 shipped** as **v0.5.0**. **G4-2 shipped** as **v0.5.1**. **G4-3 listed, not accepted** |
+| Recommended next v0.5.2 candidate | **G4-3** — live-use campaign / operator workflow (see ROADMAP). **Not** accepted here |
+| Other candidates | G4-4 extensibility (not next — no hole); G4-5 fallback plan quality; G4-6 cost/budget (was Cycle 26 G4-3 reporting half) |
+| Next product work | Waits for an accepted v0.5.2 theme |
+| Invariants | Needle OFF; caps 16/60; false DONE 0; no redesign; Class C is not a product patch; no live PASS claim |
+
+## Quality gates (this branch)
+
+Isolated homes `/tmp/rad-g43-scope-gate` (doctor, acceptance) and `/tmp/rad-g43-scope-rw` (realworld).
+
+| gate | result |
+|------|--------|
+| `rad version` | **PASS** v0.5.1 |
+| `python3 -m pytest -q` | **PASS** 596 passed in 12.03s |
+| `rad doctor --offline` | **PASS** 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR, verdict READY, exit 0 |
+| `rad acceptance` | **PASS** 50/50 — `/tmp/rad-g43-scope-gate/acceptance/20260919-062646_gate.json` |
+| `rad realworld` | **PASS** 10/11 + 1 BLOCKED — `/tmp/rad-g43-scope-rw/realworld/20260919-062643_realworld.json` |
+| Needle default | **PASS** (`existing`) — unchanged |
+| Caps | **PASS** `max_plan_tasks` 16; `Budget.tool_calls` 60 — unchanged |
+| Package | **0.5.1** (no bump) |
+| Live this patch | not re-run; suite `live_nim` **BLOCKED** (Class C) |
+
+## Remaining limitations
+
+1. Live text_analyzer@12 remains Class B FAIL. This cycle does not change that.
+2. E1/E2/E3 are scripted only. Live confirmation **deferred**.
+3. Both live free paths remain **paused**. G4-3 is scoped so a later accept can run the live campaign and close the doctor re-ping hole — not a live PASS.
+4. G4-3 is listed, not accepted.
+
+## Roadmap pointer
+
+Operating spine: [ROADMAP.md](ROADMAP.md). **Generation 4 in progress.**
+**G4-1** as v0.5.0. **G4-2 implemented as v0.5.1.** Recommended next
+**G4-3** listed, not accepted. Stay **0.5.1**. Gen5 is not started.
+
+---
+
 # Cycle 27 — G4-2 live-gate resume / provider health; v0.5.1 (2026-09-19)
 
 **Date:** 2026-09-19

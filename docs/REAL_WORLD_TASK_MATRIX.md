@@ -39,7 +39,9 @@ remains **paused** (Class C). Independent later package files is
 **complete (scripted)**; live E1–E3 confirmation is **deferred** until a
 provider recovers. Gen4 **G4-1** is **implemented as v0.5.0** (scripted
 RW-089). **G4-2** (live-gate resume / provider health) is **implemented
-as v0.5.1** (scripted RW-090 / RW-091). Do not rewrite RW-058–089.
+as v0.5.1** (scripted RW-090 / RW-091). Recommended next **v0.5.2**
+candidate **G4-3** (live-use campaign / operator workflow) is listed
+in [ROADMAP.md](ROADMAP.md), **not accepted**. Do not rewrite RW-058–091.
 Scripted theme-2 RW-066 (F-27) is preserved.
 
 Every `VERIFIED` / `completed` cell is from the control-plane verifier **and** a disk
@@ -58,7 +60,8 @@ Class A thrash **CLEARED**; E1 not live; late **429** `free-models-per-day`;
 free-model loop **paused**), then live OpenRouter RW-085 (**FAIL**; Class C
 cleared; xxd ENVIRONMENT Class A **CONFIRMED**), then scripted RW-086
 (v0.4.7), then live NIM RW-084 (**BLOCKED Class C**), then scripted RW-083.
-RW-058–087 are **not rewritten**.
+G4-3 is **scoped** (listed, not accepted) — no new RW row. RW-058–091 are
+**not rewritten**.
 
 # Scripted live-gate / provider health (RW-090 / RW-091)
 
