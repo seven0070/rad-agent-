@@ -2679,10 +2679,10 @@ environment**, not a product patch.
 
 | gate | result |
 |---|---|
-| `python3 -m pytest -q` | pending this branch |
-| `rad doctor --offline` | pending this branch |
-| `rad acceptance` | pending this branch |
-| `rad realworld` | pending this branch (`live_nim` BLOCKED) |
+| `python3 -m pytest -q` | **652 passed** in 16.54s |
+| `rad doctor --offline` | READY — 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR (`RAD_HOME=/tmp/rad-g5-hold-gate`) |
+| `rad acceptance` | **50/50 PASSED** (`/tmp/rad-g5-hold-gate/acceptance/20260919-082216_gate.json`) |
+| `rad realworld` | **10 passed / 1 BLOCKED / 0 failed** (`live_nim` BLOCKED; `/tmp/rad-g5-hold-rw/realworld/20260919-082212_realworld.json`) |
 | Package | **1.0.0** (no bump; no v1.0.1; no v1.1.0) |
 | Product code | unchanged |
 | Gen3 | **COMPLETE (scripted)**; live E1–E3 **deferred** |

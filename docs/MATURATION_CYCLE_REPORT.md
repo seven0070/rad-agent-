@@ -67,15 +67,15 @@ written accept.
 
 ## Quality gates (this branch)
 
-Isolated homes `/tmp/rad-g5-hold-gate` (doctor, acceptance) and `/tmp/rad-g5-hold-rw` (realworld). Recorded after first push.
+Isolated homes `/tmp/rad-g5-hold-gate` (doctor, acceptance) and `/tmp/rad-g5-hold-rw` (realworld).
 
 | gate | result |
 |------|--------|
-| `rad version` | pending this branch |
-| `python3 -m pytest -q` | pending this branch |
-| `rad doctor --offline` | pending this branch |
-| `rad acceptance` | pending this branch |
-| `rad realworld` | pending this branch |
+| `rad version` | **PASS** v1.0.0 |
+| `python3 -m pytest -q` | **PASS** 652 passed in 16.54s |
+| `rad doctor --offline` | **PASS** 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR, verdict READY, exit 0 |
+| `rad acceptance` | **PASS** 50/50 — `/tmp/rad-g5-hold-gate/acceptance/20260919-082216_gate.json` |
+| `rad realworld` | **PASS** 10/11 + 1 BLOCKED — `/tmp/rad-g5-hold-rw/realworld/20260919-082212_realworld.json` |
 | Needle default | **PASS** (`existing`) — unchanged |
 | Caps | **PASS** `max_plan_tasks` 16; `Budget.tool_calls` 60 — unchanged |
 | Package | **1.0.0** (no bump) |
