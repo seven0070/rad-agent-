@@ -6,6 +6,102 @@ Default `Budget.tool_calls` remains **60**.
 
 ---
 
+# Cycle 30 — Scope G4-5 fallback / LLM plan quality; stay 0.5.2 (2026-09-19)
+
+**Date:** 2026-09-19
+**Baseline:** `origin/main` `d534bd30384e9f582ca6c08562a6b2cd555fb793` (merge PR #43; package **0.5.2**; GitHub Release **Version 5** / tag **v0.5.2**)
+**Package at start:** `0.5.2`
+**This branch:** `cursor/g4-5-plan-quality-scope-7793` — package **0.5.2** (no bump)
+**Architecture:** control plane preserved. Needle stays off. Caps unchanged.
+**Kind:** docs / scope only. No `rad/` product change. RW-058–093 are **not rewritten**.
+**Release:** **none** — Version 5 packing doctrine: merge-only; pack again only when Sanath asks.
+
+## Why this cycle
+
+**Version 5 pack** shipped as GitHub Release **v0.5.2** (title **Version 5**;
+tip `d534bd3`; G4-1 / G4-2 / G4-3). G4-1 closed pause (v0.5.0 / RW-089).
+G4-2 closed safe resume (v0.5.1 / RW-090 / RW-091). G4-3 closed the
+operator-use path (v0.5.2 / RW-092 / RW-093). Both live free paths remain
+**paused**. Live E1–E3 confirmation is **deferred**. Cycle 29 left G4-4 /
+G4-5 / G4-6 as later candidates.
+
+Investigate-first after the pack: the highest-leverage **product** gap is
+not MCP, not a cost dashboard, and not another “wait for live
+confirmation” theme. G4-3 already shipped the campaign playbook. Running
+it is operator work when a provider recovers — not a package bump while
+NIM / OpenRouter free stay paused. The remaining measured gap on a
+working product path is Class B PLAN `source=fallback` (RW-085 / RW-086
+attempts=2, newline-carved tasks, not a coding graph). Cycle 24 listed
+this first among residual Class B; Cycles 26–28 deferred it so
+production-scale Class C doctrine could ship. That pack is done. F-17
+stays closed (do not add checks to fallback *tasks*).
+
+## Alternatives considered
+
+| candidate | decision |
+|---|---|
+| Fallback / LLM plan quality | **Recommended next (G4-5 / v0.5.3).** Evidence-backed (RW-085 / RW-086). Scriptable without a recovered brain. F-17 stays closed. Does not invent Class A for 403/429 |
+| Extensibility / MCP (G4-4) | No measured hole. Already first-class (`rad connect`, skill manifests, acceptance handshake). README remote-MCP hardening is an idea, not a row |
+| Cost/budget reporting (G4-6) | Dashboard without Version 5 live-use data. G4-2 already surfaces last Class C + Retry-After. Free remaining-quota not in API until 429 |
+| Larger workload / longer-horizon *product* | E1–E3 already shipped scripted. Caps 16/60 stay closed (A1 / F-21). RW-059 showed 12→24 still exhausted |
+| Live confirmation of Version 5 path | G4-3 playbook already ships. Gates remain paused. Operator campaign when a provider recovers — not a new product theme |
+
+## Code findings (lightweight; no patch)
+
+| existing | role | gap vs post-Version-5 pack |
+|---|---|---|
+| `Planner.plan` retries | JSON nudge then `_fallback` (default 2 attempts) | Live RW-085/086: `attempts=2` `source=fallback` — LLM never produced a coding graph |
+| `Planner._fallback` (F-17) + E2 | clause-split, cap 7, no checks; independent files unchained | Still not a coding plan. Do not add checks to fallback *tasks* |
+| `infer_coding_checks` | objective-level contracts | Fallback *tasks* stay check-less; execution dies on weak clause tasks |
+| `rad health` + CAMPAIGN_PLAYBOOK | operator wait/rotate/resume/run | Closed for G4-3. Residual live campaign is operator work, not this theme |
+| `rad connect` / MCP | already first-class | No measured hole (G4-4) |
+| `rad cost` | paid 14-day spend | No live use data (G4-6) |
+
+## Decision
+
+| item | value |
+|---|---|
+| Package | **0.5.2** (no 0.5.3) |
+| Gen3 | **COMPLETE (scripted)** (unchanged). Live E1–E3 **deferred** |
+| Gen4 | **IN PROGRESS**. **Version 5 pack shipped** (G4-1 / G4-2 / G4-3 as v0.5.0 / v0.5.1 / v0.5.2). **G4-5 listed, not accepted** |
+| Recommended next v0.5.3 candidate | **G4-5** — fallback / LLM plan quality under tight budgets (see ROADMAP). **Not** accepted here |
+| Other candidates | G4-4 extensibility (not next — no hole); G4-6 cost/budget (waits on live use data) |
+| Next product work | Waits for an accepted v0.5.3 theme |
+| Packing | Merge-only. **No per-slice GitHub Release.** Pack again only when Sanath asks |
+| Invariants | Needle OFF; caps 16/60; false DONE 0; no redesign; Class C is not a product patch; no live PASS claim |
+
+## Quality gates (this branch)
+
+Isolated homes `/tmp/rad-g45-scope-gate` (doctor, acceptance) and `/tmp/rad-g45-scope-rw` (realworld).
+
+| gate | result |
+|------|--------|
+| `rad version` | **PASS** v0.5.2 |
+| `python3 -m pytest -q` | pending this revision |
+| `rad doctor --offline` | pending this revision |
+| `rad acceptance` | pending this revision |
+| `rad realworld` | pending this revision |
+| Needle default | **PASS** (`existing`) — unchanged |
+| Caps | **PASS** `max_plan_tasks` 16; `Budget.tool_calls` 60 — unchanged |
+| Package | **0.5.2** (no bump) |
+| Release / tag | **none** — Version 5 packing doctrine |
+| Live this patch | not re-run; suite `live_nim` **BLOCKED** (Class C) |
+
+## Remaining limitations
+
+1. Live text_analyzer@12 remains Class B FAIL. This cycle does not change that.
+2. E1/E2/E3 are scripted only. Live confirmation **deferred**.
+3. Both live free paths remain **paused**. G4-5 is scoped so a later accept can strengthen LLM-plan vs fallback *structure* — not a live PASS.
+4. G4-5 is listed, not accepted.
+
+## Roadmap pointer
+
+Operating spine: [ROADMAP.md](ROADMAP.md). **Generation 4 in progress.**
+**Version 5 pack** shipped (G4-1 / G4-2 / G4-3). Recommended next
+**G4-5** listed, not accepted. Stay **0.5.2**. Gen5 is not started.
+
+---
+
 # Cycle 29 — G4-3 live-use campaign / operator workflow; v0.5.2 (2026-09-19)
 
 **Date:** 2026-09-19

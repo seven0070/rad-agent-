@@ -89,8 +89,10 @@ production doctrine) is **implemented as v0.5.0** — Class C 403/429 pause
 with free-first rotation. Theme **G4-2** is **implemented as v0.5.1** —
 catalog vs inference health, last-Class-C persist, live-gate resume; not a
 control-plane rewrite. Theme **G4-3** is **implemented as v0.5.2** —
-skip-blocked doctor / `rad health` operator workflow; **no GitHub Release /
-tag** (Version 5 pack later) — see [ROADMAP.md](ROADMAP.md).
+skip-blocked doctor / `rad health` operator workflow; **Version 5 pack**
+shipped as GitHub Release **v0.5.2**. Recommended next **G4-5**
+(fallback / LLM plan quality) is listed, not accepted — see
+[ROADMAP.md](ROADMAP.md).
 
 ## Parallelism (Phase 3)
 Ready tasks with satisfied dependencies run concurrently up to `objective_parallel`
