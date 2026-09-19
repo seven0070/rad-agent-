@@ -24,6 +24,12 @@ A provider that is rate-limited or unreachable is skipped automatically and repo
 (`rad [groq → openrouter] …`). If chain order surprises you, check `rad providers` — local engines
 come first, then free tiers, then paid, and `free_lock = true` removes paid entirely.
 
+HTTP **401 / 403 / 429** (auth, inference-forbidden, `free-models-per-day` quota) are
+**Class C**, not product holes. RAD rotates to the next usable **free** provider;
+if none remain it **pauses** `needs_user` (rotate the key, wait for quota, or
+`rad use` another free brain). It does **not** invent a Class A repair/replan
+for 403/429, and `free_lock` never silently spends paid.
+
 ## A vision task went to a model that cannot see
 
 `rad providers` shows which models are known to accept images. RAD keeps a model whose *name*
@@ -64,6 +70,10 @@ rad objective retry <id>      # re-open failed tasks and try a different decompo
 
 RAD stops rather than looping: retries are bounded by `max_attempts` and the retry budget, then it
 replans, then it asks. `NEEDS_USER` means it refused to guess.
+
+If `rad trace last --kind RECOVERY_DECISION` shows `AUTH_FAILURE` or `RATE_LIMIT` with
+`Class C` in the reason, that is a provider/key/quota pause (G4-1) — fix the
+environment, do not file it as a coding-loop defect.
 
 ## "task completed without machine verification"
 

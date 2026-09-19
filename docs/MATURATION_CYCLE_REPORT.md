@@ -6,6 +6,64 @@ Default `Budget.tool_calls` remains **60**.
 
 ---
 
+# Cycle 25 — G4-1 live multi-provider Class C doctrine; v0.5.0 (2026-09-19)
+
+**Date:** 2026-09-19
+**Baseline:** `origin/main` `ffd02a2c13d40cfd189327a72e588d1dfc164ac1` (merge PR #38; package **0.4.9**)
+**Package at start:** `0.4.9`
+**This branch:** `cursor/g4-1-provider-doctrine-c2b7` — package **0.5.0**
+**Architecture:** control plane preserved. Needle stays off. Caps unchanged.
+**Kind:** product — smallest Class C / free-first doctrine. RW-058–088 are **not rewritten**.
+
+## Why this cycle
+
+PR #38 scoped Gen4 and listed G4-1 as the recommended first v0.5.0
+candidate (not accepted). Sanath accepted G4-1 as a real build: Class C
+403/429 was being re-read as product work (RW-084 MODEL retries; RW-086
+429 tool burn). Investigate-first confirmed router failover and AUTH
+ask_user already existed; the hole was classify order (MODEL before
+403), 429 as TRANSIENT retry, and no written rotate/pause doctrine.
+
+## Decision
+
+| item | value |
+|---|---|
+| Package | **0.4.9 → 0.5.0** |
+| Gen3 | **COMPLETE (scripted)** (unchanged). Live E1–E3 **deferred** |
+| Gen4 | **IN PROGRESS**. **G4-1 ACCEPTED + IMPLEMENTED** |
+| Evidence | scripted **RW-089** / F-20260919-52 |
+| Invariants | Needle OFF; caps 16/60; false DONE 0; no redesign; Class C is not a Class A patch; no silent paid under free_lock; no live PASS claim |
+
+## Quality gates (this branch)
+
+Isolated homes `/tmp/rad-g41-gate` (doctor, acceptance) and `/tmp/rad-g41-rw` (realworld).
+
+| gate | result |
+|------|--------|
+| `rad version` | **PASS** v0.5.0 |
+| `python3 -m pytest -q` | **PASS** 583 passed in 11.33s |
+| `rad doctor --offline` | **PASS** 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR, verdict READY, exit 0 |
+| `rad acceptance` | **PASS** 50/50 — `/tmp/rad-g41-gate/acceptance/20260919-055207_gate.json` |
+| `rad realworld` | **PASS** 10/11 + 1 BLOCKED — `/tmp/rad-g41-rw/realworld/20260919-055207_realworld.json` |
+| Needle default | **PASS** (`existing`) |
+| Caps | **PASS** `max_plan_tasks` 16; `Budget.tool_calls` 60 |
+| Package | **0.5.0** |
+| Live this patch | not re-run; suite `live_nim` **BLOCKED** (Class C) |
+
+## Remaining limitations
+
+1. Live text_analyzer@12 remains Class B FAIL. This cycle does not change that.
+2. E1/E2/E3 are scripted only. Live confirmation **deferred**.
+3. Both live free paths remain **paused**. Scripted 403/429 is the G4-1 gate.
+4. G4-2 / G4-3 remain candidates.
+
+## Roadmap pointer
+
+Operating spine: [ROADMAP.md](ROADMAP.md). **Generation 4 in progress.**
+**G4-1 implemented as v0.5.0.** Gen5 is not started.
+
+---
+
 # Cycle 24 — Scope Gen4 v0.5.x; Gen3 complete (scripted); stay 0.4.9 (2026-09-19)
 
 **Date:** 2026-09-19

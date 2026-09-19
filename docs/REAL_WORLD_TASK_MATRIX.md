@@ -37,16 +37,18 @@ remains **paused** (Class C). Independent later package files is
 **implemented as v0.4.8** (scripted RW-087). Budget-aware retry stop is
 **implemented as v0.4.9** (scripted RW-088). Gen3 is
 **complete (scripted)**; live E1–E3 confirmation is **deferred** until a
-provider recovers. Gen4 v0.5.x is **planned / scoped** (not started; first
-v0.5.0 candidate **G4-1** listed, not accepted). Do not
-rewrite RW-058–088. Scripted theme-2 RW-066 (F-27) is preserved.
+provider recovers. Gen4 **G4-1** is **implemented as v0.5.0** (scripted
+RW-089). Do not rewrite RW-058–088. Scripted theme-2 RW-066 (F-27) is
+preserved.
 
 Every `VERIFIED` / `completed` cell is from the control-plane verifier **and** a disk
 check (file exists / contents / hash). A model `DONE:` line is never enough.
 
 Status vocabulary: **PASS** | **FAIL** | **BLOCKED** | **NOT TESTED**.
 
-Scripted E3 (RW-088) is at the top (**PASS**; retry/repair stop; later
+Scripted G4-1 (RW-089) is at the top (**PASS**; 403/429 → Class C
+`needs_user`; free rotation; no paid under free_lock; no Class A), then
+scripted E3 (RW-088) (**PASS**; retry/repair stop; later
 independent file ≥1 attempt), then scripted E2 (RW-087) (**PASS**; later
 independent fallback file ≥1 attempt), then live OpenRouter retest of v0.4.7 (RW-086) (**FAIL**; xxd
 Class A thrash **CLEARED**; E1 not live; late **429** `free-models-per-day`;
@@ -54,6 +56,15 @@ free-model loop **paused**), then live OpenRouter RW-085 (**FAIL**; Class C
 cleared; xxd ENVIRONMENT Class A **CONFIRMED**), then scripted RW-086
 (v0.4.7), then live NIM RW-084 (**BLOCKED Class C**), then scripted RW-083.
 RW-058–087 are **not rewritten**.
+
+# Scripted Class C provider doctrine (RW-089)
+
+Lane: scripted planner + controller + router (no NIM / no OpenRouter) on
+**v0.5.0**. Needle `existing` / off. Caps unchanged. **Not** a live PASS.
+
+| id | date | task | goal (short) | plan | steps | tools | result | disk / verify | ENVIRONMENT? | class | notes |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| RW-089 | 2026-09-19 | ops (scripted) — 403/429 Class C pause + free-first rotation | Write hello.txt; provider returns HTTP 403 or HTTP 429 | 1 task | raise ProviderError; recover; no retry | default **60** unchanged | **PASS** (403 → AUTH ask_user; 429 → RATE_LIMIT ask_user; attempts=1; 0 Repair; free 429 rotates; free_lock never calls paid; 503 still retries) | hello.txt **absent** on Class C pause; false DONE **0** | **N** | capability (Gen4 G4-1; Class C stays C) | Tests `test_provider_class_c.py`. Needle OFF. Caps unchanged. F-17 / E1–E3 / xxd / path-align / thrash Class A preserved. No live PASS claim. |
 
 # Scripted budget-aware retry stop (RW-088)
 

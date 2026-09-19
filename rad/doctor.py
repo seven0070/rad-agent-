@@ -236,7 +236,23 @@ class Doctor:
                            detail=["control plane, memory, doctor, lab banks and acceptance run without a key",
                                    "configure a brain when you want `rad chat` / live `rad evaluate`"])
         names = [getattr(getattr(e, "spec", e), "name", str(e)) for e in chain][:5]
-        return Finding("providers", "ok", f"{len(chain)} usable: {', '.join(names)}")
+        free_lock = bool(self.home.cfg.get("free_lock"))
+        pinned = str(self.home.cfg.get("force_provider") or "")
+        detail: List[str] = []
+        if free_lock:
+            detail.append("free_lock on — paid spend is off; 403/429 pause or rotate among free brains")
+        if pinned:
+            detail.append(
+                f"force_provider={pinned} — Class C on this pin rotates to other usable free providers")
+        if len(chain) == 1:
+            detail.append(
+                "single usable brain — HTTP 403/429 is Class C needs_user "
+                "(rotate key / wait for quota / `rad use` another), not a Class A patch")
+        else:
+            detail.append(
+                "free-first rotation: 401/403/429 skip to the next usable free provider; "
+                "exhausted Class C pauses (needs_user), not a product retry")
+        return Finding("providers", "ok", f"{len(chain)} usable: {', '.join(names)}", detail=detail)
 
 
     # ---- optional subsystems (all free to be absent; RAD stays usable)
