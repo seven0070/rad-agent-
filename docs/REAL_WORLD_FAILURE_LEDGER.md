@@ -2040,7 +2040,10 @@ python3 -m pytest -q tests/test_independent_later_files.py
 
 | gate | this PR |
 |---|---|
-| `python3 -m pytest -q` | pending this commit (558 unit tests locally before docs/gates) |
+| `python3 -m pytest -q` | **559 passed** in 10.41s |
+| `rad doctor --offline` | READY — 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR (`RAD_HOME=/tmp/rad-rw087-gate`) |
+| `rad acceptance` | **50/50 PASSED** (`/tmp/rad-rw087-gate/acceptance/20260919-050812_gate.json`) |
+| `rad realworld` | **10 passed / 1 BLOCKED / 0 failed** (`live_nim` BLOCKED; `/tmp/rad-rw087-rw/realworld/20260919-050809_realworld.json`) |
 | Package | **0.4.8** |
 | Live this patch | **not re-run** — not a live PASS claim for RW-085 / RW-086 |
 
