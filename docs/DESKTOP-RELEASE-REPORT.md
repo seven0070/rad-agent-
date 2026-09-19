@@ -181,7 +181,13 @@ sidecar loopback-only string in `rad/sidecar.py`.
 
 - `bundle.externalBin`, per-triple binary naming, 7-permission capability scope —
   verified statically (above).
-- `.github/workflows/desktop.yml` written: `test` (full pytest + acceptance) →
+- `.github/workflows/desktop.yml` written and YAML-validated in this workspace
+  (parses; job graph test/frontend/sidecar/desktop with correct `needs`).
+  **Push note:** the Arena GitHub App integration lacks the `workflows` scope, so
+  GitHub rejects pushes that create this file; it is in the workspace (and this
+  report documents it) but lands on `main` only via the repo owner (or after the
+  integration gains `workflows` permission).
+- Pipeline: `test` (full pytest + acceptance) →
   `frontend` (npm ci + strict build, dist artifact) → `sidecar` (matrix
   ubuntu/windows/macos: PyInstaller freeze + **live smoke**: serve → `/v1/health` with
   issued token → port-conflict exit 3; artifacts uploaded) → `desktop` (matrix: npm
