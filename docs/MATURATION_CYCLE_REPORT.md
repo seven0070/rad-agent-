@@ -6,6 +6,75 @@ Default `Budget.tool_calls` remains **60**.
 
 ---
 
+# Cycle 29 — G4-3 live-use campaign / operator workflow; v0.5.2 (2026-09-19)
+
+**Date:** 2026-09-19
+**Baseline:** `origin/main` `2eb3450a4288097a4938d42704105f353ebef1c7` (merge PR #42; package **0.5.1**)
+**Package at start:** `0.5.1`
+**This branch:** `cursor/g4-3-live-use-campaign-323a` — package **0.5.2**
+**Architecture:** control plane preserved. Needle stays off. Caps unchanged.
+**Kind:** product — G4-3 accepted + implemented. RW-058–091 are **not rewritten**.
+**Release:** **none** — Version 5 packs later as one release. Do not tag `v0.5.2`.
+
+## Why this cycle
+
+G4-3 was scoped on Cycle 28 / PR #42 and **accepted**. G4-1 closed pause
+(v0.5.0 / RW-089). G4-2 closed safe resume (v0.5.1 / RW-090 / RW-091).
+Production still had not **used** that path: last working-inference live
+row is RW-086 on v0.4.7; E1–E3 and G4-1/G4-2 never live-confirmed
+together. Leftover hole: online `rad doctor` re-pinged chat while last
+Class C still blocked (OpenRouter `free-models-per-day`).
+
+## Decision
+
+| item | value |
+|---|---|
+| Package | **0.5.1 → 0.5.2** |
+| Gen3 | **COMPLETE (scripted)** (unchanged). Live E1–E3 **deferred** |
+| Gen4 | **IN PROGRESS**. **G4-3 ACCEPTED + IMPLEMENTED** as **v0.5.2** |
+| Evidence | scripted **RW-092** / **RW-093** / F-20260919-54 |
+| Release / tag | **none** — Version 5 pack later |
+| Invariants | Needle OFF; caps 16/60; false DONE 0; no redesign; Class C is not a product patch; no live PASS claim; `free_lock` never silent paid |
+
+## What shipped
+
+- Online `rad doctor` / `scan_provider_health` skip chat while last Class C blocks (unknown `key_fp` included)
+- `rad doctor --force` / `rad health --force` to re-probe after a believed recovery
+- `rad health`: wait / rotate / resume / run next-action + campaign playbook
+- Controller Class C persist keeps key fingerprint / Retry-After
+
+## Quality gates (this branch)
+
+Isolated homes `/tmp/rad-g43-gate` (doctor, acceptance) and `/tmp/rad-g43-rw` (realworld).
+
+| gate | result |
+|------|--------|
+| `rad version` | **PASS** v0.5.2 |
+| `python3 -m pytest -q` | **PASS** 608 passed in 11.12s |
+| `rad doctor --offline` | **PASS** 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR, verdict READY, exit 0 |
+| `rad acceptance` | **PASS** 50/50 — `/tmp/rad-g43-gate/acceptance/20260919-064217_gate.json` |
+| `rad realworld` | **PASS** 10/11 + 1 BLOCKED — `/tmp/rad-g43-rw/realworld/20260919-064218_realworld.json` |
+| Needle default | **PASS** (`existing`) — unchanged |
+| Caps | **PASS** `max_plan_tasks` 16; `Budget.tool_calls` 60 — unchanged |
+| Package | **0.5.2** |
+| Release / tag | **none** |
+| Live this patch | not re-run; suite `live_nim` **BLOCKED** (Class C) |
+
+## Remaining limitations
+
+1. Live text_analyzer@12 remains Class B FAIL. This cycle does not change that.
+2. E1/E2/E3 are scripted only. Live confirmation **deferred**.
+3. Both live free paths remain **paused**. G4-3 is the *operator path to try*, not a live PASS.
+4. G4-4 / G4-5 / G4-6 remain later candidates.
+
+## Roadmap pointer
+
+Operating spine: [ROADMAP.md](ROADMAP.md). **Generation 4 in progress.**
+**G4-1** as v0.5.0. **G4-2** as v0.5.1. **G4-3 implemented as v0.5.2.**
+**No GitHub Release / tag.** Gen5 is not started.
+
+---
+
 # Cycle 28 — Scope G4-3 live-use campaign / operator workflow; stay 0.5.1 (2026-09-19)
 
 **Date:** 2026-09-19

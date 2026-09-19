@@ -92,7 +92,8 @@ Global: `--home <dir>` (or `RAD_HOME`), `--quiet`, `--json` where noted.
 
 | command | what it does |
 |---|---|
-| `rad doctor` | health check of RAD; --fix repairs what is safe |
+| `rad doctor` | health check of RAD; --fix repairs what is safe; --force re-pings chat |
+| `rad health` | live-use campaign: last Class C, live-gate, pause/resume next-action |
 | `rad storage` | schema/migrations/integrity/snapshots of ~/.rad |
 | `rad config` | show/get/set/unset RAD configuration |
 | `rad workspace` | show/set the hands workspace |
