@@ -14,10 +14,12 @@ from __future__ import annotations
 import json
 import os
 import re
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass, field
+from email.utils import parsedate_to_datetime
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
 from rad.home import RadHome
@@ -28,11 +30,37 @@ CLASS_C_STATUSES = frozenset({401, 403, 429})
 
 
 class ProviderError(Exception):
-    def __init__(self, msg: str, status: Optional[int] = None, retryable: bool = True) -> None:
+    def __init__(self, msg: str, status: Optional[int] = None, retryable: bool = True,
+                 retry_after: Optional[float] = None) -> None:
         super().__init__(msg)
         self.msg = msg
         self.status = status
         self.retryable = retryable
+        self.retry_after = retry_after
+
+
+def parse_retry_after(headers: Optional[Dict[str, str]]) -> Optional[float]:
+    """Return Retry-After as seconds remaining, or None if the header is absent/unusable."""
+    if not headers:
+        return None
+    raw = None
+    for k, v in headers.items():
+        if str(k).lower() == "retry-after":
+            raw = str(v).strip()
+            break
+    if not raw:
+        return None
+    try:
+        secs = float(raw)
+        return secs if secs > 0 else None
+    except ValueError:
+        pass
+    try:
+        dt = parsedate_to_datetime(raw)
+        left = dt.timestamp() - time.time()
+        return left if left > 0 else None
+    except Exception:
+        return None
 
 
 def class_c_kind(status: Optional[int] = None, msg: str = "") -> Optional[str]:
@@ -68,21 +96,30 @@ def class_c_kind(status: Optional[int] = None, msg: str = "") -> Optional[str]:
     return None
 
 
-def class_c_next_steps(kind: Optional[str] = None, free_lock: bool = False) -> str:
+def class_c_next_steps(kind: Optional[str] = None, free_lock: bool = False,
+                       retry_after: Optional[float] = None) -> str:
     """Actionable pause text: rotate key, wait for quota, switch free provider."""
     lock = " free_lock is on — paid spend stays off." if free_lock else ""
+    ra = ""
+    if retry_after is not None:
+        try:
+            secs = float(retry_after)
+            if secs > 0:
+                ra = f" Retry-After: wait {int(secs)}s before resume."
+        except (TypeError, ValueError):
+            ra = ""
     if kind == "rate_limit":
         return (
             "Class C provider rate-limit/quota — not a product hole. "
             "Wait for quota to reset, `rad use` another free provider, "
             "or add another free key. Do not invent a Class A patch."
-            + lock
+            + ra + lock
         )
     return (
         "Class C provider auth / inference-forbidden — not a product hole. "
         "Rotate the key, check inference entitlement, or `rad use` another free "
         "provider. Do not invent a Class A patch."
-        + lock
+        + ra + lock
     )
 
 
@@ -422,7 +459,7 @@ def _chat_openai(spec: ProviderSpec, key: Optional[str], messages: List[Dict[str
         if spec.name == "nvidia":
             # llama-3.2-11b-vision-instruct rejects parallel tool_calls (HTTP 400).
             body["parallel_tool_calls"] = False
-    status, _, resp = _post_json(spec.base_url + "/chat/completions", body, headers, timeout,
+    status, headers_out, resp = _post_json(spec.base_url + "/chat/completions", body, headers, timeout,
                                  stream=stream_cb is not None)
     if status != 200:
         err = _read_error_body(resp if isinstance(resp, bytes) else b"")
@@ -433,7 +470,8 @@ def _chat_openai(spec: ProviderSpec, key: Optional[str], messages: List[Dict[str
             return _chat_openai(spec, key, messages, spec.vision_model, tools, stream_cb,
                                 temperature, timeout, max_tokens)
         raise ProviderError(f"{spec.name}: HTTP {status} {err}",
-                            status=status, retryable=_retryable(status))
+                            status=status, retryable=_retryable(status),
+                            retry_after=parse_retry_after(headers_out))
     res = ChatResult(provider=spec.name, model=model)
     if stream_cb is None:
         d = json.loads(_body_bytes(resp).decode())
@@ -556,11 +594,12 @@ def _chat_anthropic(spec: ProviderSpec, key: Optional[str], messages: List[Dict[
                           "description": t["function"].get("description", ""),
                           "input_schema": t["function"].get("parameters", {"type": "object", "properties": {}})}
                          for t in tools]
-    status, _, resp = _post_json(spec.base_url + "/v1/messages", body, headers, timeout,
+    status, headers_out, resp = _post_json(spec.base_url + "/v1/messages", body, headers, timeout,
                                  stream=stream_cb is not None)
     if status != 200:
         raise ProviderError(f"{spec.name}: HTTP {status} {_read_error_body(resp if isinstance(resp, bytes) else b'')}",
-                            status=status, retryable=_retryable(status))
+                            status=status, retryable=_retryable(status),
+                            retry_after=parse_retry_after(headers_out))
     res = ChatResult(provider=spec.name, model=model)
     if stream_cb is None:
         d = json.loads(_body_bytes(resp).decode())
@@ -672,10 +711,11 @@ def _chat_gemini(spec: ProviderSpec, key: Optional[str], messages: List[Dict[str
         url = url.replace("?alt=sse", "?key=" + urllib.parse.quote(key or "") + "&alt=sse")
         url = re.sub(r"\?key=[^&]*(&alt=sse)$", r"\1", url)
         url = url.split("?")[0] + "?key=" + urllib.parse.quote(key or "") + "&alt=sse"
-    status, _, resp = _post_json(url, body, {}, timeout, stream=stream_cb is not None)
+    status, headers_out, resp = _post_json(url, body, {}, timeout, stream=stream_cb is not None)
     if status != 200:
         raise ProviderError(f"{spec.name}: HTTP {status} {_read_error_body(resp if isinstance(resp, bytes) else b'')}",
-                            status=status, retryable=_retryable(status))
+                            status=status, retryable=_retryable(status),
+                            retry_after=parse_retry_after(headers_out))
     res = ChatResult(provider=spec.name, model=model)
     if stream_cb is None:
         d = json.loads(_body_bytes(resp).decode())

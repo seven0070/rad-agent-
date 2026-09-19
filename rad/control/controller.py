@@ -46,6 +46,7 @@ from rad.control.recovery import Decision, FailureClass, RecoveryEngine
 from rad.control.scheduler import Scheduler
 from rad.control.tasks import Check, Task, TaskStatus
 from rad.control.verifier import FAILED, UNVERIFIED, VERIFIED, Verifier
+from rad.health import evaluate_live_gate, providers_from_error, record_class_c, status_from_error
 from rad.home import RadHome
 from rad.sandbox import Sandbox
 
@@ -258,6 +259,16 @@ class Controller:
             log.emit(E.CRASH_DETECTED, obj.id, tasks=restored)
             log.emit(E.CHECKPOINT_RESTORED, obj.id, tasks=restored)
         if obj.status in (ObjectiveStatus.PAUSED, ObjectiveStatus.NEEDS_USER):
+            gate = evaluate_live_gate(self.home, obj, graph)
+            self.last_run = {**(self.last_run or {}), "live_gate": gate.to_dict()}
+            if not gate.allow:
+                note = (gate.next_steps or gate.reason)[:1000]
+                obj.failure = note
+                obj.result_summary = f"{obj.status}: {note[:200]}"
+                self.store.save(obj)
+                log = self._log(obj.id)
+                log.emit(E.NEEDS_USER, obj.id, note=note, data=gate.to_dict())
+                return obj
             for t in graph.tasks.values():
                 if t.status in (TaskStatus.NEEDS_USER, TaskStatus.BLOCKED):
                     t.transition(TaskStatus.READY, "user resumed")
@@ -296,7 +307,10 @@ class Controller:
         started = time.time()
         base_seconds = float(obj.usage.seconds or 0)
         sessions: List[Any] = []
+        prev_gate = (self.last_run or {}).get("live_gate")
         self.last_run = {"objective": obj.id, "parallel": parallel, "max_tasks": max_tasks}
+        if prev_gate is not None:
+            self.last_run["live_gate"] = prev_gate
 
         def tick() -> None:
             budgets.tick(base_seconds + (time.time() - started))
@@ -669,6 +683,17 @@ class Controller:
         if d.strategy == "ask_user":
             task.transition(TaskStatus.NEEDS_USER, d.reason)
             log.emit(E.NEEDS_USER, obj.id, task.id, note=d.reason, data=d.data)
+            if d.data.get("class_c"):
+                names = list(d.data.get("providers") or []) or providers_from_error(error)
+                if not names:
+                    names = ["unknown"]
+                for name in names:
+                    record_class_c(
+                        self.home, name, kind=d.data.get("kind"),
+                        status=status_from_error(error or d.reason),
+                        err=error or d.reason, objective_id=obj.id,
+                        free_lock=bool(self.home.cfg.get("free_lock")),
+                    )
             return
         task.transition(TaskStatus.BLOCKED, d.reason)
 

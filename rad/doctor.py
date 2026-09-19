@@ -15,6 +15,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
+from rad.health import last_class_c, scan_provider_health
 from rad.home import RadHome
 from rad.storage import SCHEMA_VERSION, Storage, validate_config
 
@@ -220,39 +221,74 @@ class Doctor:
     def c_providers(self) -> Finding:
         if not self.probe_network:
             return Finding("providers", "ok", "skipped (offline mode)")
-        from rad.router import RouterState
-        r = RouterState(self.home)
-        chain = r.build_chain()
-        if not chain:
-            pinned = str(self.home.cfg.get("force_provider") or "")
-            if pinned:
-                return Finding("providers", "warn",
-                               f"force_provider={pinned} but no brain is reachable",
-                               detail=["`rad use` another provider, `rad keys add <provider> <key>`, "
-                                       "or start a local engine (`ollama serve`)"])
-            return Finding("providers", "optional",
-                           "no brain configured — add a key (`rad keys add <provider> <key>`) "
-                           "or start a local engine; RAD still works offline",
-                           detail=["control plane, memory, doctor, lab banks and acceptance run without a key",
-                                   "configure a brain when you want `rad chat` / live `rad evaluate`"])
-        names = [getattr(getattr(e, "spec", e), "name", str(e)) for e in chain][:5]
+        healths = scan_provider_health(self.home)
+        entitled = [h for h in healths if h.inference_entitled]
+        catalog_only = [h for h in healths if h.catalog_alive and not h.inference_entitled]
         free_lock = bool(self.home.cfg.get("free_lock"))
         pinned = str(self.home.cfg.get("force_provider") or "")
         detail: List[str] = []
+        last = last_class_c(self.home)
+        if last and last.get("class_c"):
+            ra = last.get("retry_after")
+            until = last.get("retry_after_until")
+            extra = ""
+            if until:
+                left = float(until) - time.time()
+                if left > 0:
+                    extra = f"; Retry-After {int(left)}s"
+            detail.append(
+                f"last Class C: {last.get('provider')} {last.get('kind')} "
+                f"HTTP {last.get('status')}{extra} — {last.get('next_steps') or 'rotate-key / wait-quota / rad use'}")
         if free_lock:
             detail.append("free_lock on — paid spend is off; 403/429 pause or rotate among free brains")
         if pinned:
             detail.append(
                 f"force_provider={pinned} — Class C on this pin rotates to other usable free providers")
-        if len(chain) == 1:
+        for h in catalog_only:
+            st = h.inference_status if h.inference_status is not None else "?"
             detail.append(
-                "single usable brain — HTTP 403/429 is Class C needs_user "
-                "(rotate key / wait for quota / `rad use` another), not a Class A patch")
-        else:
-            detail.append(
-                "free-first rotation: 401/403/429 skip to the next usable free provider; "
-                "exhausted Class C pauses (needs_user), not a product retry")
-        return Finding("providers", "ok", f"{len(chain)} usable: {', '.join(names)}", detail=detail)
+                f"{h.name}: catalog-alive (HTTP {h.catalog_status}) ≠ inference-entitled "
+                f"(chat HTTP {st}) — not a live brain")
+        if entitled:
+            names = [h.name for h in entitled][:5]
+            if len(entitled) == 1:
+                detail.append(
+                    "single inference-entitled brain — HTTP 403/429 is Class C needs_user "
+                    "(rotate key / wait for quota / `rad use` another), not a Class A patch")
+            else:
+                detail.append(
+                    "free-first rotation: 401/403/429 skip to the next usable free provider; "
+                    "exhausted Class C pauses (needs_user), not a product retry")
+            return Finding("providers", "ok",
+                           f"{len(entitled)} inference-entitled: {', '.join(names)}",
+                           detail=detail)
+        if catalog_only:
+            bits = []
+            for h in catalog_only[:5]:
+                st = h.inference_status if h.inference_status is not None else "?"
+                bits.append(f"{h.name} (chat HTTP {st})")
+            return Finding(
+                "providers", "warn",
+                f"{len(catalog_only)} catalog-alive, 0 inference-entitled: {', '.join(bits)}",
+                detail=detail or [
+                    "GET /v1/models 200 is not chat/completions entitlement (RW-084)",
+                    "rotate the key, wait for quota, or `rad use` another free provider",
+                ])
+        if healths:
+            names = [h.name for h in healths][:5]
+            return Finding("providers", "warn",
+                           f"{len(healths)} key(s) present but catalog/inference failed: {', '.join(names)}",
+                           detail=detail or ["`rad keys add` a working free key or start a local engine"])
+        if pinned:
+            return Finding("providers", "warn",
+                           f"force_provider={pinned} but no brain is reachable",
+                           detail=["`rad use` another provider, `rad keys add <provider> <key>`, "
+                                   "or start a local engine (`ollama serve`)"])
+        return Finding("providers", "optional",
+                       "no brain configured — add a key (`rad keys add <provider> <key>`) "
+                       "or start a local engine; RAD still works offline",
+                       detail=["control plane, memory, doctor, lab banks and acceptance run without a key",
+                               "configure a brain when you want `rad chat` / live `rad evaluate`"])
 
 
     # ---- optional subsystems (all free to be absent; RAD stays usable)

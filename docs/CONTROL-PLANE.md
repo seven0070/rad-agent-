@@ -62,9 +62,12 @@ When a tool or retry budget is exhausted the controller does **not** treat a mod
 ## Persistence / resume
 Checkpoint after every task: `objective.json`, `tasks.json`, `CHECKPOINT` event. `resume()`
 moves tasks left in RUNNING/OBSERVING/VERIFYING back to RETRYING, reopens NEEDS_USER/BLOCKED
-tasks, and continues. Completed tasks are never re-run. Budget exhaustion with unmet
-work is `needs_user` plus that same checkpoint; OPEN tasks whose machine checks
-already pass can close without a model call.
+tasks, and continues — except a **Class C** pause (G4-2 / v0.5.1): last Class C is
+read from `~/.rad/provider_health.json` and resume stays `needs_user` until an
+**inference-entitled** brain is available. Catalog-alive is not enough. Completed
+tasks are never re-run. Budget exhaustion with unmet work is `needs_user` plus that
+same checkpoint; OPEN tasks whose machine checks already pass can close without a
+model call.
 
 Crash-resume is **shipped** (`CheckpointManager`, `rad objective resume`;
 acceptance gate 14). Intra-run yield so later independent READY tasks still get
@@ -83,8 +86,9 @@ crash-resume with a raised budget as that gap, and do not invent a
 second persistence stack. Live E1–E3 confirmation is **deferred** until
 a provider recovers. Gen4 theme **G4-1** (live multi-provider / free-provider
 production doctrine) is **implemented as v0.5.0** — Class C 403/429 pause
-with free-first rotation; not a control-plane rewrite. See
-[ROADMAP.md](ROADMAP.md).
+with free-first rotation. Theme **G4-2** is **implemented as v0.5.1** —
+catalog vs inference health, last-Class-C persist, live-gate resume; not a
+control-plane rewrite. See [ROADMAP.md](ROADMAP.md).
 
 ## Parallelism (Phase 3)
 Ready tasks with satisfied dependencies run concurrently up to `objective_parallel`

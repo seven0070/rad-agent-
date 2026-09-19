@@ -118,6 +118,10 @@ class RadHome:
         return self.root / "notifications.md"
 
     @property
+    def provider_health_path(self) -> Path:
+        return self.root / "provider_health.json"
+
+    @property
     def dna_dir(self) -> Path:
         return self.root / "dna"
 

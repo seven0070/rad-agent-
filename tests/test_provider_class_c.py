@@ -69,7 +69,7 @@ RW089_PLAN = {
 # ---------------------------------------------------------------- architecture freeze
 
 def test_g41_does_not_raise_caps_or_enable_needle(home):
-    assert __version__ == "0.5.0"
+    assert __version__ == "0.5.1"
     assert Budget().tool_calls == 60
     assert int(home.cfg.get("max_plan_tasks", 16) or 16) == 16
     assert Planner(None, str(home.workspace())).max_tasks == 16
@@ -283,11 +283,14 @@ def test_force_provider_class_c_still_rotates_to_other_free(home):
 
 
 def test_doctor_providers_surface_class_c_doctrine(home):
-    with mock.patch.dict(__import__("os").environ, {"GROQ_API_KEY": "gsk"}):
-        with mock.patch.object(P, "probe_local", return_value=(False, [])):
-            home.update(free_lock=True)
-            fs = {f.check: f for f in Doctor(home, fix=False, probe_network=True).run()}
+    from rad.health import ProviderHealth
+    fake = [ProviderHealth(name="groq", catalog_alive=True, catalog_status=200,
+                           inference_entitled=True, inference_status=200, tier="free")]
+    with mock.patch("rad.doctor.scan_provider_health", return_value=fake):
+        home.update(free_lock=True)
+        fs = {f.check: f for f in Doctor(home, fix=False, probe_network=True).run()}
     assert fs["providers"].status == "ok"
-    blob = " ".join(fs["providers"].detail)
+    blob = fs["providers"].message + " " + " ".join(fs["providers"].detail)
+    assert "inference-entitled" in blob
     assert "Class C" in blob or "403/429" in blob
     assert "free_lock" in blob

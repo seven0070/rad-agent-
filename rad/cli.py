@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from rad import __version__
+from rad.health import last_class_c
 from rad.home import DEFAULTS, RadHome, mask
 from rad.ui import ask, col, fail, info, ok, warn
 
@@ -99,6 +100,13 @@ def cmd_providers(args) -> int:
     r = _router(home)
     print(col.bold("Providers — brain socket:"))
     print(r.describe())
+    last = last_class_c(home)
+    if last and last.get("class_c"):
+        print(col.yellow(
+            f"  last Class C: {last.get('provider')} {last.get('kind')} HTTP {last.get('status')}"
+        ))
+        if last.get("next_steps"):
+            print(col.dim("  " + last["next_steps"]))
     return 0
 
 

@@ -6,6 +6,69 @@ Default `Budget.tool_calls` remains **60**.
 
 ---
 
+# Cycle 27 — G4-2 live-gate resume / provider health; v0.5.1 (2026-09-19)
+
+**Date:** 2026-09-19
+**Baseline:** `origin/main` `d67917a76f9a9926f097bb7a168cf466a1385036` (merge PR #40; package **0.5.0**)
+**Package at start:** `0.5.0`
+**This branch:** `cursor/g4-2-live-gate-resume-2449` — package **0.5.1**
+**Architecture:** control plane preserved. Needle stays off. Caps unchanged.
+**Kind:** product — G4-2 accepted + implemented. RW-058–089 are **not rewritten**.
+
+## Why this cycle
+
+G4-2 was scoped on Cycle 26 / PR #40 and **accepted**. G4-1 closed pause
+(v0.5.0 / RW-089). Production still had no safe live-use path: RW-084
+doctor READY on catalog-alive + chat 403; RW-086 429 with no durable
+last-Class-C / Retry-After surface; resume would re-hit the same 403.
+
+## Decision
+
+| item | value |
+|---|---|
+| Package | **0.5.0 → 0.5.1** |
+| Gen3 | **COMPLETE (scripted)** (unchanged). Live E1–E3 **deferred** |
+| Gen4 | **IN PROGRESS**. **G4-2 ACCEPTED + IMPLEMENTED** as **v0.5.1** |
+| Evidence | scripted **RW-090** / **RW-091** / F-20260919-53 |
+| Invariants | Needle OFF; caps 16/60; false DONE 0; no redesign; Class C is not a product patch; no live PASS claim; `free_lock` never silent paid |
+
+## What shipped
+
+- `rad/health.py`: catalog vs inference probe; last Class C persist; live-gate
+- Doctor READY only for inference-entitled brains (RW-084 shape)
+- `rad objective resume` refuses to re-burn the same 403/429 (RW-086 shape)
+- Retry-After in `class_c_next_steps` / `provider_health.json` when present
+
+## Quality gates (this branch)
+
+Isolated homes `/tmp/rad-g42-gate` (doctor, acceptance) and `/tmp/rad-g42-rw` (realworld).
+
+| gate | result |
+|------|--------|
+| `rad version` | **PASS** v0.5.1 |
+| `python3 -m pytest -q` | **PASS** 596 passed in 11.22s |
+| `rad doctor --offline` | **PASS** 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR, verdict READY, exit 0 |
+| `rad acceptance` | **PASS** 50/50 — `/tmp/rad-g42-gate/acceptance/20260919-061250_gate.json` |
+| `rad realworld` | **PASS** 10/11 + 1 BLOCKED — `/tmp/rad-g42-rw/realworld/20260919-061257_realworld.json` |
+| Needle default | **PASS** (`existing`) — unchanged |
+| Caps | **PASS** `max_plan_tasks` 16; `Budget.tool_calls` 60 — unchanged |
+| Package | **0.5.1** |
+| Live this patch | not re-run; suite `live_nim` **BLOCKED** (Class C) |
+
+## Remaining limitations
+
+1. Live text_analyzer@12 remains Class B FAIL. This cycle does not change that.
+2. E1/E2/E3 are scripted only. Live confirmation **deferred**.
+3. Both live free paths remain **paused**. G4-2 is the *safe path to try*, not a live PASS.
+4. G4-3 / G4-4 / G4-5 remain later candidates.
+
+## Roadmap pointer
+
+Operating spine: [ROADMAP.md](ROADMAP.md). **Generation 4 in progress.**
+**G4-1** as v0.5.0. **G4-2 implemented as v0.5.1.** Gen5 is not started.
+
+---
+
 # Cycle 26 — Scope G4-2 live-gate resume / provider health; stay 0.5.0 (2026-09-19)
 
 **Date:** 2026-09-19

@@ -15,7 +15,14 @@ corrupt files (`*.corrupt-<ts>`, never delete). Exit 1 only if anything is ERROR
 
 Provider HTTP **401 / 403 / 429** are **Class C** (G4-1 / v0.5.0): `rad doctor`
 names the rotate-key / wait-quota / `rad use` pause when a chain exists;
-`free_lock` never silently spends paid. See [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
+`free_lock` never silently spends paid.
+
+G4-2 / v0.5.1: `rad doctor` distinguishes **catalog-alive** (`GET /v1/models` 200)
+from **inference-entitled** (`chat/completions`). A 403-chat pin is WARNING, not
+READY. Last Class C (kind / status / next-steps / Retry-After) is persisted in
+`~/.rad/provider_health.json`. `rad objective resume` live-gates Class C pauses
+until an inference-entitled brain recovers — it does not silently re-burn the
+same 403/429. See [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
 
 ## Storage schema & migrations (`rad/storage.py`)
 `~/.rad/schema.json` records the schema version and every applied migration (name, time, summary).
