@@ -62,6 +62,7 @@ class ProviderHealth:
     models: List[str] = field(default_factory=list)
     tier: str = ""
     skipped_inference: bool = False
+    model: str = ""
 
     def to_record(self, **extra: Any) -> Dict[str, Any]:
         rec: Dict[str, Any] = {
@@ -259,16 +260,47 @@ def probe_catalog(spec: ProviderSpec, key: Optional[str], timeout: float = 8.0) 
     return health
 
 
-def probe_inference(spec: ProviderSpec, key: Optional[str], timeout: float = 8.0) -> ProviderHealth:
+def inference_probe_model(
+    spec: ProviderSpec,
+    home: Optional[RadHome] = None,
+    model: Optional[str] = None,
+) -> str:
+    """Model id for a 1-token entitlement ping.
+
+    Router chat uses ``cfg.model`` then the provider default. Doctor / health
+    must ping that same id: a 404 on a stale ``spec.default_model`` is not
+    'not inference-entitled' when the pinned model returns 200.
+    ``force_provider`` scopes the pin to that brain so a NVIDIA probe does
+    not inherit an OpenRouter id. 403/429 on the pin stay Class C.
+    """
+    override = str(model or "").strip()
+    if override:
+        return override
+    pinned = str((home.cfg.get("model") if home is not None else None) or "").strip()
+    if pinned:
+        force = str((home.cfg.get("force_provider") if home is not None else None) or "").strip()
+        if not force or force == spec.name:
+            return pinned
+    return str(spec.default_model or "")
+
+
+def probe_inference(
+    spec: ProviderSpec,
+    key: Optional[str],
+    timeout: float = 8.0,
+    model: Optional[str] = None,
+    home: Optional[RadHome] = None,
+) -> ProviderHealth:
     """One-token chat ping. 403/429 are Class C, not a product hole."""
     health = ProviderHealth(name=spec.name, tier=spec.tier)
-    model = spec.default_model
-    if spec.local and not model:
+    ping = inference_probe_model(spec, home, model=model)
+    if spec.local and not ping:
         _, models = probe_local(spec)
-        model = models[0] if models else ""
+        ping = models[0] if models else ""
+    health.model = ping
     try:
         P.chat(spec, key, [{"role": "user", "content": "ping"}],
-             model=model, tools=None, stream_cb=None,
+             model=ping, tools=None, stream_cb=None,
              temperature=0.0, timeout=timeout, max_tokens=1)
         health.inference_entitled = True
         health.inference_status = 200
@@ -318,12 +350,14 @@ def probe_provider_health(
         catalog.retry_after = remaining_retry_after(cached if isinstance(cached, dict) else None)
         catalog.err = (cached or {}).get("err") or catalog.err
         catalog.skipped_inference = True
+        catalog.model = inference_probe_model(spec, home)
         return catalog
-    inf = probe_inference(spec, key, timeout=timeout)
+    inf = probe_inference(spec, key, timeout=timeout, home=home)
     catalog.inference_entitled = inf.inference_entitled
     catalog.inference_status = inf.inference_status
     catalog.kind = inf.kind
     catalog.retry_after = inf.retry_after
+    catalog.model = inf.model
     if inf.err:
         catalog.err = inf.err
     if home is not None:

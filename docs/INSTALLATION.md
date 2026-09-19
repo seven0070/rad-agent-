@@ -14,16 +14,18 @@
 
 ## Public 1.0 install (product path)
 
-Package **1.0.0**. `rad version` prints **1.0.0**. Needle stays **OFF**. Caps
+Package **1.0.1**. `rad version` on this tree prints **1.0.1**. Packed Version 1
+GitHub Release (tag **v1.0.0**) still prints **1.0.0**. Needle stays **OFF**. Caps
 (`max_plan_tasks` **16**, default `Budget.tool_calls` **60**) unchanged. False
 `DONE:` **0**. Class C (NIM 403 / OpenRouter 429) is **unblock the environment**,
 not a product patch. Do **not** invent remaining-quota. Live text_analyzer@12 is
 **not** claimed PASS.
 
 The public install is a **wheel or sdist from GitHub Release Version 1 /
-tag `v1.0.0`**. That release is **not** created in the G5-1 implementation PR —
-Sanath packs Version 1 after merge (see [Version 1 packing](#version-1-packing-sanath)
-below). Until those assets exist, use the [contributor checkout](#contributor-checkout).
+tag `v1.0.0`**. That release is **already packed**. This 1.0.1 change does
+**not** cut a GitHub Release or tag — Sanath packs a later 1.0.x only if he
+asks. Contributor checkout tracks this tree. Until a 1.0.1 pack exists, use
+the [contributor checkout](#contributor-checkout) for the Class A fixes.
 
 ```bash
 python3 -m venv .venv && . .venv/bin/activate
@@ -54,21 +56,21 @@ runs offline.
 
 ## Contributor checkout
 
-Source checkout remains the path for development and for installs **before**
-Version 1 assets exist:
+Source checkout remains the path for development and for 1.0.1 (this tree)
+until Sanath packs a later 1.0.x:
 
 ```bash
 git clone https://github.com/seven0070/rad-agent-.git && cd rad-agent-
 python3 -m venv .venv && . .venv/bin/activate
 pip install -e .                 # or: pip install -e ".[dev]" for the test suite
-rad version                      # prints 1.0.0
+rad version                      # prints 1.0.1
 rad doctor                       # READY / WARNING / OPTIONAL / ERROR — 23 checks
 ```
 
 ## Version 1 packing (Sanath)
 
-**Do not** cut the GitHub Release or tag from a G5-1 implementation PR. After
-that PR merges to `main`, pack **one Version 1 / 1.0** at tag **v1.0.0**:
+**Do not** cut the GitHub Release or tag from a 1.0.x Class A PR. Version 1 /
+tag **v1.0.0** is already packed. Pack **1.0.1** later only when Sanath asks.
 
 1. Checkout the merge commit on `main`. Confirm `rad version` prints `v1.0.0`.
 2. Build installable assets (no secrets; `dist/` is gitignored):

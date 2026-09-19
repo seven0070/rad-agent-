@@ -32,13 +32,13 @@ the earlier G4-1–G4-3 pack. Generation 5 is **in progress**. Theme
 **G5-1** (public / product-grade 1.0 baseline) is **accepted and
 implemented as v1.0.0** (scripted RW-100 / RW-101). Package **1.0.0**.
 **Version 1 pack is SHIPPED** as GitHub Release **Version 1** / tag
-**v1.0.0** @ `9ff184e0d071784bc8820a1258a3d40daf7f1193` (wheel + sdist).
-**No further Gen5 product theme (no G5-2).** Next step is **hold / soak**:
-operator live-use of the Version 1 / Version 5 path via the G4-3 playbook
-when a provider recovers. This change is docs/scope only — stay
-**1.0.0**. **No GitHub Release / tag in this PR.** Do **not** claim live
-text_analyzer@12 PASS. F-17 / F-26 stay closed. Class C is not a product
-patch. Remaining-quota not invented.
+**v1.0.0** @ `9ff184e0d071784bc8820a1258a3d40daf7f1193` (wheel + sdist;
+PR #52). Proven Class A on the 1.0 line is **implemented as v1.0.1**
+(scripted RW-102 / RW-103): doctor/health ping honors pinned `cfg.model`;
+G4-7 `json_field` does not invent English-glue key `on`. **No GitHub
+Release / tag in this PR** — Sanath packs 1.0.1 later only if he asks.
+Do **not** claim live text_analyzer@12 PASS. F-17 / F-26 stay closed.
+Class C is not a product patch. Remaining-quota not invented.
 
 ```
 build → test → validate → release → use → discover gaps → build the next version
@@ -53,16 +53,16 @@ Stability with no code change is a valid result.
 
 | item | value |
 |---|---|
-| Generation in production | **Gen5 in progress** — **v1.0.0** (G5-1 **shipped + packed**). Next: **hold / soak** (no G5-2). Gen4 remains **complete (scripted)** on 0.5.0–0.5.5 (G4-6 **v0.5.5**; G4-7 **v0.5.4**; G4-5 **v0.5.3**; G4-3 **v0.5.2**; G4-2 **v0.5.1**; G4-1 **v0.5.0**). Gen3 remains **complete (scripted)** on 0.4.0–0.4.9. Last live-use with **working inference** is **RW-086** on tag `v0.4.7` @ `850aaf9c` (OpenRouter free; then **429**); prior working-inference row is RW-085 on tag `v0.4.6` @ `8f09be58`; v0.4.6 live NIM attempt is RW-084 **BLOCKED Class C**; last NIM working-inference row remains RW-081 on `v0.4.5` @ `32e9fe87`; Gen2 complete on `387776dc` / tag `v0.3.2`; Gen1 baseline remains tagged `v0.2.3` @ `d121c3f` |
-| Package / tag on `main` | **1.0.0** (this change: **no bump**). **Version 1 pack** is GitHub Release **Version 1** / tag `v1.0.0` @ `9ff184e0d071784bc8820a1258a3d40daf7f1193` (wheel + sdist; merge PR #52). **No GitHub Release / tag in this PR.** Version 5 pack remains GitHub Release **Version 5** / tag `v0.5.5` @ `08cf33893d309981c5f75bef260bca87f5c47d29` (0.5.0–0.5.5). Tag `v0.5.2` @ `d534bd30384e9f582ca6c08562a6b2cd555fb793` remains the earlier G4-1–G4-3 pack. Tag `v0.5.1` @ `2d4c8b6dd2e75b191a33913b93eb7d77acd3be6b` (merge PR #41) is G4-2. Tag `v0.5.0` @ `d194b8ffc763fc00ad58273e5dd8f0203442041d` (merge PR #39) is G4-1. Tag `v0.4.9` @ `05ea0df302aa6bfd15eccfb84341aeed75d6e1d0` is E3. Tag `v0.4.7` @ `850aaf9c3a931a5ba119bdbb6ec73ae4a6fa73e9` remains the live RW-086 run |
-| This change | **G5 hold / soak scoped** (docs). G5-1 / Version 1 **done @ 1.0.0**. **No G5-2 product theme.** Stay **1.0.0**. **No GitHub Release / tag.** Not **v1.0.1**. Not **v1.1.0** |
+| Generation in production | **Gen5 in progress** — **v1.0.1** (G5-1 **shipped + packed** as **v1.0.0**; proven Class A **v1.0.1** RW-102 / RW-103). Next: **hold / soak** (no G5-2). Gen4 remains **complete (scripted)** on 0.5.0–0.5.5 (G4-6 **v0.5.5**; G4-7 **v0.5.4**; G4-5 **v0.5.3**; G4-3 **v0.5.2**; G4-2 **v0.5.1**; G4-1 **v0.5.0**). Gen3 remains **complete (scripted)** on 0.4.0–0.4.9. Last live-use with **working inference** is **RW-086** on tag `v0.4.7` @ `850aaf9c` (OpenRouter free; then **429**); prior working-inference row is RW-085 on tag `v0.4.6` @ `8f09be58`; v0.4.6 live NIM attempt is RW-084 **BLOCKED Class C**; last NIM working-inference row remains RW-081 on `v0.4.5` @ `32e9fe87`; Gen2 complete on `387776dc` / tag `v0.3.2`; Gen1 baseline remains tagged `v0.2.3` @ `d121c3f` |
+| Package / tag on `main` | **1.0.1** (this change). **Version 1 pack** remains GitHub Release **Version 1** / tag `v1.0.0` @ `9ff184e0d071784bc8820a1258a3d40daf7f1193` (wheel + sdist; merge PR #52). **No GitHub Release / tag in this PR.** Version 5 pack remains GitHub Release **Version 5** / tag `v0.5.5` @ `08cf33893d309981c5f75bef260bca87f5c47d29` (0.5.0–0.5.5). Tag `v0.5.2` @ `d534bd30384e9f582ca6c08562a6b2cd555fb793` remains the earlier G4-1–G4-3 pack. Tag `v0.5.1` @ `2d4c8b6dd2e75b191a33913b93eb7d77acd3be6b` (merge PR #41) is G4-2. Tag `v0.5.0` @ `d194b8ffc763fc00ad58273e5dd8f0203442041d` (merge PR #39) is G4-1. Tag `v0.4.9` @ `05ea0df302aa6bfd15eccfb84341aeed75d6e1d0` is E3. Tag `v0.4.7` @ `850aaf9c3a931a5ba119bdbb6ec73ae4a6fa73e9` remains the live RW-086 run |
+| This change | **v1.0.1 proven Class A** (scripted RW-102 / RW-103). Package **1.0.0 → 1.0.1**. **No GitHub Release / tag.** Not **v1.1.0**. Not a live PASS |
 | Generation 2 | **COMPLETE** — theme 1 **v0.3.0** (used RW-065 / RW-068); theme 2 **v0.3.1** (used live RW-066 / RW-068); theme 3 **v0.3.2** (scripted RW-067; used RW-068 / RW-069) |
 | Latest use (RW-086) | Live OpenRouter free text_analyzer on v0.4.7 **FAIL** `needs_user` @ tools **12/12**: provider **openrouter** / `nvidia/nemotron-3.5-lightning:free`; `$0`; PLAN `source=fallback` attempts=2; task1 **COMPLETED** + task2 attempts=1; E1 **not live** (0 TaskYield). xxd Class A ENVIRONMENT thrash **CLEARED** (0 xxd / 0 ENVIRONMENT / 0 repair). Residual Class **B+C** (fallback plan, missing tests/README, odd summary + late HTTP **429** `free-models-per-day`). False DONE **0** |
 | Live OpenRouter free loop | **PAUSED** until `free-models-per-day` rate limit resets (RW-086). Do not treat further free-model retries as product Class B until rate clears |
 | Live NIM loop | **PAUSED / Class C blocked** (RW-084). E1 live gate still **not confirmed**. Scripted RW-083 remains unit evidence |
 | Generation 3 | **COMPLETE (scripted)** — theme 1 **implemented** (v0.4.0) **used** (RW-071 / RW-073 / RW-075 / RW-077 / RW-079 / RW-081 / RW-085 / RW-086); theme 2 **implemented** (v0.4.1) **used** (RW-073 / RW-075 / RW-077 / RW-079 / RW-081 / RW-085 / RW-086); theme 3 slices A–D **v0.4.2–v0.4.5** **used** (RW-075 / RW-077 / RW-079 / RW-081; mkdir live Y on RW-081); slice E1 **v0.4.6** **implemented** (scripted RW-083; live **not confirmed** on RW-084/085/086); slice F **v0.4.7** **implemented** (xxd ENVIRONMENT; scripted RW-086; live RW-086 thrash **CLEARED**); slice E2 **v0.4.8** **implemented** (scripted RW-087; live **not confirmed**); slice E3 **v0.4.9** **implemented** (scripted RW-088; live **not confirmed**). Live E1–E3 confirmation **deferred** until a provider recovers |
 | Generation 4 | **COMPLETE (scripted)** — **G4-1** as **v0.5.0** (scripted RW-089); **G4-2** as **v0.5.1** (scripted RW-090 / RW-091); **G4-3** as **v0.5.2** (scripted RW-092 / RW-093); **Version 5 pack** shipped; **G4-5** as **v0.5.3** (scripted RW-094 / RW-095); **G4-7** as **v0.5.4** (scripted RW-096 / RW-097); **G4-6** as **v0.5.5** (scripted RW-098 / RW-099). **G4-4 parked** (no measured hole). Live confirmation **deferred** |
-| Generation 5 | **IN PROGRESS** — **G5-1** as **v1.0.0** (scripted RW-100 / RW-101); Version 1 pack **SHIPPED** (tag **v1.0.0**). **Next: hold / soak** (no G5-2). **No GitHub Release / tag in this PR.** Stay **1.0.0** |
+| Generation 5 | **IN PROGRESS** — **G5-1** as **v1.0.0** (scripted RW-100 / RW-101); Version 1 pack **SHIPPED** (tag **v1.0.0**). Proven Class A **v1.0.1** (scripted RW-102 / RW-103). **Next: hold / soak** (no G5-2). **No GitHub Release / tag in this PR.** |
 | Needle | optional / **off** (`tool_router=existing`; ADR-001) |
 | `max_plan_tasks` | **16** (unchanged) |
 | Default `Budget.tool_calls` | **60** (unchanged) |
@@ -83,7 +83,7 @@ Cycle evidence, not this file: [MATURATION_CYCLE_REPORT.md](MATURATION_CYCLE_REP
 | **2** | Capability Expansion | v0.3.x | **COMPLETE** (theme 1 → **v0.3.0**; theme 2 → **v0.3.1** used RW-066/068; theme 3 → **v0.3.2**; use campaign RW-068 PASS / RW-069 FAIL) |
 | **3** | Autonomous Agent Maturity | v0.4.x | **COMPLETE (scripted)** (theme 1 → **v0.4.0**; theme 2 → **v0.4.1**; theme 3 slices A–D → **v0.4.2–v0.4.5**; slice E1 → **v0.4.6**; slice F → **v0.4.7**; slice E2 → **v0.4.8**; slice E3 → **v0.4.9**; live E1–E3 **deferred**) |
 | **4** | Production Scale | v0.5.x | **COMPLETE (scripted)** (G4-1 → **v0.5.0**; G4-2 → **v0.5.1**; G4-3 → **v0.5.2** Version 5 pack; G4-5 → **v0.5.3**; G4-7 → **v0.5.4**; G4-6 → **v0.5.5**; G4-4 parked; live confirmation deferred) |
-| **5** | 1.0 | v1.0.0 | **IN PROGRESS** (G5-1 → **v1.0.0** packed; **next: hold / soak**; no G5-2; stay **1.0.0**) |
+| **5** | 1.0 | v1.0.0–**v1.0.1** | **IN PROGRESS** (G5-1 → **v1.0.0** packed; proven Class A → **v1.0.1**; **next: hold / soak**; no G5-2) |
 
 Enter the next generation only after the previous one has been **released, used, and has
 measured gaps**. Class B rows are the input to that decision. They do not start the
@@ -1217,8 +1217,8 @@ baseline**, not another production-scale series:
 |---|---|
 | First theme **is** the pack | **DONE.** G5-1 shipped as package **1.0.0**. Sanath cut **one Version 1 / 1.0 pack** at tag **v1.0.0** after PR #52 merge, with wheel + sdist assets. Do not start a merge-only `1.0.1` / `1.0.2` / … series as a substitute for soak |
 | G5-1 implementation PR (#52) | Package **1.0.0**. **No GitHub Release / tag in that PR.** Pack landed after merge |
-| This docs PR | Package stays **1.0.0**. **No GitHub Release / tag.** Do **not** upload secrets. Do **not** cut **v1.0.1** or **v1.1.0** |
-| Further 1.0.x | **Class A only when proven** on the 1.0 line (**v1.0.1**). Merge those; pack into Version 1 later only when Sanath asks |
+| This 1.0.1 PR | Package **1.0.1**. **No GitHub Release / tag.** Do **not** upload secrets. Do **not** cut **v1.0.1** or **v1.1.0** GitHub Release |
+| Further 1.0.x | **Class A only when proven** on the 1.0 line. **v1.0.1** is this change (RW-102 / RW-103). Merge those; pack into Version 1 later only when Sanath asks |
 | Next Gen5 *theme* (G5-2 or equivalent) | Only after soak / a measured hole / a written accept. Proposed line **v1.1.0** (or similar) — **not accepted here** |
 | Not | A GitHub Release from this PR. A v1.0.1 “docs bump.” Treating 1.0.0 as marketing while remaining gaps are unjudged. Inventing a PyPI token. Inventing G5-2 |
 
@@ -1310,6 +1310,19 @@ Sanath (wheel + sdist; no secrets); 1.0 honesty bar locked in ROADMAP /
 README / gates narrative; scripted RW-100 / RW-101. **Version 1 pack
 SHIPPED** after merge (tag **v1.0.0**, wheel + sdist attached).
 
+### v1.0.1 — proven Class A (RW-102 / RW-103)
+
+| field | value |
+|---|---|
+| Status | **IMPLEMENTED** as **v1.0.1** (scripted RW-102 / RW-103). **No GitHub Release / tag** — pack later only when Sanath asks |
+| Theme | Proven Class A on the 1.0 line (not a G5-2) |
+| Version | **v1.0.1** |
+| Problem | Two live-measured holes on **v1.0.0**. **A CONFIRMED:** `rad doctor` / `rad health` ignored pinned `cfg.model` and pinged OpenRouter `default_model` `meta-llama/llama-3.3-70b-instruct:free` (HTTP 404) while direct chat to `deepseek/deepseek-v4-flash-0731:free` returned 200. NVIDIA 403 is separate Class C. **B CONFIRMED:** G4-7 `json_field` inference tokenized English (“keys on a sample” / parenthetical “on a sample”) into a bogus key `on`, so a disk-complete `text_analyzer/` package never VERIFIED |
+| Non-goals | Inventing Class A for 403/429. Remaining-quota. Reopening F-17 / F-26. Cap raise. Needle on. A GitHub Release / tag. A **v1.1.0** theme. Live PASS claim |
+| Needs live providers | **No** for the scripted gate. Soak pointers recorded; no live PASS required to ship |
+
+**What shipped:** `inference_probe_model` + doctor/health ping the pin; `JSON_KEY_STOP` drops English glue (`on`, `sample`, …); scripted RW-102 / RW-103. Caps **16/60**. Needle **OFF**. False DONE **0**.
+
 ### G5 hold / soak — SHIPPED (docs; stay 1.0.0)
 
 | field | value |
@@ -1383,7 +1396,7 @@ accepted. **No GitHub Release / tag in this PR.** Stay **1.0.0**.
 | doc | role |
 |---|---|
 | [MATURATION_CYCLE_REPORT.md](MATURATION_CYCLE_REPORT.md) | Cycle-by-cycle evidence and decisions |
-| [REAL_WORLD_TASK_MATRIX.md](REAL_WORLD_TASK_MATRIX.md) | Disk-checked task rows (do not rewrite RW-058–101; RW-100 / RW-101 are G5-1) |
+| [REAL_WORLD_TASK_MATRIX.md](REAL_WORLD_TASK_MATRIX.md) | Disk-checked task rows (do not rewrite RW-058–101; RW-102 / RW-103 are v1.0.1 Class A) |
 | [REAL_WORLD_FAILURE_LEDGER.md](REAL_WORLD_FAILURE_LEDGER.md) | A/B/C findings |
 | [ADR-001-NEEDLE-TOOL-ROUTER.md](ADR-001-NEEDLE-TOOL-ROUTER.md) | Needle stays optional / off |
 | [CONTROL-PLANE.md](CONTROL-PLANE.md) | Shipped control-plane behaviour |

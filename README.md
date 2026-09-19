@@ -214,11 +214,11 @@ Watchers are detached processes; notifications land in `~/.rad/notifications.md`
 ## Install
 
 Requires Python 3.9+ (3.11 or 3.12 recommended). No mandatory dependencies (stdlib-only core).
-Package **1.0.0**. `rad version` prints **1.0.0**. Needle **OFF**. Caps **16/60**.
+Package **1.0.1**. `rad version` on this tree prints **1.0.1**. Needle **OFF**. Caps **16/60**.
 False DONE **0**. Live text_analyzer@12 is **not** claimed PASS.
 
-**Public 1.0** (after Sanath packs GitHub Release **Version 1** / tag **v1.0.0**
-with wheel + sdist — **not** this PR):
+**Public 1.0** (GitHub Release **Version 1** / tag **v1.0.0** wheel — already
+packed; this 1.0.1 PR does **not** cut a release):
 
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
@@ -401,7 +401,7 @@ and how to add a tool, a scenario or a migration.
 
 ## Roadmap
 
-Operating spine (Gen1–Gen5, the build → test → validate → release → use → discover gaps loop): [docs/ROADMAP.md](docs/ROADMAP.md). Gen1 complete on 0.2.3; Gen2 complete on 0.3.0–0.3.2; Gen3 **complete (scripted)** on 0.4.0–0.4.9; Gen4 **complete (scripted)** on 0.5.0–0.5.5 — **G4-1** implemented as v0.5.0 (scripted RW-089); **G4-2** live-gate resume / provider health observability **implemented as v0.5.1** (scripted RW-090 / RW-091); **G4-3** live-use campaign / operator workflow **implemented as v0.5.2** (scripted RW-092 / RW-093). **G4-5** fallback / LLM plan quality **implemented as v0.5.3** (scripted RW-094 / RW-095). **G4-7** coding artifact completeness / named package-file contracts **implemented as v0.5.4** (scripted RW-096 / RW-097). **G4-6** cost/budget reporting **implemented as v0.5.5** (scripted RW-098 / RW-099). **G4-4 parked** (no measured hole). **Version 5 pack** is GitHub Release **Version 5** / tag **v0.5.5** (0.5.0–0.5.5). Gen5 **in progress — hold / soak**. First theme **G5-1** (public / product-grade 1.0 baseline) is **accepted and implemented as v1.0.0** (scripted RW-100 / RW-101). Package **1.0.0**. **Version 1 pack SHIPPED** (GitHub Release **Version 1** / tag **v1.0.0**, wheel + sdist). **No G5-2.** **No GitHub Release / tag in this change.** Honesty bar: false DONE **0**; Needle **OFF**; caps **16/60**; F-17 / F-26 closed; Class C is not a product patch; remaining-quota not invented. Live E1–E3 confirmation **deferred**; live text_analyzer@12 **not** claimed PASS; NIM Class C paused (RW-084); OpenRouter free paused (RW-086 429). The list below is a product-idea backlog, not a generation commitment.
+Operating spine (Gen1–Gen5, the build → test → validate → release → use → discover gaps loop): [docs/ROADMAP.md](docs/ROADMAP.md). Gen1 complete on 0.2.3; Gen2 complete on 0.3.0–0.3.2; Gen3 **complete (scripted)** on 0.4.0–0.4.9; Gen4 **complete (scripted)** on 0.5.0–0.5.5 — **G4-1** implemented as v0.5.0 (scripted RW-089); **G4-2** live-gate resume / provider health observability **implemented as v0.5.1** (scripted RW-090 / RW-091); **G4-3** live-use campaign / operator workflow **implemented as v0.5.2** (scripted RW-092 / RW-093). **G4-5** fallback / LLM plan quality **implemented as v0.5.3** (scripted RW-094 / RW-095). **G4-7** coding artifact completeness / named package-file contracts **implemented as v0.5.4** (scripted RW-096 / RW-097). **G4-6** cost/budget reporting **implemented as v0.5.5** (scripted RW-098 / RW-099). **G4-4 parked** (no measured hole). **Version 5 pack** is GitHub Release **Version 5** / tag **v0.5.5** (0.5.0–0.5.5). Gen5 **in progress**. First theme **G5-1** (public / product-grade 1.0 baseline) is **accepted and implemented as v1.0.0** (scripted RW-100 / RW-101). Proven Class A on the 1.0 line is **implemented as v1.0.1** (scripted RW-102 / RW-103). Package **1.0.1**. **Version 1 pack SHIPPED** (GitHub Release **Version 1** / tag **v1.0.0**, wheel + sdist). **No G5-2.** **No GitHub Release / tag in this change.** Honesty bar: false DONE **0**; Needle **OFF**; caps **16/60**; F-17 / F-26 closed; Class C is not a product patch; remaining-quota not invented. Live E1–E3 confirmation **deferred**; live text_analyzer@12 **not** claimed PASS; NIM Class C paused (RW-084); OpenRouter free paused (RW-086 429). The list below is a product-idea backlog, not a generation commitment.
 
 LoRA fine-tune of Rad's personality into Edge0 weights · expert pruning/distillation for lighter
 35b · web/phone face · remote-MCP tool execution hardening · multi-user sessions ·

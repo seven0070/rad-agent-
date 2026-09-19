@@ -60,6 +60,15 @@ JSON_KEY_STOP = frozenset({
     "for", "have", "including", "integer", "is", "json", "key", "keys", "must",
     "named", "non", "nonempty", "object", "of", "required", "result", "results",
     "string", "summary", "the", "to", "true", "valid", "value", "values", "with",
+    # English glue / prepositions (G4-7 ``key X`` / parenthetical split).
+    # "keys on a sample" and "lines, words, characters on a sample" must
+    # not invent json_field key ``on`` (or ``sample``).
+    "about", "after", "against", "among", "around", "across", "at", "before",
+    "between", "by", "during", "from", "how", "if", "in", "into", "it", "its",
+    "like", "on", "onto", "or", "over", "per", "returning", "sample", "so",
+    "such", "than", "then", "these", "this", "those", "through", "under",
+    "upon", "using", "via", "what", "when", "where", "which", "while", "who",
+    "why", "within", "without",
 })
 INFER_CODING_CHECK_CAP = 8
 MERGE_CODING_CHECK_CAP = 10
@@ -373,7 +382,11 @@ def _check_ident(kind: str, path: str, cmd: str, field: str = "") -> tuple:
 
 
 def _json_field_names(blob: str, json_path: str) -> List[str]:
-    """Keys the goal names for a JSON artifact (parenthetical, 'key X', 'keys: a, b')."""
+    """Keys the goal names for a JSON artifact (parenthetical, 'key X', 'keys: a, b').
+
+    English glue is dropped (``on`` in "keys on a sample" / parenthetical
+    "characters on a sample") so a bogus json_field cannot block VERIFIED.
+    """
     out: List[str] = []
     seen = set()
 

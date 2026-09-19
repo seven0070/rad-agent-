@@ -6,6 +6,38 @@ Default `Budget.tool_calls` remains **60**.
 
 ---
 
+# Cycle 40 — v1.0.1 proven Class A (RW-102 / RW-103) (2026-09-19)
+
+**Date:** 2026-09-19
+**Baseline:** `origin/main` `ff59a92` (merge PR #53; package **1.0.0**; Version 1 pack tag **v1.0.0**)
+**Package at start:** `1.0.0`
+**This branch:** `cursor/v101-class-a-soak-3cec` — package **1.0.1**
+**Architecture:** control plane preserved. Needle stays off. Caps unchanged.
+**Kind:** proven Class A on the 1.0 line. RW-058–101 are **not rewritten**.
+**Release:** **none**. **No GitHub Release / tag in this PR.**
+
+## Why this cycle
+
+Hold / soak on v1.0.0 produced two live-measured holes. Investigate-first
+against current main independently **CONFIRMED** both as Class A:
+
+1. Doctor / health entitlement ping used `spec.default_model`
+   (`meta-llama/llama-3.3-70b-instruct:free` → 404) while `cfg.model`
+   (`deepseek/deepseek-v4-flash-0731:free`) chat returned 200. NVIDIA 403
+   is Class C, not this hole.
+2. G4-7 `json_field` inference tokenized English glue (`on` in “keys on
+   a sample” / parenthetical “on a sample”) into a required key, so a
+   disk-complete `text_analyzer/` package never VERIFIED.
+
+Smallest patches + scripted RW-102 / RW-103. F-17 / F-26 stay closed.
+403/429 stay Class C. No live PASS claim.
+
+## Decision
+
+Ship **v1.0.1**. Do **not** cut a GitHub Release or tag.
+
+---
+
 # Cycle 39 — Scope G5 hold / soak after Version 1; stay 1.0.0 (2026-09-19)
 
 **Date:** 2026-09-19
