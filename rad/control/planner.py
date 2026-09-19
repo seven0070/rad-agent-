@@ -108,8 +108,10 @@ Check kinds (exactly these):
   agent_review {{"criteria":[...]}} (independent read-only reviewer agent — use for quality of prose/code, IN ADDITION to a file check)
 
 For coding / test / JSON-result goals always include json_valid on every .json artifact and
-shell_ok (or shell_output) for the test command (pytest / python3 test_*.py). Never treat a
-DONE: line as a file path. A model claiming DONE is not completion. Empty .json is invalid JSON.
+shell_ok (or shell_output) for the test command (pytest / python3 test_*.py). Named package
+files the goal requires (README.md, analyzer.py, main module) need file_exists (or stronger).
+Named JSON keys need json_field — empty {{}} is valid JSON but not completion when keys are named.
+Never treat a DONE: line as a file path. A model claiming DONE is not completion. Empty .json is invalid JSON.
 DONE is not a tool — do not call a tool named DONE or DONE: …; put DONE: in the reply text after files exist.
 Stdlib-only coding goals must not pip install or invent requirements.txt.
 If the goal places files under a directory (e.g. pkg/ or text_analyzer/), check paths MUST
@@ -152,7 +154,8 @@ PLAN_BUDGET_NUDGE = (
 PLAN_CODING_RETRY = """You are the planner of an autonomous agent. Previous reply was not usable JSON.
 Decompose this coding goal into 2-4 file-write tasks that fit the tool budget (each task at least 2 tool calls).
 Independent package files must use empty depends_on. Every task needs machine-checkable checks.
-json_valid on every .json. shell_ok for test_*.py. Check paths MUST use the package prefix when one is named.
+json_valid on every .json. json_field on named summary/result keys (empty {{}} is not enough).
+file_exists on named README.md / main module. shell_ok for test_*.py. Check paths MUST use the package prefix when one is named.
 No mkdir-only tasks. No pip. No xxd/hexdump. No extra README unless the goal requires it.
 Reply ONLY with JSON. No prose, no markdown fences.
 

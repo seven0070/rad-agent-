@@ -6,6 +6,70 @@ Default `Budget.tool_calls` remains **60**.
 
 ---
 
+# Cycle 33 — G4-7 coding artifact completeness; v0.5.4 (2026-09-19)
+
+**Date:** 2026-09-19
+**Baseline:** `origin/main` `0865f58c74391c39b83dcd71454e4ea7d5d6979e` (merge PR #46; package **0.5.3**)
+**Package at start:** `0.5.3`
+**This branch:** `cursor/g4-7-artifact-completeness-4e19` — package **0.5.4**
+**Architecture:** control plane preserved. Needle stays off. Caps unchanged.
+**Kind:** product — G4-7 accepted + implemented. RW-058–095 are **not rewritten**.
+**Release:** **none** — Version 5 packing doctrine: merge-only; pack again only when Sanath asks.
+
+## Why this cycle
+
+G4-7 was scoped on Cycle 32 / PR #46 and **accepted**. G4-5 closed plan
+*structure* (v0.5.3 / RW-094 / RW-095). Version 5 pack remains GitHub
+Release **v0.5.2** (G4-1–G4-3). The remaining measured Class B on a
+working product path was incomplete packages: RW-081 empty `{}`
+`summary.json` still passed `json_valid`; RW-085 / RW-086 missing
+README.md / tests + alt-schema summary. `infer_coding_checks` already
+added `json_valid` / test `shell_ok` / `file_line_count` — not named
+README.md / analyzer.py `file_exists`, not `json_field` for required
+keys. F-17 stays closed (do not add checks to fallback *tasks*).
+
+## Decision
+
+| item | value |
+|---|---|
+| Package | **0.5.3 → 0.5.4** |
+| Gen3 | **COMPLETE (scripted)** (unchanged). Live E1–E3 **deferred** |
+| Gen4 | **IN PROGRESS**. **G4-7 ACCEPTED + IMPLEMENTED** as **v0.5.4** |
+| Evidence | scripted **RW-096** / **RW-097** / F-20260919-56 |
+| Release / tag | **none** — Version 5 pack later only when Sanath asks |
+| Invariants | Needle OFF; caps 16/60; false DONE 0; no redesign; Class C is not a product patch; no live PASS claim; F-17 fallback *tasks* stay check-less |
+
+## What shipped
+
+- `infer_coding_checks` adds `file_exists` for named README.md / main-module `.py` (RW-096)
+- `infer_coding_checks` adds `json_field` for keys the goal names so empty `{}` / alt-schema is not VERIFIED (RW-097)
+- PLAN_PROMPT / PLAN_CODING_RETRY ask for the same contracts
+- Infer cap 6→8 / merge cap 8→10 so the new contracts fit
+- Exhausted retries still `_fallback(obj)` — goal-only, cap 7, no checks (F-17)
+
+## Quality gates (this branch)
+
+Isolated homes `/tmp/rad-g47-gate` (doctor, acceptance) and `/tmp/rad-g47-rw` (realworld).
+
+| gate | result |
+|------|--------|
+| `rad version` | **PASS** v0.5.4 |
+| `python3 -m pytest -q` | **PASS** 641 passed in 13.03s |
+| `rad doctor --offline` | **PASS** 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR, verdict READY, exit 0 |
+| `rad acceptance` | **PASS** 50/50 — `/tmp/rad-g47-gate/acceptance/20260919-071646_gate.json` |
+| `rad realworld` | **PASS** 10/11 + 1 BLOCKED — `/tmp/rad-g47-rw/realworld/20260919-071646_realworld.json` |
+| Needle default | **PASS** (`existing`) — unchanged |
+| Caps | **PASS** `max_plan_tasks` 16 / `Budget.tool_calls` 60 |
+| False DONE | **0** |
+| Release / tag | **none** |
+
+## Roadmap pointer
+
+Operating spine: [ROADMAP.md](ROADMAP.md). **Generation 4 in progress.**
+**G4-7 implemented as v0.5.4.** **No GitHub Release / tag.** Gen5 is not started.
+
+---
+
 # Cycle 32 — Scope G4-7 coding artifact completeness; stay 0.5.3 (2026-09-19)
 
 **Date:** 2026-09-19
@@ -101,8 +165,8 @@ Isolated homes `/tmp/rad-g47-scope-gate` (doctor, acceptance) and `/tmp/rad-g47-
 ## Roadmap pointer
 
 Operating spine: [ROADMAP.md](ROADMAP.md). **Generation 4 in progress.**
-**G4-5 implemented as v0.5.3.** Recommended next **G4-7** listed, not
-accepted. Stay **0.5.3**. Gen5 is not started.
+**G4-5 implemented as v0.5.3.** **G4-7 implemented as v0.5.4.** Stay
+**0.5.4**. Gen5 is not started.
 
 ---
 
