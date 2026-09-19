@@ -2736,10 +2736,10 @@ Both soak holes independently **Class A CONFIRMED** against `main` @
 
 | gate | result |
 |---|---|
-| `python -m pytest -q` | (this PR) |
-| `rad doctor --offline` | (this PR) |
-| `rad acceptance` | (this PR) |
-| `rad realworld` | (this PR) |
+| `python -m pytest -q` | **670 passed** in 14.65s |
+| `rad doctor --offline` | READY — 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR (`RAD_HOME=/tmp/rad-v101-gate`) |
+| `rad acceptance` | **50/50 PASSED** (`/tmp/rad-v101-gate/acceptance/20260919-095642_gate.json`) |
+| `rad realworld` | **10 passed / 1 BLOCKED / 0 failed** (`live_nim` BLOCKED; `/tmp/rad-v101-rw/realworld/20260919-095643_realworld.json`) |
 | Package | **1.0.1** |
 | Release / tag | **none** — pack later only if Sanath asks |
 | Live this patch | **not re-run** — not a live PASS claim |
