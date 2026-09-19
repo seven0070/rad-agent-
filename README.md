@@ -12,7 +12,7 @@ runs commands with your confirmation, and **teaches itself new skills from a sin
   __ / \  |  _ \/ |      / \
  / _` __ \| |_) | | /\/\ / _ \
  \__,_||_|____/|_|/__/__\_/ \_\
-   v1.0.0 — open door, free first, self-evolving
+   v1.0.1 — open door, free first, self-evolving
 ```
 
 ---
@@ -26,7 +26,7 @@ runs commands with your confirmation, and **teaches itself new skills from a sin
 | 🧩 **Tools** | Any MCP server + custom skills, even ones Rad writes itself | hands + `rad connect` |
 | 🧬 **Memory** | Portable markdown/JSON — local disk, Google Drive, … | disk + Drive |
 | 🗣️ **Voice** | Any TTS/STT engine | Piper + Whisper (free, offline) |
-| 👤 **Face** | CLI now; **RAD Desktop 0.1** (Tauri) as a surface over `rad serve` | terminal + desktop/ |
+| 👤 **Face** | CLI; **RAD Desktop 0.2** (Tauri + bundled `rad-backend` sidecar) — install, launch, no Python/Node needed | terminal + desktop/ |
 
 Nothing is a closed list. `rad provider add` accepts **any** OpenAI-compatible endpoint and it
 behaves like a first-class provider.
@@ -463,3 +463,14 @@ Every document describes shipped behaviour: `docs/CLI.md` is generated from the 
 the acceptance gate fails if the docs mention a command that does not exist.
 
 Quick health check: `rad doctor` · first run: [quickstart](docs/QUICKSTART.md) · local API: `rad serve` · is it finished? `rad acceptance`.
+
+## RAD Desktop (0.2)
+
+The desktop is a **face over the same control plane** — never a second one. It bundles the
+Python core as a `rad-backend` sidecar (loopback-only, Bearer token `0600`, fixed argv —
+no shell surface in Tauri), so a non-developer installs it, launches it, talks to Jerry,
+picks an authority profile, gives an objective, and watches plan → task graph → execution
+→ tool trace → authority → verification → artifacts → provenance — with no Python, no
+Node and no `rad serve` of their own. Installers (Windows first, then macOS, Linux) are
+built by CI: [.github/workflows/desktop.yml](.github/workflows/desktop.yml). Details,
+the exact tested/not-tested boundary, and the release checklist: [docs/DESKTOP.md](docs/DESKTOP.md).

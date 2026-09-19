@@ -1,41 +1,54 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  ApiError,
-  AuthoritySnapshot,
-  ObjectiveRow,
-  RadClient,
-  Settings,
-  Status,
-  TaskRow,
-} from "./api";
-import {
-  apiBase,
-  apiToken,
-  backendInfo,
-  backendStart,
-  backendStop,
-  isTauri,
-} from "./backend";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AuthoritySnapshot, ObjectiveRow, RadClient, Status } from "./api";
+import { apiBase, backendStop, isTauri, launchAndConnect, ConnState } from "./backend";
+import { Ctx } from "./ctx";
+import ActiveRun from "./pages/ActiveRun";
+import Artifacts from "./pages/Artifacts";
+import AuthorityPage from "./pages/Authority";
+import Jerry from "./pages/Jerry";
+import Memory from "./pages/Memory";
+import Objectives from "./pages/Objectives";
+import SettingsPage from "./pages/Settings";
+import Tasks from "./pages/Tasks";
+import Trace from "./pages/Trace";
+import Verification from "./pages/Verification";
+import { pickFocus } from "./util";
 
-type Page = "chat" | "objectives" | "tasks" | "permissions" | "settings";
+type Page =
+  | "jerry"
+  | "objectives"
+  | "active"
+  | "tasks"
+  | "trace"
+  | "verification"
+  | "artifacts"
+  | "authority"
+  | "memory"
+  | "settings";
 
 const PAGES: { id: Page; label: string }[] = [
-  { id: "chat", label: "Chat" },
+  { id: "jerry", label: "Jerry" },
   { id: "objectives", label: "Objectives" },
+  { id: "active", label: "Active Run" },
   { id: "tasks", label: "Tasks" },
-  { id: "permissions", label: "Permissions" },
+  { id: "trace", label: "Trace" },
+  { id: "verification", label: "Verification" },
+  { id: "artifacts", label: "Artifacts" },
+  { id: "authority", label: "Authority" },
+  { id: "memory", label: "Memory" },
   { id: "settings", label: "Settings" },
 ];
 
 export default function App() {
-  const [page, setPage] = useState<Page>("chat");
+  const [page, setPage] = useState<Page>("jerry");
   const [client, setClient] = useState<RadClient | null>(null);
   const [status, setStatus] = useState<Status | null>(null);
   const [auth, setAuth] = useState<AuthoritySnapshot | null>(null);
-  const [backend, setBackend] = useState<"connected" | "connecting" | "down">("connecting");
+  const [backend, setBackend] = useState<ConnState>("connecting");
   const [error, setError] = useState("");
-  const [manualBase, setManualBase] = useState(apiBase());
-  const [manualToken, setManualToken] = useState("");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [objectives, setObjectives] = useState<ObjectiveRow[]>([]);
+  const manualRef = useRef(false);
 
   const connect = useCallback(async (base: string, token: string) => {
     const c = new RadClient(base, token);
@@ -53,26 +66,9 @@ export default function App() {
     setBackend("connecting");
     setError("");
     try {
-      if (isTauri()) {
-        const info = await backendInfo();
-        let token = "";
-        try {
-          await backendStart(info.port || 7331);
-        } catch {
-          /* may already be running externally */
-        }
-        token = await apiToken();
-        if (!token) throw new Error("no API token — start `rad serve` once to create ~/.rad/api.token");
-        await connect(apiBase(info.port || 7331), token);
-        return;
-      }
-      const envTok = import.meta.env.VITE_RAD_TOKEN || "";
-      if (envTok) {
-        await connect(apiBase(), envTok);
-        return;
-      }
-      setBackend("down");
+      await launchAndConnect(connect);
     } catch (e) {
+      manualRef.current = false;
       setBackend("down");
       setError(e instanceof Error ? e.message : String(e));
     }
@@ -82,21 +78,100 @@ export default function App() {
     void boot();
   }, [boot]);
 
+  // background health poll → reconnect loop (never silent)
+  const clientRef = useRef<RadClient | null>(null);
+  clientRef.current = client;
+  useEffect(() => {
+    if (backend !== "connected") return;
+    let retries = 0;
+    const t = setInterval(async () => {
+      const c = clientRef.current;
+      if (!c) return;
+      try {
+        await c.health();
+        retries = 0;
+        const [st, a] = await Promise.all([c.status(), c.authority()]);
+        setStatus(st);
+        setAuth(a);
+        const objs = await c.objectives(false);
+        setObjectives(objs.objectives);
+      } catch {
+        retries += 1;
+        if (retries === 1) {
+          setBackend("reconnecting");
+          setError("backend connection lost — reconnecting…");
+        }
+        if (retries >= 3) {
+          retries = 0;
+          try {
+            await launchAndConnect(connect);
+          } catch (e) {
+            setBackend("down");
+            setError(e instanceof Error ? e.message : String(e));
+          }
+        }
+      }
+    }, 5000);
+    return () => clearInterval(t);
+  }, [backend, connect]);
+
   const refresh = useCallback(async () => {
-    if (!client) return;
-    const [st, a] = await Promise.all([client.status(), client.authority()]);
+    const c = clientRef.current;
+    if (!c) return;
+    const [st, a, objs] = await Promise.all([c.status(), c.authority(), c.objectives(false)]);
     setStatus(st);
     setAuth(a);
-  }, [client]);
+    setObjectives(objs.objectives);
+  }, []);
+
+  useEffect(() => {
+    if (client) void refresh().catch(() => {});
+  }, [client]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const shutdown = useCallback(async () => {
     try {
       await backendStop();
     } finally {
       setClient(null);
+      setStatus(null);
+      setAuth(null);
       setBackend("down");
+      setError("backend shut down. Use “Launch / reconnect” to start it again.");
     }
   }, []);
+
+  const selected = useMemo(
+    () => objectives.find((o) => o.id === selectedId) || null,
+    [objectives, selectedId],
+  );
+
+  const ctxValue = useMemo(
+    () => ({
+      client: client as RadClient,
+      status,
+      auth: (auth as AuthoritySnapshot) || {
+        profile: "STANDARD",
+        blurb: "",
+        confirmation: "ask",
+        confirmation_is_automatic: false,
+        unrestricted: false,
+        unrestricted_authorized: false,
+        scopes: { workspace_only: true, extra_paths: [], hosts: [] },
+        capabilities: {},
+        policy_capabilities: {},
+        passthrough: true,
+        budgets: { tool_calls: 60, model_calls: 80, retries: 6, note: "" },
+        invariants: {},
+        updated: 0,
+      },
+      selectedId,
+      selected: selected || pickFocus(objectives),
+      select: setSelectedId,
+      onAuth: setAuth,
+      refresh,
+    }),
+    [client, status, auth, selectedId, selected, objectives, refresh],
+  );
 
   const model = status?.chain?.[0] || "no brain";
 
@@ -105,7 +180,7 @@ export default function App() {
       <aside className="sidebar">
         <div className="brand">
           RAD Desktop
-          <span>0.1.0-alpha · authority foundation</span>
+          <span>{status?.version ? `backend v${status.version}` : "connecting"} · surface over the control plane</span>
         </div>
         <nav className="nav">
           {PAGES.map((p) => (
@@ -115,43 +190,48 @@ export default function App() {
               onClick={() => setPage(p.id)}
             >
               {p.label}
+              {p.id === "objectives" && objectives.length > 0 && (
+                <span className="nav-count">{objectives.length}</span>
+              )}
+              {p.id === "active" && isRunning(selected) && <span className="dot ok nav-dot" />}
             </button>
           ))}
         </nav>
       </aside>
       <main className="main">
         {backend !== "connected" || !client || !auth ? (
-          <Connect
+          <ConnectScreen
             backend={backend}
             error={error}
-            manualBase={manualBase}
-            manualToken={manualToken}
-            setManualBase={setManualBase}
-            setManualToken={setManualToken}
             onRetry={boot}
-            onManual={() => connect(manualBase, manualToken).catch((e) => setError(String(e)))}
+            onManual={(base, token) => connect(base, token).catch((e) => setError(String(e)))}
           />
         ) : (
-          <Surface
-            page={page}
-            client={client}
-            auth={auth}
-            status={status}
-            onAuth={setAuth}
-            onRefresh={refresh}
-          />
+          <Ctx.Provider value={ctxValue}>
+            {page === "jerry" && <Jerry />}
+            {page === "objectives" && <Objectives />}
+            {page === "active" && <ActiveRun />}
+            {page === "tasks" && <Tasks />}
+            {page === "trace" && <Trace />}
+            {page === "verification" && <Verification />}
+            {page === "artifacts" && <Artifacts />}
+            {page === "authority" && <AuthorityPage />}
+            {page === "memory" && <Memory />}
+            {page === "settings" && <SettingsPage onShutdown={shutdown} />}
+          </Ctx.Provider>
         )}
       </main>
       <footer className="status">
         <span>
-          <i className={`dot ${backend === "connected" ? "ok" : "off"}`} />
-          {backend === "connected" ? "backend connected" : backend}
+          <i className={`dot ${backend === "connected" ? "ok" : backend === "reconnecting" ? "warn" : "off"}`} />
+          {backend}
         </span>
         <span className={`pill ${auth?.profile || "STANDARD"}`}>{auth?.profile || "—"}</span>
         <span>{model}</span>
         <span>
           budget {auth?.budgets.tool_calls ?? 60} tools / {auth?.budgets.model_calls ?? 80} model
         </span>
+        {selected && <span className="hint">focus: {selected.id.slice(0, 12)} ({selected.status})</span>}
         <span style={{ marginLeft: "auto" }}>
           {isTauri() && (
             <button className="btn ghost" style={{ padding: "2px 8px" }} onClick={() => void shutdown()}>
@@ -164,16 +244,31 @@ export default function App() {
   );
 }
 
-function Connect(props: {
+function isRunning(o: ObjectiveRow | null): boolean {
+  return o ? ["running", "planning"].includes(o.status.toLowerCase()) : false;
+}
+
+function ConnectScreen({
+  backend,
+  error,
+  onRetry,
+  onManual,
+}: {
   backend: string;
   error: string;
-  manualBase: string;
-  manualToken: string;
-  setManualBase: (v: string) => void;
-  setManualToken: (v: string) => void;
   onRetry: () => void;
-  onManual: () => void;
+  onManual: (base: string, token: string) => void;
 }) {
+  const [manualBase, setManualBase] = useState(apiBase());
+  const [manualToken, setManualToken] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const manualConnect = () => {
+    setBusy(true);
+    onManual(manualBase, manualToken);
+    setTimeout(() => setBusy(false), 1500);
+  };
+
   return (
     <div className="connect">
       <h1>Connect to RAD</h1>
@@ -181,376 +276,28 @@ function Connect(props: {
         Desktop is a surface over the existing Python API. It cannot run tools, raise budgets,
         or bypass Policy.decide.
       </p>
-      {props.error && <p className="err">{props.error}</p>}
+      {backend === "reconnecting" && <p className="warn-line">reconnecting…</p>}
+      {error && <p className="err">{error}</p>}
       <div className="card">
-        <button className="btn" onClick={props.onRetry}>
-          {props.backend === "connecting" ? "Connecting…" : "Launch / reconnect"}
+        <button className="btn" onClick={onRetry} disabled={busy}>
+          {backend === "connecting" ? "Connecting…" : "Launch / reconnect"}
         </button>
       </div>
       <div className="card">
+        <label>Manual connect (existing rad serve)</label>
         <label>API base</label>
-        <input value={props.manualBase} onChange={(e) => props.setManualBase(e.target.value)} />
+        <input value={manualBase} onChange={(e) => setManualBase(e.target.value)} />
         <label style={{ marginTop: 10 }}>Bearer token</label>
         <input
-          value={props.manualToken}
-          onChange={(e) => props.setManualToken(e.target.value)}
-          placeholder="from ~/.rad/api.token"
+          value={manualToken}
+          onChange={(e) => setManualToken(e.target.value)}
+          placeholder="from <rad home>/api.token"
         />
         <div className="row" style={{ marginTop: 12 }}>
-          <button className="btn ghost" onClick={props.onManual}>
+          <button className="btn ghost" onClick={manualConnect} disabled={busy || !manualToken}>
             Connect with token
           </button>
         </div>
-      </div>
-    </div>
-  );
-}
-
-function Surface(props: {
-  page: Page;
-  client: RadClient;
-  auth: AuthoritySnapshot;
-  status: Status | null;
-  onAuth: (a: AuthoritySnapshot) => void;
-  onRefresh: () => Promise<void>;
-}) {
-  switch (props.page) {
-    case "chat":
-      return <Chat client={props.client} />;
-    case "objectives":
-      return <Objectives client={props.client} />;
-    case "tasks":
-      return <Tasks client={props.client} />;
-    case "permissions":
-      return <Permissions client={props.client} auth={props.auth} onAuth={props.onAuth} />;
-    case "settings":
-      return <SettingsPage client={props.client} status={props.status} onRefresh={props.onRefresh} />;
-    default: {
-      const _n: never = props.page;
-      return <p className="err">unknown page {_n}</p>;
-    }
-  }
-}
-
-function Chat({ client }: { client: RadClient }) {
-  const [text, setText] = useState("");
-  const [msgs, setMsgs] = useState<Array<{ who: "user" | "jerry"; text: string }>>([]);
-  const [busy, setBusy] = useState(false);
-  const send = async () => {
-    const t = text.trim();
-    if (!t || busy) return;
-    setText("");
-    setMsgs((m) => [...m, { who: "user", text: t }]);
-    setBusy(true);
-    try {
-      const r = await client.chat(t);
-      setMsgs((m) => [...m, { who: "jerry", text: r.reply }]);
-    } catch (e) {
-      setMsgs((m) => [...m, { who: "jerry", text: e instanceof Error ? e.message : String(e) }]);
-    } finally {
-      setBusy(false);
-    }
-  };
-  return (
-    <div className="chat">
-      <h1>Jerry</h1>
-      <p className="lead">
-        Operator layer over the RAD session. Tools still pass Policy.decide and the executor.
-        Jerry cannot run a private tool path.
-      </p>
-      <div className="msgs">
-        {msgs.length === 0 && (
-          <div className="bubble jerry">Ask anything. Objectives you create go through the control plane.</div>
-        )}
-        {msgs.map((m, i) => (
-          <div key={i} className={`bubble ${m.who}`}>
-            {m.text}
-          </div>
-        ))}
-      </div>
-      <div className="row">
-        <textarea
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              void send();
-            }
-          }}
-          placeholder="Message Jerry…"
-        />
-        <button className="btn" disabled={busy} onClick={() => void send()}>
-          Send
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function Objectives({ client }: { client: RadClient }) {
-  const [rows, setRows] = useState<ObjectiveRow[]>([]);
-  const [goal, setGoal] = useState("");
-  const [detail, setDetail] = useState<string>("");
-  const [err, setErr] = useState("");
-  const load = useCallback(async () => {
-    const r = await client.objectives();
-    setRows(r.objectives);
-  }, [client]);
-  useEffect(() => {
-    void load();
-  }, [load]);
-  const create = async () => {
-    setErr("");
-    try {
-      const o = await client.createObjective(goal);
-      setGoal("");
-      setDetail(o.note || (o.started ? "started" : "created PENDING"));
-      await load();
-    } catch (e) {
-      setErr(e instanceof ApiError ? e.message : String(e));
-    }
-  };
-  const inspect = async (id: string) => {
-    const t = await client.trace(id);
-    setDetail(JSON.stringify({ verification: t.verification, tasks: t.tasks }, null, 2));
-  };
-  return (
-    <div>
-      <h1>Objectives</h1>
-      <p className="lead">Existing control plane. Desktop displays objectives, tasks and verification — it is not a React task engine.</p>
-      <div className="card">
-        <label>New objective</label>
-        <input value={goal} onChange={(e) => setGoal(e.target.value)} placeholder="goal" />
-        <div className="row" style={{ marginTop: 10 }}>
-          <button className="btn" onClick={() => void create()}>
-            Create
-          </button>
-          <button className="btn ghost" onClick={() => void load()}>
-            Refresh
-          </button>
-        </div>
-        {err && <p className="err">{err}</p>}
-        {detail && <pre className="lead" style={{ whiteSpace: "pre-wrap" }}>{detail}</pre>}
-      </div>
-      <div className="card">
-        <table>
-          <thead>
-            <tr>
-              <th>id</th>
-              <th>status</th>
-              <th>verification</th>
-              <th>goal</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((o) => (
-              <tr key={o.id} onClick={() => void inspect(o.id)} style={{ cursor: "pointer" }}>
-                <td>{o.id.slice(0, 12)}</td>
-                <td>{o.status}</td>
-                <td>{o.verification || "—"}</td>
-                <td>{o.goal}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
-function Tasks({ client }: { client: RadClient }) {
-  const [rows, setRows] = useState<TaskRow[]>([]);
-  useEffect(() => {
-    void client.tasks().then((r) => setRows(r.tasks));
-  }, [client]);
-  return (
-    <div>
-      <h1>Tasks</h1>
-      <p className="lead">Read-only view of control-plane tasks and their verification status.</p>
-      <div className="card">
-        <table>
-          <thead>
-            <tr>
-              <th>status</th>
-              <th>verified</th>
-              <th>task</th>
-              <th>objective</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((t) => (
-              <tr key={`${t.objective_id}-${t.id}`}>
-                <td>{t.status}</td>
-                <td>{t.verification?.status || "—"}</td>
-                <td>{t.title || t.text || t.id}</td>
-                <td>{t.goal || t.objective_id}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
-function Permissions({
-  client,
-  auth,
-  onAuth,
-}: {
-  client: RadClient;
-  auth: AuthoritySnapshot;
-  onAuth: (a: AuthoritySnapshot) => void;
-}) {
-  const [profile, setProfile] = useState(auth.profile);
-  const [confirmU, setConfirmU] = useState(false);
-  const [err, setErr] = useState("");
-  const [ok, setOk] = useState("");
-  const apply = async () => {
-    setErr("");
-    setOk("");
-    try {
-      const next = await client.setAuthority({
-        profile,
-        confirm_unrestricted: profile === "UNRESTRICTED" ? confirmU : undefined,
-      });
-      onAuth(next);
-      setOk(`profile ${next.profile}`);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : String(e));
-    }
-  };
-  const groups = useMemo(() => Object.entries(auth.capabilities), [auth]);
-  return (
-    <div>
-      <h1>Permissions</h1>
-      <p className="lead">
-        Authority is what is allowed. Scope is how far. Confirmation is whether to ask.
-        Budget and Policy.decide stay in the Python core.
-      </p>
-      {auth.unrestricted && (
-        <div className="banner">
-          UNRESTRICTED is explicitly user-authorized autonomy — not a hidden or “unsafe by
-          definition” path. Hard layer, executor, budgets, audit, provenance and verification remain.
-        </div>
-      )}
-      <div className="card">
-        <label>Authority profile</label>
-        <select value={profile} onChange={(e) => setProfile(e.target.value as typeof profile)}>
-          {["SAFE", "STANDARD", "AUTONOMOUS", "UNRESTRICTED", "CUSTOM"].map((p) => (
-            <option key={p} value={p}>
-              {p}
-            </option>
-          ))}
-        </select>
-        <p className="lead" style={{ marginTop: 10 }}>{auth.blurb}</p>
-        {profile === "UNRESTRICTED" && (
-          <label>
-            <input
-              type="checkbox"
-              checked={confirmU}
-              onChange={(e) => setConfirmU(e.target.checked)}
-              style={{ width: "auto", marginRight: 8 }}
-            />
-            I explicitly authorize UNRESTRICTED autonomy within configured scope
-          </label>
-        )}
-        <div className="row" style={{ marginTop: 12 }}>
-          <button className={profile === "UNRESTRICTED" ? "btn warn" : "btn"} onClick={() => void apply()}>
-            Apply profile
-          </button>
-        </div>
-        {err && <p className="err">{err}</p>}
-        {ok && <p className="ok">{ok}</p>}
-      </div>
-      <div className="card">
-        <label>Confirmation</label>
-        <div>{auth.confirmation} {auth.confirmation_is_automatic ? "(ASK→ALLOW; DENY/hard/budget unchanged)" : ""}</div>
-        <label style={{ marginTop: 10 }}>Scope</label>
-        <div>
-          workspace_only={String(auth.scopes.workspace_only)}
-          {auth.scopes.extra_paths.length ? ` extra=${auth.scopes.extra_paths.join(", ")}` : ""}
-          {auth.scopes.hosts.length ? ` hosts=${auth.scopes.hosts.join(", ")}` : ""}
-        </div>
-        <label style={{ marginTop: 10 }}>Budget (existing defaults — not raised)</label>
-        <div>
-          tools {auth.budgets.tool_calls} · model {auth.budgets.model_calls} · retries {auth.budgets.retries}
-        </div>
-      </div>
-      <div className="grid">
-        {groups.map(([name, info]) => (
-          <div key={name} className={`cap ${info.granted ? "" : "denied"}`}>
-            <b>{name}</b>
-            <div className="eff">
-              {info.effect} → {info.capability}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function SettingsPage({
-  client,
-  status,
-  onRefresh,
-}: {
-  client: RadClient;
-  status: Status | null;
-  onRefresh: () => Promise<void>;
-}) {
-  const [s, setS] = useState<Settings | null>(null);
-  const [err, setErr] = useState("");
-  useEffect(() => {
-    void client.settings().then(setS);
-  }, [client]);
-  if (!s) return <p className="lead">Loading settings…</p>;
-  const save = async () => {
-    setErr("");
-    try {
-      const next = await client.setSettings({
-        workspace: s.workspace,
-        free_lock: s.free_lock,
-        model: s.model,
-        force_provider: s.force_provider,
-      });
-      setS(next);
-      await onRefresh();
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : String(e));
-    }
-  };
-  return (
-    <div>
-      <h1>Settings</h1>
-      <p className="lead">{s.note}</p>
-      <div className="card">
-        <label>Workspace</label>
-        <input value={s.workspace} onChange={(e) => setS({ ...s, workspace: e.target.value })} />
-        <label style={{ marginTop: 10 }}>Pinned model</label>
-        <input value={s.model || ""} onChange={(e) => setS({ ...s, model: e.target.value || null })} />
-        <label style={{ marginTop: 10 }}>
-          <input
-            type="checkbox"
-            checked={s.free_lock}
-            onChange={(e) => setS({ ...s, free_lock: e.target.checked })}
-            style={{ width: "auto", marginRight: 8 }}
-          />
-          free-lock (paid providers impossible)
-        </label>
-        <div className="row" style={{ marginTop: 12 }}>
-          <button className="btn" onClick={() => void save()}>
-            Save
-          </button>
-        </div>
-        {err && <p className="err">{err}</p>}
-      </div>
-      <div className="card">
-        <div>Home: {status?.home}</div>
-        <div>Needle / tool_router: {s.tool_router} (off unless you set it in CLI)</div>
-        <div>Version: {status?.version}</div>
       </div>
     </div>
   );

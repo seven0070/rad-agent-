@@ -62,7 +62,38 @@ rad authority set UNRESTRICTED --i-authorize-unrestricted
 rad audit
 ```
 
+## Desktop & sidecar (`desktop/`, `rad/sidecar.py`)
+
+The packaged desktop bundles the Python core as `rad-backend` (Tauri `bundle.externalBin`).
+Its security properties, with the tests that pin them (`tests/test_security_desktop.py`,
+`tests/test_desktop_api.py`, `tests/test_desktop_surface.py`):
+
+- **Loopback only.** The sidecar refuses any non-`127.0.0.1` bind (exit 1, JSON error). It
+  serves exactly the existing `/v1/*` API; a wrong/missing Bearer token → 401 on every
+  route. The token is ≥32 random bytes, written `0600` at `~/.rad/api.token`, rotatable.
+- **Fixed argv, no shell.** The Tauri shell spawns the sidecar with a hard-coded argument
+  vector (`serve --host 127.0.0.1 --port <n> [--home <dir>]`); no user string ever reaches
+  a command line, and Tauri capabilities are limited to the seven `backend_*` lifecycle
+  commands. There is no `tauri-plugin-shell`/`fs`, no `sh -c`, and no shell/tools/exec
+  route in the HTTP API or the frontend (the frontend holds no authority state — no
+  localStorage/sessionStorage/indexedDB).
+- **Credential paths are never grantable.** `credentials` is in the never-granted set:
+  granting it via the API is coerced to `DENY`, and credential-looking paths are denied in
+  every profile, UNRESTRICTED included.
+- **Artifact content is registry-gated.** `GET /v1/objectives/{id}/artifact-content`
+  resolves only artifacts registered by *that* objective: 404 otherwise, 403 when the
+  location leaves workspace/home, 415 for non-text; text is redacted and capped.
+- **Stale-process handling is explicit.** Before start, a foreign or stale listener on the
+  port is probed (401-with-bearer ⇒ stale RAD, reported as such); starts that fail to
+  become healthy within 20 s are killed and the backend log tail is surfaced — nothing
+  fails silently.
+- **UNRESTRICTED via the desktop still needs the explicit authorization flag** (409
+  without it), and profiles never bypass the layers above.
+
 ## Not covered (honest)
 No OS-level sandbox: shell still runs as your user with workspace as cwd. Hard patterns are
 regexes and can be evaded by a determined model (e.g. base64 tricks); the workspace boundary,
-env scrubbing and redaction reduce blast radius but do not replace containers.
+env scrubbing and redaction reduce blast radius but do not replace containers. The desktop's
+Rust shell and per-platform installers are compile-checked/frozen by CI
+(`.github/workflows/desktop.yml`), not by this workspace (no Rust toolchain here); the
+clean-machine install pass is a release-checklist item (docs/DESKTOP.md), not a claim.

@@ -1,6 +1,6 @@
 [package]
 name = "rad-desktop"
-version = "0.1.0-alpha"
+version = "0.2.0-alpha"
 description = "RAD Desktop 0.1 — authority foundation"
 authors = ["Rad"]
 edition = "2021"
