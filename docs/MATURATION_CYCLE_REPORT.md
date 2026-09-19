@@ -6,6 +6,104 @@ Default `Budget.tool_calls` remains **60**.
 
 ---
 
+# Cycle 21 — Record live OpenRouter RW-086; pause free-model loop; stay 0.4.7 (2026-09-19)
+
+**Date:** 2026-09-19
+**Baseline:** `origin/main` `850aaf9c3a931a5ba119bdbb6ec73ae4a6fa73e9` (merge PR #34; package **0.4.7**, tag **v0.4.7**)
+**Package at start:** `0.4.7`
+**This branch:** `cursor/rw086-live-docs-89ad` — package **0.4.7** (no bump)
+**Architecture:** control plane preserved. Needle stays off. Caps unchanged.
+**Kind:** docs only (live RW-086 + pause pointers). No product code. RW-058–085 are **not rewritten**.
+
+## Why this cycle
+
+Live gate after v0.4.7 / scripted RW-086 (xxd ENVIRONMENT Class A). Operator
+retested RW-085-shape ASCII-tree `text_analyzer/` at `--max-tasks 8
+--max-tools 12`, Needle **OFF**, on **openrouter** /
+`nvidia/nemotron-3.5-lightning:free` (tag **v0.4.7** / `850aaf9c`). Run
+**FAIL** `needs_user` @ tools **12/12**, `$0`. xxd Class A ENVIRONMENT thrash
+from RW-085 **CLEARED** (0 `xxd`/`hexdump`; 0 ENVIRONMENT; 0 repair-insert;
+host still missing `xxd`; model used `sha256sum` + `hashlib` / `cat -A`).
+E1 leftover-budget yield **not live** (0 TaskYield; task1 COMPLETED; task2
+attempts=1 sequential, not leftover-budget yield). Residual Class **B+C**
+(fallback PLAN / incomplete package + late HTTP **429**
+`free-models-per-day`).
+
+Caveat: this trajectory did not emit a live missing-`xxd` exit-127 for the
+v0.4.7 classifier to re-label. Evidence is **absence of thrash** vs RW-085;
+scripted RW-086 / PR #34 remains the positive unit evidence.
+
+Operator decision (2026-09-19): **pause** live OpenRouter free runs until
+`free-models-per-day` resets. Live NIM loop remains **paused** (Class C).
+
+## What changed
+
+| piece | change |
+|---|---|
+| Ledger / matrix | live RW-086 **FAIL** recorded (F-20260919-49); scripted RW-086 / F-48 preserved |
+| ROADMAP / README | last live-use → RW-086; OpenRouter free-model loop **paused**; NIM still Class C paused |
+| Package | **0.4.7** (no bump) |
+| Product code | **unchanged** |
+
+## Decision
+
+| item | value |
+|---|---|
+| Package | **0.4.7** (no bump) |
+| xxd Class A thrash | **CLEARED** this trajectory (not live) |
+| E1 live | **N** — not confirmed on live RW-086 |
+| Residual | **B+C** (fallback PLAN / incomplete package + 429) |
+| Live OpenRouter free loop | **PAUSED** until `free-models-per-day` resets |
+| Live NIM loop | remains **paused** (RW-084 Class C) |
+| Live text_analyzer@12 | **not** claimed PASS |
+| Invariants | Needle OFF; caps 16/60; false DONE 0; no redesign; stay 0.4.7 |
+
+## Live facts (operator report only)
+
+| item | value |
+|---|---|
+| Home / obj | `/tmp/rad_prod_rw086_81609c3b` / `obj_e1949b8f` |
+| Provider / model | **openrouter** / `nvidia/nemotron-3.5-lightning:free` |
+| Status | `needs_user` — tool budget 12 exhausted; task2 RETRYING after MODEL_FAILURE (429) |
+| Tools / models / retries | **12/12** / **7.0/80** / **1.0/6** |
+| PLAN | `source=fallback` attempts=2; 4 newline-carved tasks |
+| Money | **`$0`** |
+| Disk | `text_analyzer/` only; input sha256 `bf69eb73…`; `test_analyzer.py` absent; README absent; summary alt schema |
+| Wall | 2026-09-19 IST 10:13:07–10:23:22 (~615s wall; usage `seconds≈417.8`); exit 2 |
+| False DONE | **0** |
+| xxd / ENVIRONMENT / repair | **0 / 0 / 0** |
+
+## Quality gates (this branch)
+
+Isolated homes pending this commit (`/tmp/rad-rw086-gate`, `/tmp/rad-rw086-rw`).
+
+| gate | result |
+|------|--------|
+| `rad version` | pending this commit |
+| `python3 -m pytest -q` | pending this commit |
+| `rad doctor --offline` | pending this commit |
+| `rad acceptance` | pending this commit |
+| `rad realworld` | pending this commit |
+| Needle default | **PASS** (`existing`) — unchanged |
+| Caps | **PASS** `max_plan_tasks` 16; `Budget.tool_calls` 60 — unchanged |
+| Package | **0.4.7** (no bump) |
+| Live this patch | **not re-run** — live RW-086 recorded from operator report; not a live PASS claim |
+
+## Remaining limitations
+
+1. Live text_analyzer@12 remains Class B FAIL (fallback plan, incomplete package, tools=12).
+2. E1 leftover-budget yield is still **not live-confirmed** (RW-084 Class C; RW-085/086 fallback chain).
+3. Live OpenRouter free-model loop is **paused** (HTTP 429 `free-models-per-day`).
+4. Live NIM loop remains **paused** (RW-084 Class C).
+
+## Roadmap pointer
+
+Operating spine: [ROADMAP.md](ROADMAP.md). **Generation 3 in progress.** Theme 3
+slice F **IMPLEMENTED** as **v0.4.7** (scripted RW-086; live RW-086 xxd thrash
+**CLEARED**). E1 remains scripted. Package stays **0.4.7**. Gen4–5 are not started.
+
+---
+
 # Cycle 20 — Record live OpenRouter RW-085; xxd ENVIRONMENT Class A CONFIRMED; v0.4.7 (2026-09-19)
 
 **Date:** 2026-09-19

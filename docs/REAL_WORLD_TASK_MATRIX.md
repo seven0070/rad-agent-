@@ -29,18 +29,80 @@ NIM retest of v0.4.6 is **RW-084 BLOCKED Class C** (HTTP 403 on
 `chat/completions`; E1 **not live-tested**). Live OpenRouter free retest of
 v0.4.6 is **RW-085 FAIL** (tools **11/12**; `xxd` ENVIRONMENT repair; E1
 **not live**). Optional checksum-utility ENVIRONMENT is **implemented as
-v0.4.7** (RW-086). Live NIM loop **paused**. E2/E3 remain candidates. Do not
-rewrite RW-058–084. Scripted theme-2 RW-066 (F-27) is preserved.
+v0.4.7** (scripted RW-086). Live OpenRouter free retest of v0.4.7 is
+**RW-086 FAIL** (tools **12/12**; xxd Class A thrash **CLEARED**; E1 **not
+live**; late HTTP **429** `free-models-per-day`). Live OpenRouter free-model
+loop **paused** until `free-models-per-day` rate limit resets. Live NIM loop
+remains **paused** (Class C). E2/E3 remain candidates. Do not rewrite
+RW-058–085. Scripted theme-2 RW-066 (F-27) is preserved.
 
 Every `VERIFIED` / `completed` cell is from the control-plane verifier **and** a disk
 check (file exists / contents / hash). A model `DONE:` line is never enough.
 
 Status vocabulary: **PASS** | **FAIL** | **BLOCKED** | **NOT TESTED**.
 
-Live OpenRouter retest of v0.4.6 (RW-085) is at the top (**FAIL**; Class C
-cleared; E1 not live; xxd ENVIRONMENT Class A **CONFIRMED**), then scripted
-RW-086 (v0.4.7), then live NIM RW-084 (**BLOCKED Class C**), then scripted
-RW-083. RW-058–084 are **not rewritten**.
+Live OpenRouter retest of v0.4.7 (RW-086) is at the top (**FAIL**; xxd Class A
+thrash **CLEARED**; E1 not live; late **429** `free-models-per-day`; free-model
+loop **paused**), then live OpenRouter RW-085 (**FAIL**; Class C cleared; xxd
+ENVIRONMENT Class A **CONFIRMED**), then scripted RW-086 (v0.4.7), then live
+NIM RW-084 (**BLOCKED Class C**), then scripted RW-083. RW-058–085 are **not
+rewritten**.
+
+# Live OpenRouter retest of v0.4.7 (RW-086) — FAIL
+
+Lane: operator production `rad objective run` on **v0.4.7** (tag `v0.4.7`,
+`850aaf9c3a931a5ba119bdbb6ec73ae4a6fa73e9`). Needle `existing` / off.
+`max_plan_tasks` **16**. Default `Budget.tool_calls` **60** (this run used
+`--max-tasks 8 --max-tools 12`). RW-058–085 are **not rewritten**. **Not** an
+end-to-end PASS. Package **0.4.7** on the live run **and** this branch (no
+bump). E1 remains shipped/scripted (RW-083). Live E1 **not confirmed**. xxd
+Class A ENVIRONMENT thrash vs RW-085 **CLEARED**. Residual **B+C**. Live
+OpenRouter free-model loop **paused** until `free-models-per-day` resets.
+Live NIM loop remains **paused** (Class C).
+
+Authoritative live facts: operator report for `obj_e1949b8f` /
+`/tmp/rad_prod_rw086_81609c3b`. This agent did not re-run the live objective.
+
+| id | Date | Category | Objective | #tasks | #actions | Tools | Result | Verification | Recovery | Failure class | Notes |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| RW-086 | 2026-09-19 IST 10:13:07–10:23:22 | coding (live OpenRouter free) — v0.4.7 text_analyzer retest vs RW-085 | production ASCII-tree `text_analyzer/` layout (analyzer.py, **exact 3-line** input.txt, summary.json, test_analyzer.py, README.md); stdlib; real tests; `--max-tasks 8 --max-tools 12`; Needle `existing` / off | `PLAN_CREATED` **source=`fallback`**, **attempts=2**, 4 tasks carved from goal newlines, `fit=true`, `compacted=false`, `estimated_tools=8`; t_febc5d2d Create package **COMPLETED** (attempts=1; VERIFIED); t_dc4db802 **RETRYING** (attempts=1; HTTP 429); t_1ca60866 / t_a4f4c8a6 **PENDING** (attempts=0) | tools **12/12** (`run_shell` 8, `write_file` 3, `read_file` 1 — **0** invented `DONE`); model calls **7.0/80** (provider=`openrouter`); retries **1.0/6**; wall ~615s / usage `seconds≈417.8`; process exit 2; money **`$0`** | 12/12 exhausted | **FAIL** vs success criteria (`needs_user`); **NOT DONE**, **not VERIFIED** complete | task1 **VERIFIED** — actions ok (5 actions, 0 errors); `file_nonempty` input.txt OK (weak task checks). Objective checks **all package-joined** under `text_analyzer/` (not executed to PASS) | **MODEL_FAILURE** (HTTP **429** `free-models-per-day`) → retry another brain; then tool budget exhausted. 0 `xxd`/`hexdump`. 0 ENVIRONMENT. 0 repair-insert. 0 TaskYield. 0 leftover-budget dispatch | **B+C** — Class B (fallback PLAN / incomplete package / odd summary / chained fallback) + late Class C (429). xxd Class A live **N**. E1 live **N** | Provider **openrouter** / `nvidia/nemotron-3.5-lightning:free`. Home `/tmp/rad_prod_rw086_81609c3b`; `obj_e1949b8f`. Disk: workspace root **only** `text_analyzer/`. `input.txt` **PASS** 3-line sha256 `bf69eb737ca6f3949b5626701cb8472a2fc683e6b05e3101744eccd49dab629b`. Package `summary.json` present, alt schema. `test_analyzer.py` **absent**. README **absent**. Host still missing `xxd`/`hexdump`; model used `sha256sum` + `hashlib` / `cat -A`. False DONE **0**. Caps unchanged. Needle OFF. Stay **0.4.7**. Free-model loop **paused**. |
+
+### RW-086 vs RW-085 / RW-081 / RW-084
+
+| | RW-081 (v0.4.5 NIM) | RW-084 (v0.4.6 NIM) | RW-085 (v0.4.6 OpenRouter free) | RW-086 (v0.4.7 OpenRouter free) |
+|---|---|---|---|---|
+| home | `/tmp/rad_prod_rw081_5a76b128` | `/tmp/rad_prod_rw084_3d9cc3ac` | `/tmp/rad_prod_rw085_15d26f58` | `/tmp/rad_prod_rw086_81609c3b` |
+| objective id | `obj_b6d32fcc` | `obj_a8118606` | `obj_3181e63d` | `obj_e1949b8f` |
+| package | 0.4.5 | **0.4.6** | **0.4.6** | **0.4.7** |
+| `--max-tasks` / `--max-tools` | 8 / 12 | 8 / 12 | 8 / 12 | 8 / 12 |
+| Needle | `existing` / off | `existing` / off | `existing` / off | `existing` / off |
+| Status | `needs_user` @ 12/12 | `needs_user` @ **0/12** | `needs_user` @ **11/12** | `needs_user` @ **12/12** |
+| Brain | nvidia / llama-3.2-11b-vision | nvidia **403** | **openrouter / nemotron-3.5-lightning:free** | **openrouter / nemotron-3.5-lightning:free** |
+| PLAN | llm attempts=2 | fallback (provider fail) | **fallback** attempts=2 | **fallback** attempts=2 |
+| `input.txt` sha256 | `bf69eb73…` OK | absent | `bf69eb73…` OK | `bf69eb73…` OK |
+| `summary.json` | `{}` empty | absent | present, alt schema | present, alt schema |
+| README | present | absent | **absent** | **absent** |
+| `test_analyzer.py` | present (SyntaxError) | absent | present (exit 1) | **absent** |
+| objective_checks | package-joined Y | package-joined Y (create only) | package-joined Y | package-joined Y |
+| Root pollution | Y (root analyzer.py) | N/A | **N** | **N** |
+| Recovery | none | MODEL_FAILURE | **ENVIRONMENT → repair** (`xxd`) | **MODEL_FAILURE** (429); 0 ENVIRONMENT |
+| E1 leftover-budget yield | N/A (pre-E1) | not live-tested | **not live** (0 yields) | **not live** (0 TaskYield; task2 sequential) |
+| Fake DONE | 0 | 0 | 0 | 0 |
+| Residual class | **B** | **C** | **B** (+ Class A xxd → v0.4.7) | **B+C** (429) |
+
+| metric | value |
+|---|---|
+| Package (live run) | **0.4.7** (tag `v0.4.7` / `850aaf9c3a931a5ba119bdbb6ec73ae4a6fa73e9`) |
+| xxd Class A thrash | **CLEARED** — 0 `xxd`/`hexdump`; 0 ENVIRONMENT; 0 repair-insert. Host still missing `xxd`; model avoided it. Caveat: absence of thrash vs RW-085, not a positive classifier observation. Scripted RW-086 remains unit evidence |
+| E1 live | **N** — task1 completed normally; 0 TaskYield / leftover-budget events. Scripted RW-083 remains unit evidence |
+| vs RW-085 | xxd ENVIRONMENT thrash **gone**; task1 COMPLETED + task2 attempts=1; tools **12/12** vs **11/12**; **429 new** |
+| Residual | **Class B+C** — fallback PLAN; incomplete package (no tests / README); odd `summary.json`; late HTTP **429** `free-models-per-day` |
+| Operator decision (2026-09-19) | **pause** live OpenRouter free runs until `free-models-per-day` resets; NIM still Class C **paused** |
+| RW-058–085 | preserved (not rewritten) |
+| Default max-tools / max-tasks | **unchanged** (this run used `--max-tasks 8 --max-tools 12` only) |
+| Needle | **OFF** (`existing`) |
+| False completion | **0** |
+| Recommendation | Record **FAIL**. xxd Class A thrash cleared this trajectory. E1 not live. Pause free-model loop. Stay **0.4.7**. Do not claim live PASS. |
 
 # Live OpenRouter retest of v0.4.6 (RW-085) — FAIL
 
