@@ -4,5 +4,5 @@ Architecture in one line: Rad is the door, not the room.
 Brain, engine, tools, memory, voice, face — all swappable at runtime.
 """
 
-__version__ = "0.5.2"
+__version__ = "0.5.3"
 NAME = "rad"

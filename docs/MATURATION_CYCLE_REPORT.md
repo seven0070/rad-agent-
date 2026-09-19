@@ -6,6 +6,76 @@ Default `Budget.tool_calls` remains **60**.
 
 ---
 
+# Cycle 31 — G4-5 fallback / LLM plan quality; v0.5.3 (2026-09-19)
+
+**Date:** 2026-09-19
+**Baseline:** `origin/main` `1fa2320d97d30488c9740666821662df53adf5ef` (merge PR #44; package **0.5.2**)
+**Package at start:** `0.5.2`
+**This branch:** `cursor/g4-5-llm-plan-quality-bdee` — package **0.5.3**
+**Architecture:** control plane preserved. Needle stays off. Caps unchanged.
+**Kind:** product — G4-5 accepted + implemented. RW-058–093 are **not rewritten**.
+**Release:** **none** — Version 5 packing doctrine: merge-only; pack again only when Sanath asks.
+
+## Why this cycle
+
+G4-5 was scoped on Cycle 30 / PR #44 and **accepted**. Version 5 pack
+closed pause / resume / operator-use (G4-1–G4-3 as v0.5.0–v0.5.2). The
+remaining measured gap on a working product path was Class B PLAN
+`source=fallback` (RW-085 / RW-086: attempts=2, clause-carved tasks, not
+a coding graph). F-17 stays closed (do not add checks to fallback
+*tasks*). Investigate-first: `_json_obj` greedy `{.*}` discarded fenced /
+trailing-comma / tasks-array / extra-brace near-JSON; coding-goal retry
+re-sent the full `PLAN_PROMPT`.
+
+## Decision
+
+| item | value |
+|---|---|
+| Package | **0.5.2 → 0.5.3** |
+| Gen3 | **COMPLETE (scripted)** (unchanged). Live E1–E3 **deferred** |
+| Gen4 | **IN PROGRESS**. **G4-5 ACCEPTED + IMPLEMENTED** as **v0.5.3** |
+| Evidence | scripted **RW-094** / **RW-095** / F-20260919-55 |
+| Release / tag | **none** — Version 5 pack later only when Sanath asks |
+| Invariants | Needle OFF; caps 16/60; false DONE 0; no redesign; Class C is not a product patch; no live PASS claim; F-17 fallback *tasks* stay check-less |
+
+## What shipped
+
+- `_json_obj` recovers markdown-fenced JSON, trailing commas, a top-level tasks array, and the first balanced object (RW-094)
+- Coding-goal retries use compact `PLAN_CODING_RETRY` instead of the full planner prompt (RW-095)
+- Exhausted retries still `_fallback(obj)` — goal-only, cap 7, no checks (F-17)
+
+## Quality gates (this branch)
+
+Isolated homes `/tmp/rad-g45-gate` (doctor, acceptance) and `/tmp/rad-g45-rw` (realworld).
+
+| gate | result |
+|------|--------|
+| `rad version` | **PASS** v0.5.3 |
+| `python3 -m pytest -q` | **PASS** 624 passed in 11.46s |
+| `rad doctor --offline` | **PASS** 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR, verdict READY, exit 0 |
+| `rad acceptance` | **PASS** 50/50 — `/tmp/rad-g45-gate/acceptance/20260919-070010_gate.json` |
+| `rad realworld` | **PASS** 10/11 + 1 BLOCKED — `/tmp/rad-g45-rw/realworld/20260919-070011_realworld.json` |
+| Needle default | **PASS** (`existing`) — unchanged |
+| Caps | **PASS** `max_plan_tasks` 16; `Budget.tool_calls` 60 — unchanged |
+| Package | **0.5.3** |
+| Release / tag | **none** — Version 5 packing doctrine |
+| Live this patch | not re-run; suite `live_nim` **BLOCKED** (Class C) |
+
+## Remaining limitations
+
+1. Live text_analyzer@12 remains Class B FAIL. This cycle does not change that.
+2. E1/E2/E3 are scripted only. Live confirmation **deferred**.
+3. Both live free paths remain **paused**. G4-5 is scripted plan-quality, not a live PASS.
+4. G4-4 / G4-6 remain later candidates.
+
+## Roadmap pointer
+
+Operating spine: [ROADMAP.md](ROADMAP.md). **Generation 4 in progress.**
+**G4-1** as v0.5.0. **G4-2** as v0.5.1. **G4-3** as v0.5.2.
+**G4-5 implemented as v0.5.3.** **No GitHub Release / tag.** Gen5 is not started.
+
+---
+
 # Cycle 30 — Scope G4-5 fallback / LLM plan quality; stay 0.5.2 (2026-09-19)
 
 **Date:** 2026-09-19
