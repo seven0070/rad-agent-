@@ -6,6 +6,95 @@ Default `Budget.tool_calls` remains **60**.
 
 ---
 
+# Cycle 26 — Scope G4-2 live-gate resume / provider health; stay 0.5.0 (2026-09-19)
+
+**Date:** 2026-09-19
+**Baseline:** `origin/main` `d194b8ffc763fc00ad58273e5dd8f0203442041d` (merge PR #39; package **0.5.0**, tag **v0.5.0**)
+**Package at start:** `0.5.0`
+**This branch:** `cursor/g4-2-live-gate-scope-8c56` — package **0.5.0** (no bump)
+**Architecture:** control plane preserved. Needle stays off. Caps unchanged.
+**Kind:** docs / scope only. No `rad/` product change. RW-058–089 are **not rewritten**.
+
+## Why this cycle
+
+G4-1 shipped as **v0.5.0** (scripted RW-089): Class C before MODEL;
+`needs_user` pause; free-first rotation; `free_lock` never silent paid.
+Both live free paths remain **paused**. Live E1–E3 confirmation is
+**deferred**. Cycle 25 left G4-2 / G4-3 as unnamed later candidates.
+
+Investigate-first after G4-1: the highest-leverage **production-scale**
+gap is not residual Class B plan quality and not runbook copy. RW-084
+pre-run `rad doctor` providers **READY** (`1 usable: nvidia`) while
+`GET /v1/models` **200** and every `chat/completions` **403**. RW-086
+worked then died on HTTP **429** `free-models-per-day` with no durable
+last-Class-C / retry-after surface. `RouterState.failures` is
+in-process only. `rad objective resume` will re-hit the same 403 if
+the operator guesses. G4-1 closed **pause**; production still has no
+**safe live-use path**.
+
+## Alternatives considered
+
+| candidate | decision |
+|---|---|
+| Live-gate resume / provider health observability | **Recommended next (G4-2 / v0.5.1).** Evidence-backed. Scriptable. Does not invent Class A for 403/429 |
+| Operational runbooks / `needs_user` UX polish | G4-1 already shipped pause text. Residual is copy, not a measured hole |
+| Larger workload / longer-horizon (G4-3) | Waits on a recovered inference-entitled brain. Caps 16/60 stay closed |
+| Extensibility / MCP (G4-4) | No measured hole. Already first-class |
+| Fallback / LLM plan quality (Cycle 24 G4-2 → now G4-5) | Residual Class B. Not the production-scale gate. Needs the recovered brain G4-2 is meant to surface |
+
+## Code findings (lightweight; no patch)
+
+| existing | role | gap vs post-G4-1 |
+|---|---|---|
+| `Doctor.c_providers` | chain from key / local probe | RW-084 READY on a 403-chat pin. Catalog ≠ inference |
+| `probe_local` | local reachable + model list | No cloud inference-health probe |
+| `RouterState.failures` | skip Class C this process | Gone after CLI exit |
+| `class_c_next_steps` | pause copy | Resume *check* missing |
+| `Planner._fallback` (F-17) | clause-split, no checks | Residual Class B (G4-5), not this theme |
+
+## Decision
+
+| item | value |
+|---|---|
+| Package | **0.5.0** (no 0.5.1) |
+| Gen3 | **COMPLETE (scripted)** (unchanged). Live E1–E3 **deferred** |
+| Gen4 | **IN PROGRESS**. **G4-1 shipped** as **v0.5.0**. **G4-2 listed, not accepted** |
+| Recommended next v0.5.1 candidate | **G4-2** — live-gate resume / provider health observability (see ROADMAP). **Not** accepted here |
+| Other candidates | G4-3 longer workload / cost; G4-4 extensibility (not next — no hole); G4-5 fallback plan quality (was Cycle 24 G4-2) |
+| Next product work | Waits for an accepted v0.5.1 theme |
+| Invariants | Needle OFF; caps 16/60; false DONE 0; no redesign; Class C is not a product patch; no live PASS claim |
+
+## Quality gates (this branch)
+
+Isolated homes `/tmp/rad-g42-scope-gate` (doctor, acceptance) and `/tmp/rad-g42-scope-rw` (realworld).
+
+| gate | result |
+|------|--------|
+| `rad version` | **PASS** v0.5.0 |
+| `python3 -m pytest -q` | pending this branch |
+| `rad doctor --offline` | pending this branch |
+| `rad acceptance` | pending this branch |
+| `rad realworld` | pending this branch |
+| Needle default | **PASS** (`existing`) — unchanged |
+| Caps | **PASS** `max_plan_tasks` 16; `Budget.tool_calls` 60 — unchanged |
+| Package | **0.5.0** (no bump) |
+| Live this patch | not re-run; suite `live_nim` **BLOCKED** (Class C) |
+
+## Remaining limitations
+
+1. Live text_analyzer@12 remains Class B FAIL. This cycle does not change that.
+2. E1/E2/E3 are scripted only. Live confirmation **deferred**.
+3. Both live free paths remain **paused**. G4-2 is scoped so a later accept can add a safe resume/health path — not a live PASS.
+4. G4-2 is listed, not accepted.
+
+## Roadmap pointer
+
+Operating spine: [ROADMAP.md](ROADMAP.md). **Generation 4 in progress.**
+**G4-1 implemented as v0.5.0.** Recommended next **G4-2** listed, not
+accepted. Stay **0.5.0**. Gen5 is not started.
+
+---
+
 # Cycle 25 — G4-1 live multi-provider Class C doctrine; v0.5.0 (2026-09-19)
 
 **Date:** 2026-09-19
