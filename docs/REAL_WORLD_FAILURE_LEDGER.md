@@ -1833,10 +1833,10 @@ RAD_HOME=/tmp/rad_prod_rw084_3d9cc3ac rad objective run "<ASCII-tree text_analyz
 
 | gate | result |
 |---|---|
-| `python3 -m pytest -q` | pending this branch |
-| `rad doctor --offline` | pending this branch |
-| `rad acceptance` | pending this branch |
-| `rad realworld` | pending this branch |
+| `python3 -m pytest -q` | **530 passed** in 10.76s |
+| `rad doctor --offline` | READY — 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR (`RAD_HOME=/tmp/rad-rw084-gate`) |
+| `rad acceptance` | **50/50 PASSED** (`/tmp/rad-rw084-gate/acceptance/20260919-031510_gate.json`) |
+| `rad realworld` | **10 passed / 1 BLOCKED / 0 failed** (`live_nim` BLOCKED; `/tmp/rad-rw084-rw/realworld/20260919-031511_realworld.json`) |
 | Package | **0.4.6** (no bump) |
 | Product code | unchanged |
 | RW-058–083 | preserved |
