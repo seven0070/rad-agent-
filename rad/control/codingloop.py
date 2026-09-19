@@ -18,7 +18,10 @@ contract (Gen3 theme 3 slice B). mkdir / create **already exists** after
 Gen3 theme 3 slice C) — it must not fail a task whose directory/file checks
 passed. Premature `python …/test_*.py` (interpreter cannot open a `.py` script
 the agent has not written yet) is sequencing, not a broken host environment
-(RW-079 / Gen3 theme 3 slice D).
+(RW-079 / Gen3 theme 3 slice D). Missing optional checksum/hex binaries
+(`xxd`, `hexdump`, `sha256sum` and close variants) used only for inspection
+theater are model/tool-choice, not a broken RAD host (RW-085 / theme 3
+slice F) — python + write_file exist.
 """
 from __future__ import annotations
 
@@ -54,6 +57,17 @@ _MKDIR_LIKE = re.compile(
 )
 _PERM_DENIED = re.compile(r"permission denied|EACCES", re.I)
 _MODULE_NOT_FOUND = re.compile(r"ModuleNotFoundError|No module named", re.I)
+# Optional hex/checksum utilities models invoke for inspection theater (RW-085).
+_OPTIONAL_CHECKSUM_BIN = re.compile(
+    r"\b(xxd|hexdump|sha256sum|sha1sum|shasum|md5sum)\b",
+    re.I,
+)
+_OPTIONAL_BIN_NOT_FOUND = re.compile(
+    r"(?:^|[\s/'\"`:])(?P<bin>xxd|hexdump|sha256sum|sha1sum|shasum|md5sum)"
+    r"\s*:\s*(?:command not found|not found)\b",
+    re.I,
+)
+_EXIT_127 = re.compile(r"\[exit[= ]127\]", re.I)
 # CPython: python3: can't open file 'pkg/test_foo.py': [Errno 2] No such file …
 _PYTHON_CANT_OPEN_SCRIPT = re.compile(
     r"can't open file\s+['\"][^'\"]+\.py['\"]",
@@ -149,6 +163,29 @@ def is_missing_python_script(output: str = "", command: str = "") -> bool:
     return True
 
 
+def is_missing_optional_checksum_utility(output: str = "", command: str = "") -> bool:
+    """True when xxd/hexdump/sha*sum is not installed (checksum theater).
+
+    For stdlib coding the RAD host is python + write_file. A missing optional
+    hex/checksum binary is model/tool-choice, not a missing environment
+    prerequisite (RW-085). `python: command not found`, `pip: command not
+    found`, and `cat` no-such-file stay genuine ENVIRONMENT (F-18).
+    File-not-found on the *argument* (`sha256sum: input.txt: No such file
+    or directory`) is not this signal — that binary exists.
+    """
+    out = output or ""
+    cmd = command or ""
+    if _OPTIONAL_BIN_NOT_FOUND.search(out):
+        return True
+    if not _OPTIONAL_CHECKSUM_BIN.search(cmd):
+        return False
+    if re.search(r"command not found", out, re.I) and _OPTIONAL_CHECKSUM_BIN.search(out):
+        return True
+    if _EXIT_127.search(out) and _OPTIONAL_CHECKSUM_BIN.search(cmd):
+        return True
+    return False
+
+
 def is_mkdir_already_exists(output: str = "", command: str = "") -> bool:
     """True when mkdir/create failed because the path already exists (RW-077).
 
@@ -173,6 +210,8 @@ def is_first_task_thrash_noise(tool: str, output: str = "", command: str = "") -
         return True
     if is_missing_python_script(output, command):
         return True
+    if is_missing_optional_checksum_utility(output, command):
+        return True
     return is_mkdir_already_exists(output, command)
 
 
@@ -195,7 +234,8 @@ def repair_hint(failed_checks: Iterable[Dict[str, Any]]) -> str:
           "and do not replace the artifact with a DONE: line. "
           "Do not call a tool named DONE. Do not pip install -r a missing requirements.txt "
           "for stdlib-only coding. Do not mkdir a path write_file already created. "
-          "Do not run python test_*.py before the test file exists."
+          "Do not run python test_*.py before the test file exists. "
+          "Do not call xxd/hexdump to inspect files for stdlib-only coding."
     )
 
 

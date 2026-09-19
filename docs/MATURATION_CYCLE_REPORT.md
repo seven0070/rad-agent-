@@ -6,6 +6,94 @@ Default `Budget.tool_calls` remains **60**.
 
 ---
 
+# Cycle 20 — Record live OpenRouter RW-085; xxd ENVIRONMENT Class A CONFIRMED; v0.4.7 (2026-09-19)
+
+**Date:** 2026-09-19
+**Baseline:** `origin/main` `54fc739` (merge PR #33; package **0.4.6**, docs SHA after RW-084)
+**Package at start:** `0.4.6`
+**This branch:** `cursor/rw085-xxd-environment-40c4` — package **0.4.7**
+**Architecture:** control plane preserved. Needle stays off. Caps unchanged.
+**Kind:** docs (RW-085) + product patch (optional checksum ENVIRONMENT). RW-058–084 are **not rewritten**.
+
+## Why this cycle
+
+Live gate after RW-084 Class C. Operator retested RW-081-shape ASCII-tree
+`text_analyzer/` at `--max-tasks 8 --max-tools 12`, Needle **OFF**, on
+**openrouter** / `nvidia/nemotron-3.5-lightning:free` (tag **v0.4.6** /
+`8f09be58`). Run **FAIL** `needs_user` @ tools **11/12**, `$0`. Class C vs
+RW-084 **cleared**. E1 leftover-budget yield **not live** (0 TaskYield;
+fallback PLAN attempts=2; later tasks 0 attempts). Residual Class **B**
+(fallback plan, wrong summary, missing README, failing tests) plus live
+`xxd: not found` exit 127 classified **ENVIRONMENT_FAILURE → repair**.
+
+Investigate-first: missing optional `xxd` is the same family as pip `-r`
+file-not-found and premature-test No-such-file — model/tool-choice on a
+working python host, not a broken RAD environment. **Class A CONFIRMED.**
+
+## What changed
+
+| piece | change |
+|---|---|
+| `is_missing_optional_checksum_utility` (`codingloop.py`) | Tight helper: `xxd` / `hexdump` / `sha256sum` (and close variants) not-found / exit 127 |
+| `classify()` (`recovery.py`) | Skip ENVIRONMENT for that helper; genuine `python`/`pip`/`gcc` command-not-found stays ENVIRONMENT |
+| `is_first_task_thrash_noise` | Same helper — verifier does not fail a check-passing task |
+| `PLAN_PROMPT` | Do not call xxd/hexdump for stdlib coding; use hashlib |
+| Package | **0.4.6 → 0.4.7** |
+
+## Decision
+
+| item | value |
+|---|---|
+| Package | **0.4.7** |
+| Class A `xxd` ENVIRONMENT | **CONFIRMED** (theme 3 slice F) |
+| E1 live | **N** — not confirmed on RW-085 |
+| Class C vs RW-084 | **cleared** (OpenRouter) |
+| Live text_analyzer@12 | **not** claimed PASS |
+| Invariants | Needle OFF; caps 16/60; false DONE 0; no redesign |
+
+## Live facts (operator report only)
+
+| item | value |
+|---|---|
+| Home / obj | `/tmp/rad_prod_rw085_15d26f58` / `obj_3181e63d` |
+| Provider / model | **openrouter** / `nvidia/nemotron-3.5-lightning:free` |
+| Status | `needs_user` — ENVIRONMENT repair exhausted → replan → NEEDS_USER |
+| Tools / models / retries | **11/12** / **14.0/80** / **2.0/6** |
+| PLAN | `source=fallback` attempts=2; 4 newline-carved tasks |
+| Money | **`$0`** |
+| Disk | `text_analyzer/` only; input sha256 `bf69eb73…`; README absent; tests exit 1 |
+| Wall | 2026-09-19 IST 09:34:38–09:57:47 (~1389s event; usage `seconds≈928.8`); exit 2 |
+| False DONE | **0** |
+
+## Quality gates (this branch)
+
+Isolated homes `/tmp/rad-rw085-gate` (doctor, acceptance) and `/tmp/rad-rw085-rw` (realworld).
+
+| gate | result |
+|------|--------|
+| `rad version` | pending |
+| `python3 -m pytest -q` | pending |
+| `rad doctor --offline` | pending |
+| `rad acceptance` | pending |
+| `rad realworld` | pending |
+| Needle default | **PASS** (`existing`) — unchanged |
+| Caps | **PASS** `max_plan_tasks` 16; `Budget.tool_calls` 60 — unchanged |
+| Package | **0.4.7** |
+| Live this patch | **not re-run** — not a live PASS claim |
+
+## Remaining limitations
+
+1. Live text_analyzer@12 remains Class B FAIL (fallback plan, quality, tools=12).
+2. E1 leftover-budget yield is still **not live-confirmed** (RW-084 Class C; RW-085 fallback chain).
+3. Live NIM loop remains **paused** (RW-084 Class C).
+
+## Roadmap pointer
+
+Operating spine: [ROADMAP.md](ROADMAP.md). **Generation 3 in progress.** Theme 3
+slice F **IMPLEMENTED** as **v0.4.7**. E1 remains scripted. Gen4–5 are not started.
+
+---
+
 # Cycle 19 — Record live NIM RW-084 Class C; pause live NIM; stay 0.4.6 (2026-09-19)
 
 **Date:** 2026-09-19

@@ -70,7 +70,9 @@ acceptance gate 14). Intra-run yield so later independent READY tasks still get
 ≥1 attempt when an early sequential task would burn remaining tools is
 **implemented as v0.4.6** (theme 3 slice E1; `TaskYield` + leftover-tool
 reserve + `Scheduler` skip of yielded tasks). Same `checkpoint.json` format.
-Linear `depends_on` is unchanged (E2). Do not treat crash-resume with a raised
+Linear `depends_on` is unchanged (E2). Missing optional `xxd` / hexdump /
+`sha256sum` (checksum theater) is **not** ENVIRONMENT as of **v0.4.7**
+(theme 3 slice F). Do not treat crash-resume with a raised
 budget as that gap, and do not invent a second persistence stack.
 
 ## Parallelism (Phase 3)

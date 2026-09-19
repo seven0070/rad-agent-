@@ -17,9 +17,9 @@ from rad.providers import ProviderSpec, _chat_openai, _openai_message, _unparall
 
 
 def test_version_is_synced():
-    assert __version__ == "0.4.6"
+    assert __version__ == "0.4.7"
     pyproject = Path(__file__).resolve().parent.parent / "pyproject.toml"
-    assert 'version = "0.4.6"' in pyproject.read_text(encoding="utf-8")
+    assert 'version = "0.4.7"' in pyproject.read_text(encoding="utf-8")
 
 
 def test_default_workspace_is_inside_home_not_cwd(tmp_path, monkeypatch):
@@ -81,7 +81,7 @@ def test_global_home_flag_works_with_subcommands(home, capsys):
     """`rad --home <dir> <cmd>` used to be rewritten into `rad chat --home …` and fail."""
     rc = main(["--home", str(home.root), "version"])
     out = capsys.readouterr().out
-    assert rc == 0 and "v0.4.6" in out
+    assert rc == 0 and "v0.4.7" in out
 
 
 def test_nvidia_default_model_is_not_eol(tmp_path):
@@ -162,4 +162,4 @@ def test_nvidia_requests_disable_parallel_tool_calls(monkeypatch):
 
 def test_rad_version_cli(capsys):
     assert main(["version"]) == 0
-    assert "v0.4.6" in capsys.readouterr().out
+    assert "v0.4.7" in capsys.readouterr().out
