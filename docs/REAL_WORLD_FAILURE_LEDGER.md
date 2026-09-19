@@ -2,7 +2,7 @@
 
 Living log of **measured** RAD failures found in live or reconstructed use.
 Architecture is frozen. Needle stays experimental and off by default. This is not AGI/ASI.
-Operating spine: [ROADMAP.md](ROADMAP.md) (adopted 2026-09-18). Gen1 complete on 0.2.3; **Gen2 complete** on 0.3.0–0.3.2. Verified coding loop is **implemented as v0.3.0** (F-20260918-24 / RW-064). Live retest **RW-065**. Plan-timeout resilience is **implemented as v0.3.1** (F-20260918-27 / scripted RW-066) and **used** (live RW-066 / F-20260918-28). Budget-aware planning is **implemented as v0.3.2** (F-20260918-29 / RW-067). Live NIM use of v0.3.2 is **RW-068 PASS** (F-20260918-30) and **RW-069 FAIL** (F-20260918-31). Path-aligned checks are **implemented as v0.4.0** (F-20260918-32 / RW-070). Live NIM retest of v0.4.0 is **RW-071 FAIL** (F-20260918-33; theme 1 live-confirmed). Multi-file contracts under tight budgets are **implemented as v0.4.1** (F-20260918-34 / RW-072). Live NIM retest of v0.4.1 is **RW-073 FAIL** (F-20260918-35; theme 1/2 live-confirmed). ASCII-tree `package_dir` is **implemented as v0.4.2** (F-20260918-36 / RW-074). Live NIM retest of v0.4.2 is **RW-075 FAIL** (F-20260918-37; ASCII-tree obj-checks live-confirmed). First-task thrash is **implemented as v0.4.3** (F-20260918-38 / RW-076). Live NIM retest of v0.4.3 is **RW-077 FAIL** (F-20260918-39; pip/DONE Class A **live-consistent**; mkdir File-exists action noise is F-40). mkdir already-exists action noise is **implemented as v0.4.4** (F-20260918-40 / RW-078). Live NIM retest of v0.4.4 is **RW-079 FAIL** (F-20260918-41; mkdir File-exists **not live-hit**; premature-test ENVIRONMENT is F-42). Premature-test ENVIRONMENT is **implemented as v0.4.5** (F-20260918-42 / RW-080). Live NIM retest of v0.4.5 is **RW-081 FAIL** (F-20260918-43; mkdir File-exists **live Y**; premature-test ENVIRONMENT **not live-hit**; pip/echo + root pollution residual). Pip thrash + root `analyzer.py` pollution Class A is **NOT CONFIRMED** (F-20260918-44 / scripted RW-082). Task-boundary yield / leftover-budget dispatch is **implemented as v0.4.6** (F-20260918-45 / scripted RW-083). This ledger is evidence. Do not rewrite RW-058–082. Scripted RW-066 (F-27) is preserved.
+Operating spine: [ROADMAP.md](ROADMAP.md) (adopted 2026-09-18). Gen1 complete on 0.2.3; **Gen2 complete** on 0.3.0–0.3.2. Verified coding loop is **implemented as v0.3.0** (F-20260918-24 / RW-064). Live retest **RW-065**. Plan-timeout resilience is **implemented as v0.3.1** (F-20260918-27 / scripted RW-066) and **used** (live RW-066 / F-20260918-28). Budget-aware planning is **implemented as v0.3.2** (F-20260918-29 / RW-067). Live NIM use of v0.3.2 is **RW-068 PASS** (F-20260918-30) and **RW-069 FAIL** (F-20260918-31). Path-aligned checks are **implemented as v0.4.0** (F-20260918-32 / RW-070). Live NIM retest of v0.4.0 is **RW-071 FAIL** (F-20260918-33; theme 1 live-confirmed). Multi-file contracts under tight budgets are **implemented as v0.4.1** (F-20260918-34 / RW-072). Live NIM retest of v0.4.1 is **RW-073 FAIL** (F-20260918-35; theme 1/2 live-confirmed). ASCII-tree `package_dir` is **implemented as v0.4.2** (F-20260918-36 / RW-074). Live NIM retest of v0.4.2 is **RW-075 FAIL** (F-20260918-37; ASCII-tree obj-checks live-confirmed). First-task thrash is **implemented as v0.4.3** (F-20260918-38 / RW-076). Live NIM retest of v0.4.3 is **RW-077 FAIL** (F-20260918-39; pip/DONE Class A **live-consistent**; mkdir File-exists action noise is F-40). mkdir already-exists action noise is **implemented as v0.4.4** (F-20260918-40 / RW-078). Live NIM retest of v0.4.4 is **RW-079 FAIL** (F-20260918-41; mkdir File-exists **not live-hit**; premature-test ENVIRONMENT is F-42). Premature-test ENVIRONMENT is **implemented as v0.4.5** (F-20260918-42 / RW-080). Live NIM retest of v0.4.5 is **RW-081 FAIL** (F-20260918-43; mkdir File-exists **live Y**; premature-test ENVIRONMENT **not live-hit**; pip/echo + root pollution residual). Pip thrash + root `analyzer.py` pollution Class A is **NOT CONFIRMED** (F-20260918-44 / scripted RW-082). Task-boundary yield / leftover-budget dispatch is **implemented as v0.4.6** (F-20260918-45 / scripted RW-083). Live NIM retest of v0.4.6 is **RW-084 BLOCKED Class C** (F-20260919-46; HTTP **403 Authorization failed** on all `chat/completions`; `/v1/models` **200**; tools **0/12**; E1 leftover-budget yield **not live-tested**). Live NIM loop is **paused** until inference-entitled credentials work. This ledger is evidence. Do not rewrite RW-058–083. Scripted RW-066 (F-27) is preserved.
 
 No secrets belong here: never paste API keys, vault contents, account tokens, or full
 provider payloads. Paths under `/tmp/…` and objective ids are fine.
@@ -1793,6 +1793,58 @@ waits for a written accept.
 | Needle | **OFF** (`existing`) |
 | False completion | **0** |
 | Live NIM this patch | **BLOCKED** (no NVIDIA keys) — not a live PASS claim |
+
+## Live NIM retest of v0.4.6 (RW-084) — 2026-09-19
+
+Operator production `rad objective run` on package **0.4.6** (tag **v0.4.6**,
+`8f09be5839e25c236349121a4ec77606d0d5ed2d`). Needle **OFF**. Caps **not**
+raised. RW-058–083 facts are **not rewritten**. F-17 / F-18 / F-21 / F-26 stay
+closed. A1 is **not reopened**. E1 remains **shipped / scripted** (RW-083 /
+F-45). Live E1 gate **deferred**. Live NIM loop **paused / Class C blocked**.
+Package stays **0.4.6**. No product patch.
+
+Authoritative facts: operator report `obj_a8118606` /
+`/tmp/rad_prod_rw084_3d9cc3ac`. This agent did not re-run NIM. No keys printed
+or committed.
+
+### F-20260919-46 — live 11B text_analyzer on v0.4.6 **BLOCKED Class C** (RW-084)
+
+| field | value |
+|---|---|
+| class | **C** (NVIDIA NIM inference unauthorized). Key loads; `GET /v1/models` **200** (catalog lists `meta/llama-3.2-11b-vision-instruct`); all probed `POST /v1/chat/completions` return **403** `Authorization failed`. Not a RAD product defect observable this run. Class A/B / E1: **not live-hit** |
+| status | **BLOCKED** — live **FAIL / BLOCKED Class C** (`needs_user`; 0 tools). E1 leftover-budget yield **not live-tested**. Package stays **0.4.6**. Live NIM loop **paused** |
+| found in | post-v0.4.6 production use (RW-084), rad v0.4.6 / `8f09be58`, 2026-09-19 IST 08:34:20–08:34:22 |
+| fixed in | — not a RAD hole. Refresh a NIM key with `chat/completions` entitlement before any E1 live retest. Do **not** keep retrying keys that list models but fail chat |
+| lane | live NVIDIA NIM `meta/llama-3.2-11b-vision-instruct` (intended 11B; Needle OFF) |
+| objective / test | `obj_a8118606` — RW-081 shape ASCII-tree `text_analyzer/` layout; exact 3-line input intended; stdlib; `--max-tasks 8 --max-tools 12`; Needle `existing` / off |
+| disk | workspace root **empty**; `text_analyzer/` **absent**. `input.txt` / `summary.json` / code / tests / README all **absent**. Root pollution **N**. No tools ran |
+| expected | working inference so the E1 live gate can run; `VERIFIED` only from machine checks; no false DONE |
+| actual | status `needs_user` / **BLOCKED Class C** — **NOT DONE**, 0 tool calls. Pre-run `rad doctor` providers READY (1 usable: nvidia). `GET /v1/models` **200**. All `chat/completions` **403**. Other listed instruct models (granite, mistral, nemotron, …) **403**. EOL probe `meta/llama-3.1-8b-instruct` **410** Gone. RAD error: `all providers failed: nvidia: HTTP 403 … Authorization failed`. `PLAN_CREATED` **source=`fallback`** (LLM plan unavailable), 4 tasks carved from goal newlines (not a real coding plan), then NEEDS_USER. t_ad22c64b **NEEDS_USER** (`MODEL_FAILURE`; 3 attempts; HTTP 403); t_e74ab370 / t_5cb4bd78 / t_bf095942 **BLOCKED** (unmet prereq). Tools **0/12**. Model calls **3.0/80** (all failed). Retries **2.0/6** (retry×2 then replan → no usable plan). Wall ~1.5s / usage `seconds≈0.91`. Process exit 2. Verification **none**. objective_checks package-joined at create (`json_valid text_analyzer/summary.json`; `shell_ok python3 text_analyzer/test_analyzer.py`) — **never executed**. 0 ENVIRONMENT repair. 0 TaskYield. 0 leftover-budget dispatch. False DONE **0** |
+| notes | vs RW-081: **cannot compare E1 live** — RW-081 ran tools 12/12 on working NIM; RW-084 stopped at HTTP 403 (0 tools). Residual Class **C** (not B). E1 code is present on tag `v0.4.6` / `8f09be58` (scripted RW-083 remains unit evidence). Prior Class A paths (mkdir / premature-test / pip / invented DONE) **not hit**. Operator decision (2026-09-19): **pause** live NIM loop until inference-entitled credentials work on integrate.api. Caps unchanged. Needle OFF. Stay **0.4.6** |
+
+Reproduction (redacted; live NIM; operator home):
+
+```
+RAD_HOME=/tmp/rad_prod_rw084_3d9cc3ac rad objective run "<ASCII-tree text_analyzer goal>" --auto --max-tasks 8 --max-tools 12
+# obj_a8118606 → needs_user; tools 0/12; PLAN_CREATED source=fallback
+# chat/completions HTTP 403 Authorization failed; GET /v1/models 200
+# E1 leftover-budget yield not live-tested; false DONE 0
+```
+
+| gate | result |
+|---|---|
+| `python3 -m pytest -q` | pending this branch |
+| `rad doctor --offline` | pending this branch |
+| `rad acceptance` | pending this branch |
+| `rad realworld` | pending this branch |
+| Package | **0.4.6** (no bump) |
+| Product code | unchanged |
+| RW-058–083 | preserved |
+| 16-task cap | **UNCHANGED** |
+| Default tool budget | **UNCHANGED** (60) |
+| Needle | **OFF** (`existing`) |
+| False completion | **0** |
+| Live NIM this patch | **BLOCKED Class C** (RW-084 recorded; loop **paused**) — not a live PASS claim |
 
 ## How to add a finding
 

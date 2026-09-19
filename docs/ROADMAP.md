@@ -4,7 +4,7 @@ This is the **operating spine** for RAD: five generations, one loop, evidence in
 It is not a product-idea backlog (that list stays in the README) and it is not a license to
 redesign the control plane.
 
-**Status (2026-09-18):** Generation 1 is **complete**. Generation 2 is
+**Status (2026-09-19):** Generation 1 is **complete**. Generation 2 is
 **complete** (v0.3.0–v0.3.2). Theme 1 — **verified coding loop** — shipped as
 **v0.3.0** and **used** (RW-065; RW-068). Theme 2 — **plan-timeout
 resilience** — shipped as **v0.3.1** and **used** (live RW-066 **PASS**;
@@ -23,9 +23,11 @@ ENVIRONMENT) is **implemented as v0.4.5** and **used** (RW-081; premature-test
 path **not live-hit**; mkdir File-exists **live Y**). Pip thrash + root
 pollution Class A is **NOT CONFIRMED** (RW-082). Slice E1 — **task-boundary
 yield / leftover-budget dispatch** — is **accepted and implemented as
-v0.4.6**. Thrash Class A chase is **paused** after RW-081. Needle stays off.
-Caps unchanged. This patch does **not** claim live 11B RW-081 would now PASS.
-Generations 4–5 are **not started**.
+v0.4.6** (scripted RW-083). Live NIM retest of v0.4.6 is **RW-084 BLOCKED
+Class C** (HTTP 403 on `chat/completions`; E1 **not live-tested**). Live NIM
+loop is **paused** until inference-entitled credentials work. Thrash Class A
+chase is **paused** after RW-081. Needle stays off. Caps unchanged. Package
+stays **0.4.6**. Generations 4–5 are **not started**.
 
 ```
 build → test → validate → release → use → discover gaps → build the next version
@@ -40,12 +42,13 @@ Stability with no code change is a valid result.
 
 | item | value |
 |---|---|
-| Generation in production | **Gen3 in progress** — **v0.4.6**; tagged `v0.4.5` @ `32e9fe87` remains the last live-use tag; v0.4.4 is tagged `v0.4.4` @ `acb61997`; v0.4.3 is tagged `v0.4.3` @ `99099b8a`; v0.4.2 is tagged `v0.4.2` @ `feb8a4ec`; v0.4.1 is tagged `v0.4.1` @ `387bd83a`; v0.4.0 is tagged `v0.4.0` @ `a8aac8ae`; Gen2 complete on `387776dc` / tag `v0.3.2`; Gen1 baseline remains tagged `v0.2.3` @ `d121c3f` |
-| Package / tag on `main` | **0.4.6** (this change). Last annotated tag `v0.4.5` @ `32e9fe87` |
-| This change | **E1 accepted + implemented** — task-boundary yield / leftover-budget dispatch (package **0.4.6**) |
+| Generation in production | **Gen3 in progress** — **v0.4.6** @ `8f09be58`; last live-use with **working inference** remains `v0.4.5` @ `32e9fe87`; v0.4.6 live attempt is RW-084 **BLOCKED Class C**; v0.4.4 is tagged `v0.4.4` @ `acb61997`; v0.4.3 is tagged `v0.4.3` @ `99099b8a`; v0.4.2 is tagged `v0.4.2` @ `feb8a4ec`; v0.4.1 is tagged `v0.4.1` @ `387bd83a`; v0.4.0 is tagged `v0.4.0` @ `a8aac8ae`; Gen2 complete on `387776dc` / tag `v0.3.2`; Gen1 baseline remains tagged `v0.2.3` @ `d121c3f` |
+| Package / tag on `main` | **0.4.6** (stay). Tag `v0.4.6` @ `8f09be5839e25c236349121a4ec77606d0d5ed2d` |
+| This change | **docs only** — record live NIM RW-084 **BLOCKED Class C**; package stays **0.4.6**; live NIM loop **paused** |
 | Generation 2 | **COMPLETE** — theme 1 **v0.3.0** (used RW-065 / RW-068); theme 2 **v0.3.1** (used live RW-066 / RW-068); theme 3 **v0.3.2** (scripted RW-067; used RW-068 / RW-069) |
-| Latest use (RW-081) | Live NIM 11B text_analyzer on v0.4.5: **FAIL** `needs_user` @ 12/12; theme 1 **Y**; theme 2 **Y**; mkdir File-exists Class A **live Y**; premature-test ENVIRONMENT **not live-hit**; residual **Class B** (pip/echo thrash, root `analyzer.py` pollution, empty `summary.json`, SyntaxError test under tools=12). This patch does **not** claim that live row now PASS |
-| Generation 3 | **IN PROGRESS** — theme 1 **implemented** (v0.4.0) **used** (RW-071 / RW-073 / RW-075 / RW-077 / RW-079 / RW-081); theme 2 **implemented** (v0.4.1) **used** (RW-073 / RW-075 / RW-077 / RW-079 / RW-081); theme 3 **planned / scoped**, slice A **v0.4.2** **used** (RW-075 / RW-077 / RW-079 / RW-081), slice B **v0.4.3** **used** (RW-077 / RW-079 / RW-081), slice C **v0.4.4** **used** (RW-081 mkdir live Y), slice D **v0.4.5** **used** (RW-081; premature-test path not live-hit), slice E1 **v0.4.6** **implemented** (scripted RW-083; not live-claimed) |
+| Latest use (RW-084) | Live NIM 11B text_analyzer on v0.4.6 **BLOCKED Class C**: HTTP **403 Authorization failed** on all `chat/completions`; `/v1/models` **200**; tools **0/12**; E1 leftover-budget yield **not live-tested**. Cannot compare E1 vs RW-081 (RW-081 had working inference). False DONE **0**. Operator (2026-09-19): **pause** live NIM loop until inference-entitled credentials work on integrate.api. Last working-inference live row remains **RW-081** (v0.4.5 Class B FAIL @ 12/12) |
+| Live NIM loop | **PAUSED / Class C blocked** (RW-084). Do not keep retrying keys that list models but fail chat. E1 live gate **deferred**. Scripted RW-083 remains unit evidence |
+| Generation 3 | **IN PROGRESS** — theme 1 **implemented** (v0.4.0) **used** (RW-071 / RW-073 / RW-075 / RW-077 / RW-079 / RW-081); theme 2 **implemented** (v0.4.1) **used** (RW-073 / RW-075 / RW-077 / RW-079 / RW-081); theme 3 **planned / scoped**, slice A **v0.4.2** **used** (RW-075 / RW-077 / RW-079 / RW-081), slice B **v0.4.3** **used** (RW-077 / RW-079 / RW-081), slice C **v0.4.4** **used** (RW-081 mkdir live Y), slice D **v0.4.5** **used** (RW-081; premature-test path not live-hit), slice E1 **v0.4.6** **implemented** (scripted RW-083; live gate **deferred** after RW-084 Class C) |
 | Generations 4–5 | **NOT STARTED** |
 | Needle | optional / **off** (`tool_router=existing`; ADR-001) |
 | `max_plan_tasks` | **16** (unchanged) |
@@ -81,9 +84,10 @@ and **used** (RW-077 / RW-079 / RW-081); slice C (mkdir already-exists action no
 **implemented** (v0.4.4) and **used** (RW-081 mkdir live Y); slice D (premature-test ENVIRONMENT) is **implemented**
 (v0.4.5) and **used** (RW-081; premature-test path not live-hit). Slice E1
 (task-boundary yield / leftover-budget dispatch) is **accepted and implemented**
-(v0.4.6; scripted RW-083). E2/E3 stay candidates. Thrash Class A chase is
-paused after RW-081 **NOT CONFIRMED**. Gen4–5 stay closed until Gen3
-has been released and used.
+(v0.4.6; scripted RW-083). Live NIM retest of v0.4.6 is **RW-084 BLOCKED
+Class C**; E1 live gate **deferred**. Live NIM loop **paused**. E2/E3 stay
+candidates. Thrash Class A chase is paused after RW-081 **NOT CONFIRMED**.
+Gen4–5 stay closed until Gen3 has been released and used.
 
 ---
 
@@ -287,10 +291,11 @@ v0.4.4** and **live-confirmed** (RW-081). Slice D (premature-test
 ENVIRONMENT) is **implemented as v0.4.5** and **used** (RW-081; premature-test
 path **not live-hit**). Slice E1 (task-boundary yield / leftover-budget
 dispatch) is **accepted and implemented as v0.4.6**. Package is **0.4.6**.
-Live RW-081 Class B (pip/echo thrash, root `analyzer.py` pollution, empty
-`summary.json`, SyntaxError test) is **not** claimed fixed. Pip/root-pollution
-Class A is **NOT CONFIRMED** (RW-082). Thrash Class A chase is **paused**.
-E2/E3 stay candidates. This patch does **not** claim live 11B RW-081 would now PASS.
+Live RW-084 is **BLOCKED Class C** (HTTP 403; E1 **not live-tested**). Live
+NIM loop is **paused**. Live RW-081 Class B (pip/echo thrash, root
+`analyzer.py` pollution, empty `summary.json`, SyntaxError test) is **not**
+claimed fixed. Pip/root-pollution Class A is **NOT CONFIRMED** (RW-082).
+Thrash Class A chase is **paused**. E2/E3 stay candidates.
 
 Do not pre-design Gen3 from Gen1 Class B rows alone. Do not skip Gen2 (Gen2 is
 now complete). Do not treat a FAIL row as an automatic architecture rewrite.
@@ -363,11 +368,11 @@ verifier still evaluates the stored path honestly.
 
 | field | value |
 |---|---|
-| Status | **PLANNED / SCOPED**. Slice A **IMPLEMENTED** as v0.4.2. Slice B **IMPLEMENTED** as v0.4.3. Slice C **IMPLEMENTED** as v0.4.4 (**used** RW-081). Slice D **IMPLEMENTED** as v0.4.5 (**used** RW-081; premature-test path not live-hit). Slice E1 **ACCEPTED + IMPLEMENTED** as v0.4.6 (scripted RW-083) |
+| Status | **PLANNED / SCOPED**. Slice A **IMPLEMENTED** as v0.4.2. Slice B **IMPLEMENTED** as v0.4.3. Slice C **IMPLEMENTED** as v0.4.4 (**used** RW-081). Slice D **IMPLEMENTED** as v0.4.5 (**used** RW-081; premature-test path not live-hit). Slice E1 **ACCEPTED + IMPLEMENTED** as v0.4.6 (scripted RW-083; live gate **deferred** after RW-084 Class C) |
 | Theme | **Longer-horizon / multi-step reliability** |
 | Version | Theme 3 itself is **not** a full v0.4.x redesign. Slice A is **v0.4.2**. Slice B is **v0.4.3**. Slice C is **v0.4.4**. Slice D is **v0.4.5**. Slice E1 is **v0.4.6** |
 | Loop (slice E1) | stuck in-flight task about to burn leftover tools → checkpoint at the task boundary (`RETRYING`) → `Scheduler` dispatches later independent READY work under the same `--max-tools` cap |
-| Evidence | RW-081 / F-20260918-43 (live FAIL; later package tasks PENDING while tools 12/12); deterministic RW-082 / F-20260918-44 (**NOT CONFIRMED**); scripted RW-083 / F-20260918-45 (E1: later independent `file_exists` still gets ≥1 attempt) |
+| Evidence | RW-081 / F-20260918-43 (live FAIL; later package tasks PENDING while tools 12/12); deterministic RW-082 / F-20260918-44 (**NOT CONFIRMED**); scripted RW-083 / F-20260918-45 (E1: later independent `file_exists` still gets ≥1 attempt); live RW-084 / F-20260919-46 (**BLOCKED Class C**; E1 not live-tested) |
 | What it is not | Not a control-plane rewrite. Not Needle-as-default. Not a cap raise. Not a claim that live 11B RW-081 now PASS. Not a new persistence layer. Not a remap of check *kinds* (F-26). Fallback *tasks* stay check-less (F-17). Not remapping `write_file` / `echo >` action paths (F-44). Not E2 (linear `depends_on` still blocks dependents). |
 
 **Entry rule:** themes 1–2 are measured (done). Slice A shipped as v0.4.2
@@ -390,7 +395,7 @@ and **not** Gen4. Naming: **slice E1**. Status: **ACCEPTED + IMPLEMENTED**.
 | Theme | **Task-boundary yield / leftover-budget dispatch** — later independent READY work still gets ≥1 attempt when an early task would burn remaining tools |
 | Version | **v0.4.6** |
 | Loop | remaining tools ≤ reserved leftover for unattempted independent READY tasks → `TaskYield` at the executor / retry-verify boundary → `CheckpointManager.save` (`RETRYING`, `verification.yielded`) → `Scheduler` prefers non-yielded READY work |
-| Evidence | RW-081 / F-20260918-43 (driver); deterministic RW-083 / F-20260918-45 |
+| Evidence | RW-081 / F-20260918-43 (driver); deterministic RW-083 / F-20260918-45; live RW-084 / F-20260919-46 (**BLOCKED Class C**; E1 not live-tested) |
 | What it is not | Not a control-plane rewrite. Not Needle-as-default. Not a cap raise. Not a claim that live 11B RW-081 now PASS. Not a new checkpoint format. Not remapping `write_file` / `echo >` (F-44). Not rubber-stamping unmet checks. Fallback *tasks* stay check-less (F-17). Not E2 (chained later files stay unready). Not E3 as a separate retry estimator |
 
 When a sequential in-flight task is about to consume the last reserved tool
@@ -412,7 +417,7 @@ budget died. Persistence already shipped (`CheckpointManager`, `resume`,
 
 | id | candidate | status |
 |---|---|---|
-| **E1** | Task-boundary yield / leftover-budget dispatch | **IMPLEMENTED** v0.4.6 (RW-083) |
+| **E1** | Task-boundary yield / leftover-budget dispatch | **IMPLEMENTED** v0.4.6 (scripted RW-083; live gate **deferred** after RW-084 Class C) |
 | **E2** | Independent later package files (optional / empty `depends_on`) | still a candidate. Live later files may stay unready without this |
 | **E3** | Budget-aware retry stop (2-tools/task at retry time) | overlaps E1; not a separate patch |
 
@@ -443,7 +448,7 @@ v0.3.2 is **not** a Gen3 hole (B3).
 |---|---|---|---|---|
 | 1 | **Path-aligned checks / package layout** | **IMPLEMENTED** — v0.4.0; **used** RW-071 / RW-073 / RW-075 / RW-077 / RW-079 / RW-081 | Task checks required workspace-root `input.txt` while first successful writes were under `text_analyzer/` → VALIDATION_FAILURE → retry flattened files to root → layout thrash. Confirmed as planner/infer emission + LLM-check acceptance (not just 11B). Live RW-081: path-alignment **Y** on disk/tasks **and** objective_checks (ASCII-tree join live). Root `echo > analyzer.py` leftover is Class B, not check-path flattening. | RW-069; RW-070 (scripted); RW-071 / RW-073 / RW-075 / RW-077 / RW-079 / RW-081 (live use); RW-074 (scripted ASCII-tree); related path confusion on RW-058 |
 | 2 | **Multi-file coding under tight budgets** | **IMPLEMENTED** — v0.4.1; **used** RW-073 / RW-075 / RW-077 / RW-079 / RW-081 | `text_analyzer` @ tools=**12** still FAIL on live 11B. RW-081: contracts **package-joined**; correct 3-line `bf69eb73…`; mkdir File-exists **live Y**. Residual: empty `summary.json`, SyntaxError test, pip/echo budget. Does not raise default max-tools. | RW-071; RW-072 (scripted); RW-073 / RW-075 / RW-077 / RW-079 / RW-081 (live use); RW-069; RW-058 / RW-059 family (F-15 / F-16 / F-19) |
-| 3 | **Longer-horizon / multi-step reliability** | **PLANNED / SCOPED** — slices A–D **IMPLEMENTED** (v0.4.2–v0.4.5); slice E1 **IMPLEMENTED** as v0.4.6 (scripted RW-083). E2/E3 remain candidates | RW-081 burns remaining tools on second-task pip/echo after first task VERIFIED; later files PENDING. Crash-resume already ships; E1 is intra-run yield using `CheckpointManager` + `Scheduler`. Does **not** claim live RW-081 PASS. Thrash Class A chase paused (RW-082 NOT CONFIRMED). | RW-083 (scripted E1); RW-081; RW-082 (scripted NOT CONFIRMED); RW-079; RW-080 (scripted slice D); RW-077; RW-078 (scripted slice C); RW-075; RW-076 (scripted slice B); RW-074 (scripted slice A) |
+| 3 | **Longer-horizon / multi-step reliability** | **PLANNED / SCOPED** — slices A–D **IMPLEMENTED** (v0.4.2–v0.4.5); slice E1 **IMPLEMENTED** as v0.4.6 (scripted RW-083; live gate **deferred** after RW-084 Class C). E2/E3 remain candidates | RW-081 burns remaining tools on second-task pip/echo after first task VERIFIED; later files PENDING. Crash-resume already ships; E1 is intra-run yield using `CheckpointManager` + `Scheduler`. Live RW-084 **BLOCKED Class C** (HTTP 403; 0 tools) — cannot compare E1 vs RW-081. Live NIM loop **paused**. Does **not** claim live RW-081 PASS. Thrash Class A chase paused (RW-082 NOT CONFIRMED). | RW-084 (live Class C); RW-083 (scripted E1); RW-081; RW-082 (scripted NOT CONFIRMED); RW-079; RW-080 (scripted slice D); RW-077; RW-078 (scripted slice C); RW-075; RW-076 (scripted slice B); RW-074 (scripted slice A) |
 
 ### Closed / not automatic Gen3 work
 
@@ -467,7 +472,8 @@ tools=12. Residual is **Class B** capacity/quality (11B under the historical
 12-tool bound; RW-081 pip/echo thrash, empty `summary.json`, SyntaxError test,
 root leftover) **plus** possible linear `depends_on` (E2). Theme-3 measured
 win this patch: leftover-budget dispatch so later independent READY tasks get
-≥1 attempt (RW-083). Thrash Class A chase is **paused**. E2/E3 stay candidates.
+≥1 attempt (RW-083). Live RW-084 **BLOCKED Class C**; E1 live gate deferred.
+Live NIM loop **paused**. Thrash Class A chase is **paused**. E2/E3 stay candidates.
 
 ### Accepting a further v0.4.x theme
 
@@ -504,7 +510,7 @@ acceptable for a public baseline).
 | doc | role |
 |---|---|
 | [MATURATION_CYCLE_REPORT.md](MATURATION_CYCLE_REPORT.md) | Cycle-by-cycle evidence and decisions |
-| [REAL_WORLD_TASK_MATRIX.md](REAL_WORLD_TASK_MATRIX.md) | Disk-checked task rows (do not rewrite RW-058–072) |
+| [REAL_WORLD_TASK_MATRIX.md](REAL_WORLD_TASK_MATRIX.md) | Disk-checked task rows (do not rewrite RW-058–083) |
 | [REAL_WORLD_FAILURE_LEDGER.md](REAL_WORLD_FAILURE_LEDGER.md) | A/B/C findings |
 | [ADR-001-NEEDLE-TOOL-ROUTER.md](ADR-001-NEEDLE-TOOL-ROUTER.md) | Needle stays optional / off |
 | [CONTROL-PLANE.md](CONTROL-PLANE.md) | Shipped control-plane behaviour |
