@@ -53,16 +53,20 @@ parked** (no measured hole). **Version 5 pack** is GitHub Release
 **1.0.0**. First Gen5 theme **G5-1** (public / product-grade 1.0 baseline)
 is **accepted and implemented as v1.0.0** (scripted RW-100 / RW-101).
 **Version 1 pack SHIPPED** as GitHub Release **Version 1** / tag **v1.0.0**
-(wheel + sdist; PR #52). **No G5-2 product theme.** Next: **hold / soak**
-(operator live-use via G4-3 when a provider recovers). Stay **1.0.0**.
-**No GitHub Release / tag** in this docs change. Do not rewrite RW-058–101.
+(wheel + sdist; PR #52). Proven Class A on the 1.0 line is **implemented
+as v1.0.1** (scripted RW-102 / RW-103). Package **1.0.1**. **No G5-2
+product theme.** Next: **hold / soak**. **No GitHub Release / tag** in
+this change. Do not rewrite RW-058–101.
 
 Every `VERIFIED` / `completed` cell is from the control-plane verifier **and** a disk
 check (file exists / contents / hash). A model `DONE:` line is never enough.
 
 Status vocabulary: **PASS** | **FAIL** | **BLOCKED** | **NOT TESTED**.
 
-Scripted G5-1 (RW-100 / RW-101) is at the top (**PASS**; public 1.0
+Scripted v1.0.1 Class A (RW-102 / RW-103) is at the top (**PASS**; pinned
+model health ping; json_field English glue not a key; no live PASS
+required), then
+scripted G5-1 (RW-100 / RW-101) is at the top (**PASS**; public 1.0
 install / docs honesty / honesty bar; no live PASS required), then
 scripted G4-6 (RW-098 / RW-099) (**PASS**; persisted
 `Usage` rollup on `rad cost`; remaining-quota not invented; no live
@@ -92,7 +96,24 @@ G4-5 is **shipped** as v0.5.3 (scripted RW-094 / RW-095). **G4-7** is
 **shipped** as v0.5.5 (scripted RW-098 / RW-099). Gen4 is
 **complete (scripted)**; G4-4 **parked**. **G5-1** is **shipped** as
 v1.0.0 (scripted RW-100 / RW-101). **No GitHub Release / tag** in that
-change. RW-058–099 are **not rewritten**.
+change. **v1.0.1** is proven Class A (scripted RW-102 / RW-103).
+RW-058–101 are **not rewritten**.
+
+# Scripted pinned-model health ping + json_field glue (RW-102 / RW-103)
+
+Lane: scripted doctor + health + planner + verifier (no NIM / no OpenRouter)
+on **v1.0.1**. Needle `existing` / off. Caps unchanged. **Not** a live PASS.
+
+Soak pointers (2026-09-19): OpenRouter free — `force_provider=openrouter`,
+`model=deepseek/deepseek-v4-flash-0731:free`; chat HTTP **200**; doctor pinged
+stale `meta-llama/llama-3.3-70b-instruct:free` HTTP **404**; NVIDIA 403 Class C
+noise. NIM glm-5.3 — `text_analyzer/` artifacts on disk; objective never
+VERIFIED; bogus json_field key **`on`**.
+
+| id | date | task | goal (short) | plan | steps | tools | result | disk / verify | ENVIRONMENT? | class | notes |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| RW-102 | 2026-09-19 | ops (scripted) — doctor/health ping uses pinned `cfg.model` (OpenRouter soak shape) | force_provider=openrouter; model=deepseek/deepseek-v4-flash-0731:free; stale default llama:free 404; pin 200 | n/a | probe_inference + scan + doctor | none (1-token ping mocked) | **PASS** (pin entitled; llama default not pinged; nvidia 403 stays Class C) | n/a; false DONE **0** | **N** | **A CONFIRMED** (v1.0.1; F-20260919-59) | Tests `test_pinned_model_health_probe.py`. Needle OFF. Caps unchanged. No live PASS claim. No GitHub Release / tag. |
+| RW-103 | 2026-09-19 | verify (scripted) — json_field does not invent key `on` (NIM glm-5.3 soak shape) | ASCII-tree `summary.json (… on a sample)` / `JSON keys on a sample` | merged objective contracts | infer + scripted write | remaining=20 | **PASS** (`on`/`sample` not contracted; classic keys still fail `{}`; complete package **VERIFIED**) | named keys contracted; glue dropped; false DONE **0** | **N** | **A CONFIRMED** (v1.0.1; F-20260919-60) | Tests `test_json_field_english_glue.py`. Needle OFF. Caps unchanged. F-17 stays closed. No live PASS claim. |
 
 # Scripted public 1.0 baseline (RW-100 / RW-101)
 

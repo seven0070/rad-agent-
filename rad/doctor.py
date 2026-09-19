@@ -253,11 +253,16 @@ class Doctor:
         if pinned:
             detail.append(
                 f"force_provider={pinned} — Class C on this pin rotates to other usable free providers")
+        pinned_model = str(self.home.cfg.get("model") or "")
+        if pinned_model:
+            detail.append(
+                f"model={pinned_model} — chat ping uses this pin, not provider default_model")
         for h in catalog_only:
             st = h.inference_status if h.inference_status is not None else "?"
+            probed = f" model {h.model}" if h.model else ""
             detail.append(
                 f"{h.name}: catalog-alive (HTTP {h.catalog_status}) ≠ inference-entitled "
-                f"(chat HTTP {st}) — not a live brain")
+                f"(chat HTTP {st}{probed}) — not a live brain")
         if entitled:
             names = [h.name for h in entitled][:5]
             if len(entitled) == 1:

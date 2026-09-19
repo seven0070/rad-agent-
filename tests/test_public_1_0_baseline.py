@@ -45,7 +45,7 @@ PYPROJECT = ROOT / "pyproject.toml"
 # ---------------------------------------------------------------- architecture freeze
 
 def test_g51_does_not_raise_caps_or_enable_needle(home):
-    assert __version__ == "1.0.0"
+    assert __version__ == "1.0.1"
     assert Budget().tool_calls == 60
     assert int(home.cfg.get("max_plan_tasks", 16) or 16) == 16
     assert Planner(None, str(home.workspace())).max_tasks == 16
@@ -58,7 +58,7 @@ def test_g51_does_not_invent_remaining_quota_or_class_a_for_403():
     assert "remaining-quota" not in REMAINING_QUOTA_NOTE
     assert "not in the API until HTTP 429" in REMAINING_QUOTA_NOTE
     pyproject = PYPROJECT.read_text(encoding="utf-8")
-    assert 'version = "1.0.0"' in pyproject
+    assert 'version = "1.0.1"' in pyproject
     assert "pack = [" in pyproject
     assert "Homepage = " in pyproject
     assert "Development Status :: 5 - Production/Stable" in pyproject
@@ -67,12 +67,13 @@ def test_g51_does_not_invent_remaining_quota_or_class_a_for_403():
 # ---------------------------------------------------------------- RW-100 public install + docs honesty
 
 def test_rw100_first_run_docs_match_package_1_0_0(capsys):
-    """RW-100: QUICKSTART / INSTALLATION / CLI advertise 1.0.0, not 0.4.1."""
-    assert __version__ == "1.0.0"
+    """RW-100: QUICKSTART / INSTALLATION advertise Version 1 pack; CLI matches this tree."""
+    assert __version__ == "1.0.1"
     qs = QUICKSTART.read_text(encoding="utf-8")
     inst = INSTALLATION.read_text(encoding="utf-8")
     readme = README.read_text(encoding="utf-8")
-    assert "prints 1.0.0" in qs
+    assert "prints 1.0.1" in qs
+    assert "prints 1.0.0" in qs  # packed Version 1 wheel still v1.0.0
     assert "prints 0.4.1" not in qs
     assert "prints 0.4.1" not in inst
     assert "v1.0.0 — open door" in readme
@@ -82,7 +83,7 @@ def test_rw100_first_run_docs_match_package_1_0_0(capsys):
     assert "Do not** cut the GitHub Release" in inst or "Do **not** cut the GitHub Release" in inst
     assert "claimed PASS" in inst
     assert main(["version"]) == 0
-    assert "v1.0.0" in capsys.readouterr().out
+    assert "v1.0.1" in capsys.readouterr().out
 
 
 def test_rw100_wheel_and_sdist_build_without_credentials(tmp_path):
@@ -112,9 +113,9 @@ def test_rw100_wheel_and_sdist_build_without_credentials(tmp_path):
     )
     assert build.returncode == 0, build.stdout + build.stderr
     names = sorted(p.name for p in dist.iterdir())
-    wheels = list(dist.glob("rad_agent-1.0.0-*.whl"))
-    sdists = list(dist.glob("rad_agent-1.0.0.tar.gz")) + list(
-        dist.glob("rad-agent-1.0.0.tar.gz")
+    wheels = list(dist.glob("rad_agent-1.0.1-*.whl"))
+    sdists = list(dist.glob("rad_agent-1.0.1.tar.gz")) + list(
+        dist.glob("rad-agent-1.0.1.tar.gz")
     )
     assert wheels, names
     assert sdists, names
@@ -128,6 +129,7 @@ def test_rw101_honesty_bar_locked_in_roadmap_and_gates():
     assert "## Generation 5 — 1.0" in text
     assert "ACCEPTED + IMPLEMENTED" in text
     assert "**v1.0.0**" in text
+    assert "**v1.0.1**" in text
     assert "false DONE **0**" in text
     assert "Needle **OFF**" in text
     assert "caps **16/60**" in text or "`max_plan_tasks` **16**" in text

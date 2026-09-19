@@ -2,7 +2,7 @@
 
 Living log of **measured** RAD failures found in live or reconstructed use.
 Architecture is frozen. Needle stays experimental and off by default. This is not AGI/ASI.
-Operating spine: [ROADMAP.md](ROADMAP.md) (adopted 2026-09-18). Gen1 complete on 0.2.3; **Gen2 complete** on 0.3.0–0.3.2. Verified coding loop is **implemented as v0.3.0** (F-20260918-24 / RW-064). Live retest **RW-065**. Plan-timeout resilience is **implemented as v0.3.1** (F-20260918-27 / scripted RW-066) and **used** (live RW-066 / F-20260918-28). Budget-aware planning is **implemented as v0.3.2** (F-20260918-29 / RW-067). Live NIM use of v0.3.2 is **RW-068 PASS** (F-20260918-30) and **RW-069 FAIL** (F-20260918-31). Path-aligned checks are **implemented as v0.4.0** (F-20260918-32 / RW-070). Live NIM retest of v0.4.0 is **RW-071 FAIL** (F-20260918-33; theme 1 live-confirmed). Multi-file contracts under tight budgets are **implemented as v0.4.1** (F-20260918-34 / RW-072). Live NIM retest of v0.4.1 is **RW-073 FAIL** (F-20260918-35; theme 1/2 live-confirmed). ASCII-tree `package_dir` is **implemented as v0.4.2** (F-20260918-36 / RW-074). Live NIM retest of v0.4.2 is **RW-075 FAIL** (F-20260918-37; ASCII-tree obj-checks live-confirmed). First-task thrash is **implemented as v0.4.3** (F-20260918-38 / RW-076). Live NIM retest of v0.4.3 is **RW-077 FAIL** (F-20260918-39; pip/DONE Class A **live-consistent**; mkdir File-exists action noise is F-40). mkdir already-exists action noise is **implemented as v0.4.4** (F-20260918-40 / RW-078). Live NIM retest of v0.4.4 is **RW-079 FAIL** (F-20260918-41; mkdir File-exists **not live-hit**; premature-test ENVIRONMENT is F-42). Premature-test ENVIRONMENT is **implemented as v0.4.5** (F-20260918-42 / RW-080). Live NIM retest of v0.4.5 is **RW-081 FAIL** (F-20260918-43; mkdir File-exists **live Y**; premature-test ENVIRONMENT **not live-hit**; pip/echo + root pollution residual). Pip thrash + root `analyzer.py` pollution Class A is **NOT CONFIRMED** (F-20260918-44 / scripted RW-082). Task-boundary yield / leftover-budget dispatch is **implemented as v0.4.6** (F-20260918-45 / scripted RW-083). Live NIM retest of v0.4.6 is **RW-084 BLOCKED Class C** (F-20260919-46; HTTP **403 Authorization failed** on all `chat/completions`; `/v1/models` **200**; tools **0/12**; E1 leftover-budget yield **not live-tested**). Live OpenRouter free retest of v0.4.6 is **RW-085 FAIL** (F-20260919-47; tools **11/12**; `xxd` ENVIRONMENT repair; E1 **not live**). Missing optional checksum/hex utility ENVIRONMENT is **Class A CONFIRMED** and **implemented as v0.4.7** (F-20260919-48 / scripted RW-086). Live OpenRouter free retest of v0.4.7 is **RW-086 FAIL** (F-20260919-49; tools **12/12**; xxd Class A thrash **CLEARED**; E1 **not live**; late HTTP **429** `free-models-per-day`). Independent later package files is **implemented as v0.4.8** (F-20260919-50 / scripted RW-087). Budget-aware retry stop is **implemented as v0.4.9** (F-20260919-51 / scripted RW-088). Gen3 is **complete (scripted)**; live E1–E3 confirmation is **deferred** until a provider recovers. Gen4 **G4-1** is **accepted and implemented as v0.5.0** (F-20260919-52 / scripted RW-089). **G4-2** is **accepted and implemented as v0.5.1** (F-20260919-53 / scripted RW-090 / RW-091). **G4-3** is **accepted and implemented as v0.5.2** (F-20260919-54 / scripted RW-092 / RW-093). **Version 5 pack** shipped as GitHub Release **v0.5.2**. **G4-5** is **accepted and implemented as v0.5.3** (F-20260919-55 / scripted RW-094 / RW-095). **G4-7** is **accepted and implemented as v0.5.4** (F-20260919-56 / scripted RW-096 / RW-097). **G4-6** is **accepted and implemented as v0.5.5** (F-20260919-57 / scripted RW-098 / RW-099). Gen4 is **complete (scripted)**; **G4-4 parked** (no measured hole). **Version 5 pack** is GitHub Release **Version 5** / tag **v0.5.5** (0.5.0–0.5.5). Live confirmation of Version 5 / G4-5 / G4-7 / G4-6 / E1–E3 is **deferred**. Package on the 1.0 line is **1.0.0**. First Gen5 theme **G5-1** (public / product-grade 1.0 baseline) is **accepted and implemented as v1.0.0** (F-20260919-58 / scripted RW-100 / RW-101). **No GitHub Release / tag** in that change — Sanath packs Version 1 after merge. Live OpenRouter free-model loop is **paused** until `free-models-per-day` rate limit resets. Live NIM loop remains **paused** (Class C). This ledger is evidence. Do not rewrite RW-058–099. Scripted RW-066 (F-27) is preserved.
+Operating spine: [ROADMAP.md](ROADMAP.md) (adopted 2026-09-18). Gen1 complete on 0.2.3; **Gen2 complete** on 0.3.0–0.3.2. Verified coding loop is **implemented as v0.3.0** (F-20260918-24 / RW-064). Live retest **RW-065**. Plan-timeout resilience is **implemented as v0.3.1** (F-20260918-27 / scripted RW-066) and **used** (live RW-066 / F-20260918-28). Budget-aware planning is **implemented as v0.3.2** (F-20260918-29 / RW-067). Live NIM use of v0.3.2 is **RW-068 PASS** (F-20260918-30) and **RW-069 FAIL** (F-20260918-31). Path-aligned checks are **implemented as v0.4.0** (F-20260918-32 / RW-070). Live NIM retest of v0.4.0 is **RW-071 FAIL** (F-20260918-33; theme 1 live-confirmed). Multi-file contracts under tight budgets are **implemented as v0.4.1** (F-20260918-34 / RW-072). Live NIM retest of v0.4.1 is **RW-073 FAIL** (F-20260918-35; theme 1/2 live-confirmed). ASCII-tree `package_dir` is **implemented as v0.4.2** (F-20260918-36 / RW-074). Live NIM retest of v0.4.2 is **RW-075 FAIL** (F-20260918-37; ASCII-tree obj-checks live-confirmed). First-task thrash is **implemented as v0.4.3** (F-20260918-38 / RW-076). Live NIM retest of v0.4.3 is **RW-077 FAIL** (F-20260918-39; pip/DONE Class A **live-consistent**; mkdir File-exists action noise is F-40). mkdir already-exists action noise is **implemented as v0.4.4** (F-20260918-40 / RW-078). Live NIM retest of v0.4.4 is **RW-079 FAIL** (F-20260918-41; mkdir File-exists **not live-hit**; premature-test ENVIRONMENT is F-42). Premature-test ENVIRONMENT is **implemented as v0.4.5** (F-20260918-42 / RW-080). Live NIM retest of v0.4.5 is **RW-081 FAIL** (F-20260918-43; mkdir File-exists **live Y**; premature-test ENVIRONMENT **not live-hit**; pip/echo + root pollution residual). Pip thrash + root `analyzer.py` pollution Class A is **NOT CONFIRMED** (F-20260918-44 / scripted RW-082). Task-boundary yield / leftover-budget dispatch is **implemented as v0.4.6** (F-20260918-45 / scripted RW-083). Live NIM retest of v0.4.6 is **RW-084 BLOCKED Class C** (F-20260919-46; HTTP **403 Authorization failed** on all `chat/completions`; `/v1/models` **200**; tools **0/12**; E1 leftover-budget yield **not live-tested**). Live OpenRouter free retest of v0.4.6 is **RW-085 FAIL** (F-20260919-47; tools **11/12**; `xxd` ENVIRONMENT repair; E1 **not live**). Missing optional checksum/hex utility ENVIRONMENT is **Class A CONFIRMED** and **implemented as v0.4.7** (F-20260919-48 / scripted RW-086). Live OpenRouter free retest of v0.4.7 is **RW-086 FAIL** (F-20260919-49; tools **12/12**; xxd Class A thrash **CLEARED**; E1 **not live**; late HTTP **429** `free-models-per-day`). Independent later package files is **implemented as v0.4.8** (F-20260919-50 / scripted RW-087). Budget-aware retry stop is **implemented as v0.4.9** (F-20260919-51 / scripted RW-088). Gen3 is **complete (scripted)**; live E1–E3 confirmation is **deferred** until a provider recovers. Gen4 **G4-1** is **accepted and implemented as v0.5.0** (F-20260919-52 / scripted RW-089). **G4-2** is **accepted and implemented as v0.5.1** (F-20260919-53 / scripted RW-090 / RW-091). **G4-3** is **accepted and implemented as v0.5.2** (F-20260919-54 / scripted RW-092 / RW-093). **Version 5 pack** shipped as GitHub Release **v0.5.2**. **G4-5** is **accepted and implemented as v0.5.3** (F-20260919-55 / scripted RW-094 / RW-095). **G4-7** is **accepted and implemented as v0.5.4** (F-20260919-56 / scripted RW-096 / RW-097). **G4-6** is **accepted and implemented as v0.5.5** (F-20260919-57 / scripted RW-098 / RW-099). Gen4 is **complete (scripted)**; **G4-4 parked** (no measured hole). **Version 5 pack** is GitHub Release **Version 5** / tag **v0.5.5** (0.5.0–0.5.5). Live confirmation of Version 5 / G4-5 / G4-7 / G4-6 / E1–E3 is **deferred**. Package on the 1.0 line is **1.0.0**. First Gen5 theme **G5-1** (public / product-grade 1.0 baseline) is **accepted and implemented as v1.0.0** (F-20260919-58 / scripted RW-100 / RW-101). **No GitHub Release / tag** in that change — Sanath packs Version 1 after merge. Live OpenRouter free-model loop is **paused** until `free-models-per-day` rate limit resets. Live NIM loop remains **paused** (Class C). Proven Class A on the 1.0 line is **implemented as v1.0.1** (F-20260919-59 / RW-102; F-20260919-60 / RW-103). Package **1.0.1**. **No GitHub Release / tag** in that change. This ledger is evidence. Do not rewrite RW-058–101. Scripted RW-066 (F-27) is preserved.
 
 No secrets belong here: never paste API keys, vault contents, account tokens, or full
 provider payloads. Paths under `/tmp/…` and objective ids are fine.
@@ -2693,6 +2693,56 @@ environment**, not a product patch.
 | Needle | **OFF** (`existing`) |
 | False completion | **0** |
 | Live this patch | **BLOCKED** (`live_nim` Class C) — not a live PASS claim |
+
+## v1.0.1 — proven Class A (RW-102 / RW-103) — 2026-09-19
+
+Package **1.0.0 → 1.0.1**. Control plane preserved. Needle **OFF**. Caps
+**not** raised. RW-058–101 facts are **not rewritten**. F-17 / F-26 stay
+closed. Do **not** invent a Class A patch for 403/429. Do **not** invent
+remaining-quota. **No GitHub Release / tag** — Sanath packs 1.0.1 later
+only if he asks.
+
+Both soak holes independently **Class A CONFIRMED** against `main` @
+`ff59a92` / v1.0.0.
+
+### F-20260919-59 — doctor / health ping ignores pinned `cfg.model` (RW-102)
+
+| field | value |
+|---|---|
+| class | **A** |
+| status | **fixed** in v1.0.1 |
+| found in | v1.0.0 live OpenRouter free soak 2026-09-19; reconstructed on `ff59a92` |
+| fixed in | **v1.0.1** — `inference_probe_model` / `probe_inference` use `cfg.model` for the pinned provider; NVIDIA 403 stays Class C. Caps unchanged. Needle OFF |
+| lane | scripted doctor + health (soak pointer: OpenRouter free 2026-09-19) |
+| objective / test | `tests/test_pinned_model_health_probe.py`; RW-102 |
+| expected | `force_provider=openrouter` + `model=deepseek/deepseek-v4-flash-0731:free` → doctor/health ping that id (same as `rad router chat`) |
+| actual | pinged stale OpenRouter `default_model` `meta-llama/llama-3.3-70b-instruct:free` → HTTP **404**; chat to the pin HTTP **200**; NVIDIA catalog-alive 403 Class C noise |
+| notes | Catalog-alive ≠ inference-entitled still holds. 403/429 on the *pin* remain Class C. No remaining-quota. No live PASS claim. |
+
+### F-20260919-60 — json_field inference invents key `on` (RW-103)
+
+| field | value |
+|---|---|
+| class | **A** |
+| status | **fixed** in v1.0.1 |
+| found in | v1.0.0 live NIM glm-5.3 soak 2026-09-19; reconstructed via `infer_coding_checks` on `ff59a92` |
+| fixed in | **v1.0.1** — `JSON_KEY_STOP` drops English glue (`on`, `sample`, prepositions); named `lines`/`words`/`characters` still contract; empty `{}` still fails. F-17 check-less. Caps unchanged. Needle OFF |
+| lane | scripted planner + verifier (soak pointer: NIM glm-5.3 2026-09-19) |
+| objective / test | `tests/test_json_field_english_glue.py`; RW-103 |
+| disk | complete `text_analyzer/` package (classic keys) **VERIFIED**; `{}` **not VERIFIED**; no json_field key `on` |
+| expected | “keys on a sample” / parenthetical “on a sample” does not require a JSON field named `on` |
+| actual | `_json_field_names` captured `on` (and `sample`); bogus check blocked VERIFIED and could crowd INFER cap 8 so named `file_exists` dropped |
+| notes | Hypothesis confirmed. Backtick-quoted `` `lines` `` still not parsed (not this hole — that would *drop* contracts). No live PASS claim. |
+
+| gate | result |
+|---|---|
+| `python -m pytest -q` | (this PR) |
+| `rad doctor --offline` | (this PR) |
+| `rad acceptance` | (this PR) |
+| `rad realworld` | (this PR) |
+| Package | **1.0.1** |
+| Release / tag | **none** — pack later only if Sanath asks |
+| Live this patch | **not re-run** — not a live PASS claim |
 
 ## How to add a finding
 

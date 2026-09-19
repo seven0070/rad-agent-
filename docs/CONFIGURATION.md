@@ -14,7 +14,7 @@ rejected with a reason instead of being written (`rad doctor` re-checks the whol
 | `free_lock` | `false` | true = paid providers are never used, no matter what falls over |
 | `auto` | `false` | true = stop asking for confirmation (hard-blocked patterns stay blocked regardless) |
 | `force_provider` | `null` | pin one provider for every call |
-| `model` | `null` | pin a model id (otherwise each provider's default is used) |
+| `model` | `null` | pin a model id (otherwise each provider's default is used). `rad doctor` / `rad health` ping this pin, not a stale `default_model` |
 | `edge0_url` | `"http://127.0.0.1:8000/v1"` | local Edge0 endpoint (default http://127.0.0.1:8000) |
 | `edge0_tier` | `"10b"` | which Edge0 tier to talk to |
 | `ollama_url` | `"http://127.0.0.1:11434"` | local Ollama endpoint |
