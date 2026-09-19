@@ -18,7 +18,9 @@ pretending to be complete. When a stuck in-flight task would burn leftover
 tools, the drive loop yields at a task boundary and dispatches later
 independent READY work under the same cap (slice E1). Fallback later
 file-write clauses are independent (empty ``depends_on``) as of slice E2
-so they can enter that READY set.
+so they can enter that READY set. Slice E3 stops a retry or repair of a
+stuck task when leftover headroom is below ``TOOLS_PER_TASK``, yielding
+to that E1 path instead of spending the reserved tools mid-retry.
 """
 from __future__ import annotations
 
@@ -30,7 +32,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
 from rad.control import events as E
-from rad.control.budgetplan import leftover_tool_reserve, remaining_tool_calls
+from rad.control.budgetplan import leftover_tool_reserve, remaining_tool_calls, should_yield_for_leftover
 from rad.control.budgets import BudgetExceeded, BudgetManager, TaskYield
 from rad.control.checkpoints import CheckpointManager
 from rad.control.events import EventLog
@@ -408,6 +410,11 @@ class Controller:
         if task.status == TaskStatus.PENDING:
             task.transition(TaskStatus.READY)
         if task.status == TaskStatus.RETRYING:
+            if self._should_yield(obj, graph, task, budgets):
+                with lock:
+                    self._yield_task(obj, graph, task, log, budgets,
+                                     note="yield leftover-budget: stop retry")
+                return
             task.transition(TaskStatus.READY)
         hint = task.verification.get("hint", "") if task.verification else ""
         task.transition(TaskStatus.RUNNING)
@@ -711,16 +718,13 @@ class Controller:
     # ------------------------------------------------------------ leftover-budget yield (E1)
     def _should_yield(self, obj: Objective, graph: TaskGraph, task: Task,
                       budgets: Optional[BudgetManager] = None) -> bool:
-        """True when another retry of ``task`` would burn leftover tools later READY work needs."""
+        """True when another retry/repair of ``task`` would spend leftover tools later READY work needs."""
         if budgets is not None:
             r = budgets.remaining("tool_calls")
             rem: Optional[int] = None if r == float("inf") else int(r)
         else:
             rem = remaining_tool_calls(obj)
-        reserve = leftover_tool_reserve(graph, task, rem)
-        if reserve <= 0 or rem is None:
-            return False
-        return int(rem) <= reserve
+        return should_yield_for_leftover(graph, task, rem)
 
     def _yield_task(self, obj: Objective, graph: TaskGraph, task: Task, log: EventLog,
                     budgets: Optional[BudgetManager] = None,
