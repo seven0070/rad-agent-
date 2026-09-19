@@ -2529,10 +2529,10 @@ live text_analyzer@12 now PASS.
 
 | gate | result |
 |---|---|
-| `python -m pytest -q` | **pending this branch** |
-| `rad doctor --offline` | **pending this branch** |
-| `rad acceptance` | **pending this branch** |
-| `rad realworld` | **pending this branch** |
+| `python -m pytest -q` | **646 passed** in 11.81s |
+| `rad doctor --offline` | READY — 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR (`RAD_HOME=/tmp/rad-g46-gate`) |
+| `rad acceptance` | **50/50 PASSED** (`/tmp/rad-g46-gate/acceptance/20260919-073423_gate.json`) |
+| `rad realworld` | **10 passed / 1 BLOCKED / 0 failed** (`live_nim` BLOCKED; `/tmp/rad-g46-rw/realworld/20260919-073426_realworld.json`) |
 | Package | **0.5.5** |
 | Release / tag | **none** — Version 5 packing doctrine |
 | Live this patch | **not re-run** — not a live PASS claim |
