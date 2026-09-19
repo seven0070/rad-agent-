@@ -39,19 +39,34 @@ export default function App() {
     setError("");
   }, []);
 
+  const waitForToken = useCallback(async () => {
+    let last = "";
+    for (let i = 0; i < 40; i += 1) {
+      try {
+        const token = await apiToken();
+        if (token) return token;
+      } catch (e) {
+        last = e instanceof Error ? e.message : String(e);
+      }
+      await new Promise((resolve) => window.setTimeout(resolve, 250));
+    }
+    throw new Error(last || "RAD API token was not created in time");
+  }, []);
+
   const boot = useCallback(async () => {
     setBackend("connecting");
     setError("");
     try {
       if (isTauri()) {
         const info = await backendInfo();
+        let startError = "";
         try {
           await backendStart(info.port || 7331);
-        } catch {
-          /* may already be running externally */
+        } catch (e) {
+          startError = e instanceof Error ? e.message : String(e);
         }
-        const token = await apiToken();
-        if (!token) throw new Error("no API token — start `rad serve` once to create ~/.rad/api.token");
+        const token = await waitForToken();
+        if (!token) throw new Error(startError || "no API token — desktop could not start the bundled backend");
         await connect(apiBase(info.port || 7331), token);
         return;
       }
@@ -65,7 +80,7 @@ export default function App() {
       setBackend("down");
       setError(e instanceof Error ? e.message : String(e));
     }
-  }, [connect]);
+  }, [connect, waitForToken]);
 
   useEffect(() => {
     void boot();
@@ -185,8 +200,8 @@ function Connect(props: {
       <div className="content-grid single">
         <section className="card">
           <p className="lead">
-            This desktop app stays as a frontend layer only. Tools, plans, and execution continue in the
-            Python control plane behind <code>rad serve</code>.
+            This desktop app can launch its own bundled RAD backend. Tools, plans, and execution still
+            continue in the Python control plane behind <code>rad serve</code>.
           </p>
           {props.error && <p className="err">{props.error}</p>}
           <div className="sidebar-actions">

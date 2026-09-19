@@ -1,9 +1,14 @@
 //! RAD Desktop backend lifecycle. Fixed `rad serve` argv only — no arbitrary shell.
 
 use serde::Serialize;
+use std::ffi::OsString;
+use std::net::{SocketAddr, TcpStream};
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
 use std::sync::Mutex;
+use std::thread;
+use std::time::{Duration, Instant};
+use tauri::Manager;
 
 #[derive(Serialize, Clone)]
 pub struct BackendInfo {
@@ -40,6 +45,52 @@ fn dirs_fallback() -> PathBuf {
 
 fn python_bin() -> String {
     std::env::var("RAD_PYTHON").unwrap_or_else(|_| "python3".into())
+}
+
+fn bundled_backend_root(app: &tauri::AppHandle) -> Result<PathBuf, String> {
+    if let Ok(root) = std::env::var("RAD_DESKTOP_SOURCE_ROOT") {
+        let p = PathBuf::from(root);
+        if p.join("rad").exists() {
+            return Ok(p);
+        }
+    }
+    if let Ok(dir) = app.path().resource_dir() {
+        if dir.join("rad").exists() {
+            return Ok(dir);
+        }
+    }
+    let dev = PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../.."));
+    if dev.join("rad").exists() {
+        return Ok(dev);
+    }
+    Err("bundled RAD backend sources not found".into())
+}
+
+fn python_path(root: &PathBuf) -> Result<OsString, String> {
+    let mut paths = vec![root.clone()];
+    if let Some(existing) = std::env::var_os("PYTHONPATH") {
+        paths.extend(std::env::split_paths(&existing));
+    }
+    std::env::join_paths(paths).map_err(|e| format!("cannot set PYTHONPATH: {e}"))
+}
+
+fn wait_for_backend_ready(child: &mut Child, port: u16, home: &PathBuf) -> Result<(), String> {
+    let addr = SocketAddr::from(([127, 0, 0, 1], port));
+    let tok = token_path(home);
+    let deadline = Instant::now() + Duration::from_secs(15);
+    while Instant::now() < deadline {
+        if let Some(status) = child.try_wait().map_err(|e| e.to_string())? {
+            return Err(format!("rad serve exited before ready: {status}"));
+        }
+        let port_ready = TcpStream::connect_timeout(&addr, Duration::from_millis(250)).is_ok();
+        if port_ready && tok.exists() {
+            return Ok(());
+        }
+        thread::sleep(Duration::from_millis(200));
+    }
+    Err(format!(
+        "timed out waiting for RAD backend on http://127.0.0.1:{port}"
+    ))
 }
 
 fn token_path(home: &PathBuf) -> PathBuf {
@@ -87,6 +138,7 @@ fn backend_info(state: tauri::State<State>) -> BackendInfo {
 
 #[tauri::command]
 fn backend_start(
+    app: tauri::AppHandle,
     state: tauri::State<State>,
     port: Option<u16>,
     home: Option<String>,
@@ -106,15 +158,20 @@ fn backend_start(
         }
     }
     // Fixed argv: never interpolate a user command string.
-    let mut cmd = Command::new(python_bin());
+    let backend_root = bundled_backend_root(&app)?;
+    let python = python_bin();
+    let mut cmd = Command::new(&python);
     cmd.args(["-m", "rad", "serve", "--host", "127.0.0.1", "--port", &port.to_string()])
+        .current_dir(&backend_root)
         .env("RAD_HOME", &home)
+        .env("PYTHONPATH", python_path(&backend_root)?)
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::null());
-    let child = cmd
+    let mut child = cmd
         .spawn()
-        .map_err(|e| format!("failed to start rad serve via {}: {e}", python_bin()))?;
+        .map_err(|e| format!("failed to start bundled rad serve via {python}: {e}"))?;
+    wait_for_backend_ready(&mut child, port, &home)?;
     let pid = child.id();
     let mut guard = state.backend.lock().map_err(|e| e.to_string())?;
     *guard = Some(Backend {
