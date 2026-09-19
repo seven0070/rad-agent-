@@ -6,6 +6,80 @@ Default `Budget.tool_calls` remains **60**.
 
 ---
 
+# Cycle 41 — Record live NIM glm-5.3 RW-104 PASS / VERIFIED; stay 1.0.1 (2026-09-19)
+
+**Date:** 2026-09-19 IST afternoon (live soak); docs this cycle
+**Baseline:** `origin/main` `806bdbd` (merge PR #54; package **1.0.1**; Version 1 pack tag **v1.0.0**)
+**Package at start:** `1.0.1`
+**This branch:** `cursor/rw104-nim-verified-soak-785f` — package **1.0.1** (no bump)
+**Architecture:** control plane preserved. Needle stays off. Caps unchanged.
+**Kind:** docs only. No `rad/` product change. RW-058–103 are **not rewritten**.
+**Release:** **none**. **No GitHub Release / tag in this PR.** Stay **1.0.1**.
+
+## Why this cycle
+
+Hold / soak on **v1.0.1** produced a live NVIDIA NIM `z-ai/glm-5.3`
+`text_analyzer/` objective (`obj_72b050a0`) that the control plane marked
+**VERIFIED** / `verified complete` / `needs_user=no`. Disk matched. Host
+tests OK. RW-102 (pinned-model doctor ping) and RW-103 (no json_field
+key `on`) are **live-cleared**. This is the loop’s `use` step, not a
+product patch and **not** G5-2.
+
+Authoritative facts: operator report (this agent did not re-run NIM).
+Home `/tmp/rad-v101-nim-soak-c5b63bf7`, workspace
+`/tmp/rad-v101-nim-ws-c5b63bf7`.
+
+| item | value |
+|---|---|
+| Verdict | **PASS** — `completed` / **VERIFIED**. Disk matched; host tests OK |
+| vs v1.0.0 NIM glm-5.3 (RW-103 pointer) | **better E2E** — that soak was disk PASS + control plane FAIL `needs_user` + glue key `on` |
+| vs v1.0.0 OpenRouter DeepSeek flash (RW-102 pointer) | that lane chat-OK, never VERIFIED, then **429** |
+| PLAN | **source=fallback** **attempts≈2** (NIM plan timeouts then fallback) |
+| Disk | full `text_analyzer/` — README, analyzer.py, test_analyzer.py, `summary.json` `{lines:2,words:4,characters:20}`, sample.txt; `python text_analyzer/test_analyzer.py` **OK** |
+| Objective checks | `json_valid`, `shell_ok` tests, `json_field` **`lines`**, README / analyzer `file_exists`. **No** key `on` |
+| Tools | **40/40**; model **46/80**; retries **3/6**; wall ~1120s |
+| Doctor/health | nvidia **inference-entitled** under pinned glm-5.3 (RW-102 live-cleared) |
+| False DONE | **0** |
+| Class | **B** residual only (fallback PLAN; Task6 cancelled after budget; resume `--max-tools 70` did not raise stored budget; xxd/hexdump `TOOL_FAILURE` noise; empty `llm_judge` non-blocking). **Not** new Class A |
+
+## Decision
+
+Record **RW-104 PASS**. Stay **1.0.1**. Continue hold / soak. Do **not**
+cut a GitHub Release or tag. Do **not** invent G5-2 / v1.1.0. Do **not**
+claim live text_analyzer@12 PASS. Do **not** invent Class A for 403/429
+or the listed caveats.
+
+## What did not change
+
+- Package **1.0.1** (no bump)
+- Product code (`rad/`)
+- F-17 / F-26 closed
+- Needle default `existing` / off
+- `max_plan_tasks` **16**; default `Budget.tool_calls` **60**
+- False completion remains **0**
+- RW-058–103 ledger/matrix rows
+- OpenRouter free loop remains **paused** (RW-086 **429**)
+- Historical NIM 11B **403** pause (RW-084) remains Class C for that pin
+
+## Remaining limitations
+
+1. Live text_analyzer@12 remains historical Class B FAIL. RW-104 is VERIFIED at tools **40/40** on glm-5.3 — not the @12 bound.
+2. Plan still fallback (Class B / provider timeout quality). F-17 stays closed.
+3. Task6 cancelled after budget; resume `--max-tools 70` did not raise the stored budget (evidence only; not Class A this record).
+4. xxd/hexdump `TOOL_FAILURE` noise burned some of the 40-tool bound (not ENVIRONMENT thrash; not a new Class A).
+5. Empty `llm_judge` was non-blocking under overall VERIFIED.
+6. OpenRouter free remains paused. E1–E3 live confirmation still not claimed from this soak.
+7. No G5-2. No v1.1.0. No GitHub Release / tag.
+
+## Roadmap pointer
+
+Operating spine: [ROADMAP.md](ROADMAP.md). **Generation 5 in progress —
+hold / soak.** **G5-1** shipped as **v1.0.0**. Proven Class A **v1.0.1**
+(RW-102 / RW-103) **used** live (**RW-104 PASS**). Stay **1.0.1**. **No
+GitHub Release in this PR.**
+
+---
+
 # Cycle 40 — v1.0.1 proven Class A (RW-102 / RW-103) (2026-09-19)
 
 **Date:** 2026-09-19
