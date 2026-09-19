@@ -2182,6 +2182,10 @@ is **unblock the environment**, not a product patch.
 
 | gate | result |
 |---|---|
+| `python3 -m pytest -q` | **583 passed** in 13.19s |
+| `rad doctor --offline` | READY — 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR (`RAD_HOME=/tmp/rad-g42-scope-gate`) |
+| `rad acceptance` | **50/50 PASSED** (`/tmp/rad-g42-scope-gate/acceptance/20260919-060115_gate.json`) |
+| `rad realworld` | **10 passed / 1 BLOCKED / 0 failed** (`live_nim` BLOCKED; `/tmp/rad-g42-scope-rw/realworld/20260919-060115_realworld.json`) |
 | Package | **0.5.0** (no bump; no v0.5.1) |
 | Product code | unchanged |
 | Gen3 | **COMPLETE (scripted)**; live E1–E3 **deferred** |
