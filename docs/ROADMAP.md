@@ -28,9 +28,12 @@ Class C** (HTTP 403 on `chat/completions`; E1 **not live-tested**). Live
 OpenRouter free retest of v0.4.6 is **RW-085 FAIL** (tools **11/12**;
 `xxd` ENVIRONMENT repair). Missing optional checksum/hex utility
 ENVIRONMENT is **Class A CONFIRMED** and **implemented as v0.4.7**
-(scripted RW-086). E1 leftover-budget yield is **not live**. Live NIM loop
-remains **paused** (Class C). Needle stays off. Caps unchanged. Package
-is **0.4.7**. Generations 4–5 are **not started**.
+(scripted RW-086). Live OpenRouter free retest of v0.4.7 is **RW-086 FAIL**
+(tools **12/12**; xxd Class A thrash **CLEARED**; E1 **not live**; late HTTP
+**429** `free-models-per-day`). E1 leftover-budget yield is **not live**.
+Live OpenRouter free-model loop is **paused** until `free-models-per-day`
+resets. Live NIM loop remains **paused** (Class C). Needle stays off. Caps
+unchanged. Package is **0.4.7**. Generations 4–5 are **not started**.
 
 ```
 build → test → validate → release → use → discover gaps → build the next version
@@ -45,13 +48,14 @@ Stability with no code change is a valid result.
 
 | item | value |
 |---|---|
-| Generation in production | **Gen3 in progress** — **v0.4.7** (this change); last live-use with **working inference** is **RW-085** on tag `v0.4.6` @ `8f09be58` (OpenRouter free); v0.4.6 live NIM attempt is RW-084 **BLOCKED Class C**; last NIM working-inference row remains RW-081 on `v0.4.5` @ `32e9fe87`; v0.4.4 is tagged `v0.4.4` @ `acb61997`; v0.4.3 is tagged `v0.4.3` @ `99099b8a`; v0.4.2 is tagged `v0.4.2` @ `feb8a4ec`; v0.4.1 is tagged `v0.4.1` @ `387bd83a`; v0.4.0 is tagged `v0.4.0` @ `a8aac8ae`; Gen2 complete on `387776dc` / tag `v0.3.2`; Gen1 baseline remains tagged `v0.2.3` @ `d121c3f` |
-| Package / tag on `main` | **0.4.7** (this change). Tag `v0.4.6` @ `8f09be5839e25c236349121a4ec77606d0d5ed2d` remains the live RW-085 run |
-| This change | **product** — record live OpenRouter RW-085 **FAIL**; xxd ENVIRONMENT Class A **CONFIRMED**; smallest patch + bump **0.4.6 → 0.4.7** |
+| Generation in production | **Gen3 in progress** — **v0.4.7**; last live-use with **working inference** is **RW-086** on tag `v0.4.7` @ `850aaf9c` (OpenRouter free; then **429**); prior working-inference row is RW-085 on tag `v0.4.6` @ `8f09be58`; v0.4.6 live NIM attempt is RW-084 **BLOCKED Class C**; last NIM working-inference row remains RW-081 on `v0.4.5` @ `32e9fe87`; v0.4.4 is tagged `v0.4.4` @ `acb61997`; v0.4.3 is tagged `v0.4.3` @ `99099b8a`; v0.4.2 is tagged `v0.4.2` @ `feb8a4ec`; v0.4.1 is tagged `v0.4.1` @ `387bd83a`; v0.4.0 is tagged `v0.4.0` @ `a8aac8ae`; Gen2 complete on `387776dc` / tag `v0.3.2`; Gen1 baseline remains tagged `v0.2.3` @ `d121c3f` |
+| Package / tag on `main` | **0.4.7**. Tag `v0.4.7` @ `850aaf9c3a931a5ba119bdbb6ec73ae4a6fa73e9` is the live RW-086 run |
+| This change | **docs** — record live OpenRouter RW-086 **FAIL**; xxd Class A thrash **CLEARED**; pause live OpenRouter free-model loop until `free-models-per-day` resets; stay **0.4.7** |
 | Generation 2 | **COMPLETE** — theme 1 **v0.3.0** (used RW-065 / RW-068); theme 2 **v0.3.1** (used live RW-066 / RW-068); theme 3 **v0.3.2** (scripted RW-067; used RW-068 / RW-069) |
-| Latest use (RW-085) | Live OpenRouter free text_analyzer on v0.4.6 **FAIL** `needs_user` @ tools **11/12**: provider **openrouter** / `nvidia/nemotron-3.5-lightning:free`; `$0`; PLAN `source=fallback` attempts=2; E1 **not live** (0 TaskYield; later tasks 0 attempts). `xxd: not found` exit 127 → ENVIRONMENT → Repair-prerequisite. Class C vs RW-084 **cleared**. Residual Class **B** (fallback plan, wrong summary, missing README, failing tests) + Class A xxd (this patch). False DONE **0** |
-| Live NIM loop | **PAUSED / Class C blocked** (RW-084). RW-085 used OpenRouter free instead. E1 live gate still **not confirmed**. Scripted RW-083 remains unit evidence |
-| Generation 3 | **IN PROGRESS** — theme 1 **implemented** (v0.4.0) **used** (RW-071 / RW-073 / RW-075 / RW-077 / RW-079 / RW-081 / RW-085); theme 2 **implemented** (v0.4.1) **used** (RW-073 / RW-075 / RW-077 / RW-079 / RW-081 / RW-085); theme 3 **planned / scoped**, slice A **v0.4.2** **used** (RW-075 / RW-077 / RW-079 / RW-081 / RW-085), slice B **v0.4.3** **used** (RW-077 / RW-079 / RW-081 / RW-085), slice C **v0.4.4** **used** (RW-081 mkdir live Y), slice D **v0.4.5** **used** (RW-081; premature-test path not live-hit), slice E1 **v0.4.6** **implemented** (scripted RW-083; live **not confirmed** on RW-084/085), slice F **v0.4.7** **implemented** (xxd ENVIRONMENT; scripted RW-086) |
+| Latest use (RW-086) | Live OpenRouter free text_analyzer on v0.4.7 **FAIL** `needs_user` @ tools **12/12**: provider **openrouter** / `nvidia/nemotron-3.5-lightning:free`; `$0`; PLAN `source=fallback` attempts=2; task1 **COMPLETED** + task2 attempts=1; E1 **not live** (0 TaskYield). xxd Class A ENVIRONMENT thrash **CLEARED** (0 xxd / 0 ENVIRONMENT / 0 repair). Residual Class **B+C** (fallback plan, missing tests/README, odd summary + late HTTP **429** `free-models-per-day`). False DONE **0** |
+| Live OpenRouter free loop | **PAUSED** until `free-models-per-day` rate limit resets (RW-086). Do not treat further free-model retries as product Class B until rate clears |
+| Live NIM loop | **PAUSED / Class C blocked** (RW-084). E1 live gate still **not confirmed**. Scripted RW-083 remains unit evidence |
+| Generation 3 | **IN PROGRESS** — theme 1 **implemented** (v0.4.0) **used** (RW-071 / RW-073 / RW-075 / RW-077 / RW-079 / RW-081 / RW-085 / RW-086); theme 2 **implemented** (v0.4.1) **used** (RW-073 / RW-075 / RW-077 / RW-079 / RW-081 / RW-085 / RW-086); theme 3 **planned / scoped**, slice A **v0.4.2** **used** (RW-075 / RW-077 / RW-079 / RW-081 / RW-085 / RW-086), slice B **v0.4.3** **used** (RW-077 / RW-079 / RW-081 / RW-085 / RW-086), slice C **v0.4.4** **used** (RW-081 mkdir live Y), slice D **v0.4.5** **used** (RW-081; premature-test path not live-hit), slice E1 **v0.4.6** **implemented** (scripted RW-083; live **not confirmed** on RW-084/085/086), slice F **v0.4.7** **implemented** (xxd ENVIRONMENT; scripted RW-086; live RW-086 thrash **CLEARED**) |
 | Generations 4–5 | **NOT STARTED** |
 | Needle | optional / **off** (`tool_router=existing`; ADR-001) |
 | `max_plan_tasks` | **16** (unchanged) |
@@ -88,10 +92,12 @@ and **used** (RW-077 / RW-079 / RW-081); slice C (mkdir already-exists action no
 (v0.4.5) and **used** (RW-081; premature-test path not live-hit). Slice E1
 (task-boundary yield / leftover-budget dispatch) is **accepted and implemented**
 (v0.4.6; scripted RW-083). Live NIM retest of v0.4.6 is **RW-084 BLOCKED
-Class C**. Live OpenRouter retest is **RW-085 FAIL**; E1 **not live**.
-Slice F (optional `xxd` ENVIRONMENT) is **Class A CONFIRMED** as **v0.4.7**.
-Live NIM loop **paused**. E2/E3 stay candidates. Gen4–5 stay closed until
-Gen3 has been released and used.
+Class C**. Live OpenRouter retest of v0.4.6 is **RW-085 FAIL**; E1 **not
+live**. Slice F (optional `xxd` ENVIRONMENT) is **Class A CONFIRMED** as
+**v0.4.7**. Live OpenRouter retest of v0.4.7 is **RW-086 FAIL**; xxd Class A
+thrash **CLEARED**; E1 **not live**; late **429**. Live OpenRouter free-model
+loop **paused**. Live NIM loop **paused**. E2/E3 stay candidates. Gen4–5 stay
+closed until Gen3 has been released and used.
 
 ---
 
@@ -298,10 +304,13 @@ dispatch) is **accepted and implemented as v0.4.6**. Slice F (optional
 checksum/hex utility ENVIRONMENT) is **implemented as v0.4.7**. Package is
 **0.4.7**. Live RW-084 is **BLOCKED Class C** (HTTP 403; E1 **not
 live-tested**). Live RW-085 is **FAIL** on OpenRouter free (tools 11/12;
-E1 **not live**; xxd ENVIRONMENT **CONFIRMED**). Live NIM loop is
-**paused**. Live artifact quality (wrong summary, missing README, failing
-tests) is **not** claimed fixed. Pip/root-pollution Class A is **NOT
-CONFIRMED** (RW-082). E2/E3 stay candidates.
+E1 **not live**; xxd ENVIRONMENT **CONFIRMED**). Live RW-086 is **FAIL** on
+OpenRouter free (tools 12/12; xxd Class A thrash **CLEARED**; E1 **not live**;
+late HTTP **429** `free-models-per-day`). Live OpenRouter free-model loop is
+**paused**. Live NIM loop is **paused**. Live artifact quality (incomplete
+package, odd summary, missing README/tests) is **not** claimed fixed.
+Pip/root-pollution Class A is **NOT CONFIRMED** (RW-082). E2/E3 stay
+candidates.
 
 Do not pre-design Gen3 from Gen1 Class B rows alone. Do not skip Gen2 (Gen2 is
 now complete). Do not treat a FAIL row as an automatic architecture rewrite.
@@ -374,11 +383,11 @@ verifier still evaluates the stored path honestly.
 
 | field | value |
 |---|---|
-| Status | **PLANNED / SCOPED**. Slice A **IMPLEMENTED** as v0.4.2. Slice B **IMPLEMENTED** as v0.4.3. Slice C **IMPLEMENTED** as v0.4.4 (**used** RW-081). Slice D **IMPLEMENTED** as v0.4.5 (**used** RW-081; premature-test path not live-hit). Slice E1 **ACCEPTED + IMPLEMENTED** as v0.4.6 (scripted RW-083; live **not confirmed** on RW-084/085). Slice F **IMPLEMENTED** as v0.4.7 (xxd ENVIRONMENT; scripted RW-086) |
+| Status | **PLANNED / SCOPED**. Slice A **IMPLEMENTED** as v0.4.2. Slice B **IMPLEMENTED** as v0.4.3. Slice C **IMPLEMENTED** as v0.4.4 (**used** RW-081). Slice D **IMPLEMENTED** as v0.4.5 (**used** RW-081; premature-test path not live-hit). Slice E1 **ACCEPTED + IMPLEMENTED** as v0.4.6 (scripted RW-083; live **not confirmed** on RW-084/085/086). Slice F **IMPLEMENTED** as v0.4.7 (xxd ENVIRONMENT; scripted RW-086; live RW-086 thrash **CLEARED**) |
 | Theme | **Longer-horizon / multi-step reliability** |
 | Version | Theme 3 itself is **not** a full v0.4.x redesign. Slice A is **v0.4.2**. Slice B is **v0.4.3**. Slice C is **v0.4.4**. Slice D is **v0.4.5**. Slice E1 is **v0.4.6**. Slice F is **v0.4.7** |
 | Loop (slice E1) | stuck in-flight task about to burn leftover tools → checkpoint at the task boundary (`RETRYING`) → `Scheduler` dispatches later independent READY work under the same `--max-tools` cap |
-| Evidence | RW-081 / F-20260918-43 (live FAIL; later package tasks PENDING while tools 12/12); deterministic RW-082 / F-20260918-44 (**NOT CONFIRMED**); scripted RW-083 / F-20260918-45 (E1: later independent `file_exists` still gets ≥1 attempt); live RW-084 / F-20260919-46 (**BLOCKED Class C**; E1 not live-tested); live RW-085 / F-20260919-47 (**FAIL** OpenRouter; E1 not live; xxd ENVIRONMENT live); scripted RW-086 / F-20260919-48 (xxd ≠ ENVIRONMENT) |
+| Evidence | RW-081 / F-20260918-43 (live FAIL; later package tasks PENDING while tools 12/12); deterministic RW-082 / F-20260918-44 (**NOT CONFIRMED**); scripted RW-083 / F-20260918-45 (E1: later independent `file_exists` still gets ≥1 attempt); live RW-084 / F-20260919-46 (**BLOCKED Class C**; E1 not live-tested); live RW-085 / F-20260919-47 (**FAIL** OpenRouter; E1 not live; xxd ENVIRONMENT live); scripted RW-086 / F-20260919-48 (xxd ≠ ENVIRONMENT); live RW-086 / F-20260919-49 (**FAIL** OpenRouter; xxd thrash **CLEARED**; E1 not live; late **429**) |
 | What it is not | Not a control-plane rewrite. Not Needle-as-default. Not a cap raise. Not a claim that live 11B RW-081 now PASS. Not a new persistence layer. Not a remap of check *kinds* (F-26). Fallback *tasks* stay check-less (F-17). Not remapping `write_file` / `echo >` action paths (F-44). Not E2 (linear `depends_on` still blocks dependents). |
 
 **Entry rule:** themes 1–2 are measured (done). Slice A shipped as v0.4.2
@@ -423,10 +432,10 @@ budget died. Persistence already shipped (`CheckpointManager`, `resume`,
 
 | id | candidate | status |
 |---|---|---|
-| **E1** | Task-boundary yield / leftover-budget dispatch | **IMPLEMENTED** v0.4.6 (scripted RW-083; live **not confirmed** on RW-084/085) |
+| **E1** | Task-boundary yield / leftover-budget dispatch | **IMPLEMENTED** v0.4.6 (scripted RW-083; live **not confirmed** on RW-084/085/086) |
 | **E2** | Independent later package files (optional / empty `depends_on`) | still a candidate. Live later files may stay unready without this |
 | **E3** | Budget-aware retry stop (2-tools/task at retry time) | overlaps E1; not a separate patch |
-| **F** | Optional checksum/hex utility (`xxd`) ENVIRONMENT | **IMPLEMENTED** v0.4.7 (scripted RW-086; live RW-085) |
+| **F** | Optional checksum/hex utility (`xxd`) ENVIRONMENT | **IMPLEMENTED** v0.4.7 (scripted RW-086; live RW-085 confirmed; live RW-086 thrash **CLEARED**) |
 
 E1 alone does **not** claim live RW-081 would PASS (Class B quality + possible
 linear `depends_on` / E2 remain).
@@ -455,7 +464,7 @@ v0.3.2 is **not** a Gen3 hole (B3).
 |---|---|---|---|---|
 | 1 | **Path-aligned checks / package layout** | **IMPLEMENTED** — v0.4.0; **used** RW-071 / RW-073 / RW-075 / RW-077 / RW-079 / RW-081 | Task checks required workspace-root `input.txt` while first successful writes were under `text_analyzer/` → VALIDATION_FAILURE → retry flattened files to root → layout thrash. Confirmed as planner/infer emission + LLM-check acceptance (not just 11B). Live RW-081: path-alignment **Y** on disk/tasks **and** objective_checks (ASCII-tree join live). Root `echo > analyzer.py` leftover is Class B, not check-path flattening. | RW-069; RW-070 (scripted); RW-071 / RW-073 / RW-075 / RW-077 / RW-079 / RW-081 (live use); RW-074 (scripted ASCII-tree); related path confusion on RW-058 |
 | 2 | **Multi-file coding under tight budgets** | **IMPLEMENTED** — v0.4.1; **used** RW-073 / RW-075 / RW-077 / RW-079 / RW-081 | `text_analyzer` @ tools=**12** still FAIL on live 11B. RW-081: contracts **package-joined**; correct 3-line `bf69eb73…`; mkdir File-exists **live Y**. Residual: empty `summary.json`, SyntaxError test, pip/echo budget. Does not raise default max-tools. | RW-071; RW-072 (scripted); RW-073 / RW-075 / RW-077 / RW-079 / RW-081 (live use); RW-069; RW-058 / RW-059 family (F-15 / F-16 / F-19) |
-| 3 | **Longer-horizon / multi-step reliability** | **PLANNED / SCOPED** — slices A–D **IMPLEMENTED** (v0.4.2–v0.4.5); slice E1 **IMPLEMENTED** as v0.4.6 (scripted RW-083; live **not confirmed**). Slice F **IMPLEMENTED** as v0.4.7. E2/E3 remain candidates | RW-085 burns leftover tools on ENVIRONMENT repair from missing `xxd` after input.txt was already written; later fallback tasks 0 attempts. E1 did not fire (fallback chain). Does **not** claim live PASS. | RW-086 (scripted slice F); RW-085 (live OpenRouter FAIL); RW-084 (live Class C); RW-083 (scripted E1); RW-081; RW-082 (scripted NOT CONFIRMED); RW-079; RW-080 (scripted slice D); RW-077; RW-078 (scripted slice C); RW-075; RW-076 (scripted slice B); RW-074 (scripted slice A) |
+| 3 | **Longer-horizon / multi-step reliability** | **PLANNED / SCOPED** — slices A–D **IMPLEMENTED** (v0.4.2–v0.4.5); slice E1 **IMPLEMENTED** as v0.4.6 (scripted RW-083; live **not confirmed**). Slice F **IMPLEMENTED** as v0.4.7. E2/E3 remain candidates | Live RW-086: xxd ENVIRONMENT thrash **CLEARED**; still FAIL `needs_user` @ 12/12 on fallback PLAN + late **429**. E1 did not fire (fallback chain). Does **not** claim live PASS. | live RW-086 (OpenRouter FAIL; xxd thrash cleared); RW-086 (scripted slice F); RW-085 (live OpenRouter FAIL); RW-084 (live Class C); RW-083 (scripted E1); RW-081; RW-082 (scripted NOT CONFIRMED); RW-079; RW-080 (scripted slice D); RW-077; RW-078 (scripted slice C); RW-075; RW-076 (scripted slice B); RW-074 (scripted slice A) |
 
 ### Closed / not automatic Gen3 work
 
@@ -470,7 +479,7 @@ These are **not** a license to raise caps or enable Needle from this change:
 | A6 | mkdir File-exists failing a check-passing task | **Class A confirmed** as v0.4.4 (theme 3 slice C). Unit RW-078. **Live-confirmed** on RW-081 (task VERIFIED despite File-exists action error). Do not regress. |
 | A7 | Premature `python …/test_*.py` No-such-file → ENVIRONMENT | **Class A confirmed** as v0.4.5 (theme 3 slice D). Unit RW-080. **Not live-hit** on RW-081 / RW-085. Do not regress. |
 | A8 | Pip thrash + root `echo > analyzer.py` pollution under known `package_dir` | **NOT CONFIRMED.** Checks already join to `package_dir`. Actions are model-proposed (no write/redirect remap). Root file does not satisfy package checks (false DONE 0). Joining echo redirects would clobber a good package file. PLAN_PROMPT already forbids pip for stdlib-only; ingest-reject still charges tools. Stay paused. See RW-082 / F-44. |
-| A9 | Missing optional `xxd` / checksum utility → ENVIRONMENT + Repair-prerequisite | **Class A confirmed** as v0.4.7 (theme 3 slice F). Live RW-085: `xxd: not found` exit 127 classified ENVIRONMENT while `file_nonempty` input.txt passed. Scripted RW-086. Genuine `python`/`pip`/`gcc` command-not-found stays ENVIRONMENT (F-18). Do not regress. |
+| A9 | Missing optional `xxd` / checksum utility → ENVIRONMENT + Repair-prerequisite | **Class A confirmed** as v0.4.7 (theme 3 slice F). Live RW-085: `xxd: not found` exit 127 classified ENVIRONMENT while `file_nonempty` input.txt passed. Scripted RW-086. Live RW-086: xxd Class A thrash **CLEARED** (0 xxd / 0 ENVIRONMENT / 0 repair; host still missing `xxd`; model avoided it — absence of thrash, not a positive classifier observation). Genuine `python`/`pip`/`gcc` command-not-found stays ENVIRONMENT (F-18). Do not regress. |
 | A3 | DONE pollution refuse | **Already works** for `DONE:` *paths*. RW-081 invented-tool `DONE` **0**; slice B still stops it from failing check-passing tasks. |
 | B3 | Simple verified coding loop | **Stable PASS** on v0.3.2 (RW-068 llm plan@1). Not a Gen3 hole. |
 | F-17 / F-18 / F-21 / F-26 | Prior closed non-gates | **Stay closed.** This cycle does not add checks to fallback *tasks* (F-17) and does not remap check *kinds* (F-26). Genuine `python`/`pip`/`gcc`/`mkreport_*` `command not found` / `ModuleNotFoundError` stay ENVIRONMENT (F-18). Optional `xxd`/hexdump/`sha256sum` not-found is **not** ENVIRONMENT (v0.4.7 / A9). `cat` no-such-file stays ENVIRONMENT. mkdir already-exists still **not** ENVIRONMENT (v0.4.1). |
@@ -481,8 +490,10 @@ tools=12. Residual is **Class B** capacity/quality (11B under the historical
 root leftover) **plus** possible linear `depends_on` (E2). Theme-3 measured
 win this patch: leftover-budget dispatch so later independent READY tasks get
 ≥1 attempt (RW-083). Live RW-084 **BLOCKED Class C**. Live RW-085 **FAIL**
-OpenRouter (E1 **not live**; xxd ENVIRONMENT **CONFIRMED** → v0.4.7).
-Live NIM loop **paused**. E2/E3 stay candidates.
+OpenRouter (E1 **not live**; xxd ENVIRONMENT **CONFIRMED** → v0.4.7). Live
+RW-086 **FAIL** OpenRouter (xxd thrash **CLEARED**; E1 **not live**; late
+**429**). Live OpenRouter free-model loop **paused**. Live NIM loop
+**paused**. E2/E3 stay candidates.
 
 ### Accepting a further v0.4.x theme
 
@@ -494,7 +505,7 @@ and used through RW-081. Slice E1 is **accepted and implemented** as **v0.4.6**.
 Slice F is **implemented** as **v0.4.7**. E2/E3 remain candidates. Do not invent
 a long-horizon redesign from Class B budget rows. Pip/root-pollution on RW-081
 is **NOT CONFIRMED** as Class A. Missing optional `xxd` ENVIRONMENT on RW-085
-**is** Class A.
+**is** Class A (v0.4.7). Live RW-086 xxd thrash **CLEARED**.
 
 ---
 
@@ -521,7 +532,7 @@ acceptable for a public baseline).
 | doc | role |
 |---|---|
 | [MATURATION_CYCLE_REPORT.md](MATURATION_CYCLE_REPORT.md) | Cycle-by-cycle evidence and decisions |
-| [REAL_WORLD_TASK_MATRIX.md](REAL_WORLD_TASK_MATRIX.md) | Disk-checked task rows (do not rewrite RW-058–084) |
+| [REAL_WORLD_TASK_MATRIX.md](REAL_WORLD_TASK_MATRIX.md) | Disk-checked task rows (do not rewrite RW-058–085) |
 | [REAL_WORLD_FAILURE_LEDGER.md](REAL_WORLD_FAILURE_LEDGER.md) | A/B/C findings |
 | [ADR-001-NEEDLE-TOOL-ROUTER.md](ADR-001-NEEDLE-TOOL-ROUTER.md) | Needle stays optional / off |
 | [CONTROL-PLANE.md](CONTROL-PLANE.md) | Shipped control-plane behaviour |
