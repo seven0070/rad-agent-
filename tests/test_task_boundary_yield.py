@@ -120,7 +120,7 @@ def _tasks_by_prefix(graph, *prefixes):
 # ---------------------------------------------------------------- architecture freeze
 
 def test_e1_does_not_raise_caps_or_enable_needle(home):
-    assert __version__ == "0.4.7"
+    assert __version__ == "0.4.8"
     assert Budget().tool_calls == 60
     assert int(home.cfg.get("max_plan_tasks", 16) or 16) == 16
     assert Planner(None, str(home.workspace())).max_tasks == 16

@@ -38,8 +38,9 @@ def independent_unattempted_ready(graph: TaskGraph, current: Optional[Task] = No
     """READY/PENDING/RETRYING tasks that do not wait on ``current`` and have not run yet.
 
     ``graph.ready()`` already requires deps satisfied, so an in-flight ``current``
-    is excluded when later tasks depend on it. E1 does not rewrite ``depends_on``
-    (that is candidate E2).
+    is excluded when later tasks depend on it. E2 (v0.4.8) emits empty
+    ``depends_on`` for independent fallback file-write clauses so those later
+    tasks can appear here; E1 still does not rewrite an explicit LLM chain.
     """
     cur_id = current.id if current is not None else None
     out: List[Task] = []

@@ -6,6 +6,80 @@ Default `Budget.tool_calls` remains **60**.
 
 ---
 
+# Cycle 22 — Independent later package files (E2); v0.4.8 (2026-09-19)
+
+**Date:** 2026-09-19
+**Baseline:** `origin/main` `3607678a5d82fa2c80a03a256a8d57afa7c1fc86` (merge PR #35; package **0.4.7**)
+**Package at start:** `0.4.7`
+**This branch:** `cursor/e2-independent-later-files-889b` — package **0.4.8**
+**Architecture:** control plane preserved. Needle stays off. Caps unchanged.
+**Kind:** product — Gen3 theme 3 slice E2. RW-058–086 are **not rewritten**.
+
+## Why this cycle
+
+Live RW-085/086: PLAN `source=fallback` carved the goal into a linear
+`depends_on` chain. Later package-file tasks stayed PENDING (0 attempts)
+while an early task burned leftover tools. E1 leftover reserve is 0 when
+later tasks wait on the in-flight one. `optional` only unblocks after
+FAILED/BLOCKED/CANCELLED, not while RETRYING.
+
+Investigate-first: the hole is fallback *emission* (`depends_on=[prev]` on
+every clause), not a missing scheduler primitive and not “E1 already covers
+this.” Smallest patch: empty `depends_on` on independent file-write clauses.
+Consume/verify/read still chains. Explicit LLM chains are not rewritten.
+F-17 stays closed (goal-only split, cap 7, no checks).
+
+## What changed
+
+| piece | change |
+|---|---|
+| `independent_file_clause` (`planner.py`) | Distinct file-write clauses vs run/verify/read consume |
+| `Planner._fallback` | Empty `depends_on` on independent later file writes |
+| `PLAN_PROMPT` | Independent package-file writes must use empty `depends_on` |
+| Package | **0.4.7 → 0.4.8** |
+
+## Decision
+
+| item | value |
+|---|---|
+| Package | **0.4.8** |
+| E2 | **ACCEPTED + IMPLEMENTED** (scripted RW-087) |
+| E1 live | **N** — not confirmed on RW-084/085/086 |
+| Live text_analyzer@12 | **not** claimed PASS |
+| Invariants | Needle OFF; caps 16/60; false DONE 0; no redesign |
+
+## Quality gates (this branch)
+
+Isolated homes `/tmp/rad-rw087-gate` (doctor, acceptance) and `/tmp/rad-rw087-rw` (realworld).
+
+| gate | result |
+|------|--------|
+| `rad version` | **PASS** v0.4.8 |
+| `python3 -m pytest -q` | **PASS** 559 passed in 10.41s |
+| `rad doctor --offline` | **PASS** 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR, verdict READY, exit 0 |
+| `rad acceptance` | **PASS** 50/50 — `/tmp/rad-rw087-gate/acceptance/20260919-050812_gate.json` |
+| `rad realworld` | **PASS** 10/11 + 1 BLOCKED — `/tmp/rad-rw087-rw/realworld/20260919-050809_realworld.json` |
+| Needle default | **PASS** (`existing`) — unchanged |
+| Caps | **PASS** `max_plan_tasks` 16; `Budget.tool_calls` 60 — unchanged |
+| Package | **0.4.8** |
+| Live this patch | **not re-run** — not a live PASS claim |
+
+## Remaining limitations
+
+1. Live text_analyzer@12 remains Class B FAIL (fallback plan, incomplete package, tools=12).
+2. E1 leftover-budget yield is still **not live-confirmed**.
+3. E2 is scripted only (RW-087). Live fallback chain not re-run (OpenRouter free loop paused; NIM paused).
+4. Live OpenRouter free-model loop is **paused** (HTTP 429 `free-models-per-day`).
+5. Live NIM loop remains **paused** (RW-084 Class C).
+
+## Roadmap pointer
+
+Operating spine: [ROADMAP.md](ROADMAP.md). **Generation 3 in progress.** Theme 3
+slice E2 **IMPLEMENTED** as **v0.4.8** (scripted RW-087). E1 remains scripted.
+E3 stays a candidate. Package is **0.4.8**. Gen4–5 are not started.
+
+---
+
 # Cycle 21 — Record live OpenRouter RW-086; pause free-model loop; stay 0.4.7 (2026-09-19)
 
 **Date:** 2026-09-19
