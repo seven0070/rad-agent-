@@ -6,6 +6,95 @@ Default `Budget.tool_calls` remains **60**.
 
 ---
 
+# Cycle 37 — Scope G5-1 public / product-grade 1.0 baseline; stay 0.5.5 (2026-09-19)
+
+**Date:** 2026-09-19
+**Baseline:** `origin/main` `08cf33893d309981c5f75bef260bca87f5c47d29` (merge PR #50; package **0.5.5**; GitHub Release **Version 5** / tag **v0.5.5** covers 0.5.0–0.5.5)
+**Package at start:** `0.5.5`
+**This branch:** `cursor/gen5-first-theme-908a` — package **0.5.5** (no bump)
+**Architecture:** control plane preserved. Needle stays off. Caps unchanged.
+**Kind:** docs / scope only. No `rad/` product change. RW-058–099 are **not rewritten**.
+**Release:** **none**. Do **not** cut v1.0.0. Version 5 pack is already tag **v0.5.5**.
+
+## Why this cycle
+
+Gen4 is **complete (scripted)** on v0.5.0–v0.5.5 (Cycle 36 / PR #50).
+**Version 5 pack** is GitHub Release **Version 5** / tag **v0.5.5**
+(0.5.0–0.5.5). G4-4 remains **parked** (no measured hole). Live NIM /
+OpenRouter free stay **paused**. Live E1–E3 and Version 5 / G4-5 / G4-7 /
+G4-6 confirmation is **deferred**. F-17 / F-26 stay closed. Cycle 24’s
+remaining *product* Class B list is **closed scripted**. Remaining 11B
+incompleteness without a contract hole is evidence, not a theme.
+
+Investigate-first after closeout: the highest-leverage step toward a
+stable public / product-grade **1.0** is **not** live confirmation as a
+package theme (G4-3 playbook already ships; Cycle 36 refused G4-8),
+**not** unparking MCP, **not** a cap raise, **not** an 11B-quality
+grab-bag, and **not** a v0.5.6. Gen5’s named purpose is the public
+baseline. Measured gap vs that definition: install is git clone +
+`pip install -e .`; the Version 5 GitHub Release has no installable
+assets; QUICKSTART still says `rad version` prints **0.4.1** while the
+package is **0.5.5**. Live soak remains the loop’s `use` step and a
+Gen5 entry *caveat* / remaining-gaps input — not G5-1 itself. Scope
+**G5-1** (public / product-grade 1.0 baseline) as proposed **v1.0.0**,
+listed not accepted. Stay **0.5.5**.
+
+## Alternatives considered
+
+| candidate | decision |
+|---|---|
+| Public / product-grade 1.0 baseline (G5-1) | **Recommended first.** Evidence-backed vs Gen5’s named purpose + INSTALLATION / QUICKSTART vs packed 0.5.5. Scriptable/docs without a recovered brain. Remaining-gaps judgment is the accept, not a second theme. Proposed **v1.0.0** only when accepted |
+| Live confirmation / production soak of Version 5 path | Highest *loop* leverage. **Not** the product slice. G4-3 playbook ships. Gates paused. Operator work when a provider recovers. Cycle 36 refused this as a package theme. Entry *caveat* / remaining-gaps input, not G5-1 |
+| Unpark G4-4 MCP | No measured hole. Already first-class. **Parked** |
+| Cap policy / longer-horizon *product* | E1–E3 shipped scripted. Caps 16/60 stay closed (A1 / F-21). RW-059 showed 12→24 still exhausted |
+| Residual Class B after G4-5 / G4-6 / G4-7 | Contract holes closed scripted. Remaining 11B incompleteness without a contract hole is evidence, not a theme |
+| Stability / false-DONE gates as a standalone theme | False DONE already 0. Gates already green. Part of G5-1’s honesty bar, not a second slice |
+| A v0.5.6 docs-only bump | No product change. Stay **0.5.5** |
+
+## Decision
+
+| item | value |
+|---|---|
+| Package | **0.5.5** (no 0.5.6; no 1.0.0) |
+| Gen3 | **COMPLETE (scripted)** (unchanged). Live E1–E3 **deferred** |
+| Gen4 | **COMPLETE (scripted)**. **Version 5 pack** tag **v0.5.5** (0.5.0–0.5.5). **G4-4 parked** |
+| Gen5 | **NOT STARTED**. Entry listed, not accepted |
+| Recommended first v1.0.0 candidate | **G5-1** — public / product-grade 1.0 baseline (see ROADMAP). **Not** accepted here |
+| Packing | When G5-1 is accepted and shipped: **one Version 1 / 1.0 pack** at tag **v1.0.0**. This PR cuts **no** release |
+| Invariants | Needle OFF; caps 16/60; false DONE 0; no redesign; Class C is not a product patch; no live PASS claim; F-17 / F-26 stay closed; remaining-quota not invented |
+
+## Quality gates (this branch)
+
+Isolated homes `/tmp/rad-g51-scope-gate` (doctor, acceptance) and `/tmp/rad-g51-scope-rw` (realworld).
+
+| gate | result |
+|------|--------|
+| `rad version` | **PASS** v0.5.5 |
+| `python3 -m pytest -q` | **PASS** 646 passed in 14.13s |
+| `rad doctor --offline` | **PASS** 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR, verdict READY, exit 0 |
+| `rad acceptance` | **PASS** 50/50 — `/tmp/rad-g51-scope-gate/acceptance/20260919-080144_gate.json` |
+| `rad realworld` | **PASS** 10/11 + 1 BLOCKED — `/tmp/rad-g51-scope-rw/realworld/20260919-080144_realworld.json` |
+| Needle default | **PASS** (`existing`) — unchanged |
+| Caps | **PASS** `max_plan_tasks` 16; `Budget.tool_calls` 60 — unchanged |
+| Package | **0.5.5** (no bump) |
+| Release / tag | **none** |
+| Live this patch | not re-run; suite `live_nim` **BLOCKED** (Class C) |
+
+## Remaining limitations
+
+1. Live text_analyzer@12 remains Class B FAIL. This cycle does not change that.
+2. E1/E2/E3 are scripted only. Live confirmation **deferred**.
+3. Both live free paths remain **paused**. Version 5 / G4-5 / G4-7 / G4-6 have not been live-confirmed together.
+4. G5-1 is listed, not accepted. Gen5 is not started. No v1.0.0.
+
+## Roadmap pointer
+
+Operating spine: [ROADMAP.md](ROADMAP.md). **Generation 4 complete (scripted).**
+Recommended next **G5-1** listed, not accepted. Stay **0.5.5**. Gen5 is
+not started.
+
+---
+
 # Cycle 36 — Scope Gen4 closeout / Gen5 entry; stay 0.5.5 (2026-09-19)
 
 **Date:** 2026-09-19

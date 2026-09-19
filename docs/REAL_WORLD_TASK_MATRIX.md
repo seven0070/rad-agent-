@@ -41,14 +41,17 @@ provider recovers. Gen4 **G4-1** is **implemented as v0.5.0** (scripted
 RW-089). **G4-2** (live-gate resume / provider health) is **implemented
 as v0.5.1** (scripted RW-090 / RW-091). **G4-3** (live-use campaign /
 operator workflow) is **implemented as v0.5.2** (scripted RW-092 / RW-093).
-**Version 5 pack** shipped as GitHub Release **v0.5.2**. **G4-5**
+**Version 5 pack** is GitHub Release **Version 5** / tag **v0.5.5**
+(0.5.0–0.5.5). **G4-5**
 (fallback / LLM plan quality) is **implemented as v0.5.3** (scripted
 RW-094 / RW-095). **G4-7** (coding artifact completeness / named
 package-file contracts) is **implemented as v0.5.4** (scripted RW-096 /
 RW-097). **G4-6** (cost/budget reporting) is **implemented as v0.5.5**
 (scripted RW-098 / RW-099). Gen4 is **complete (scripted)**; **G4-4
-parked** (no measured hole). Package stays **0.5.5**. **No
-per-slice GitHub Release.** Do not rewrite RW-058–099.
+parked** (no measured hole). **Version 5 pack** is GitHub Release
+**Version 5** / tag **v0.5.5** (0.5.0–0.5.5). Package stays **0.5.5**.
+First Gen5 theme **G5-1** (public / product-grade 1.0 baseline) is
+listed, not accepted. Do not rewrite RW-058–099.
 
 Every `VERIFIED` / `completed` cell is from the control-plane verifier **and** a disk
 check (file exists / contents / hash). A model `DONE:` line is never enough.
@@ -76,11 +79,13 @@ Class A thrash **CLEARED**; E1 not live; late **429** `free-models-per-day`;
 free-model loop **paused**), then live OpenRouter RW-085 (**FAIL**; Class C
 cleared; xxd ENVIRONMENT Class A **CONFIRMED**), then scripted RW-086
 (v0.4.7), then live NIM RW-084 (**BLOCKED Class C**), then scripted RW-083.
-G4-3 is **shipped** as v0.5.2 (scripted); **Version 5 pack** shipped.
+G4-3 is **shipped** as v0.5.2 (scripted); **Version 5 pack** is tag
+**v0.5.5** (0.5.0–0.5.5).
 G4-5 is **shipped** as v0.5.3 (scripted RW-094 / RW-095). **G4-7** is
 **shipped** as v0.5.4 (scripted RW-096 / RW-097). **G4-6** is
 **shipped** as v0.5.5 (scripted RW-098 / RW-099). Gen4 is
-**complete (scripted)**; G4-4 **parked**. RW-058–099 are **not rewritten**.
+**complete (scripted)**; G4-4 **parked**. **G5-1** is **scoped**
+(listed, not accepted) — no new RW row. RW-058–099 are **not rewritten**.
 
 # Scripted cost/budget reporting (RW-098 / RW-099)
 
