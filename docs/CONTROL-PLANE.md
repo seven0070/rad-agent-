@@ -93,7 +93,9 @@ skip-blocked doctor / `rad health` operator workflow; **Version 5 pack**
 shipped as GitHub Release **v0.5.2**. Theme **G4-5** is **implemented as
 v0.5.3** — near-JSON LLM plan recovery and compact coding-plan retry so
 RW-085/086-shaped misses are less often clause-carve; F-17 fallback
-*tasks* stay check-less. **No per-slice GitHub Release** — see
+*tasks* stay check-less. Recommended next **G4-7** (coding artifact
+completeness / named package-file contracts) is **listed, not
+accepted** — stay **0.5.3**. **No per-slice GitHub Release** — see
 [ROADMAP.md](ROADMAP.md).
 
 ## Parallelism (Phase 3)
