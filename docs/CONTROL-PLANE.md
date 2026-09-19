@@ -100,11 +100,12 @@ cannot VERIFIED; F-17 stays closed. Theme **G4-6** is **implemented as
 v0.5.5** — `rad cost` rolls up persisted per-objective `Usage`
 (`tool_calls` / `model_calls` / `money_usd` / `tokens`) across
 `objective.json`; remaining-quota is not invented; G4-2 last Class C is
-untouched. Package is **1.0.0**. First Gen5 theme **G5-1** (public /
+untouched. Package is **1.0.1**. First Gen5 theme **G5-1** (public /
 product-grade 1.0 baseline) is **accepted and implemented as v1.0.0**
 (scripted RW-100 / RW-101). **Version 1 pack SHIPPED** (GitHub Release
-**Version 1** / tag **v1.0.0**). Gen5 next step is **hold / soak** (no
-G5-2). **No GitHub Release / tag in this change.** Honesty bar: false DONE
+**Version 1** / tag **v1.0.0**). Proven Class A **v1.0.1** (RW-102 /
+RW-103) **used** live (**RW-104 PASS**). Gen5 next step is **hold / soak**
+(no G5-2). **No GitHub Release / tag in this change.** Honesty bar: false DONE
 **0**; Needle **OFF**; caps **16/60**; F-17 / F-26 closed; Class C is not
 a product patch — see [ROADMAP.md](ROADMAP.md).
 

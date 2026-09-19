@@ -32,8 +32,9 @@ v0.4.6 is **RW-085 FAIL** (tools **11/12**; `xxd` ENVIRONMENT repair; E1
 v0.4.7** (scripted RW-086). Live OpenRouter free retest of v0.4.7 is
 **RW-086 FAIL** (tools **12/12**; xxd Class A thrash **CLEARED**; E1 **not
 live**; late HTTP **429** `free-models-per-day`). Live OpenRouter free-model
-loop **paused** until `free-models-per-day` rate limit resets. Live NIM loop
-remains **paused** (Class C). Independent later package files is
+loop **paused** until `free-models-per-day` rate limit resets. Historical
+live NIM **11B** loop remains **paused** (RW-084 Class C). Live NIM
+`z-ai/glm-5.3` on v1.0.1 is **RW-104 PASS**. Independent later package files is
 **implemented as v0.4.8** (scripted RW-087). Budget-aware retry stop is
 **implemented as v0.4.9** (scripted RW-088). Gen3 is
 **complete (scripted)**; live E1–E3 confirmation is **deferred** until a
@@ -54,19 +55,23 @@ parked** (no measured hole). **Version 5 pack** is GitHub Release
 is **accepted and implemented as v1.0.0** (scripted RW-100 / RW-101).
 **Version 1 pack SHIPPED** as GitHub Release **Version 1** / tag **v1.0.0**
 (wheel + sdist; PR #52). Proven Class A on the 1.0 line is **implemented
-as v1.0.1** (scripted RW-102 / RW-103). Package **1.0.1**. **No G5-2
-product theme.** Next: **hold / soak**. **No GitHub Release / tag** in
-this change. Do not rewrite RW-058–101.
+as v1.0.1** (scripted RW-102 / RW-103). Package **1.0.1**. Live NIM
+`z-ai/glm-5.3` soak of v1.0.1 is **RW-104 PASS** (`completed` /
+**VERIFIED**; RW-102 / RW-103 live-cleared). Package stays **1.0.1**.
+**No G5-2 product theme.** Next: **hold / soak**. **No GitHub Release /
+tag** in this change. Do not rewrite RW-058–103.
 
 Every `VERIFIED` / `completed` cell is from the control-plane verifier **and** a disk
 check (file exists / contents / hash). A model `DONE:` line is never enough.
 
 Status vocabulary: **PASS** | **FAIL** | **BLOCKED** | **NOT TESTED**.
 
-Scripted v1.0.1 Class A (RW-102 / RW-103) is at the top (**PASS**; pinned
-model health ping; json_field English glue not a key; no live PASS
-required), then
-scripted G5-1 (RW-100 / RW-101) is at the top (**PASS**; public 1.0
+Live NIM glm-5.3 soak of v1.0.1 (RW-104) is at the top (**PASS** /
+**VERIFIED**; not text_analyzer@12), then
+scripted v1.0.1 Class A (RW-102 / RW-103) (**PASS**; pinned
+model health ping; json_field English glue not a key; live-cleared by
+RW-104), then
+scripted G5-1 (RW-100 / RW-101) (**PASS**; public 1.0
 install / docs honesty / honesty bar; no live PASS required), then
 scripted G4-6 (RW-098 / RW-099) (**PASS**; persisted
 `Usage` rollup on `rad cost`; remaining-quota not invented; no live
@@ -96,8 +101,41 @@ G4-5 is **shipped** as v0.5.3 (scripted RW-094 / RW-095). **G4-7** is
 **shipped** as v0.5.5 (scripted RW-098 / RW-099). Gen4 is
 **complete (scripted)**; G4-4 **parked**. **G5-1** is **shipped** as
 v1.0.0 (scripted RW-100 / RW-101). **No GitHub Release / tag** in that
-change. **v1.0.1** is proven Class A (scripted RW-102 / RW-103).
-RW-058–101 are **not rewritten**.
+change. **v1.0.1** is proven Class A (scripted RW-102 / RW-103) and
+**used** live (RW-104 **PASS**).
+RW-058–103 are **not rewritten**.
+
+# Live NIM glm-5.3 soak of v1.0.1 (RW-104) — PASS
+
+Lane: operator production `rad objective run` on **v1.0.1** (`806bdbd`,
+PR #54). Provider **nvidia** / `z-ai/glm-5.3`. Needle `existing` / off.
+`max_plan_tasks` **16**. Default `Budget.tool_calls` **60** (this soak
+used a **40**-tool bound and exhausted it). RW-058–103 are **not
+rewritten**. Package stays **1.0.1** (no bump). **No GitHub Release /
+tag.** **Not** a live text_analyzer@12 PASS.
+
+Authoritative live facts: operator report for `obj_72b050a0` /
+`RAD_HOME=/tmp/rad-v101-nim-soak-c5b63bf7` / workspace
+`/tmp/rad-v101-nim-ws-c5b63bf7`. This agent did not re-run NIM.
+
+| id | Date | Category | Objective | #tasks | #actions | Tools | Result | Verification | Recovery | Failure class | Notes |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| RW-104 | 2026-09-19 IST afternoon | coding (live NIM) — v1.0.1 text_analyzer glm-5.3 soak | production `text_analyzer/` (README, analyzer.py, test_analyzer.py, summary.json, sample.txt); Needle `existing` / off | `PLAN_CREATED` **source=fallback** **attempts≈2** (NIM plan timeouts then fallback) | tools **40/40**; model **46/80**; retries **3/6**; wall ~1120s | 40/40 exhausted | **PASS** (`completed` / **VERIFIED** / `verified complete`; `needs_user=no`) | objective **VERIFIED**: `json_valid`, `shell_ok` tests, `json_field` **`lines`**, README / analyzer `file_exists`. **No** bogus key `on`. Host `python text_analyzer/test_analyzer.py` **OK** | Task6 **CANCELLED** after budget. Resume `--max-tools 70` did **not** raise stored budget (evidence only). xxd/hexdump `TOOL_FAILURE` noise burned tools (not ENVIRONMENT). Empty `llm_judge` non-blocking under overall VERIFIED | **B** residual (fallback PLAN / provider timeout quality / budget UX / TOOL_FAILURE noise). RW-102 / RW-103 **live-cleared**. Class A this record **NO** | Provider **nvidia** / `z-ai/glm-5.3`. Home `/tmp/rad-v101-nim-soak-c5b63bf7`; workspace `/tmp/rad-v101-nim-ws-c5b63bf7`; `obj_72b050a0`. Disk: full `text_analyzer/` — `summary.json` `{lines:2,words:4,characters:20}`; `sample.txt` YES. Doctor/health: nvidia **inference-entitled** under pinned glm-5.3. False DONE **0**. Caps unchanged. Needle OFF. Stay **1.0.1**. Do not claim text_analyzer@12 PASS. |
+
+### RW-104 vs prior 1.0 soaks (context)
+
+| | v1.0.0 OpenRouter DeepSeek flash (RW-102 pointer) | v1.0.0 NIM glm-5.3 (RW-103 pointer) | RW-104 (v1.0.1 NIM glm-5.3) |
+|---|---|---|---|
+| package | **1.0.0** | **1.0.0** | **1.0.1** (`806bdbd` / PR #54) |
+| brain | openrouter / `deepseek/deepseek-v4-flash-0731:free` | nvidia / `z-ai/glm-5.3` | nvidia / `z-ai/glm-5.3` |
+| chat / doctor | chat **200**; doctor pinged stale llama:free **404** | entitled enough to write disk | doctor/health **inference-entitled** on the pin (RW-102 **live-cleared**) |
+| PLAN | fallback | (soak; plan not the Class A hole) | **fallback** attempts≈2 (NIM plan timeouts) |
+| disk `text_analyzer/` | never VERIFIED | **PASS** (package on disk) | **PASS** — README, analyzer.py, test_analyzer.py, `summary.json` `{lines:2,words:4,characters:20}`, sample.txt; host tests **OK** |
+| control plane | never VERIFIED; then **429** `free-models-per-day` | **FAIL** `needs_user` + bogus json_field **`on`** | **PASS** `completed` / **VERIFIED** / `needs_user=no` |
+| json_field `on` | n/a (doctor-pin hole) | **YES** (blocked VERIFIED) | **NO** (RW-103 **live-cleared**) |
+| tools | (soak; then 429) | (soak) | **40/40**; model 46/80; retries 3/6; ~1120s |
+| residual | Class C 429 + RW-102 Class A (fixed v1.0.1) | RW-103 Class A (fixed v1.0.1) | **Class B** only (fallback PLAN; Task6 cancelled; resume `--max-tools 70` did not raise stored budget; xxd/hexdump TOOL_FAILURE noise; empty llm_judge non-blocking) |
+| false DONE | **0** | **0** | **0** |
 
 # Scripted pinned-model health ping + json_field glue (RW-102 / RW-103)
 
@@ -108,7 +146,7 @@ Soak pointers (2026-09-19): OpenRouter free — `force_provider=openrouter`,
 `model=deepseek/deepseek-v4-flash-0731:free`; chat HTTP **200**; doctor pinged
 stale `meta-llama/llama-3.3-70b-instruct:free` HTTP **404**; NVIDIA 403 Class C
 noise. NIM glm-5.3 — `text_analyzer/` artifacts on disk; objective never
-VERIFIED; bogus json_field key **`on`**.
+VERIFIED; bogus json_field key **`on`**. Live-cleared by **RW-104**.
 
 | id | date | task | goal (short) | plan | steps | tools | result | disk / verify | ENVIRONMENT? | class | notes |
 |---|---|---|---|---|---|---|---|---|---|---|---|
