@@ -2403,10 +2403,10 @@ patch.
 
 | gate | result |
 |---|---|
-| `python3 -m pytest -q` | *(recorded after commit)* |
-| `rad doctor --offline` | *(recorded after commit)* |
-| `rad acceptance` | *(recorded after commit)* |
-| `rad realworld` | *(recorded after commit)* |
+| `python3 -m pytest -q` | **624 passed** in 12.24s |
+| `rad doctor --offline` | READY — 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR (`RAD_HOME=/tmp/rad-g47-scope-gate`) |
+| `rad acceptance` | **50/50 PASSED** (`/tmp/rad-g47-scope-gate/acceptance/20260919-070854_gate.json`) |
+| `rad realworld` | **10 passed / 1 BLOCKED / 0 failed** (`live_nim` BLOCKED; `/tmp/rad-g47-scope-rw/realworld/20260919-070855_realworld.json`) |
 | Package | **0.5.3** (no bump; no v0.5.4) |
 | Product code | unchanged |
 | Gen3 | **COMPLETE (scripted)**; live E1–E3 **deferred** |

@@ -81,10 +81,10 @@ Isolated homes `/tmp/rad-g47-scope-gate` (doctor, acceptance) and `/tmp/rad-g47-
 | gate | result |
 |------|--------|
 | `rad version` | **PASS** v0.5.3 |
-| `python3 -m pytest -q` | *(recorded after commit)* |
-| `rad doctor --offline` | *(recorded after commit)* |
-| `rad acceptance` | *(recorded after commit)* |
-| `rad realworld` | *(recorded after commit)* |
+| `python3 -m pytest -q` | **PASS** 624 passed in 12.24s |
+| `rad doctor --offline` | **PASS** 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR, verdict READY, exit 0 |
+| `rad acceptance` | **PASS** 50/50 — `/tmp/rad-g47-scope-gate/acceptance/20260919-070854_gate.json` |
+| `rad realworld` | **PASS** 10/11 + 1 BLOCKED — `/tmp/rad-g47-scope-rw/realworld/20260919-070855_realworld.json` |
 | Needle default | **PASS** (`existing`) — unchanged |
 | Caps | **PASS** `max_plan_tasks` 16; `Budget.tool_calls` 60 — unchanged |
 | Package | **0.5.3** (no bump) |
