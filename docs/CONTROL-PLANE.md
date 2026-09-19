@@ -96,8 +96,11 @@ RW-085/086-shaped misses are less often clause-carve; F-17 fallback
 *tasks* stay check-less. Theme **G4-7** is **implemented as v0.5.4** —
 named package-file `file_exists` and `json_field` for keys the goal names
 so empty `{}` / missing README cannot VERIFIED; F-17 stays closed.
-Package is **0.5.4**. **No per-slice GitHub Release** — see
-[ROADMAP.md](ROADMAP.md).
+Theme **G4-6** is **implemented as v0.5.5** — `rad cost` rolls up
+persisted per-objective `Usage` (`tool_calls` / `model_calls` /
+`money_usd` / `tokens`) across `objective.json`; remaining-quota is not
+invented; G4-2 last Class C is untouched. Package is **0.5.5**. **No
+per-slice GitHub Release** — see [ROADMAP.md](ROADMAP.md).
 
 ## Parallelism (Phase 3)
 Ready tasks with satisfied dependencies run concurrently up to `objective_parallel`

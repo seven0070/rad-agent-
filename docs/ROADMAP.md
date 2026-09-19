@@ -25,12 +25,12 @@ Gen4 slices on main are **not** in that pack). Theme **G4-5** (fallback /
 LLM plan quality under tight budgets) is **accepted and implemented as
 v0.5.3** (scripted RW-094 / RW-095). Theme **G4-7** (coding artifact
 completeness / named package-file contracts) is **accepted and
-implemented as v0.5.4** (scripted RW-096 / RW-097). Recommended next
-**v0.5.5** candidate **G4-6** (cost/budget reporting) is **listed, not
-accepted**. Package stays **0.5.4**. **No per-slice GitHub Release** —
-Version 5 packing doctrine: merge-only; pack again only when Sanath asks.
-Do **not** claim live text_analyzer@12 PASS. Generation 5 is **not
-started**.
+implemented as v0.5.4** (scripted RW-096 / RW-097). Theme **G4-6**
+(operational scale: cost/budget reporting) is **accepted and implemented
+as v0.5.5** (scripted RW-098 / RW-099). Package is **0.5.5**. **No
+per-slice GitHub Release** — Version 5 packing doctrine: merge-only;
+pack again only when Sanath asks. Do **not** claim live
+text_analyzer@12 PASS. Generation 5 is **not started**.
 
 ```
 build → test → validate → release → use → discover gaps → build the next version
@@ -45,15 +45,15 @@ Stability with no code change is a valid result.
 
 | item | value |
 |---|---|
-| Generation in production | **Gen4 in progress** — **v0.5.4** (G4-7). G4-5 remains **v0.5.3**. G4-3 remains **v0.5.2**. G4-2 remains **v0.5.1**. G4-1 remains **v0.5.0**. Gen3 remains **complete (scripted)** on 0.4.0–0.4.9. Last live-use with **working inference** is **RW-086** on tag `v0.4.7` @ `850aaf9c` (OpenRouter free; then **429**); prior working-inference row is RW-085 on tag `v0.4.6` @ `8f09be58`; v0.4.6 live NIM attempt is RW-084 **BLOCKED Class C**; last NIM working-inference row remains RW-081 on `v0.4.5` @ `32e9fe87`; Gen2 complete on `387776dc` / tag `v0.3.2`; Gen1 baseline remains tagged `v0.2.3` @ `d121c3f` |
-| Package / tag on `main` | **0.5.4** (this change — **no bump**). GitHub Release **Version 5** / tag `v0.5.2` @ `d534bd30384e9f582ca6c08562a6b2cd555fb793` packs G4-1–G4-3. Tag `v0.5.1` @ `2d4c8b6dd2e75b191a33913b93eb7d77acd3be6b` (merge PR #41) is G4-2. Tag `v0.5.0` @ `d194b8ffc763fc00ad58273e5dd8f0203442041d` (merge PR #39) is G4-1. Tag `v0.4.9` @ `05ea0df302aa6bfd15eccfb84341aeed75d6e1d0` is E3. Tag `v0.4.7` @ `850aaf9c3a931a5ba119bdbb6ec73ae4a6fa73e9` remains the live RW-086 run |
-| This change | **docs / scope only** — mark **G4-7 shipped** as **v0.5.4** under Version 5 (merge-only; GitHub Release still **v0.5.2**); scope **G4-6** cost/budget reporting as recommended next **v0.5.5** (listed, not accepted); stay **0.5.4**. **No per-slice GitHub Release** |
+| Generation in production | **Gen4 in progress** — **v0.5.5** (G4-6). G4-7 remains **v0.5.4**. G4-5 remains **v0.5.3**. G4-3 remains **v0.5.2**. G4-2 remains **v0.5.1**. G4-1 remains **v0.5.0**. Gen3 remains **complete (scripted)** on 0.4.0–0.4.9. Last live-use with **working inference** is **RW-086** on tag `v0.4.7` @ `850aaf9c` (OpenRouter free; then **429**); prior working-inference row is RW-085 on tag `v0.4.6` @ `8f09be58`; v0.4.6 live NIM attempt is RW-084 **BLOCKED Class C**; last NIM working-inference row remains RW-081 on `v0.4.5` @ `32e9fe87`; Gen2 complete on `387776dc` / tag `v0.3.2`; Gen1 baseline remains tagged `v0.2.3` @ `d121c3f` |
+| Package / tag on `main` | **0.5.5** (this change). GitHub Release **Version 5** / tag `v0.5.2` @ `d534bd30384e9f582ca6c08562a6b2cd555fb793` packs G4-1–G4-3. Tag `v0.5.1` @ `2d4c8b6dd2e75b191a33913b93eb7d77acd3be6b` (merge PR #41) is G4-2. Tag `v0.5.0` @ `d194b8ffc763fc00ad58273e5dd8f0203442041d` (merge PR #39) is G4-1. Tag `v0.4.9` @ `05ea0df302aa6bfd15eccfb84341aeed75d6e1d0` is E3. Tag `v0.4.7` @ `850aaf9c3a931a5ba119bdbb6ec73ae4a6fa73e9` remains the live RW-086 run. **No tag / GitHub Release for 0.5.5** |
+| This change | **G4-6 accepted + implemented** as **v0.5.5** (scripted RW-098 / RW-099) under Version 5 (merge-only; GitHub Release still **v0.5.2**). **No per-slice GitHub Release** |
 | Generation 2 | **COMPLETE** — theme 1 **v0.3.0** (used RW-065 / RW-068); theme 2 **v0.3.1** (used live RW-066 / RW-068); theme 3 **v0.3.2** (scripted RW-067; used RW-068 / RW-069) |
 | Latest use (RW-086) | Live OpenRouter free text_analyzer on v0.4.7 **FAIL** `needs_user` @ tools **12/12**: provider **openrouter** / `nvidia/nemotron-3.5-lightning:free`; `$0`; PLAN `source=fallback` attempts=2; task1 **COMPLETED** + task2 attempts=1; E1 **not live** (0 TaskYield). xxd Class A ENVIRONMENT thrash **CLEARED** (0 xxd / 0 ENVIRONMENT / 0 repair). Residual Class **B+C** (fallback plan, missing tests/README, odd summary + late HTTP **429** `free-models-per-day`). False DONE **0** |
 | Live OpenRouter free loop | **PAUSED** until `free-models-per-day` rate limit resets (RW-086). Do not treat further free-model retries as product Class B until rate clears |
 | Live NIM loop | **PAUSED / Class C blocked** (RW-084). E1 live gate still **not confirmed**. Scripted RW-083 remains unit evidence |
 | Generation 3 | **COMPLETE (scripted)** — theme 1 **implemented** (v0.4.0) **used** (RW-071 / RW-073 / RW-075 / RW-077 / RW-079 / RW-081 / RW-085 / RW-086); theme 2 **implemented** (v0.4.1) **used** (RW-073 / RW-075 / RW-077 / RW-079 / RW-081 / RW-085 / RW-086); theme 3 slices A–D **v0.4.2–v0.4.5** **used** (RW-075 / RW-077 / RW-079 / RW-081; mkdir live Y on RW-081); slice E1 **v0.4.6** **implemented** (scripted RW-083; live **not confirmed** on RW-084/085/086); slice F **v0.4.7** **implemented** (xxd ENVIRONMENT; scripted RW-086; live RW-086 thrash **CLEARED**); slice E2 **v0.4.8** **implemented** (scripted RW-087; live **not confirmed**); slice E3 **v0.4.9** **implemented** (scripted RW-088; live **not confirmed**). Live E1–E3 confirmation **deferred** until a provider recovers |
-| Generation 4 | **IN PROGRESS** — **G4-1** as **v0.5.0** (scripted RW-089); **G4-2** as **v0.5.1** (scripted RW-090 / RW-091); **G4-3** as **v0.5.2** (scripted RW-092 / RW-093); **Version 5 pack** shipped; **G4-5** as **v0.5.3** (scripted RW-094 / RW-095); **G4-7** as **v0.5.4** (scripted RW-096 / RW-097). Recommended next **G4-6** listed, **not accepted**. G4-4 remains later (no measured hole) |
+| Generation 4 | **IN PROGRESS** — **G4-1** as **v0.5.0** (scripted RW-089); **G4-2** as **v0.5.1** (scripted RW-090 / RW-091); **G4-3** as **v0.5.2** (scripted RW-092 / RW-093); **Version 5 pack** shipped; **G4-5** as **v0.5.3** (scripted RW-094 / RW-095); **G4-7** as **v0.5.4** (scripted RW-096 / RW-097); **G4-6** as **v0.5.5** (scripted RW-098 / RW-099). G4-4 remains later (no measured hole) |
 | Generation 5 | **NOT STARTED** |
 | Needle | optional / **off** (`tool_router=existing`; ADR-001) |
 | `max_plan_tasks` | **16** (unchanged) |
@@ -74,7 +74,7 @@ Cycle evidence, not this file: [MATURATION_CYCLE_REPORT.md](MATURATION_CYCLE_REP
 | **1** | Foundation | v0.2.0, v0.2.1, v0.2.2, **v0.2.3** | **COMPLETE** |
 | **2** | Capability Expansion | v0.3.x | **COMPLETE** (theme 1 → **v0.3.0**; theme 2 → **v0.3.1** used RW-066/068; theme 3 → **v0.3.2**; use campaign RW-068 PASS / RW-069 FAIL) |
 | **3** | Autonomous Agent Maturity | v0.4.x | **COMPLETE (scripted)** (theme 1 → **v0.4.0**; theme 2 → **v0.4.1**; theme 3 slices A–D → **v0.4.2–v0.4.5**; slice E1 → **v0.4.6**; slice F → **v0.4.7**; slice E2 → **v0.4.8**; slice E3 → **v0.4.9**; live E1–E3 **deferred**) |
-| **4** | Production Scale | v0.5.x | **IN PROGRESS** (G4-1 → **v0.5.0**; G4-2 → **v0.5.1**; G4-3 → **v0.5.2** Version 5 pack; G4-5 → **v0.5.3**; G4-7 → **v0.5.4**; G4-6 listed, not accepted; G4-4 candidate) |
+| **4** | Production Scale | v0.5.x | **IN PROGRESS** (G4-1 → **v0.5.0**; G4-2 → **v0.5.1**; G4-3 → **v0.5.2** Version 5 pack; G4-5 → **v0.5.3**; G4-7 → **v0.5.4**; G4-6 → **v0.5.5**; G4-4 candidate) |
 | **5** | 1.0 | v1.0.0 | **NOT STARTED** |
 
 Enter the next generation only after the previous one has been **released, used, and has
@@ -107,9 +107,9 @@ implemented** as **v0.5.2**. **Version 5 pack** shipped (GitHub Release
 implemented** as **v0.5.3** (scripted RW-094 / RW-095). **G4-7**
 (coding artifact completeness / named package-file contracts) is
 **accepted and implemented** as **v0.5.4** (scripted RW-096 / RW-097).
-Recommended next **G4-6** (cost/budget reporting) is **listed, not
-accepted**. **No per-slice GitHub Release.** Gen5 stays closed until
-Gen4 has been released and used.
+**G4-6** (cost/budget reporting) is **accepted and implemented** as
+**v0.5.5** (scripted RW-098 / RW-099). **No per-slice GitHub Release.**
+Gen5 stays closed until Gen4 has been released and used.
 
 ---
 
@@ -588,11 +588,11 @@ Theme **G4-5** (fallback / LLM plan quality under tight budgets) is
 **accepted and implemented as v0.5.3** (scripted RW-094 / RW-095).
 Theme **G4-7** (coding artifact completeness / named package-file
 contracts) is **accepted and implemented as v0.5.4** (scripted RW-096 /
-RW-097). Recommended next **v0.5.5** candidate **G4-6** (cost/budget
-reporting) is **listed, not accepted**. Package stays **0.5.4**. Do
-**not** implement v0.5.5 in this change. **No per-slice GitHub Release**
-— Version 5 packing doctrine: Gen4 themes are sub-versions under
-Version 5; build and merge on main; pack again only when Sanath asks.
+RW-097). Theme **G4-6** (cost/budget reporting) is **accepted and
+implemented as v0.5.5** (scripted RW-098 / RW-099). Package is
+**0.5.5**. **No per-slice GitHub Release** — Version 5 packing doctrine:
+Gen4 themes are sub-versions under Version 5; build and merge on main;
+pack again only when Sanath asks.
 GitHub Release **Version 5** / tag **v0.5.2** still covers G4-1–G4-3
 only. Same loop. Same A/B/C rules. Same gates. Needle stays **OFF**. Caps
 (`max_plan_tasks` **16**, default `Budget.tool_calls` **60**) unchanged.
@@ -631,12 +631,12 @@ Release gates must still be green (pytest, `rad doctor --offline`,
 
 ### Code findings (lightweight; no patch)
 
-What is already in tree vs the measured gap after **G4-7** (v0.5.4 /
-RW-096 / RW-097). Named package-file / JSON-field *objective* contracts
+What is already in tree vs the measured gap after **G4-6** (v0.5.5 /
+RW-098 / RW-099). Named package-file / JSON-field *objective* contracts
 are closed scripted. Cycle 24’s remaining *product* Class B list
-(fallback PLAN, incomplete packages) is closed scripted. Do not invent
-a second control plane, do not reopen F-17, do not invent MCP, and do
-not invent remaining-quota.
+(fallback PLAN, incomplete packages) is closed scripted. Per-objective
+`Usage` now rolls up on `rad cost`. Do not invent a second control plane,
+do not reopen F-17, do not invent MCP, and do not invent remaining-quota.
 
 | already in tree | role | gap vs measured post-G4-5 residual |
 |---|---|---|
@@ -651,7 +651,7 @@ not invent remaining-quota.
 | `infer_coding_checks` | objective-level `json_valid` / test `shell_ok` / exact `file_line_count` plus named-file `file_exists` and `json_field` for keys the goal names (cap 8); merge into omitted LLM plans | **Closed for scripted G4-7** (RW-096 / RW-097). Live RW-081 `{}` / RW-085/086 missing README + alt-schema remain historical Class B; live confirmation deferred. False DONE **0**. F-17 fallback *tasks* stay check-less |
 | `codingloop` repair | broken `json_valid` / `json_field` / `shell_ok` insert one repair | **Closed for scripted G4-7** on named keys (empty `{}` fails `json_field`). Repair still cannot invent keys the goal never named. Live confirmation deferred |
 | E1 / E2 / E3 (`TaskYield`, empty fallback `depends_on`, leftover retry stop) | scripted RW-083 / RW-087 / RW-088 | Live **not confirmed**. Not a missing executor slice — live confirmation waits on Class C recovery (G4-3 playbook) |
-| `rad cost` / `RouterState.cost_report` | paid 14-day token spend | **G4-6 hole.** Free-tier quota remaining is not in the API until 429 — do not invent a counter. Per-objective `Usage` (`tool_calls` / `model_calls` / `money_usd` / `tokens`) already persists on `~/.rad/objectives/<id>/objective.json`. `rad inspect` / the run banner print one objective. There is no production rollup across objectives. Scripted/offline runs already write those records (acceptance, realworld, unit). G4-2 already persists last Class C + Retry-After — do not re-do |
+| `rad cost` / `RouterState.cost_report` + `ObjectiveStore.usage_rollup` | paid 14-day token spend **and** persisted per-objective `Usage` rollup (v0.5.5 / RW-098 / RW-099) | **Closed for scripted G4-6.** Free-tier quota remaining is not in the API until 429 — still not invented. G4-2 last Class C + Retry-After preserved |
 | `rad connect` / skills / MCP gate; `rad provider add` | MCP + any OpenAI-compatible endpoint already first-class | No measured production row says MCP or custom-provider *absence* is the hole. Acceptance already handshakes MCP (**G4-4** stays not-next) |
 
 ### Candidate themes (evidence-backed)
@@ -691,10 +691,9 @@ Cycles 30–32 deferred **G4-6** as “wait for Version 5 live-use data.”
 That was a **priority deferral** while measured Class B product holes
 were higher leverage — not a missing API. Those holes are now closed
 scripted. Per-objective `Usage` records already exist from scripted /
-offline runs. That is enough to **scope** a rollup. Do **not** invent
-remaining-quota. Do **not** stall Gen4 on Class C. After G4-7, the
-highest-leverage **Production Scale** leftover is that parked report
-gap (**G4-6** / proposed **v0.5.5**).
+offline runs. That was enough to **build** the rollup. Do **not** invent
+remaining-quota. Do **not** stall Gen4 on Class C. **G4-6** is now
+**accepted and implemented** as **v0.5.5** (scripted RW-098 / RW-099).
 
 | id | theme | live providers? | status |
 |---|---|---|---|
@@ -703,7 +702,7 @@ gap (**G4-6** / proposed **v0.5.5**).
 | **G4-3** | Live-use campaign / operator workflow | Live E1–E3 confirmation needs an entitled brain; doctor skip-blocked / campaign playbook is scripted | **ACCEPTED + IMPLEMENTED** as **v0.5.2** (scripted RW-092 / RW-093); **Version 5 pack** |
 | **G4-4** | Extensibility / integrations (MCP, custom providers) | No — already partially in tree | **not a next theme** (no measured hole) |
 | **G4-5** | Fallback / LLM plan quality under tight budgets | Scripted possible; live confirmation needs a recovered brain | **ACCEPTED + IMPLEMENTED** as **v0.5.3** (scripted RW-094 / RW-095); Version 5 pack merge-only |
-| **G4-6** | Operational scale: cost/budget reporting | Reporting can be scripted from existing `Objective.usage` records; free-quota *remaining* is not in the API until 429 | **recommended next v0.5.5 candidate — not accepted** (Cycle 26 G4-3 reporting half) |
+| **G4-6** | Operational scale: cost/budget reporting | Reporting can be scripted from existing `Objective.usage` records; free-quota *remaining* is not in the API until 429 | **ACCEPTED + IMPLEMENTED** as **v0.5.5** (scripted RW-098 / RW-099); Version 5 pack merge-only |
 | **G4-7** | Coding artifact completeness / named package-file contracts | Scripted possible; live confirmation needs a recovered brain | **ACCEPTED + IMPLEMENTED** as **v0.5.4** (scripted RW-096 / RW-097); Version 5 pack merge-only |
 
 #### G4-1 — ACCEPTED + IMPLEMENTED (live multi-provider / free-provider production doctrine)
@@ -851,15 +850,15 @@ surfaces the doctrine; `free_lock` still drops paid.
 
 **What shipped:** `_json_obj` recovers fenced JSON, trailing commas, a top-level tasks array, and the first balanced object; coding-goal retries use `PLAN_CODING_RETRY`; `_fallback` unchanged (F-17).
 
-#### G4-6 — Operational scale (cost/budget reporting) (recommended next)
+#### G4-6 — ACCEPTED + IMPLEMENTED (operational scale: cost/budget reporting)
 
 | field | value |
 |---|---|
-| Status | **CANDIDATE**. Recommended next **v0.5.5**. **Not accepted. Not implemented.** Cycle 26 id was **G4-3** (reporting half of a grab-bag with longer workloads) — kept as **G4-6** so live-use could occupy G4-3. Cycles 30–32 deferred this as “wait for Version 5 live-use data” while G4-5 / G4-7 product holes were higher leverage. Those holes are now closed scripted. Version 5 pack shipped; this slice merge-only when accepted |
+| Status | **ACCEPTED + IMPLEMENTED** as **v0.5.5** (scripted RW-098 / RW-099). Cycle 26 id was **G4-3** (reporting half of a grab-bag with longer workloads) — kept as **G4-6** so live-use could occupy G4-3. Cycles 30–32 deferred this as “wait for Version 5 live-use data” while G4-5 / G4-7 product holes were higher leverage. Those holes are closed scripted. Version 5 pack shipped; this slice merge-only |
 | Theme | **Operational scale: cost/budget reporting** |
-| Version | Proposed **v0.5.5** (package bump only when accepted). This scope PR stays **0.5.4** |
+| Version | **v0.5.5** |
 | Problem | After G4-7 closed named-file / JSON-field *objective* contracts, Cycle 24’s remaining *product* Class B list is closed scripted. Production Scale leftover is spend visibility. `rad cost` / `RouterState.cost_report` reports **paid 14-day token spend** only (“no paid usage recorded (you're on free/local)”). Per-objective `Usage` (`tool_calls` / `model_calls` / `money_usd` / `tokens`) already persists on `~/.rad/objectives/<id>/objective.json` (Cycle 24 / `rad/control/objectives.py`). `rad inspect` and the run banner print **one** objective. There is no production rollup across objectives. Free-tier *remaining* quota is not in the API until HTTP 429 (RW-086) — do **not** invent a counter. G4-2 already persists last Class C + Retry-After — do **not** re-do. Default caps 16/60 are **not** raised (A1 / F-21 stay closed). RW-086 recorded `$0` + tools **12/12** with no spend rollup beyond the one-run banner |
-| Entry | G4-7 shipped (v0.5.4 / RW-096 / RW-097) — **DONE**. Sanath accepts G4-6 as v0.5.5. Grounded in Cycle 24 `rad cost` paid-only gap, RW-086 (`$0` / tools 12/12 / late 429 with no remaining-quota API), and existing per-objective `Usage` that is not rolled up. Scripted/offline objectives already write those records (acceptance, realworld, unit) — enough to **scope** / **accept** a rollup without Version 5 *live* inference. Investigate-first: roll up records that exist — not “invent remaining-quota”, not “raise caps”, not a new telemetry stack. Live confirmation prefers a recovered brain (G4-3 playbook) but is **not** required to *scope* or to *accept*. Class C stays Class C |
+| Entry | G4-7 shipped (v0.5.4 / RW-096 / RW-097) — **DONE**. Sanath accepts G4-6 as v0.5.5. Grounded in Cycle 24 `rad cost` paid-only gap, RW-086 (`$0` / tools 12/12 / late 429 with no remaining-quota API), and existing per-objective `Usage` that is not rolled up. Scripted/offline objectives already write those records (acceptance, realworld, unit) — enough to **build** a rollup without Version 5 *live* inference. Investigate-first: roll up records that exist — not “invent remaining-quota”, not “raise caps”, not a new telemetry stack. Live confirmation prefers a recovered brain (G4-3 playbook) but is **not** required to ship. Class C stays Class C |
 | Non-goals | Reopening F-17 / F-21 / F-26. Adding checks to fallback *tasks*. Rubber-stamp VERIFIED. Cap raise as the theme. Inventing a remaining-quota counter the provider does not expose. Claiming 11B quality is solved. Remapping `write_file` / `echo >` (F-44). Inventing a product Class A for 403/429. MCP marketplace (that is G4-4). A new executor slice (E4). A new telemetry stack / SQLite. A control-plane rewrite. Needle on. Re-doing G4-2 catalog-vs-inference / last Class C. Re-doing G4-3 live-use playbook. A GitHub Release / tag for this sub-version |
 | Needs live providers | **No** for the scripted gate. Interpreting free-quota *remaining* needs a provider that exposes it — out of scope. Live confirmation of Version 5 / G4-5 / G4-7 is **not** this theme |
 | What it is not | Not “raise max-tools to 24 and call it scale.” RW-059 already showed 12→24 still exhausted. Not a Gen3 leftover theme number. Not “wait forever” for Class C. Not live confirmation of Version 5 as a product theme. Not inventing telemetry from a reconstructed story — the records already exist |
@@ -875,7 +874,7 @@ surfaces the doctrine; `free_lock` still drops paid.
 | Residual Class B “11B quality / free-model thrash” as a grab-bag | Thrash Class A paths are patched or F-44 **NOT CONFIRMED**. 429 is Class C. Not a theme |
 | Operational runbooks / `needs_user` UX polish | G4-1 / G4-2 / G4-3 already shipped pause / resume / skip-blocked doctor / `rad health`. Residual copy is not a measured hole |
 
-**Acceptance gates (when accepted — not this change):**
+**Acceptance gates (this change):**
 
 | gate | meaning |
 |---|---|
@@ -885,6 +884,8 @@ surfaces the doctrine; `free_lock` still drops paid.
 | Real-world suite | `rad realworld` (`live_nim` may stay BLOCKED) |
 | Scripted spend rollup | per-objective `Usage` (tools / model / paid) already on disk is visible as a production rollup — not paid-14-day-only `rad cost`; free remaining-quota is **not** invented; G4-2 last Class C / Retry-After preserved; false DONE **0** |
 | Invariants | Needle **OFF**; caps **16/60**; false DONE **0**; Class C is not a product patch; no live PASS claim; **no per-slice GitHub Release** (Version 5 packing doctrine) |
+
+**What shipped:** `ObjectiveStore.usage_rollup` sums persisted `Usage` (`tool_calls` / `model_calls` / `money_usd` / `tokens`) across `~/.rad/objectives/<id>/objective.json`. `rad cost` prints that rollup under the existing paid 14-day section. Remaining-quota is **not** invented. G4-2 last Class C + Retry-After is untouched.
 
 #### G4-7 — ACCEPTED + IMPLEMENTED (coding artifact completeness / named package-file contracts)
 
@@ -1030,35 +1031,39 @@ cut a per-slice GitHub Release. Pack again only when Sanath asks.
 GitHub Release **Version 5** / tag **v0.5.2** still covers G4-1–G4-3
 only.
 
-### Recommended next v0.5.5 — G4-6 (candidate, not accepted)
+### v0.5.5 — G4-6 (accepted + implemented)
 
-**G4-6** (operational scale: cost/budget reporting) is the
-recommended next slice. It is **listed, not accepted, not implemented**.
+**G4-6** (operational scale: cost/budget reporting) is
+**accepted and implemented as v0.5.5**. **No GitHub Release / tag** —
+Version 5 packing doctrine: merge-only; pack again only when Sanath asks.
 
-Why this one next: **G4-7** closed named-file / JSON-field *objective*
+Why this one: **G4-7** closed named-file / JSON-field *objective*
 contracts as **v0.5.4**. Cycle 24’s remaining *product* Class B list
 (fallback PLAN, incomplete packages) is closed scripted. The remaining
-measured Production Scale leftover is spend visibility: `rad cost` is
-paid-14-day only; per-objective `Usage` already persists and is not
+measured Production Scale leftover was spend visibility: `rad cost` was
+paid-14-day only; per-objective `Usage` already persisted and was not
 rolled up. Cycles 30–32 deferred this so G4-5 / G4-7 could ship. Those
-are done. Scripted/offline `Usage` records are enough to **build**; live
+are done. Scripted/offline `Usage` records were enough to **build**; live
 NIM/OpenRouter success is **not** required. Do **not** invent remaining-quota.
 Do **not** invent Class A for 403/429. Do **not** claim live
 text_analyzer@12 PASS. Do **not** raise caps. F-17 stays closed.
 
-**Version 5 packing doctrine:** next slices **merge only**. Do **not**
+**What shipped:** `ObjectiveStore.usage_rollup` sums persisted
+`tool_calls` / `model_calls` / `money_usd` / `tokens`; `rad cost`
+prints that rollup under paid 14-day tokens. Remaining-quota is not
+invented. G4-2 last Class C + Retry-After is untouched.
+
+**Version 5 packing doctrine:** this slice **merged only**. Do **not**
 cut a per-slice GitHub Release. Pack again only when Sanath asks.
 GitHub Release **Version 5** / tag **v0.5.2** still covers G4-1–G4-3
 only.
 
-Next product work waits for a written accept. Stay **0.5.4**.
-
 ### Later candidates (not this change)
 
 **G4-4** (extensibility / MCP) remains a later candidate (no measured
-hole). Live confirmation of Version 5 / G4-5 / G4-7 is operator
+hole). Live confirmation of Version 5 / G4-5 / G4-7 / G4-6 is operator
 campaign work (G4-3 playbook) when a provider recovers — not a package
-bump. Stay **0.5.4**.
+bump. Stay **0.5.5**.
 
 ### Accepting a further v0.5.x theme
 
@@ -1068,9 +1073,9 @@ models propose / RAD decides; false DONE **0**; Class C is not a product
 patch), and the 0.5.x change. G4-1 / G4-2 / G4-3 are shipped and
 **Version 5 packed** as v0.5.0 / v0.5.1 / v0.5.2. **G4-5** is shipped as
 **v0.5.3** (merge-only; not in the pack release). **G4-7** is shipped as
-**v0.5.4** (merge-only; not in the pack release). G4-6 is listed, not
-accepted. G4-4 remains a later candidate. Do not start v0.5.5 from
-this scope PR. **No per-slice GitHub Release.**
+**v0.5.4** (merge-only; not in the pack release). **G4-6** is shipped as
+**v0.5.5** (merge-only; not in the pack release). G4-4 remains a later
+candidate. **No per-slice GitHub Release.**
 
 ---
 
@@ -1089,7 +1094,7 @@ acceptable for a public baseline).
 | doc | role |
 |---|---|
 | [MATURATION_CYCLE_REPORT.md](MATURATION_CYCLE_REPORT.md) | Cycle-by-cycle evidence and decisions |
-| [REAL_WORLD_TASK_MATRIX.md](REAL_WORLD_TASK_MATRIX.md) | Disk-checked task rows (do not rewrite RW-058–097) |
+| [REAL_WORLD_TASK_MATRIX.md](REAL_WORLD_TASK_MATRIX.md) | Disk-checked task rows (do not rewrite RW-058–099) |
 | [REAL_WORLD_FAILURE_LEDGER.md](REAL_WORLD_FAILURE_LEDGER.md) | A/B/C findings |
 | [ADR-001-NEEDLE-TOOL-ROUTER.md](ADR-001-NEEDLE-TOOL-ROUTER.md) | Needle stays optional / off |
 | [CONTROL-PLANE.md](CONTROL-PLANE.md) | Shipped control-plane behaviour |

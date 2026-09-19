@@ -12,7 +12,7 @@ runs commands with your confirmation, and **teaches itself new skills from a sin
   __ / \  |  _ \/ |      / \
  / _` __ \| |_) | | /\/\ / _ \
  \__,_||_|____/|_|/__/__\_/ \_\
-   v0.5.4 — open door, free first, self-evolving
+   v0.5.5 — open door, free first, self-evolving
 ```
 
 ---
@@ -59,11 +59,12 @@ local engines → free cloud tiers (round-robin) → paid (unless free-lock)
 * Any provider failing (rate limit, quota, network) → Rad **auto-falls-back** and tells you.
 * Free tiers **rotate** so one rate limit never walls you off.
 * `rad use <provider>` pins one; **free-lock mode** makes paid spend impossible;
-  `rad cost` shows exactly what any paid fallback cost.
+  `rad cost` shows paid 14-day spend and a rollup of persisted
+  per-objective Usage (tools / model / money / tokens).
 * Everything is reported: `rad [groq] …`
 * Optional experimental tool router: `RAD_TOOL_ROUTER=needle` lets [Needle](https://github.com/cactus-compute/needle)
   *propose* tool names/args. Default remains `existing`. Needle never executes tools, never
-  bypasses permission/sandbox/budget/verification, and stays **off** in v0.5.4
+  bypasses permission/sandbox/budget/verification, and stays **off** in v0.5.5
   (`RAD_TOOL_ROUTER=existing`). `rad needle-eval` is the measurement path; it is not a default.
 
 ## Human-inspired memory
@@ -292,7 +293,7 @@ rad chat --voice --auto --use <p> --free-lock --model <m> --workspace <dir>
 rad keys add <provider> <key> | list | rm <provider>
 rad providers                # detected brains + chain
 rad use <provider>           # pin
-rad cost                     # paid spend
+rad cost                     # paid spend + objective usage rollup
 
 rad see <image> [question]   # vision
 rad browse <url>             # scrape public page
@@ -385,7 +386,7 @@ and how to add a tool, a scenario or a migration.
 
 ## Roadmap
 
-Operating spine (Gen1–Gen5, the build → test → validate → release → use → discover gaps loop): [docs/ROADMAP.md](docs/ROADMAP.md). Gen1 complete on 0.2.3; Gen2 complete on 0.3.0–0.3.2; Gen3 **complete (scripted)** on 0.4.0–0.4.9; Gen4 **in progress** — **G4-1** implemented as v0.5.0 (scripted RW-089); **G4-2** live-gate resume / provider health observability **implemented as v0.5.1** (scripted RW-090 / RW-091); **G4-3** live-use campaign / operator workflow **implemented as v0.5.2** (scripted RW-092 / RW-093). **Version 5 pack** shipped as GitHub Release **v0.5.2**. **G4-5** fallback / LLM plan quality **implemented as v0.5.3** (scripted RW-094 / RW-095). **G4-7** coding artifact completeness / named package-file contracts **implemented as v0.5.4** (scripted RW-096 / RW-097). Recommended next **v0.5.5** candidate **G4-6** (cost/budget reporting) is listed, not accepted. Package stays **0.5.4**. **No per-slice GitHub Release** — Version 5 pack later only when Sanath asks. Live E1–E3 confirmation **deferred**; live text_analyzer@12 **not** claimed PASS; NIM Class C paused (RW-084); OpenRouter free paused (RW-086 429). Needle **OFF**. Caps **16/60**. The list below is a product-idea backlog, not a generation commitment.
+Operating spine (Gen1–Gen5, the build → test → validate → release → use → discover gaps loop): [docs/ROADMAP.md](docs/ROADMAP.md). Gen1 complete on 0.2.3; Gen2 complete on 0.3.0–0.3.2; Gen3 **complete (scripted)** on 0.4.0–0.4.9; Gen4 **in progress** — **G4-1** implemented as v0.5.0 (scripted RW-089); **G4-2** live-gate resume / provider health observability **implemented as v0.5.1** (scripted RW-090 / RW-091); **G4-3** live-use campaign / operator workflow **implemented as v0.5.2** (scripted RW-092 / RW-093). **Version 5 pack** shipped as GitHub Release **v0.5.2**. **G4-5** fallback / LLM plan quality **implemented as v0.5.3** (scripted RW-094 / RW-095). **G4-7** coding artifact completeness / named package-file contracts **implemented as v0.5.4** (scripted RW-096 / RW-097). **G4-6** cost/budget reporting **implemented as v0.5.5** (scripted RW-098 / RW-099). Package is **0.5.5**. **No per-slice GitHub Release** — Version 5 pack later only when Sanath asks. Live E1–E3 confirmation **deferred**; live text_analyzer@12 **not** claimed PASS; NIM Class C paused (RW-084); OpenRouter free paused (RW-086 429). Needle **OFF**. Caps **16/60**. The list below is a product-idea backlog, not a generation commitment.
 
 LoRA fine-tune of Rad's personality into Edge0 weights · expert pruning/distillation for lighter
 35b · web/phone face · remote-MCP tool execution hardening · multi-user sessions ·

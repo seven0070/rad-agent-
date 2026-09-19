@@ -6,6 +6,67 @@ Default `Budget.tool_calls` remains **60**.
 
 ---
 
+# Cycle 35 — G4-6 cost/budget reporting; v0.5.5 (2026-09-19)
+
+**Date:** 2026-09-19
+**Baseline:** `origin/main` `639a6d61c251e336c4ab61bfc6d41a833fd651ec` (merge PR #48; package **0.5.4**)
+**Package at start:** `0.5.4`
+**This branch:** `cursor/g4-6-cost-budget-report-7432` — package **0.5.5**
+**Architecture:** control plane preserved. Needle stays off. Caps unchanged.
+**Kind:** product — G4-6 accepted + implemented. RW-058–097 are **not rewritten**.
+**Release:** **none** — Version 5 packing doctrine: merge-only; pack again only when Sanath asks.
+
+## Why this cycle
+
+G4-6 was scoped on Cycle 34 / PR #48 and **accepted**. G4-7 closed named-file
+/ JSON-field *objective* contracts (v0.5.4 / RW-096 / RW-097). Version 5
+pack remains GitHub Release **v0.5.2** (G4-1–G4-3). The remaining measured
+Production Scale leftover was spend visibility: `rad cost` /
+`RouterState.cost_report` reported paid 14-day tokens only; per-objective
+`Usage` already persisted on `objective.json` and was not rolled up.
+Free remaining-quota is not in the API until 429 — not invented. G4-2
+last Class C + Retry-After is not re-done. F-17 stays closed.
+
+## Decision
+
+| item | value |
+|---|---|
+| Package | **0.5.4 → 0.5.5** |
+| Gen3 | **COMPLETE (scripted)** (unchanged). Live E1–E3 **deferred** |
+| Gen4 | **IN PROGRESS**. **G4-6 ACCEPTED + IMPLEMENTED** as **v0.5.5** |
+| Evidence | scripted **RW-098** / **RW-099** / F-20260919-57 |
+| Release / tag | **none** — Version 5 pack later only when Sanath asks |
+| Invariants | Needle OFF; caps 16/60; false DONE 0; no redesign; Class C is not a product patch; no live PASS claim; remaining-quota not invented; F-17 fallback *tasks* stay check-less |
+
+## What shipped
+
+- `ObjectiveStore.usage_rollup` sums persisted `tool_calls` / `model_calls` / `money_usd` / `tokens` (RW-098)
+- `rad cost` prints that rollup under the existing paid 14-day section (RW-099)
+- Remaining-quota is **not** a field; G4-2 last Class C + Retry-After is untouched
+
+## Quality gates (this branch)
+
+Isolated homes `/tmp/rad-g46-gate` (doctor, acceptance) and `/tmp/rad-g46-rw` (realworld).
+
+| gate | result |
+|------|--------|
+| `rad version` | **PASS** v0.5.5 |
+| `python3 -m pytest -q` | **pending this branch** |
+| `rad doctor --offline` | **pending this branch** |
+| `rad acceptance` | **pending this branch** |
+| `rad realworld` | **pending this branch** |
+| Needle default | **PASS** (`existing`) — unchanged |
+| Caps | **PASS** `max_plan_tasks` 16 / `Budget.tool_calls` 60 |
+| False DONE | **0** |
+| Release / tag | **none** |
+
+## Roadmap pointer
+
+Operating spine: [ROADMAP.md](ROADMAP.md). **Generation 4 in progress.**
+**G4-6 implemented as v0.5.5.** **No GitHub Release / tag.** Gen5 is not started.
+
+---
+
 # Cycle 34 — Scope G4-6 cost/budget reporting; stay 0.5.4 (2026-09-19)
 
 **Date:** 2026-09-19

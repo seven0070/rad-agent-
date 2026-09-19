@@ -30,7 +30,7 @@ Global: `--home <dir>` (or `RAD_HOME`), `--quiet`, `--json` where noted.
 | `rad use` | pin a provider |
 | `rad provider` | custom providers (open door) |
 | `rad models` | local engine models |
-| `rad cost` | paid spend so far |
+| `rad cost` | paid 14-day spend + persisted objective usage rollup |
 | `rad install` | install optional parts |
 
 ## Autonomy (control plane)

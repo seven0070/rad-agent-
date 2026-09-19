@@ -2,7 +2,7 @@
 
 Living log of **measured** RAD failures found in live or reconstructed use.
 Architecture is frozen. Needle stays experimental and off by default. This is not AGI/ASI.
-Operating spine: [ROADMAP.md](ROADMAP.md) (adopted 2026-09-18). Gen1 complete on 0.2.3; **Gen2 complete** on 0.3.0–0.3.2. Verified coding loop is **implemented as v0.3.0** (F-20260918-24 / RW-064). Live retest **RW-065**. Plan-timeout resilience is **implemented as v0.3.1** (F-20260918-27 / scripted RW-066) and **used** (live RW-066 / F-20260918-28). Budget-aware planning is **implemented as v0.3.2** (F-20260918-29 / RW-067). Live NIM use of v0.3.2 is **RW-068 PASS** (F-20260918-30) and **RW-069 FAIL** (F-20260918-31). Path-aligned checks are **implemented as v0.4.0** (F-20260918-32 / RW-070). Live NIM retest of v0.4.0 is **RW-071 FAIL** (F-20260918-33; theme 1 live-confirmed). Multi-file contracts under tight budgets are **implemented as v0.4.1** (F-20260918-34 / RW-072). Live NIM retest of v0.4.1 is **RW-073 FAIL** (F-20260918-35; theme 1/2 live-confirmed). ASCII-tree `package_dir` is **implemented as v0.4.2** (F-20260918-36 / RW-074). Live NIM retest of v0.4.2 is **RW-075 FAIL** (F-20260918-37; ASCII-tree obj-checks live-confirmed). First-task thrash is **implemented as v0.4.3** (F-20260918-38 / RW-076). Live NIM retest of v0.4.3 is **RW-077 FAIL** (F-20260918-39; pip/DONE Class A **live-consistent**; mkdir File-exists action noise is F-40). mkdir already-exists action noise is **implemented as v0.4.4** (F-20260918-40 / RW-078). Live NIM retest of v0.4.4 is **RW-079 FAIL** (F-20260918-41; mkdir File-exists **not live-hit**; premature-test ENVIRONMENT is F-42). Premature-test ENVIRONMENT is **implemented as v0.4.5** (F-20260918-42 / RW-080). Live NIM retest of v0.4.5 is **RW-081 FAIL** (F-20260918-43; mkdir File-exists **live Y**; premature-test ENVIRONMENT **not live-hit**; pip/echo + root pollution residual). Pip thrash + root `analyzer.py` pollution Class A is **NOT CONFIRMED** (F-20260918-44 / scripted RW-082). Task-boundary yield / leftover-budget dispatch is **implemented as v0.4.6** (F-20260918-45 / scripted RW-083). Live NIM retest of v0.4.6 is **RW-084 BLOCKED Class C** (F-20260919-46; HTTP **403 Authorization failed** on all `chat/completions`; `/v1/models` **200**; tools **0/12**; E1 leftover-budget yield **not live-tested**). Live OpenRouter free retest of v0.4.6 is **RW-085 FAIL** (F-20260919-47; tools **11/12**; `xxd` ENVIRONMENT repair; E1 **not live**). Missing optional checksum/hex utility ENVIRONMENT is **Class A CONFIRMED** and **implemented as v0.4.7** (F-20260919-48 / scripted RW-086). Live OpenRouter free retest of v0.4.7 is **RW-086 FAIL** (F-20260919-49; tools **12/12**; xxd Class A thrash **CLEARED**; E1 **not live**; late HTTP **429** `free-models-per-day`). Independent later package files is **implemented as v0.4.8** (F-20260919-50 / scripted RW-087). Budget-aware retry stop is **implemented as v0.4.9** (F-20260919-51 / scripted RW-088). Gen3 is **complete (scripted)**; live E1–E3 confirmation is **deferred** until a provider recovers. Gen4 **G4-1** is **accepted and implemented as v0.5.0** (F-20260919-52 / scripted RW-089). **G4-2** is **accepted and implemented as v0.5.1** (F-20260919-53 / scripted RW-090 / RW-091). **G4-3** is **accepted and implemented as v0.5.2** (F-20260919-54 / scripted RW-092 / RW-093). **Version 5 pack** shipped as GitHub Release **v0.5.2**. **G4-5** is **accepted and implemented as v0.5.3** (F-20260919-55 / scripted RW-094 / RW-095). **G4-7** is **accepted and implemented as v0.5.4** (F-20260919-56 / scripted RW-096 / RW-097). Recommended next **v0.5.5** candidate **G4-6** (cost/budget reporting) is listed, not accepted. Package stays **0.5.4**. **No per-slice GitHub Release.** Live OpenRouter free-model loop is **paused** until `free-models-per-day` rate limit resets. Live NIM loop remains **paused** (Class C). This ledger is evidence. Do not rewrite RW-058–097. Scripted RW-066 (F-27) is preserved.
+Operating spine: [ROADMAP.md](ROADMAP.md) (adopted 2026-09-18). Gen1 complete on 0.2.3; **Gen2 complete** on 0.3.0–0.3.2. Verified coding loop is **implemented as v0.3.0** (F-20260918-24 / RW-064). Live retest **RW-065**. Plan-timeout resilience is **implemented as v0.3.1** (F-20260918-27 / scripted RW-066) and **used** (live RW-066 / F-20260918-28). Budget-aware planning is **implemented as v0.3.2** (F-20260918-29 / RW-067). Live NIM use of v0.3.2 is **RW-068 PASS** (F-20260918-30) and **RW-069 FAIL** (F-20260918-31). Path-aligned checks are **implemented as v0.4.0** (F-20260918-32 / RW-070). Live NIM retest of v0.4.0 is **RW-071 FAIL** (F-20260918-33; theme 1 live-confirmed). Multi-file contracts under tight budgets are **implemented as v0.4.1** (F-20260918-34 / RW-072). Live NIM retest of v0.4.1 is **RW-073 FAIL** (F-20260918-35; theme 1/2 live-confirmed). ASCII-tree `package_dir` is **implemented as v0.4.2** (F-20260918-36 / RW-074). Live NIM retest of v0.4.2 is **RW-075 FAIL** (F-20260918-37; ASCII-tree obj-checks live-confirmed). First-task thrash is **implemented as v0.4.3** (F-20260918-38 / RW-076). Live NIM retest of v0.4.3 is **RW-077 FAIL** (F-20260918-39; pip/DONE Class A **live-consistent**; mkdir File-exists action noise is F-40). mkdir already-exists action noise is **implemented as v0.4.4** (F-20260918-40 / RW-078). Live NIM retest of v0.4.4 is **RW-079 FAIL** (F-20260918-41; mkdir File-exists **not live-hit**; premature-test ENVIRONMENT is F-42). Premature-test ENVIRONMENT is **implemented as v0.4.5** (F-20260918-42 / RW-080). Live NIM retest of v0.4.5 is **RW-081 FAIL** (F-20260918-43; mkdir File-exists **live Y**; premature-test ENVIRONMENT **not live-hit**; pip/echo + root pollution residual). Pip thrash + root `analyzer.py` pollution Class A is **NOT CONFIRMED** (F-20260918-44 / scripted RW-082). Task-boundary yield / leftover-budget dispatch is **implemented as v0.4.6** (F-20260918-45 / scripted RW-083). Live NIM retest of v0.4.6 is **RW-084 BLOCKED Class C** (F-20260919-46; HTTP **403 Authorization failed** on all `chat/completions`; `/v1/models` **200**; tools **0/12**; E1 leftover-budget yield **not live-tested**). Live OpenRouter free retest of v0.4.6 is **RW-085 FAIL** (F-20260919-47; tools **11/12**; `xxd` ENVIRONMENT repair; E1 **not live**). Missing optional checksum/hex utility ENVIRONMENT is **Class A CONFIRMED** and **implemented as v0.4.7** (F-20260919-48 / scripted RW-086). Live OpenRouter free retest of v0.4.7 is **RW-086 FAIL** (F-20260919-49; tools **12/12**; xxd Class A thrash **CLEARED**; E1 **not live**; late HTTP **429** `free-models-per-day`). Independent later package files is **implemented as v0.4.8** (F-20260919-50 / scripted RW-087). Budget-aware retry stop is **implemented as v0.4.9** (F-20260919-51 / scripted RW-088). Gen3 is **complete (scripted)**; live E1–E3 confirmation is **deferred** until a provider recovers. Gen4 **G4-1** is **accepted and implemented as v0.5.0** (F-20260919-52 / scripted RW-089). **G4-2** is **accepted and implemented as v0.5.1** (F-20260919-53 / scripted RW-090 / RW-091). **G4-3** is **accepted and implemented as v0.5.2** (F-20260919-54 / scripted RW-092 / RW-093). **Version 5 pack** shipped as GitHub Release **v0.5.2**. **G4-5** is **accepted and implemented as v0.5.3** (F-20260919-55 / scripted RW-094 / RW-095). **G4-7** is **accepted and implemented as v0.5.4** (F-20260919-56 / scripted RW-096 / RW-097). **G4-6** is **accepted and implemented as v0.5.5** (F-20260919-57 / scripted RW-098 / RW-099). Package is **0.5.5**. **No per-slice GitHub Release.** Live OpenRouter free-model loop is **paused** until `free-models-per-day` rate limit resets. Live NIM loop remains **paused** (Class C). This ledger is evidence. Do not rewrite RW-058–099. Scripted RW-066 (F-27) is preserved.
 
 No secrets belong here: never paste API keys, vault contents, account tokens, or full
 provider payloads. Paths under `/tmp/…` and objective ids are fine.
@@ -2493,6 +2493,49 @@ kept.** Next product work waits for a written accept. Class C is
 | Needle | **OFF** (`existing`) |
 | False completion | **0** |
 | Live this patch | **BLOCKED** (`live_nim` Class C) — not a live PASS claim |
+
+## Gen4 / v0.5.5 — Cost/budget reporting (RW-098 / RW-099) — 2026-09-19
+
+Generation 4 production scale, **G4-6**. Package **0.5.4 → 0.5.5**.
+Control plane preserved (models propose / RAD decides). Needle **OFF**.
+Caps **not** raised (`max_plan_tasks` 16, `Budget.tool_calls` 60).
+RW-058–097 facts are **not rewritten**. F-17 / F-18 / F-21 / F-26 stay
+closed. A1 not reopened. Do **not** invent a Class A patch for 403/429.
+Do **not** invent remaining-quota. Do **not** re-do G4-2 last Class C /
+Retry-After. **No GitHub Release / tag** — Version 5 packing doctrine:
+merge-only; pack again only when Sanath asks.
+
+Product: `rad cost` now rolls up persisted per-objective `Usage`
+(`tool_calls` / `model_calls` / `money_usd` / `tokens`) across
+`~/.rad/objectives/<id>/objective.json`, under the existing paid 14-day
+token section. Scripted/offline records are enough. Remaining free-tier
+quota is still **not** in the API until HTTP 429. Does **not** claim
+live text_analyzer@12 now PASS.
+
+### F-20260919-57 — persisted Usage not rolled up (RW-098 / RW-099)
+
+| field | value |
+|---|---|
+| class | **B** residual (paid-14-day-only `rad cost`; Cycle 24 / RW-086 `$0` + tools 12/12 with no cross-objective rollup) addressed as **capability** (Gen4 G4-6). Not a remaining-quota invention. Not Class A for 403/429. Not a re-open of G4-2 |
+| status | **shipped in v0.5.5** |
+| found in | Cycle 24 `rad cost` paid-only gap; live RW-086 / F-20260919-49 (`$0` / tools 12/12 / late 429); scoped Cycle 34 / PR #48 |
+| fixed in | **v0.5.5** — `ObjectiveStore.usage_rollup` sums persisted `Usage`; `rad cost` prints the rollup; remaining-quota not invented; G4-2 last Class C + Retry-After unchanged. Caps unchanged. Needle OFF |
+| lane | scripted objective store + CLI (no NIM / no OpenRouter) |
+| objective / test | `tests/test_cost_budget_report.py`; RW-098 / RW-099 |
+| disk | scripted: two `objective.json` records roll up (15 tools / 6 model / $0.02 / 950 tokens); empty store is honest; `rad cost` shows paid section + rollup; `provider_health.json` last Class C preserved |
+| expected | operator-visible production rollup of persisted Usage; remaining-quota **not** a field; false DONE **0** |
+| actual | scripted **PASS** (see RW-098 / RW-099). Live text_analyzer@12 **not** claimed |
+| notes | Live RW-086 remains Class B+C historically. This PR does **not** claim live PASS. A1 not reopened. E1–E3 live still **not confirmed**. F-17 stays closed. Needle off. Caps unchanged. **No release / tag.** |
+
+| gate | result |
+|---|---|
+| `python -m pytest -q` | **pending this branch** |
+| `rad doctor --offline` | **pending this branch** |
+| `rad acceptance` | **pending this branch** |
+| `rad realworld` | **pending this branch** |
+| Package | **0.5.5** |
+| Release / tag | **none** — Version 5 packing doctrine |
+| Live this patch | **not re-run** — not a live PASS claim |
 
 ## How to add a finding
 
