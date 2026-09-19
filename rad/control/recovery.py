@@ -120,9 +120,10 @@ class RecoveryEngine:
 
         if fc in (FailureClass.AUTH, FailureClass.RATE):
             kind = "rate_limit" if fc == FailureClass.RATE else "auth"
+            providers = _failed_providers(error or "", observations)
             return Decision(
                 "ask_user", fc, class_c_next_steps(kind),
-                data={"class_c": True, "kind": kind},
+                data={"class_c": True, "kind": kind, "providers": providers},
             )
         if fc == FailureClass.PERMISSION:
             blocked = [o.output[:200] for o in observations if o.status in ("blocked", "declined")]

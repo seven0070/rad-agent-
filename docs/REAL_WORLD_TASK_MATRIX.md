@@ -38,16 +38,18 @@ remains **paused** (Class C). Independent later package files is
 **implemented as v0.4.9** (scripted RW-088). Gen3 is
 **complete (scripted)**; live E1–E3 confirmation is **deferred** until a
 provider recovers. Gen4 **G4-1** is **implemented as v0.5.0** (scripted
-RW-089). Recommended next **G4-2** (live-gate resume / provider health)
-is **scoped, not accepted** (Cycle 26 / ROADMAP). Do not rewrite
-RW-058–089. Scripted theme-2 RW-066 (F-27) is preserved.
+RW-089). **G4-2** (live-gate resume / provider health) is **implemented
+as v0.5.1** (scripted RW-090 / RW-091). Do not rewrite RW-058–089.
+Scripted theme-2 RW-066 (F-27) is preserved.
 
 Every `VERIFIED` / `completed` cell is from the control-plane verifier **and** a disk
 check (file exists / contents / hash). A model `DONE:` line is never enough.
 
 Status vocabulary: **PASS** | **FAIL** | **BLOCKED** | **NOT TESTED**.
 
-Scripted G4-1 (RW-089) is at the top (**PASS**; 403/429 → Class C
+Scripted G4-2 (RW-090 / RW-091) is at the top (**PASS**; catalog ≠
+inference; last Class C persists; resume live-gated; 429 Retry-After
+visible), then scripted G4-1 (RW-089) (**PASS**; 403/429 → Class C
 `needs_user`; free rotation; no paid under free_lock; no Class A), then
 scripted E3 (RW-088) (**PASS**; retry/repair stop; later
 independent file ≥1 attempt), then scripted E2 (RW-087) (**PASS**; later
@@ -57,6 +59,16 @@ free-model loop **paused**), then live OpenRouter RW-085 (**FAIL**; Class C
 cleared; xxd ENVIRONMENT Class A **CONFIRMED**), then scripted RW-086
 (v0.4.7), then live NIM RW-084 (**BLOCKED Class C**), then scripted RW-083.
 RW-058–087 are **not rewritten**.
+
+# Scripted live-gate / provider health (RW-090 / RW-091)
+
+Lane: scripted doctor + controller + health (no NIM / no OpenRouter) on
+**v0.5.1**. Needle `existing` / off. Caps unchanged. **Not** a live PASS.
+
+| id | date | task | goal (short) | plan | steps | tools | result | disk / verify | ENVIRONMENT? | class | notes |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| RW-090 | 2026-09-19 | ops (scripted) — catalog-alive ≠ inference-entitled (RW-084 shape) | Doctor a pin whose GET /v1/models is 200 and chat/completions is 403 | n/a | catalog probe + 1-token chat ping | none (health ping only) | **PASS** (catalog 200 + chat 403 → doctor WARNING, not READY; last Class C persisted) | n/a; false DONE **0** | **N** | capability (Gen4 G4-2; Class C stays C) | Tests `test_provider_health_resume.py`. Needle OFF. Caps unchanged. No live PASS claim. |
+| RW-091 | 2026-09-19 | ops (scripted) — last Class C persist + resume live-gate (RW-086 shape) | 403 pause then resume; 429 + Retry-After; resume after entitled brain recovers | 1 task | persist; resume gate; no second chat | default **60** unchanged | **PASS** (last Class C survives new RouterState; resume stays needs_user / no re-burn; 429 Retry-After visible; resume proceeds when entitled brain exists; free_lock drops paid) | hello.txt **absent** on gated resume; present after entitled resume; false DONE **0** | **N** | capability (Gen4 G4-2; Class C stays C) | Tests `test_provider_health_resume.py`. Needle OFF. Caps unchanged. No live PASS claim. |
 
 # Scripted Class C provider doctrine (RW-089)
 

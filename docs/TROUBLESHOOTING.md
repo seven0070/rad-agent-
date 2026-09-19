@@ -75,6 +75,14 @@ If `rad trace last --kind RECOVERY_DECISION` shows `AUTH_FAILURE` or `RATE_LIMIT
 `Class C` in the reason, that is a provider/key/quota pause (G4-1) — fix the
 environment, do not file it as a coding-loop defect.
 
+G4-2 / v0.5.1: do **not** `rad objective resume` on a Class C pause until
+`rad doctor` shows an **inference-entitled** brain (catalog-alive is not enough —
+RW-084). Last Class C + Retry-After live in `~/.rad/provider_health.json` and on
+`rad doctor` / `rad providers`. Resume is live-gated: it will refuse to re-hit
+the same 403/429 and print rotate-key / wait-quota / Retry-After next steps.
+When a usable free brain recovers (`rad keys add` / `rad use` / quota reset),
+resume proceeds. `free_lock` still never silently spends paid.
+
 ## "task completed without machine verification"
 
 `accept_unverified_done` is `false` by default: a task whose checks could not run is not reported as

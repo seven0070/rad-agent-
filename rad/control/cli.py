@@ -123,6 +123,14 @@ def cmd_objective(args) -> int:
         ctl.on_event = _live_printer
         info(f"  resuming {obj.id} …")
         obj = ctl.resume(obj.id, max_tasks=args.max_tasks)
+        gate = (getattr(ctl, "last_run", {}) or {}).get("live_gate") or {}
+        if gate.get("allow") is False:
+            warn("live-gate blocked resume — last Class C still in force (not a product retry)")
+            if gate.get("next_steps"):
+                warn(gate["next_steps"])
+            last = gate.get("last") or {}
+            if last.get("provider"):
+                info(f"  last Class C: {last.get('provider')} {last.get('kind')} HTTP {last.get('status')}")
         _print_objective(obj, ctl)
         return 0 if obj.status == ObjectiveStatus.COMPLETED else 2
     if act == "pause":

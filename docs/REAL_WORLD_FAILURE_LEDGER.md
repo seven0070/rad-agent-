@@ -2196,6 +2196,39 @@ is **unblock the environment**, not a product patch.
 | False completion | **0** |
 | Live this patch | **BLOCKED** (`live_nim` Class C) — not a live PASS claim |
 
+## Gen4 / v0.5.1 — Live-gate resume / provider health (RW-090 / RW-091) — 2026-09-19
+
+Investigate-first confirmed the Cycle 26 hole: G4-1 closed the **pause**,
+but doctor still READY on a catalog-alive 403-chat pin (RW-084) and
+`RouterState.failures` died with the process (RW-086). G4-2 is
+**accepted**. Smallest patch: catalog vs inference health; persist last
+Class C with next-steps / Retry-After; live-gate resume until an
+inference-entitled brain recovers. Package **0.5.0 → 0.5.1**. Control
+plane preserved. Needle **OFF**. Caps **not** raised. RW-058–089 facts
+are **not rewritten**. No Class A invented for 403/429.
+
+### F-20260919-53 — catalog vs inference + last-Class-C resume gate (RW-090 / RW-091)
+
+| field | value |
+|---|---|
+| class | **capability** (Gen4 G4-2). Investigate-first: doctor READY on catalog-alive ≠ chat (RW-084); in-process failures (RW-086). Class C stays Class C |
+| status | **shipped in v0.5.1** |
+| found in | RW-084 / F-20260919-46 (NIM catalog 200 / chat 403; doctor READY); live RW-086 / F-20260919-49 (429, no durable surface); ROADMAP G4-2 (PR #40 listed, this change accepts) |
+| fixed in | **v0.5.1** — `rad/health.py` catalog vs inference; `provider_health.json`; doctor WARNING on catalog-only; resume live-gate; Retry-After in next-steps. F-17 check-less / caps unchanged |
+| objective / test | `tests/test_provider_health_resume.py`; RW-090 / RW-091 |
+| expected | catalog 200 + chat 403 → doctor not READY; last Class C survives process exit; resume does not re-burn 403; 429 Retry-After visible without tool retry; resume proceeds when entitled brain recovers |
+| actual | scripted **PASS** (see RW-090 / RW-091). Live text_analyzer@12 **not** claimed |
+| notes | Live RW-084/086 remain Class C paused. This PR does **not** claim live PASS. A1 not reopened. E1–E3 live still **not confirmed**. Needle off. Caps unchanged. |
+
+| gate | result |
+|---|---|
+| `python3 -m pytest -q` | *(recorded after gates)* |
+| `rad doctor --offline` | *(recorded after gates)* |
+| `rad acceptance` | *(recorded after gates)* |
+| `rad realworld` | *(recorded after gates)* |
+| Package | **0.5.1** |
+| Live this patch | **not re-run** — not a live PASS claim for RW-085 / RW-086 |
+
 ## How to add a finding
 
 1. Reproduce with disk checks (file exists / hash / contents). Quote status + verification, not model prose.

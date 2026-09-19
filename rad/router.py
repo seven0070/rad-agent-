@@ -11,6 +11,7 @@ from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional
 
 from rad import providers as P
+from rad.health import blocking_class_c_records, clear_class_c, record_class_c
 from rad.home import RadHome
 from rad.ui import col
 
@@ -34,6 +35,10 @@ class RouterState:
     _free_rr: "itertools.cycle" = None  # type: ignore
     warned_no_crypto: bool = False
     last_selection: Optional[Dict[str, Any]] = None          # task-aware selection trace
+
+    def __post_init__(self) -> None:
+        for name, rec in blocking_class_c_records(self.home).items():
+            self.failures.setdefault(name, rec)
 
     # ---------------------------------------------------------------- chain
     def build_chain(self, force: Optional[str] = None, free_lock: Optional[bool] = None,
@@ -145,11 +150,14 @@ class RouterState:
                 kind = "rate_limit" if "rate_limit" in kinds else "auth"
                 statuses = [f.get("status") for f in self.failures.values() if (f or {}).get("class_c")]
                 status = next((s for s in statuses if s in P.CLASS_C_STATUSES), None)
+                ras = [f.get("retry_after") for f in self.failures.values() if (f or {}).get("class_c")]
+                ra = next((x for x in ras if x), None)
                 raise P.ProviderError(
                     "all providers failed (Class C — not a product hole):\n  "
                     + "\n  ".join(f"{n}: {f.get('err', '')}" for n, f in self.failures.items() if (f or {}).get("class_c"))
-                    + "\n" + P.class_c_next_steps(kind, free_lock=bool(self.home.cfg.get("free_lock"))),
-                    status=status, retryable=False)
+                    + "\n" + P.class_c_next_steps(kind, free_lock=bool(self.home.cfg.get("free_lock")),
+                                                retry_after=ra),
+                    status=status, retryable=False, retry_after=ra)
             hint = ("no vision-capable brain available — this task includes an image; "
                     "`rad providers` lists what each provider/model supports, then "
                     "`rad use <provider>` or `rad provider add` with a vision model "
@@ -170,14 +178,23 @@ class RouterState:
                              max_tokens=max_tokens)
                 self.preferred[entry.spec.tier] = entry.spec.name
                 self.failures.pop(entry.spec.name, None)
+                clear_class_c(self.home, entry.spec.name)
                 self._record_cost(entry, res)
                 return res
             except P.ProviderError as e:
                 kind = P.class_c_kind(e.status, e.msg)
-                self.failures[entry.spec.name] = {
+                rec = {
                     "err": e.msg, "status": e.status, "at": time.time(),
                     "class_c": bool(kind), "kind": kind,
+                    "retry_after": e.retry_after,
                 }
+                self.failures[entry.spec.name] = rec
+                if kind:
+                    record_class_c(
+                        self.home, entry.spec.name, kind=kind, status=e.status,
+                        err=e.msg, retry_after=e.retry_after, key=entry.key,
+                        free_lock=free_lock,
+                    )
                 if kind and self.preferred.get(entry.spec.tier) == entry.spec.name:
                     self.preferred.pop(entry.spec.tier, None)
                 errors.append(f"{entry.spec.name}: {e.msg}")
@@ -202,10 +219,11 @@ class RouterState:
             kinds = {P.class_c_kind(e.status, e.msg) for e in class_c_hits}
             kind = "rate_limit" if "rate_limit" in kinds else "auth"
             status = next((e.status for e in class_c_hits if e.status in P.CLASS_C_STATUSES), None)
+            ra = next((e.retry_after for e in class_c_hits if e.retry_after), None)
             raise P.ProviderError(
                 "all providers failed (Class C — not a product hole):\n  " + "\n  ".join(errors)
-                + "\n" + P.class_c_next_steps(kind, free_lock=free_lock),
-                status=status, retryable=False)
+                + "\n" + P.class_c_next_steps(kind, free_lock=free_lock, retry_after=ra),
+                status=status, retryable=False, retry_after=ra)
         raise P.ProviderError("all providers failed:\n  " + "\n  ".join(errors), retryable=False)
 
     def _record_cost(self, entry: ChainEntry, res: P.ChatResult) -> None:
