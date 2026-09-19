@@ -6,6 +6,81 @@ Default `Budget.tool_calls` remains **60**.
 
 ---
 
+# Cycle 23 — Budget-aware retry stop (E3); v0.4.9 (2026-09-19)
+
+**Date:** 2026-09-19
+**Baseline:** `origin/main` `f5cda30dcbb6a2ff96465ea20997f384a5f53f4a` (merge PR #36; package **0.4.8**, tag **v0.4.8**)
+**Package at start:** `0.4.8`
+**This branch:** `cursor/e3-budget-aware-retry-stop-ac23` — package **0.4.9**
+**Architecture:** control plane preserved. Needle stays off. Caps unchanged.
+**Kind:** product — Gen3 theme 3 slice E3. RW-058–087 are **not rewritten**.
+
+## Why this cycle
+
+E1 leftover reserve + E2 independent later files already exist. After a
+failed first attempt, when remaining tools were `reserve + 1`, recovery
+still started a retry or inserted a repair of the stuck task and spent
+the spare tool E1 was holding for later READY work (RW-085/086-style
+thrash).
+
+Investigate-first: E1 `TaskYield` already stops mid-think when
+`rem <= reserve`. The hole is the retry/repair *decision*, not a missing
+executor check and not “E1 already covers this.” Smallest patch:
+`should_yield_for_leftover` (`rem < leftover_tool_reserve + TOOLS_PER_TASK`)
+on the existing `_should_yield` / RETRYING-dispatch boundary. Solo tasks
+still retry. Unlimited budgets do not yield. Executor reserve stays
+1-per-later-task.
+
+## What changed
+
+| piece | change |
+|---|---|
+| `should_yield_for_leftover` (`budgetplan.py`) | Stop retry/repair when leftover headroom is below `TOOLS_PER_TASK` |
+| `Controller._should_yield` / RETRYING start | Reuse that helper; yield instead of another stuck-task attempt |
+| Package | **0.4.8 → 0.4.9** |
+
+## Decision
+
+| item | value |
+|---|---|
+| Package | **0.4.9** |
+| E3 | **ACCEPTED + IMPLEMENTED** (scripted RW-088) |
+| E1 / E2 live | **N** — not confirmed on RW-084/085/086 |
+| Live text_analyzer@12 | **not** claimed PASS |
+| Invariants | Needle OFF; caps 16/60; false DONE 0; no redesign |
+
+## Quality gates (this branch)
+
+Isolated homes `/tmp/rad-rw088-gate` (doctor, acceptance) and `/tmp/rad-rw088-rw` (realworld).
+
+| gate | result |
+|------|--------|
+| `rad version` | **PASS** v0.4.9 |
+| `python3 -m pytest -q` | **PASS** 569 passed in 14.44s |
+| `rad doctor --offline` | **PASS** 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR, verdict READY, exit 0 |
+| `rad acceptance` | **PASS** 50/50 — `/tmp/rad-rw088-gate/acceptance/20260919-052039_gate.json` |
+| `rad realworld` | **PASS** 10/11 + 1 BLOCKED — `/tmp/rad-rw088-rw/realworld/20260919-052035_realworld.json` |
+| Needle default | **PASS** (`existing`) — unchanged |
+| Caps | **PASS** `max_plan_tasks` 16; `Budget.tool_calls` 60 — unchanged |
+| Package | **0.4.9** |
+| Live this patch | **not re-run** — not a live PASS claim |
+
+## Remaining limitations
+
+1. Live text_analyzer@12 remains Class B FAIL (fallback plan, incomplete package, tools=12).
+2. E1 leftover-budget yield is still **not live-confirmed**.
+3. E2 / E3 are scripted only (RW-087 / RW-088). Live fallback chain not re-run (OpenRouter free loop paused; NIM paused).
+4. Live OpenRouter free-model loop is **paused** (HTTP 429 `free-models-per-day`).
+5. Live NIM loop remains **paused** (RW-084 Class C).
+
+## Roadmap pointer
+
+Operating spine: [ROADMAP.md](ROADMAP.md). **Generation 3 in progress.** Theme 3
+slice E3 **IMPLEMENTED** as **v0.4.9** (scripted RW-088). E1/E2 remain scripted.
+Package is **0.4.9**. Gen4–5 are not started.
+
+---
+
 # Cycle 22 — Independent later package files (E2); v0.4.8 (2026-09-19)
 
 **Date:** 2026-09-19

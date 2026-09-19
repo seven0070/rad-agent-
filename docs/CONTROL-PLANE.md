@@ -73,6 +73,9 @@ reserve + `Scheduler` skip of yielded tasks). Same `checkpoint.json` format.
 Linear fallback `depends_on` for independent later file-write clauses is
 empty as of **v0.4.8** (theme 3 slice E2; scripted RW-087) so those tasks
 can enter the E1 READY set. Explicit LLM chains are not rewritten.
+Retry / repair of a stuck task stops when leftover headroom is below
+`TOOLS_PER_TASK` as of **v0.4.9** (theme 3 slice E3; scripted RW-088),
+yielding to that E1 path instead of spending reserved tools mid-retry.
 Missing optional `xxd` / hexdump / `sha256sum` (checksum theater) is
 **not** ENVIRONMENT as of **v0.4.7** (theme 3 slice F). Do not treat
 crash-resume with a raised budget as that gap, and do not invent a

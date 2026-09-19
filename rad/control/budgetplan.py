@@ -17,6 +17,11 @@ silently compacted so machine checks and leftover-task cancellation stay.
 Gen3 theme 3 slice E1 reuses the same remaining-tools account at *drive*
 time: reserve one tool per later independent unattempted READY task so a
 stuck in-flight task yields before leftover hits 0.
+
+Slice E3 strengthens that same boundary at *retry / repair* time: another
+attempt of the stuck task is refused when remaining tools are below
+``leftover_tool_reserve + TOOLS_PER_TASK``, so a retry cannot spend the
+tools E1 reserved for later READY work.
 """
 from __future__ import annotations
 
@@ -63,6 +68,8 @@ def leftover_tool_reserve(graph: TaskGraph, current: Optional[Task],
 
     One tool per unattempted independent READY task, never more than remaining.
     Unlimited budgets (``remaining is None``) reserve nothing — no yield.
+    Executor (E1) uses this as ``reserve_tools``. Retry/repair stop (E3)
+    compares remaining against this reserve plus ``TOOLS_PER_TASK``.
     """
     if remaining is None:
         return 0
@@ -71,6 +78,25 @@ def leftover_tool_reserve(graph: TaskGraph, current: Optional[Task],
     if n <= 0 or rem <= 0:
         return 0
     return min(n, rem)
+
+
+def should_yield_for_leftover(graph: TaskGraph, current: Optional[Task],
+                              remaining: Optional[int]) -> bool:
+    """Park ``current`` so later independent READY work keeps reserved tools.
+
+    E1: remaining ≤ leftover reserve (executor will not charge a reserved tool).
+    E3: also stop a retry/repair when remaining headroom is below
+    ``TOOLS_PER_TASK`` — another attempt of the stuck task would spend
+    tools the leftover reserve is holding for later READY work.
+    Unlimited budgets never yield.
+    """
+    if remaining is None:
+        return False
+    rem = max(0, int(remaining))
+    reserve = leftover_tool_reserve(graph, current, rem)
+    if reserve <= 0:
+        return False
+    return rem < reserve + TOOLS_PER_TASK
 
 
 def remaining_tool_calls(obj: Any) -> Optional[int]:
