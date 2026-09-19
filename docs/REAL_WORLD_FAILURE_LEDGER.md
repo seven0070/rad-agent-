@@ -2371,10 +2371,10 @@ claim live text_analyzer@12 now PASS.
 
 | gate | result |
 |---|---|
-| `python -m pytest -q` | (this change) |
-| `rad doctor --offline` | (this change) |
-| `rad acceptance` | (this change) |
-| `rad realworld` | (this change) |
+| `python -m pytest -q` | **624 passed** in 11.46s |
+| `rad doctor --offline` | READY — 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR (`RAD_HOME=/tmp/rad-g45-gate`) |
+| `rad acceptance` | **50/50 PASSED** (`/tmp/rad-g45-gate/acceptance/20260919-070010_gate.json`) |
+| `rad realworld` | **10 passed / 1 BLOCKED / 0 failed** (`live_nim` BLOCKED; `/tmp/rad-g45-rw/realworld/20260919-070011_realworld.json`) |
 | Package | **0.5.3** |
 | Release / tag | **none** — Version 5 packing doctrine |
 | Live this patch | **not re-run** — not a live PASS claim for RW-085 / RW-086 |
