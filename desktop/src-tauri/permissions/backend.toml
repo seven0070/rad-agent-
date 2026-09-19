@@ -1,0 +1,24 @@
+[[permission]]
+identifier = "allow-backend-start"
+description = "Start the RAD Python API with a fixed argv (no user shell)."
+commands.allow = ["backend_start"]
+
+[[permission]]
+identifier = "allow-backend-stop"
+description = "Stop the managed rad serve process."
+commands.allow = ["backend_stop"]
+
+[[permission]]
+identifier = "allow-backend-info"
+description = "Read managed backend pid/port/home."
+commands.allow = ["backend_info"]
+
+[[permission]]
+identifier = "allow-api-token"
+description = "Read ~/.rad/api.token (0600)."
+commands.allow = ["api_token"]
+
+[[permission]]
+identifier = "allow-default-home"
+description = "Return RAD_HOME / ~/.rad."
+commands.allow = ["default_home"]
