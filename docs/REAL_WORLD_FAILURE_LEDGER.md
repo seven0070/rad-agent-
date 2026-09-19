@@ -2655,6 +2655,45 @@ text_analyzer@12 now PASS.
 | Release / tag | **none** — Version 1 pack after Sanath merges |
 | Live this patch | **not re-run** — not a live PASS claim |
 
+## Scope — G5 hold / soak after Version 1 (docs only) — 2026-09-19
+
+Docs-only scope on `9ff184e0d` / v1.0.0 after PR #52. No product patch. Package
+stays **1.0.0**. Needle **OFF**. Caps **not** raised. RW-058–101 facts are
+**not rewritten**. F-17 / F-18 / F-21 / F-26 stay closed. A1 not reopened. Do
+**not** invent a Class A patch for 403/429. Do **not** invent remaining-quota.
+**No v1.0.1 bump. No v1.1.0 bump. No GitHub Release.**
+
+G5-1 is **shipped and packed**. **Version 1 pack** is GitHub Release
+**Version 1** / tag **v1.0.0** (wheel + sdist). Investigate-first: the next
+step is not MCP, not live confirmation of Version 1 / Version 5 as a
+package theme (G4-3 playbook already ships; gates remain paused; Cycle 36
+refused G4-8), not PyPI upload (GitHub wheel is the public path; no token
+in tree), not a residual Class B grab-bag, not a cap raise, and not a
+v1.0.1 / v1.1.0. Remaining 11B incompleteness without a contract hole is
+evidence, not a theme. Recommended next is **hold / soak** listed in
+[ROADMAP.md](ROADMAP.md) — **not accepted** as a G5-2 product theme, **not
+implemented**. Stay **1.0.0**. Next product work waits for proven Class A
+on the 1.0 line (**v1.0.1**), a written Gen5 accept after soak (**v1.1.0**),
+or operator live-use when a provider recovers. Class C is **unblock the
+environment**, not a product patch.
+
+| gate | result |
+|---|---|
+| `python3 -m pytest -q` | pending this branch |
+| `rad doctor --offline` | pending this branch |
+| `rad acceptance` | pending this branch |
+| `rad realworld` | pending this branch (`live_nim` BLOCKED) |
+| Package | **1.0.0** (no bump; no v1.0.1; no v1.1.0) |
+| Product code | unchanged |
+| Gen3 | **COMPLETE (scripted)**; live E1–E3 **deferred** |
+| Gen4 | **COMPLETE (scripted)** — Version 5 pack tag **v0.5.5**; G4-4 parked |
+| Gen5 | **IN PROGRESS — hold / soak** — G5-1 shipped + packed as **v1.0.0**; **no G5-2** |
+| 16-task cap | **UNCHANGED** |
+| Default tool budget | **UNCHANGED** (60) |
+| Needle | **OFF** (`existing`) |
+| False completion | **0** |
+| Live this patch | **BLOCKED** (`live_nim` Class C) — not a live PASS claim |
+
 ## How to add a finding
 
 1. Reproduce with disk checks (file exists / hash / contents). Quote status + verification, not model prose.
