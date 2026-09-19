@@ -2087,10 +2087,10 @@ python3 -m pytest -q tests/test_budget_aware_retry_stop.py
 
 | gate | this PR |
 |---|---|
-| `python3 -m pytest -q` | *(recorded after gates)* |
-| `rad doctor --offline` | *(recorded after gates)* |
-| `rad acceptance` | *(recorded after gates)* |
-| `rad realworld` | *(recorded after gates)* |
+| `python3 -m pytest -q` | **569 passed** in 14.44s |
+| `rad doctor --offline` | READY — 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR (`RAD_HOME=/tmp/rad-rw088-gate`) |
+| `rad acceptance` | **50/50 PASSED** (`/tmp/rad-rw088-gate/acceptance/20260919-052039_gate.json`) |
+| `rad realworld` | **10 passed / 1 BLOCKED / 0 failed** (`live_nim` BLOCKED; `/tmp/rad-rw088-rw/realworld/20260919-052035_realworld.json`) |
 | Package | **0.4.9** |
 | Live this patch | **not re-run** — not a live PASS claim for RW-085 / RW-086 |
 
