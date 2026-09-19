@@ -61,6 +61,23 @@ or the listed caveats.
 - OpenRouter free loop remains **paused** (RW-086 **429**)
 - Historical NIM 11B **403** pause (RW-084) remains Class C for that pin
 
+## Quality gates (this branch)
+
+Isolated homes `/tmp/rad-rw104-gate` (doctor, acceptance) and `/tmp/rad-rw104-rw` (realworld).
+
+| gate | result |
+|------|--------|
+| `rad version` | **PASS** v1.0.1 |
+| `python3 -m pytest -q` | **PASS** 670 passed in 13.86s |
+| `rad doctor --offline` | **PASS** 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR, verdict READY, exit 0 |
+| `rad acceptance` | **PASS** 50/50 — `/tmp/rad-rw104-gate/acceptance/20260919-103908_gate.json` |
+| `rad realworld` | **PASS** 10/11 + 1 BLOCKED — `/tmp/rad-rw104-rw/realworld/20260919-103909_realworld.json` |
+| Needle default | **PASS** (`existing`) — unchanged |
+| Caps | **PASS** `max_plan_tasks` 16; `Budget.tool_calls` 60 — unchanged |
+| Package | **1.0.1** (no bump) |
+| Release / tag | **none** |
+| Live this patch | not re-run; suite `live_nim` **BLOCKED** (no keys here). RW-104 live facts from the operator report |
+
 ## Remaining limitations
 
 1. Live text_analyzer@12 remains historical Class B FAIL. RW-104 is VERIFIED at tools **40/40** on glm-5.3 — not the @12 bound.
