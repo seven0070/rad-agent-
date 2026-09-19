@@ -79,7 +79,10 @@ yielding to that E1 path instead of spending reserved tools mid-retry.
 Missing optional `xxd` / hexdump / `sha256sum` (checksum theater) is
 **not** ENVIRONMENT as of **v0.4.7** (theme 3 slice F). Do not treat
 crash-resume with a raised budget as that gap, and do not invent a
-second persistence stack.
+second persistence stack. Live E1–E3 confirmation is **deferred** until
+a provider recovers. Gen4 (v0.5.x Production Scale) is **planned /
+scoped** in [ROADMAP.md](ROADMAP.md) — not a control-plane rewrite and
+not started from this file.
 
 ## Parallelism (Phase 3)
 Ready tasks with satisfied dependencies run concurrently up to `objective_parallel`
