@@ -1,4 +1,5 @@
 """Desktop is a surface: no shell from the frontend, no second control plane."""
+import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -25,7 +26,7 @@ def test_frontend_has_no_arbitrary_shell():
     assert "shell.execute" not in src or "capabilities" in src  # conceptual name in UI is ok
     assert "invoke(\"shell" not in src
     assert "tauri-plugin-shell" not in rust
-    assert 'args(["-m", "rad", "serve"' in rust
+    assert re.search(r'\.args\(\s*\[\s*"-m",\s*"rad",\s*"serve"', rust)
     # no user-controlled command interpolation
     assert ".arg(cmd)" not in rust
     assert "std::process::Command::new(user" not in rust
