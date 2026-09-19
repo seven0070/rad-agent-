@@ -15,3 +15,7 @@ htmlcov/
 *.log
 rad.egg-info/
 .netlify/
+desktop/node_modules/
+desktop/dist/
+desktop/src-tauri/target/
+desktop/.vite/

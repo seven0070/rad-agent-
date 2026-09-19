@@ -2,7 +2,7 @@
 
 ```
                  ┌──────────── interfaces ────────────┐
-                 │ CLI (rad …)   REPL   HTTP API      │  docs/API.md
+                 │ CLI (rad …)   REPL   HTTP API   Desktop (Tauri) │  docs/API.md · desktop/
                  └──────┬───────────┬──────────┬──────┘
                         ▼           ▼          ▼
 ┌─────────────── control plane  rad/control/ ────────────────┐   docs/CONTROL-PLANE.md
@@ -27,7 +27,7 @@
 
 ## Invariants (each backed by tests)
 1. **Nothing is VERIFIED without a passing machine check.** Model or reviewer opinions can fail a task, never pass it.
-2. **One enforcement point.** Every tool call — REPL, control plane, sub-agent, MCP — passes `run_tool → Policy.decide`. The hard layer cannot be configured away; `--auto` only turns ASK into ALLOW.
+2. **One enforcement point.** Every tool call — REPL, control plane, sub-agent, MCP, Jerry, desktop — passes `run_tool → Policy.decide`. Authority profiles resolve into grants/scopes/confirmation on that gate. The hard layer cannot be configured away; `--auto` / confirmation=never only turns ASK into ALLOW.
 3. **Explicit state.** Goals, tasks, retries, budgets, checkpoints, artifacts, verification, events, audit, memory provenance are files under `~/.rad`, replayable and inspectable (`rad trace/inspect/events/replay/why`).
 4. **Provenance everywhere.** Memories, user facts, world relations carry origin + confidence + verification; contradictions are linked, not merged.
 5. **Evolution cannot touch code.** Only persona/style/lessons and three config knobs; every change is sandboxed, lab-gated, recorded, reversible.
@@ -35,7 +35,7 @@
 
 ## State layout (`~/.rad`)
 ```
-rad.json schema.json policy.json audit.jsonl user.json api.token
+rad.json schema.json policy.json authority.json audit.jsonl user.json api.token
 memory/{short,long/{episodic,semantic,procedural},archive}   world/graph.json   dna/gen*.json
 objectives/<id>/{objective.json,tasks.json,events.jsonl,observations/,artifacts.json,checkpoints/}
 agents/{registry.json,runs/,blackboard/}   skills/{registry.json,*.manifest.json}

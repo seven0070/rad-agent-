@@ -10,8 +10,10 @@ token → 401 for every route, including `/health`.
 **Same gates as the CLI.** Requests never carry file paths or commands; they create objectives
 and the Controller, policy layer and hard layer do the rest. Because HTTP cannot answer
 confirmation prompts, `POST /objectives` only *starts* work when config `auto=true`; otherwise
-the objective is created `PENDING` (201) for `rad objective run`. `/chat` runs one brain turn with
-`auto=false` (ASK-level tools are declined, ALLOW-level tools work).
+the objective is created `PENDING` (201) for `rad objective run`, unless the authority
+profile's confirmation policy is already `never` (AUTONOMOUS / UNRESTRICTED). `/chat` is one
+Jerry turn with session `auto=false` (ASK-level tools are declined unless the profile
+converts ASK→ALLOW; ALLOW-level tools work). Desktop uses these routes; it cannot run tools.
 
 Bodies ≤ 256 KB, JSON objects only. Every request is logged to `~/.rad/logs/api.jsonl`
 (method, path, status, ms, peer — no bodies).
@@ -29,7 +31,10 @@ Bodies ≤ 256 KB, JSON objects only. Every request is logged to `~/.rad/logs/ap
 | GET | `/v1/objectives/{id}/why?q=<artifact or claim>` | provenance |
 | GET | `/v1/memory/recall?q=&k=` · POST `/v1/memory {text, layer?}` | memories (API writes are USER_PROVIDED, source `api`) |
 | GET | `/v1/user` · `/v1/policy` · `/v1/audit?n=` · `/v1/lab/history` · `/v1/evolve/candidates` | read-only views |
-| POST | `/v1/chat {text}` | one turn |
+| POST | `/v1/chat {text}` | one Jerry turn (`via: jerry`) |
+| GET | `/v1/authority` | profile, conceptual capabilities, scopes, confirmation, existing budgets |
+| PUT | `/v1/authority` | `{profile, confirm_unrestricted?, capabilities?, scopes?, confirmation?}`. UNRESTRICTED → 409 without `confirm_unrestricted` |
+| GET / PUT | `/v1/settings` | safe config subset. Cannot raise budgets, change Needle, or set `--auto` |
 
-Not provided on purpose: policy edits, key management, evolution promotion, file access —
-those stay CLI-only where a human is at the keyboard.
+Not provided on purpose: policy rule edits, key management, evolution promotion, file access,
+arbitrary shell — those stay CLI-only (or do not exist). Desktop has no `/v1/shell`.

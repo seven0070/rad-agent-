@@ -126,6 +126,12 @@ lock-protected. Set `objective_parallel: 1` for strictly sequential runs.
   means RAD produced the claim without consulting anything (i.e. from model priors).
   Web sources are labelled `untrusted-web`. No model is involved in answering.
 
+## Authority (Desktop 0.1)
+Profiles SAFE / STANDARD / AUTONOMOUS / UNRESTRICTED / CUSTOM (`rad/authority.py`) resolve
+into grants, scopes and confirmation that `Policy.decide` already owns. Desktop (Tauri) and
+Jerry sit **above** this plane. They do not add a second executor, verifier, memory, or
+control plane. Needle stays off; planner cap 16 and default tool budget 60 are unchanged.
+
 ## Not yet (later phases)
-Capability-based permissions · sandbox · SQLite store · deterministic re-execution of
-side effects (replay is inspect + re-verify, not re-run).
+SQLite store · deterministic re-execution of side effects (replay is inspect + re-verify, not re-run)
+· full Jerry personality · production-signed desktop installers.

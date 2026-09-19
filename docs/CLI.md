@@ -66,6 +66,7 @@ Global: `--home <dir>` (or `RAD_HOME`), `--quiet`, `--json` where noted.
 | command | what it does |
 |---|---|
 | `rad policy` | capability permissions: show/allow/ask/deny/limit/default/test |
+| `rad authority` | authority profile: show / set SAFE\|STANDARD\|AUTONOMOUS\|UNRESTRICTED\|CUSTOM / test |
 | `rad audit` | permission decisions log |
 | `rad security` | enforcement layers, capability defaults, hard limits, audit |
 | `rad tools` | tools RAD can call + the capability each one needs |
@@ -98,6 +99,7 @@ Global: `--home <dir>` (or `RAD_HOME`), `--quiet`, `--json` where noted.
 | `rad config` | show/get/set/unset RAD configuration |
 | `rad workspace` | show/set the hands workspace |
 | `rad serve` | local JSON API over the control plane (loopback, bearer token) |
+| `rad desktop` | RAD Desktop 0.1 — launch a built Tauri binary or print the surface path |
 
 ## Command groups
 
@@ -106,6 +108,7 @@ Several commands take a sub-action as their first argument:
 | command | sub-actions |
 |---|---|
 | `rad agents` | list, define, remove, run, runs, caps, board |
+| `rad authority` | show, set, test |
 | `rad benchmark` | run, bank, long, history, compare |
 | `rad brain` | add, list, current, promote, rollback |
 | `rad config` | show, get, set, unset, path |

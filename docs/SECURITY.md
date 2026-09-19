@@ -1,7 +1,27 @@
 # Security model (`rad/policy.py`)
 
-Every tool call — from the REPL, the control plane, or a sub-agent — passes through **one**
-gate inside `run_tool`: `Policy.decide(capability, resource) → HARD_DENY | DENY | ASK | LIMITED | ALLOW`.
+Every tool call — from the REPL, the control plane, a sub-agent, Jerry, or the desktop UI — passes through **one**
+gate inside `run_tool`: `Policy.decide(capability, resource) → HARD_DENY | DENY | ASK | LIMITED | ALLOW | SCOPE_VIOLATION | UNAUTHORIZED`.
+
+## Authority profiles (`rad/authority.py`)
+
+User → **authority profile** → capability / scope / confirmation → **existing** `Policy.decide` → executor → tool.
+
+Profiles (persisted in `~/.rad/authority.json`; STANDARD if the file is missing or corrupt):
+
+| profile | meaning |
+|---|---|
+| **SAFE** | confirmation-heavy, narrow grants (read/memory; write/shell/packages/mcp/spawn/py/paid denied), workspace-only scope |
+| **STANDARD** | default compatibility — existing RAD defaults; no extra grant/scope layer |
+| **AUTONOMOUS** | confirmation policy = never (ASK→ALLOW) inside the granted set; budgets and hard layer stay on |
+| **UNRESTRICTED** | explicitly user-authorized autonomy (`--i-authorize-unrestricted` / `confirm_unrestricted`). Broad grants, confirmation never, user-defined scopes. **Not a bypass** of Policy.decide, the executor, budgets, audit, provenance or verification |
+| **CUSTOM** | per-capability effects you set |
+
+`--auto` is confirmation policy = never for that session. It still cannot turn DENY / LIMITED / hard / SCOPE_VIOLATION / UNAUTHORIZED into ALLOW.
+
+Conceptual capabilities (`filesystem.read`, `shell.execute`, `network.request`, `browser.access`, `mcp.use`, `skills.install`, `package.install`, `process.spawn`, `model.free`, `model.paid`) map onto the existing policy names. `credentials` stays denied in every profile.
+
+Jerry (`rad/jerry.py`) is an operator layer: chat and propose objectives. It has no tool runner.
 
 ## Two layers
 
@@ -18,7 +38,7 @@ gate inside `run_tool`: `Policy.decide(capability, resource) → HARD_DENY | DEN
 - ordered rules `capability + glob → effect [+ limits]`; first match wins
 - `LIMITED` limits are enforced: shell `timeout`, write `max_bytes`, read/fetch `max_chars`
 - optional `web_allow` domain allowlist
-- `--auto` only turns **ASK → ALLOW**; DENY/LIMITED/hard are untouched
+- `--auto` / confirmation=never only turns **ASK → ALLOW**; DENY/LIMITED/hard/SCOPE_VIOLATION/UNAUTHORIZED are untouched
 
 Sub-agents carry a **capability envelope** (`ToolCtx.agent_caps`) that can only narrow: checked
 inside the gate, in addition to the agent runtime's wrapper.
@@ -36,6 +56,9 @@ rad policy limit shell "pytest*" --limits '{"timeout":60}'
 rad policy ask fs.write "*.py" · rad policy allow web
 rad policy default shell DENY · rad policy rm <n> · rad policy web-allow example.com docs.python.org
 rad policy test shell "sudo ls" [--auto] # dry-run a decision
+rad authority                            # show profile / capabilities / scopes
+rad authority set SAFE
+rad authority set UNRESTRICTED --i-authorize-unrestricted
 rad audit
 ```
 
