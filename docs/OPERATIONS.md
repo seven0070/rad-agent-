@@ -13,6 +13,10 @@ not fail the exit code. Report mode changes nothing. `--fix` only does what is s
 invalid config to defaults / drop unknown keys, run pending migrations (snapshot first), quarantine
 corrupt files (`*.corrupt-<ts>`, never delete). Exit 1 only if anything is ERROR.
 
+Provider HTTP **401 / 403 / 429** are **Class C** (G4-1 / v0.5.0): `rad doctor`
+names the rotate-key / wait-quota / `rad use` pause when a chain exists;
+`free_lock` never silently spends paid. See [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
+
 ## Storage schema & migrations (`rad/storage.py`)
 `~/.rad/schema.json` records the schema version and every applied migration (name, time, summary).
 Migrations are ordered, forward-only, idempotent, and each is preceded by a snapshot.

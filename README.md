@@ -12,7 +12,7 @@ runs commands with your confirmation, and **teaches itself new skills from a sin
   __ / \  |  _ \/ |      / \
  / _` __ \| |_) | | /\/\ / _ \
  \__,_||_|____/|_|/__/__\_/ \_\
-   v0.4.9 — open door, free first, self-evolving
+   v0.5.0 — open door, free first, self-evolving
 ```
 
 ---
@@ -63,7 +63,7 @@ local engines → free cloud tiers (round-robin) → paid (unless free-lock)
 * Everything is reported: `rad [groq] …`
 * Optional experimental tool router: `RAD_TOOL_ROUTER=needle` lets [Needle](https://github.com/cactus-compute/needle)
   *propose* tool names/args. Default remains `existing`. Needle never executes tools, never
-  bypasses permission/sandbox/budget/verification, and stays **off** in v0.4.9
+  bypasses permission/sandbox/budget/verification, and stays **off** in v0.5.0
   (`RAD_TOOL_ROUTER=existing`). `rad needle-eval` is the measurement path; it is not a default.
 
 ## Human-inspired memory
@@ -385,7 +385,7 @@ and how to add a tool, a scenario or a migration.
 
 ## Roadmap
 
-Operating spine (Gen1–Gen5, the build → test → validate → release → use → discover gaps loop): [docs/ROADMAP.md](docs/ROADMAP.md). Gen1 complete on 0.2.3; Gen2 complete on 0.3.0–0.3.2; Gen3 **complete (scripted)** on 0.4.0–0.4.9 (path-aligned checks **v0.4.0**; multi-file contracts **v0.4.1**; ASCII-tree package_dir **v0.4.2**; first-task thrash **v0.4.3**; mkdir already-exists action noise **v0.4.4**; premature-test ENVIRONMENT **v0.4.5**; task-boundary yield / leftover-budget dispatch **v0.4.6**; optional checksum-utility ENVIRONMENT **v0.4.7**; independent later package files **v0.4.8**; budget-aware retry stop **v0.4.9**; live E1–E3 confirmation **deferred** until a provider recovers; live RW-086 **FAIL** OpenRouter free / Class B+C residual; xxd Class A thrash **CLEARED**; E1 **not live**; E2/E3 **scripted** (RW-087 / RW-088); live OpenRouter free-model loop **paused**; NIM still Class C paused; no live PASS claim). Gen4 **planned / scoped** (not started; first v0.5.0 candidate **G4-1** listed, not accepted). The list below is a product-idea backlog, not a generation commitment.
+Operating spine (Gen1–Gen5, the build → test → validate → release → use → discover gaps loop): [docs/ROADMAP.md](docs/ROADMAP.md). Gen1 complete on 0.2.3; Gen2 complete on 0.3.0–0.3.2; Gen3 **complete (scripted)** on 0.4.0–0.4.9; Gen4 **in progress** — **G4-1** live multi-provider / free-provider production doctrine **implemented as v0.5.0** (scripted RW-089: 403/429 → Class C `needs_user`; free-first rotation; no silent paid under `free_lock`; no Class A invented). Live E1–E3 confirmation **deferred**; live text_analyzer@12 **not** claimed PASS; NIM Class C paused (RW-084); OpenRouter free paused (RW-086 429). Needle **OFF**. Caps **16/60**. The list below is a product-idea backlog, not a generation commitment.
 
 LoRA fine-tune of Rad's personality into Edge0 weights · expert pruning/distillation for lighter
 35b · web/phone face · remote-MCP tool execution hardening · multi-user sessions ·

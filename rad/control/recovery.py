@@ -26,6 +26,7 @@ from rad.control.codingloop import (
 )
 from rad.control.observer import Observation
 from rad.control.tasks import Task
+from rad.providers import class_c_kind, class_c_next_steps
 
 
 class FailureClass:
@@ -33,6 +34,7 @@ class FailureClass:
     TOOL = "TOOL_FAILURE"
     NETWORK = "NETWORK_FAILURE"
     AUTH = "AUTH_FAILURE"
+    RATE = "RATE_LIMIT"
     PERMISSION = "PERMISSION_FAILURE"
     PLANNING = "PLANNING_FAILURE"
     MODEL = "MODEL_FAILURE"
@@ -55,7 +57,7 @@ class Decision:
     data: Dict[str, Any] = field(default_factory=dict)
 
 
-_NET = re.compile(r"network:|timed? ?out|connection (reset|refused)|temporar|HTTP 5\d\d|HTTP 429|rate limit", re.I)
+_NET = re.compile(r"network:|timed? ?out|connection (reset|refused)|temporar|HTTP 5\d\d", re.I)
 _AUTH = re.compile(r"HTTP 401|HTTP 403|unauthori[sz]ed|invalid api key|forbidden", re.I)
 _PERM = re.compile(r"blocked by safety policy|user declined|permission denied|outside the workspace", re.I)
 _ENV = re.compile(r"command not found|: not found|no such file|not installed|ModuleNotFoundError|No module named|ENOENT", re.I)
@@ -66,10 +68,15 @@ _MODEL = re.compile(r"all providers failed|no brain available|brain error|no mod
 def classify(task: Task, observations: List[Observation], error: str = "",
              verification: Optional[Dict[str, Any]] = None) -> str:
     text = " ".join([error] + [o.output[-400:] for o in observations if o.status != "success"])
+    # Class C (auth / rate-limit / inference-forbidden) before MODEL so
+    # "all providers failed: nvidia: HTTP 403" is a pause, not a product retry.
+    kind = class_c_kind(None, text)
+    if kind == "rate_limit":
+        return FailureClass.RATE
+    if kind == "auth" or _AUTH.search(text):
+        return FailureClass.AUTH
     if error and _MODEL.search(error):
         return FailureClass.MODEL
-    if _AUTH.search(text):
-        return FailureClass.AUTH
     if _PERM.search(text):
         return FailureClass.PERMISSION
     if _NET.search(text):
@@ -111,8 +118,12 @@ class RecoveryEngine:
         detail = "; ".join(r.get("detail", "")[:100] for r in failed_checks)[:600]
         broken_verified = self._broken_verified(failed_checks, artifacts or {})
 
-        if fc == FailureClass.AUTH:
-            return Decision("ask_user", fc, "credentials rejected — a human must fix keys")
+        if fc in (FailureClass.AUTH, FailureClass.RATE):
+            kind = "rate_limit" if fc == FailureClass.RATE else "auth"
+            return Decision(
+                "ask_user", fc, class_c_next_steps(kind),
+                data={"class_c": True, "kind": kind},
+            )
         if fc == FailureClass.PERMISSION:
             blocked = [o.output[:200] for o in observations if o.status in ("blocked", "declined")]
             if can_retry:

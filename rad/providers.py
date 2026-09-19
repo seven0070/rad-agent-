@@ -23,12 +23,67 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 from rad.home import RadHome
 
 
+# HTTP statuses that are Class C (keys / quota / inference-forbidden), not product holes.
+CLASS_C_STATUSES = frozenset({401, 403, 429})
+
+
 class ProviderError(Exception):
     def __init__(self, msg: str, status: Optional[int] = None, retryable: bool = True) -> None:
         super().__init__(msg)
         self.msg = msg
         self.status = status
         self.retryable = retryable
+
+
+def class_c_kind(status: Optional[int] = None, msg: str = "") -> Optional[str]:
+    """Return ``auth`` or ``rate_limit`` for Class C provider failures, else None.
+
+    Class C is environment / keys / quota / inference-forbidden. Do not invent a
+    Class A product patch for these (RW-084 HTTP 403; RW-086 HTTP 429).
+    """
+    text = (msg or "").lower()
+    if (
+        status == 429
+        or "http 429" in text
+        or "rate limit" in text
+        or "free-models-per-day" in text
+        or "quota exceeded" in text
+        or "insufficient quota" in text
+    ):
+        return "rate_limit"
+    if (
+        status in (401, 403)
+        or "http 401" in text
+        or "http 403" in text
+        or "unauthori" in text
+        or "invalid api key" in text
+        or "authorization failed" in text
+        or "inference-forbidden" in text
+        or "inference forbidden" in text
+        or ("forbidden" in text and "http" in text)
+    ):
+        return "auth"
+    if "forbidden" in text or "invalid api key" in text:
+        return "auth"
+    return None
+
+
+def class_c_next_steps(kind: Optional[str] = None, free_lock: bool = False) -> str:
+    """Actionable pause text: rotate key, wait for quota, switch free provider."""
+    lock = " free_lock is on — paid spend stays off." if free_lock else ""
+    if kind == "rate_limit":
+        return (
+            "Class C provider rate-limit/quota — not a product hole. "
+            "Wait for quota to reset, `rad use` another free provider, "
+            "or add another free key. Do not invent a Class A patch."
+            + lock
+        )
+    return (
+        "Class C provider auth / inference-forbidden — not a product hole. "
+        "Rotate the key, check inference entitlement, or `rad use` another free "
+        "provider. Do not invent a Class A patch."
+        + lock
+    )
 
 
 @dataclass

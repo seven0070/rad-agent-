@@ -49,9 +49,10 @@ Illegal transitions raise. Every transition is on `task.history` and in the even
 ## Recovery policy (deterministic)
 | class | strategy |
 |---|---|
-| AUTH / PERMISSION | ask_user |
-| MODEL ("no brain") | ask_user; other model errors → retry (router falls back) |
-| TRANSIENT / NETWORK | retry while attempts remain |
+| AUTH / RATE_LIMIT (Class C: HTTP 401/403/429, inference-forbidden, free-models-per-day) | **ask_user / pause** — rotate key, wait for quota, or `rad use` another free provider. Do **not** invent a Class A repair/replan (G4-1 / RW-089). Router already rotates to the next usable free brain; `free_lock` never silently spends paid |
+| AUTH / PERMISSION (non-provider) | ask_user |
+| MODEL ("no brain") | ask_user; other model errors (5xx) → retry (router falls back) |
+| TRANSIENT / NETWORK | retry while attempts remain (5xx / timeout — **not** 429 quota) |
 | ENVIRONMENT (not found / no module) | insert a **repair task** once, then retry_with_hint, then ask_user. `mkdir` / create **already exists** is **not** ENVIRONMENT (RW-071) — mixed File-exists + no-such-file noise uses TOOL/VALIDATION so remaining tools are not spent on Repair-prerequisite thrash. `pip install -r` when the requirements file is missing is **not** ENVIRONMENT (RW-075) — that is TOOL/VALIDATION, not a missing-env repair. Premature `python …/test_*.py` (interpreter `can't open file` a `.py` script the agent has not written) is **not** ENVIRONMENT (RW-079) — sequencing, not a missing host dependency. Invented tool `DONE` / `DONE: …` is a protocol mistake: it errors, but does not fail a task whose explicit machine checks passed |
 | VALIDATION / TOOL with **broken artifacts** (`json_valid`, `json_field`, `json_min_len`, `shell_ok`, `shell_output`) | insert a **repair task** once with the concrete failure (stderr / invalid JSON / expected vs actual), then retry_with_hint → replan once → ask_user. Models propose; RAD decides. A `DONE:` line is never an artifact path. |
 | VALIDATION / TOOL / UNKNOWN (missing file, `file_exists` fail, other) | retry_with_hint (explicit failed-check feedback) → replan once → ask_user |
@@ -80,9 +81,10 @@ Missing optional `xxd` / hexdump / `sha256sum` (checksum theater) is
 **not** ENVIRONMENT as of **v0.4.7** (theme 3 slice F). Do not treat
 crash-resume with a raised budget as that gap, and do not invent a
 second persistence stack. Live E1–E3 confirmation is **deferred** until
-a provider recovers. Gen4 (v0.5.x Production Scale) is **planned /
-scoped** in [ROADMAP.md](ROADMAP.md) — not a control-plane rewrite and
-not started from this file.
+a provider recovers. Gen4 theme **G4-1** (live multi-provider / free-provider
+production doctrine) is **implemented as v0.5.0** — Class C 403/429 pause
+with free-first rotation; not a control-plane rewrite. See
+[ROADMAP.md](ROADMAP.md).
 
 ## Parallelism (Phase 3)
 Ready tasks with satisfied dependencies run concurrently up to `objective_parallel`

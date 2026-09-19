@@ -49,6 +49,11 @@ class RouterState:
                 continue
             if free_lock and entry.spec.tier == "paid":
                 continue
+            # Skip brains that already failed Class C this process so we rotate
+            # to another usable free provider instead of re-pinning a 403/429.
+            fail = self.failures.get(entry.spec.name) or {}
+            if fail.get("class_c"):
+                continue
             entries.append(entry)
         entries.sort(key=lambda e: (TIER_RANK[e.spec.tier], e.spec.name))
         if force:
@@ -135,6 +140,16 @@ class RouterState:
                 or getattr(requirements, "kind", "") == "vision"
         chain = self.build_chain_for(requirements=requirements, need_vision=need_vision)
         if not chain:
+            if any((f or {}).get("class_c") for f in self.failures.values()):
+                kinds = {(f or {}).get("kind") for f in self.failures.values() if (f or {}).get("class_c")}
+                kind = "rate_limit" if "rate_limit" in kinds else "auth"
+                statuses = [f.get("status") for f in self.failures.values() if (f or {}).get("class_c")]
+                status = next((s for s in statuses if s in P.CLASS_C_STATUSES), None)
+                raise P.ProviderError(
+                    "all providers failed (Class C — not a product hole):\n  "
+                    + "\n  ".join(f"{n}: {f.get('err', '')}" for n, f in self.failures.items() if (f or {}).get("class_c"))
+                    + "\n" + P.class_c_next_steps(kind, free_lock=bool(self.home.cfg.get("free_lock"))),
+                    status=status, retryable=False)
             hint = ("no vision-capable brain available — this task includes an image; "
                     "`rad providers` lists what each provider/model supports, then "
                     "`rad use <provider>` or `rad provider add` with a vision model "
@@ -143,6 +158,8 @@ class RouterState:
                     "start a local engine (Edge0/Ollama/LM Studio), or `rad provider add`")
             raise P.ProviderError(hint, retryable=False)
         errors: List[str] = []
+        class_c_hits: List[P.ProviderError] = []
+        free_lock = bool(self.home.cfg.get("free_lock"))
         for entry in chain:
             model = model_override or self.home.cfg.get("model") or entry.model
             if not model and entry.spec.local and entry.spec.name == "edge0":
@@ -156,12 +173,24 @@ class RouterState:
                 self._record_cost(entry, res)
                 return res
             except P.ProviderError as e:
-                self.failures[entry.spec.name] = {"err": e.msg, "status": e.status, "at": time.time()}
+                kind = P.class_c_kind(e.status, e.msg)
+                self.failures[entry.spec.name] = {
+                    "err": e.msg, "status": e.status, "at": time.time(),
+                    "class_c": bool(kind), "kind": kind,
+                }
+                if kind and self.preferred.get(entry.spec.tier) == entry.spec.name:
+                    self.preferred.pop(entry.spec.tier, None)
                 errors.append(f"{entry.spec.name}: {e.msg}")
+                if kind:
+                    class_c_hits.append(e)
                 home_log = self.home
                 home_log.log("router", f"FAIL {entry.spec.name} {e.status} {e.msg}")
-                if not e.retryable and e.status in (401, 403):
-                    continue  # bad key — try next provider
+                if kind or (not e.retryable and e.status in (401, 403, 429)):
+                    if stream_cb is not None:
+                        stream_cb("\n")
+                    print(col.dim(f"  ⚠ {entry.spec.name} Class C ({e.msg}) — rotating free provider…"),
+                          flush=True)
+                    continue  # auth / quota / inference-forbidden — try next usable brain
                 if stream_cb is not None:
                     stream_cb("\n")
                 print(col.dim(f"  ⚠ {entry.spec.name} failed ({e.msg}) — falling back…"), flush=True)
@@ -169,6 +198,14 @@ class RouterState:
             except Exception as e:  # unexpected → treat as retryable
                 errors.append(f"{entry.spec.name}: {e}")
                 continue
+        if class_c_hits and len(class_c_hits) == len(errors):
+            kinds = {P.class_c_kind(e.status, e.msg) for e in class_c_hits}
+            kind = "rate_limit" if "rate_limit" in kinds else "auth"
+            status = next((e.status for e in class_c_hits if e.status in P.CLASS_C_STATUSES), None)
+            raise P.ProviderError(
+                "all providers failed (Class C — not a product hole):\n  " + "\n  ".join(errors)
+                + "\n" + P.class_c_next_steps(kind, free_lock=free_lock),
+                status=status, retryable=False)
         raise P.ProviderError("all providers failed:\n  " + "\n  ".join(errors), retryable=False)
 
     def _record_cost(self, entry: ChainEntry, res: P.ChatResult) -> None:
