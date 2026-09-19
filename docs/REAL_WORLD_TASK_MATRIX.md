@@ -52,8 +52,10 @@ parked** (no measured hole). **Version 5 pack** is GitHub Release
 **Version 5** / tag **v0.5.5** (0.5.0–0.5.5). Package on the 1.0 line is
 **1.0.0**. First Gen5 theme **G5-1** (public / product-grade 1.0 baseline)
 is **accepted and implemented as v1.0.0** (scripted RW-100 / RW-101).
-**No GitHub Release / tag** in that change — Sanath packs Version 1 after
-merge. Do not rewrite RW-058–099.
+**Version 1 pack SHIPPED** as GitHub Release **Version 1** / tag **v1.0.0**
+(wheel + sdist; PR #52). **No G5-2 product theme.** Next: **hold / soak**
+(operator live-use via G4-3 when a provider recovers). Stay **1.0.0**.
+**No GitHub Release / tag** in this docs change. Do not rewrite RW-058–101.
 
 Every `VERIFIED` / `completed` cell is from the control-plane verifier **and** a disk
 check (file exists / contents / hash). A model `DONE:` line is never enough.

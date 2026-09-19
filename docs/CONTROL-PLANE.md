@@ -102,10 +102,11 @@ v0.5.5** — `rad cost` rolls up persisted per-objective `Usage`
 `objective.json`; remaining-quota is not invented; G4-2 last Class C is
 untouched. Package is **1.0.0**. First Gen5 theme **G5-1** (public /
 product-grade 1.0 baseline) is **accepted and implemented as v1.0.0**
-(scripted RW-100 / RW-101). **No GitHub Release / tag in that change** —
-Sanath packs Version 1 after merge. Honesty bar: false DONE **0**; Needle
-**OFF**; caps **16/60**; F-17 / F-26 closed; Class C is not a product
-patch — see [ROADMAP.md](ROADMAP.md).
+(scripted RW-100 / RW-101). **Version 1 pack SHIPPED** (GitHub Release
+**Version 1** / tag **v1.0.0**). Gen5 next step is **hold / soak** (no
+G5-2). **No GitHub Release / tag in this change.** Honesty bar: false DONE
+**0**; Needle **OFF**; caps **16/60**; F-17 / F-26 closed; Class C is not
+a product patch — see [ROADMAP.md](ROADMAP.md).
 
 ## Parallelism (Phase 3)
 Ready tasks with satisfied dependencies run concurrently up to `objective_parallel`

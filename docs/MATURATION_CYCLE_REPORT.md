@@ -6,6 +6,99 @@ Default `Budget.tool_calls` remains **60**.
 
 ---
 
+# Cycle 39 — Scope G5 hold / soak after Version 1; stay 1.0.0 (2026-09-19)
+
+**Date:** 2026-09-19
+**Baseline:** `origin/main` `9ff184e0d071784bc8820a1258a3d40daf7f1193` (merge PR #52; package **1.0.0**; GitHub Release **Version 1** / tag **v1.0.0** with wheel + sdist)
+**Package at start:** `1.0.0`
+**This branch:** `cursor/g5-2-next-theme-182d` — package **1.0.0** (no bump)
+**Architecture:** control plane preserved. Needle stays off. Caps unchanged.
+**Kind:** docs / scope only. No `rad/` product change. RW-058–101 are **not rewritten**.
+**Release:** **none**. **No GitHub Release / tag in this PR.** Version 1 pack is already tag **v1.0.0**. Do **not** cut **v1.0.1** or **v1.1.0**.
+
+## Why this cycle
+
+G5-1 is **accepted, implemented, and packed** as **v1.0.0** (Cycle 38 /
+PR #52; GitHub Release **Version 1**). Gen4 remains **complete (scripted)**
+on v0.5.0–v0.5.5. G4-4 remains **parked** (no measured hole). Live NIM /
+OpenRouter free stay **paused**. Live E1–E3 and Version 5 / G4-5 / G4-7 /
+G4-6 / Version 1 confirmation is **deferred**. F-17 / F-26 stay closed.
+Cycle 24’s remaining *product* Class B list is **closed scripted**. The
+public 1.0 install / honesty-bar hole is **closed** (RW-100 / RW-101).
+Remaining 11B incompleteness without a contract hole is evidence, not a
+theme. Open GitHub issues: **none**.
+
+Investigate-first after Version 1: the highest-leverage next step is
+**not** a G5-2 product theme. Live confirmation is the loop’s `use` step
+(G4-3 playbook already ships; Cycle 36 refused it as a package theme;
+gates remain paused). Unparking MCP has no measured hole. PyPI upload is
+optional later (GitHub wheel is the public path; no token in tree). A cap
+raise is closed (A1 / F-21). Residual Class B without a contract hole is
+not a theme. A **v1.0.1** docs bump is not proven Class A. A **v1.1.0**
+theme bump has nothing to accept. Scope **hold / soak**: stay **1.0.0**;
+record remaining gaps; wait for operator use, proven Class A, or a later
+written accept.
+
+## Alternatives considered
+
+| candidate | decision |
+|---|---|
+| Hold / soak (operator live-use via G4-3; remaining gaps recorded) | **Recommended next.** Evidence-backed: G5-1 packed; no measured product hole; providers paused; G4-3 playbook ships. Stay **1.0.0**. No G5-2. No v1.0.1. No v1.1.0 |
+| Live confirmation / production soak **as G5-2 / v1.1.0** | Highest *loop* leverage. **Not** a product slice. Cycle 36 refused this as a package theme. Operator work when a provider recovers |
+| Unpark G4-4 MCP | No measured hole. Already first-class. **Parked** |
+| PyPI publish / distribution polish | GitHub wheel is the public 1.0 path. Metadata already PyPI-ready. No token. Optional later, not a theme |
+| Cap policy / longer-horizon *product* | E1–E3 shipped scripted. Caps 16/60 stay closed (A1 / F-21). RW-059 showed 12→24 still exhausted |
+| Residual Class B after G4-5 / G4-6 / G4-7 / G5-1 | Contract holes + public baseline closed scripted. Remaining 11B incompleteness without a contract hole is evidence, not a theme |
+| INSTALLATION / QUICKSTART pre-pack wording as G5-2 | Docs residual, not a control-plane hole. Not v1.0.1 unless Sanath asks |
+| A v1.0.1 docs-only bump | No proven Class A. Stay **1.0.0** |
+
+## Decision
+
+| item | value |
+|---|---|
+| Package | **1.0.0** (no 1.0.1; no 1.1.0) |
+| Gen3 | **COMPLETE (scripted)** (unchanged). Live E1–E3 **deferred** |
+| Gen4 | **COMPLETE (scripted)**. **Version 5 pack** tag **v0.5.5** (0.5.0–0.5.5). **G4-4 parked** |
+| Gen5 | **IN PROGRESS — hold / soak**. **G5-1** shipped + packed as **v1.0.0**. **No G5-2** |
+| Recommended next | **Hold / soak** (see ROADMAP). **Not** accepted as a product theme |
+| Packing | Version 1 pack is **already** tag **v1.0.0**. This PR cuts **no** release |
+| Proposed later versions | **v1.0.1** only for proven Class A; **v1.1.0** only for a later accepted Gen5 theme after soak. **Neither here** |
+| Invariants | Needle OFF; caps 16/60; false DONE 0; no redesign; Class C is not a product patch; no live PASS claim; F-17 / F-26 stay closed; remaining-quota not invented |
+
+## Quality gates (this branch)
+
+Isolated homes `/tmp/rad-g5-hold-gate` (doctor, acceptance) and `/tmp/rad-g5-hold-rw` (realworld).
+
+| gate | result |
+|------|--------|
+| `rad version` | **PASS** v1.0.0 |
+| `python3 -m pytest -q` | **PASS** 652 passed in 16.54s |
+| `rad doctor --offline` | **PASS** 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR, verdict READY, exit 0 |
+| `rad acceptance` | **PASS** 50/50 — `/tmp/rad-g5-hold-gate/acceptance/20260919-082216_gate.json` |
+| `rad realworld` | **PASS** 10/11 + 1 BLOCKED — `/tmp/rad-g5-hold-rw/realworld/20260919-082212_realworld.json` |
+| Needle default | **PASS** (`existing`) — unchanged |
+| Caps | **PASS** `max_plan_tasks` 16; `Budget.tool_calls` 60 — unchanged |
+| Package | **1.0.0** (no bump) |
+| Release / tag | **none** — Version 1 pack already tag **v1.0.0** |
+| Live this patch | not re-run; suite `live_nim` **BLOCKED** (Class C) |
+
+## Remaining limitations
+
+1. Live text_analyzer@12 remains Class B FAIL. This cycle does not change that.
+2. E1/E2/E3 and Version 5 / G4-5 / G4-7 / G4-6 / Version 1 are scripted or packed only. Live confirmation **deferred**.
+3. Both live free paths remain **paused**.
+4. G4-4 still has no measured hole. PyPI `pip install rad-agent` is not claimed.
+5. INSTALLATION / QUICKSTART / README still include G5-1-era pre-pack wording; the Version 1 wheel URL is live.
+6. No G5-2. No v1.0.1. No v1.1.0.
+
+## Roadmap pointer
+
+Operating spine: [ROADMAP.md](ROADMAP.md). **Generation 5 in progress —
+hold / soak.** **G5-1** shipped as **v1.0.0**. Version 1 pack **SHIPPED**.
+Stay **1.0.0**. **No GitHub Release in this PR.**
+
+---
+
 # Cycle 38 — G5-1 public / product-grade 1.0 baseline / v1.0.0 (2026-09-19)
 
 **Date:** 2026-09-19
