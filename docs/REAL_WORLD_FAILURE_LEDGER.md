@@ -1928,10 +1928,10 @@ python3 -m pytest -q tests/test_xxd_environment.py
 
 | gate | result |
 |---|---|
-| `python3 -m pytest -q` | pending this branch |
-| `rad doctor --offline` | pending this branch |
-| `rad acceptance` | pending this branch |
-| `rad realworld` | pending this branch |
+| `python3 -m pytest -q` | **547 passed** in 12.22s |
+| `rad doctor --offline` | READY — 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR (`RAD_HOME=/tmp/rad-rw085-gate`) |
+| `rad acceptance` | **50/50 PASSED** (`/tmp/rad-rw085-gate/acceptance/20260919-043709_gate.json`) |
+| `rad realworld` | **10 passed / 1 BLOCKED / 0 failed** (`live_nim` BLOCKED; `/tmp/rad-rw085-rw/realworld/20260919-043710_realworld.json`) |
 | Package | **0.4.7** |
 | RW-058–085 | preserved |
 | 16-task cap | **UNCHANGED** |
