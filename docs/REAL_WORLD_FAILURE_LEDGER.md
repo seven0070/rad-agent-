@@ -2322,10 +2322,10 @@ live use data. Next product work waits for a written accept. Class C is
 
 | gate | result |
 |---|---|
-| `python3 -m pytest -q` | pending this revision |
-| `rad doctor --offline` | pending this revision |
-| `rad acceptance` | pending this revision |
-| `rad realworld` | pending this revision |
+| `python3 -m pytest -q` | **608 passed** in 11.67s |
+| `rad doctor --offline` | READY — 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR (`RAD_HOME=/tmp/rad-g45-scope-gate`) |
+| `rad acceptance` | **50/50 PASSED** (`/tmp/rad-g45-scope-gate/acceptance/20260919-065055_gate.json`) |
+| `rad realworld` | **10 passed / 1 BLOCKED / 0 failed** (`live_nim` BLOCKED; `/tmp/rad-g45-scope-rw/realworld/20260919-065056_realworld.json`) |
 | Package | **0.5.2** (no bump; no v0.5.3) |
 | Product code | unchanged |
 | Gen3 | **COMPLETE (scripted)**; live E1–E3 **deferred** |
