@@ -46,8 +46,16 @@ from rad.control.recovery import Decision, FailureClass, RecoveryEngine
 from rad.control.scheduler import Scheduler
 from rad.control.tasks import Check, Task, TaskStatus
 from rad.control.verifier import FAILED, UNVERIFIED, VERIFIED, Verifier
-from rad.health import evaluate_live_gate, providers_from_error, record_class_c, status_from_error
+from rad.health import (
+    evaluate_live_gate,
+    load_health_state,
+    providers_from_error,
+    record_class_c,
+    remaining_retry_after,
+    status_from_error,
+)
 from rad.home import RadHome
+from rad.providers import all_specs, find_key
 from rad.sandbox import Sandbox
 
 DONE_RE = re.compile(r"\bDONE:\s*(.+)", re.I)
@@ -687,11 +695,17 @@ class Controller:
                 names = list(d.data.get("providers") or []) or providers_from_error(error)
                 if not names:
                     names = ["unknown"]
+                state = load_health_state(self.home)
                 for name in names:
+                    spec = next((s for s in all_specs(self.home) if s.name == name), None)
+                    key = find_key(self.home, spec) if spec is not None else None
+                    existing = (state.get("providers") or {}).get(name) or {}
+                    ra = remaining_retry_after(existing) if existing else None
                     record_class_c(
                         self.home, name, kind=d.data.get("kind"),
                         status=status_from_error(error or d.reason),
                         err=error or d.reason, objective_id=obj.id,
+                        retry_after=ra, key=key,
                         free_lock=bool(self.home.cfg.get("free_lock")),
                     )
             return

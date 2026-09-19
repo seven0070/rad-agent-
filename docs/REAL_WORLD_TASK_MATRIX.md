@@ -39,19 +39,20 @@ remains **paused** (Class C). Independent later package files is
 **complete (scripted)**; live E1–E3 confirmation is **deferred** until a
 provider recovers. Gen4 **G4-1** is **implemented as v0.5.0** (scripted
 RW-089). **G4-2** (live-gate resume / provider health) is **implemented
-as v0.5.1** (scripted RW-090 / RW-091). Recommended next **v0.5.2**
-candidate **G4-3** (live-use campaign / operator workflow) is listed
-in [ROADMAP.md](ROADMAP.md), **not accepted**. Do not rewrite RW-058–091.
-Scripted theme-2 RW-066 (F-27) is preserved.
+as v0.5.1** (scripted RW-090 / RW-091). **G4-3** (live-use campaign /
+operator workflow) is **implemented as v0.5.2** (scripted RW-092 / RW-093).
+Do not rewrite RW-058–093.
 
 Every `VERIFIED` / `completed` cell is from the control-plane verifier **and** a disk
 check (file exists / contents / hash). A model `DONE:` line is never enough.
 
 Status vocabulary: **PASS** | **FAIL** | **BLOCKED** | **NOT TESTED**.
 
-Scripted G4-2 (RW-090 / RW-091) is at the top (**PASS**; catalog ≠
-inference; last Class C persists; resume live-gated; 429 Retry-After
-visible), then scripted G4-1 (RW-089) (**PASS**; 403/429 → Class C
+Scripted G4-3 (RW-092 / RW-093) is at the top (**PASS**; doctor skip-blocked;
+`rad health` wait/rotate/resume/run; playbook; no live PASS required), then
+scripted G4-2 (RW-090 / RW-091) (**PASS**; catalog ≠ inference; last Class C
+persists; resume live-gated; 429 Retry-After visible), then
+scripted G4-1 (RW-089) (**PASS**; 403/429 → Class C
 `needs_user`; free rotation; no paid under free_lock; no Class A), then
 scripted E3 (RW-088) (**PASS**; retry/repair stop; later
 independent file ≥1 attempt), then scripted E2 (RW-087) (**PASS**; later
@@ -60,8 +61,17 @@ Class A thrash **CLEARED**; E1 not live; late **429** `free-models-per-day`;
 free-model loop **paused**), then live OpenRouter RW-085 (**FAIL**; Class C
 cleared; xxd ENVIRONMENT Class A **CONFIRMED**), then scripted RW-086
 (v0.4.7), then live NIM RW-084 (**BLOCKED Class C**), then scripted RW-083.
-G4-3 is **scoped** (listed, not accepted) — no new RW row. RW-058–091 are
-**not rewritten**.
+G4-3 is **shipped** as v0.5.2 (scripted). RW-058–091 are **not rewritten**.
+
+# Scripted live-use campaign / operator workflow (RW-092 / RW-093)
+
+Lane: scripted doctor + health + CLI (no NIM / no OpenRouter) on
+**v0.5.2**. Needle `existing` / off. Caps unchanged. **Not** a live PASS.
+
+| id | date | task | goal (short) | plan | steps | tools | result | disk / verify | ENVIRONMENT? | class | notes |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| RW-092 | 2026-09-19 | ops (scripted) — doctor skip-blocked chat (RW-086 quota shape) | Last Class C 429 still blocking; online doctor / scan must not re-hit chat | n/a | persist; doctor; --force re-probe; Retry-After expiry | none (health ping only) | **PASS** (unknown key_fp still skips; `--force` pings; expired Retry-After pings; scan default skips) | n/a; false DONE **0** | **N** | capability (Gen4 G4-3; Class C stays C) | Tests `test_live_use_campaign.py`. Needle OFF. Caps unchanged. No live PASS claim. |
+| RW-093 | 2026-09-19 | ops (scripted) — campaign / operator workflow | Pause then `rad health` next-action; playbook; entitled → resume | 1 task | Class C pause; operator_status; CLI --json | default **60** unchanged | **PASS** (429 → wait, no chat; 403 pause → resume when entitled; playbook names E1–E3 / no live PASS required; free_lock drops paid) | hello.txt **absent** on pause; false DONE **0** | **N** | capability (Gen4 G4-3; Class C stays C) | Tests `test_live_use_campaign.py`. Needle OFF. Caps unchanged. No live PASS claim. |
 
 # Scripted live-gate / provider health (RW-090 / RW-091)
 

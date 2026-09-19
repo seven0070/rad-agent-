@@ -22,7 +22,32 @@ from **inference-entitled** (`chat/completions`). A 403-chat pin is WARNING, not
 READY. Last Class C (kind / status / next-steps / Retry-After) is persisted in
 `~/.rad/provider_health.json`. `rad objective resume` live-gates Class C pauses
 until an inference-entitled brain recovers — it does not silently re-burn the
-same 403/429. See [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
+same 403/429.
+
+G4-3 / v0.5.2: online `rad doctor` **does not re-ping chat** while last Class C
+still blocks (same skip as resume; unknown `key_fp` included). `--force`
+re-probes after a believed recovery (quota-unsafe on OpenRouter
+`free-models-per-day`). `rad health` is the pause / resume / campaign surface
+(`wait` / `rotate` / `resume` / `run`). See [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
+
+## Live-use campaign (G4-3)
+
+When NIM or OpenRouter free recovers, run **one bounded objective** and record
+the RW row honestly. A live PASS is **not** required. Caps **16/60**. Needle
+**OFF**. `free_lock` never silently spends paid. Class C stays Class C.
+
+```bash
+rad health                 # last Class C + Retry-After + next-action (skip-blocked)
+rad health --campaign      # print the playbook
+# wait | rotate key | rad use another free brain
+# rad doctor --force       # only after you believe the same key recovered
+rad objective resume <id>  # when next-action is resume
+rad objective run <goal> --max-tasks 16 --max-tools 60   # when next-action is run
+```
+
+Record: PASS / FAIL / BLOCKED; E1–E3 live **Y / N / BLOCKED**; if Class C hits
+mid-run, G4-1 pause + G4-2 resume. Last working-inference live row remains
+RW-086 on v0.4.7 until a new live row is recorded.
 
 ## Storage schema & migrations (`rad/storage.py`)
 `~/.rad/schema.json` records the schema version and every applied migration (name, time, summary).

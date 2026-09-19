@@ -176,7 +176,7 @@ class Gate:
               "plan", "team", "world", "version"}
         control = {"objective", "trace", "inspect", "replay", "events", "why", "agents", "policy",
                    "audit", "lab", "status", "config", "security", "tools", "evaluate", "regression",
-                   "realworld", "acceptance"}
+                   "realworld", "acceptance", "health"}
         miss_v1, miss_v2 = sorted(v1 - choices), sorted(control - choices)
         return (not miss_v1 and not miss_v2), (
             f"{len(v1) - len(miss_v1)}/{len(v1)} v1 commands still present (missing={miss_v1 or 'none'}); "
@@ -1199,7 +1199,7 @@ class Gate:
         from rad.doctor import Doctor
         from rad.storage import MIGRATIONS, SCHEMA_VERSION, Storage
         choices = set(build_parser()._subparsers._group_actions[0].choices)
-        need = {"install", "doctor", "storage", "config", "status", "version", "evolve", "brain",
+        need = {"install", "doctor", "health", "storage", "config", "status", "version", "evolve", "brain",
                 "workspace", "acceptance", "regression"}
         missing = sorted(need - choices)
         home = self.item_home()

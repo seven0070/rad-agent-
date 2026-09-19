@@ -15,10 +15,12 @@ free-model thrash. Generation 4 is **in progress**. First theme **G4-1**
 (live multi-provider / free-provider production doctrine) is **accepted
 and implemented as v0.5.0** (scripted RW-089). Theme **G4-2**
 (live-gate resume / provider health observability) is **accepted
-and implemented as v0.5.1** (scripted RW-090 / RW-091). Recommended
-next **v0.5.2** candidate **G4-3** (live-use campaign / operator
-workflow) is **listed, not accepted**. Package stays **0.5.1**. Do
-**not** claim live text_analyzer@12 PASS. Generation 5 is **not started**.
+and implemented as v0.5.1** (scripted RW-090 / RW-091). Theme **G4-3**
+(live-use campaign / operator workflow) is **accepted and implemented
+as v0.5.2** (scripted RW-092 / RW-093). Package is **0.5.2**. **No
+GitHub Release / tag** for this slice — Version 5 packs later as one
+release. Do **not** claim live text_analyzer@12 PASS. Generation 5 is
+**not started**.
 
 ```
 build → test → validate → release → use → discover gaps → build the next version
@@ -33,15 +35,15 @@ Stability with no code change is a valid result.
 
 | item | value |
 |---|---|
-| Generation in production | **Gen4 in progress** — **v0.5.1** (G4-2). G4-1 remains **v0.5.0**. Gen3 remains **complete (scripted)** on 0.4.0–0.4.9. Last live-use with **working inference** is **RW-086** on tag `v0.4.7` @ `850aaf9c` (OpenRouter free; then **429**); prior working-inference row is RW-085 on tag `v0.4.6` @ `8f09be58`; v0.4.6 live NIM attempt is RW-084 **BLOCKED Class C**; last NIM working-inference row remains RW-081 on `v0.4.5` @ `32e9fe87`; Gen2 complete on `387776dc` / tag `v0.3.2`; Gen1 baseline remains tagged `v0.2.3` @ `d121c3f` |
-| Package / tag on `main` | **0.5.1** (this change — **no bump**). Tag `v0.5.1` @ `2d4c8b6dd2e75b191a33913b93eb7d77acd3be6b` (merge PR #41) is G4-2. Tag `v0.5.0` @ `d194b8ffc763fc00ad58273e5dd8f0203442041d` (merge PR #39) is G4-1. Tag `v0.4.9` @ `05ea0df302aa6bfd15eccfb84341aeed75d6e1d0` is E3. Tag `v0.4.7` @ `850aaf9c3a931a5ba119bdbb6ec73ae4a6fa73e9` remains the live RW-086 run |
-| This change | **docs / scope only** — mark **G4-2 shipped** as **v0.5.1**; scope **G4-3** live-use campaign / operator workflow as recommended next **v0.5.2** (listed, not accepted); stay **0.5.1** |
+| Generation in production | **Gen4 in progress** — **v0.5.2** (G4-3). G4-2 remains **v0.5.1**. G4-1 remains **v0.5.0**. Gen3 remains **complete (scripted)** on 0.4.0–0.4.9. Last live-use with **working inference** is **RW-086** on tag `v0.4.7` @ `850aaf9c` (OpenRouter free; then **429**); prior working-inference row is RW-085 on tag `v0.4.6` @ `8f09be58`; v0.4.6 live NIM attempt is RW-084 **BLOCKED Class C**; last NIM working-inference row remains RW-081 on `v0.4.5` @ `32e9fe87`; Gen2 complete on `387776dc` / tag `v0.3.2`; Gen1 baseline remains tagged `v0.2.3` @ `d121c3f` |
+| Package / tag on `main` | **0.5.2** (this change). **No GitHub Release / tag** — Version 5 pack later. Tag `v0.5.1` @ `2d4c8b6dd2e75b191a33913b93eb7d77acd3be6b` (merge PR #41) is G4-2. Tag `v0.5.0` @ `d194b8ffc763fc00ad58273e5dd8f0203442041d` (merge PR #39) is G4-1. Tag `v0.4.9` @ `05ea0df302aa6bfd15eccfb84341aeed75d6e1d0` is E3. Tag `v0.4.7` @ `850aaf9c3a931a5ba119bdbb6ec73ae4a6fa73e9` remains the live RW-086 run |
+| This change | **G4-3 accepted + implemented** as **v0.5.2** (scripted RW-092 / RW-093): doctor / health skip-blocked; `rad health` pause/resume/campaign surface; live-use playbook. **No release / tag** |
 | Generation 2 | **COMPLETE** — theme 1 **v0.3.0** (used RW-065 / RW-068); theme 2 **v0.3.1** (used live RW-066 / RW-068); theme 3 **v0.3.2** (scripted RW-067; used RW-068 / RW-069) |
 | Latest use (RW-086) | Live OpenRouter free text_analyzer on v0.4.7 **FAIL** `needs_user` @ tools **12/12**: provider **openrouter** / `nvidia/nemotron-3.5-lightning:free`; `$0`; PLAN `source=fallback` attempts=2; task1 **COMPLETED** + task2 attempts=1; E1 **not live** (0 TaskYield). xxd Class A ENVIRONMENT thrash **CLEARED** (0 xxd / 0 ENVIRONMENT / 0 repair). Residual Class **B+C** (fallback plan, missing tests/README, odd summary + late HTTP **429** `free-models-per-day`). False DONE **0** |
 | Live OpenRouter free loop | **PAUSED** until `free-models-per-day` rate limit resets (RW-086). Do not treat further free-model retries as product Class B until rate clears |
 | Live NIM loop | **PAUSED / Class C blocked** (RW-084). E1 live gate still **not confirmed**. Scripted RW-083 remains unit evidence |
 | Generation 3 | **COMPLETE (scripted)** — theme 1 **implemented** (v0.4.0) **used** (RW-071 / RW-073 / RW-075 / RW-077 / RW-079 / RW-081 / RW-085 / RW-086); theme 2 **implemented** (v0.4.1) **used** (RW-073 / RW-075 / RW-077 / RW-079 / RW-081 / RW-085 / RW-086); theme 3 slices A–D **v0.4.2–v0.4.5** **used** (RW-075 / RW-077 / RW-079 / RW-081; mkdir live Y on RW-081); slice E1 **v0.4.6** **implemented** (scripted RW-083; live **not confirmed** on RW-084/085/086); slice F **v0.4.7** **implemented** (xxd ENVIRONMENT; scripted RW-086; live RW-086 thrash **CLEARED**); slice E2 **v0.4.8** **implemented** (scripted RW-087; live **not confirmed**); slice E3 **v0.4.9** **implemented** (scripted RW-088; live **not confirmed**). Live E1–E3 confirmation **deferred** until a provider recovers |
-| Generation 4 | **IN PROGRESS** — **G4-1** as **v0.5.0** (scripted RW-089); **G4-2** as **v0.5.1** (scripted RW-090 / RW-091). Recommended next **G4-3** listed, **not accepted**. G4-4 / G4-5 / G4-6 remain later candidates |
+| Generation 4 | **IN PROGRESS** — **G4-1** as **v0.5.0** (scripted RW-089); **G4-2** as **v0.5.1** (scripted RW-090 / RW-091); **G4-3** as **v0.5.2** (scripted RW-092 / RW-093). G4-4 / G4-5 / G4-6 remain later candidates |
 | Generation 5 | **NOT STARTED** |
 | Needle | optional / **off** (`tool_router=existing`; ADR-001) |
 | `max_plan_tasks` | **16** (unchanged) |
@@ -62,7 +64,7 @@ Cycle evidence, not this file: [MATURATION_CYCLE_REPORT.md](MATURATION_CYCLE_REP
 | **1** | Foundation | v0.2.0, v0.2.1, v0.2.2, **v0.2.3** | **COMPLETE** |
 | **2** | Capability Expansion | v0.3.x | **COMPLETE** (theme 1 → **v0.3.0**; theme 2 → **v0.3.1** used RW-066/068; theme 3 → **v0.3.2**; use campaign RW-068 PASS / RW-069 FAIL) |
 | **3** | Autonomous Agent Maturity | v0.4.x | **COMPLETE (scripted)** (theme 1 → **v0.4.0**; theme 2 → **v0.4.1**; theme 3 slices A–D → **v0.4.2–v0.4.5**; slice E1 → **v0.4.6**; slice F → **v0.4.7**; slice E2 → **v0.4.8**; slice E3 → **v0.4.9**; live E1–E3 **deferred**) |
-| **4** | Production Scale | v0.5.x | **IN PROGRESS** (G4-1 → **v0.5.0**; G4-2 → **v0.5.1**; G4-3 listed, not accepted; G4-4 / G4-5 / G4-6 candidates) |
+| **4** | Production Scale | v0.5.x | **IN PROGRESS** (G4-1 → **v0.5.0**; G4-2 → **v0.5.1**; G4-3 → **v0.5.2**; G4-4 / G4-5 / G4-6 candidates) |
 | **5** | 1.0 | v1.0.0 | **NOT STARTED** |
 
 Enter the next generation only after the previous one has been **released, used, and has
@@ -89,8 +91,8 @@ implemented** as **v0.4.9** (scripted RW-088). Gen3 is **complete
 recovers. Gen4 is **in progress**. G4-1 is **accepted and implemented**
 as **v0.5.0**. **G4-2** (live-gate resume / provider health
 observability) is **accepted and implemented** as **v0.5.1**.
-Recommended next **G4-3** (live-use campaign / operator workflow) is
-**listed, not accepted**. Gen5 stays closed until Gen4 has been
+**G4-3** (live-use campaign / operator workflow) is **accepted and
+implemented** as **v0.5.2**. Gen5 stays closed until Gen4 has been
 released and used.
 
 ---
@@ -562,14 +564,14 @@ after Gen3 maturity themes have measured (scripted) wins.
 free-provider production doctrine** — is **accepted and implemented as
 v0.5.0** (scripted RW-089). Theme **G4-2** (live-gate resume / provider
 health observability) is **accepted and implemented as v0.5.1**
-(scripted RW-090 / RW-091). Recommended next **v0.5.2** candidate
-**G4-3** (live-use campaign / operator workflow) is **listed, not
-accepted**. Package stays **0.5.1**. Do **not** implement v0.5.2 in
-this change. Same loop. Same A/B/C rules. Same gates. Needle stays
-**OFF**. Caps (`max_plan_tasks` **16**, default `Budget.tool_calls`
-**60**) unchanged. Do **not** claim live text_analyzer@12 PASS. Live
-NIM/OpenRouter success is **not** a gate. Do **not** invent a Class A
-patch for 403/429.
+(scripted RW-090 / RW-091). Theme **G4-3** (live-use campaign / operator
+workflow) is **accepted and implemented as v0.5.2** (scripted RW-092 /
+RW-093). Package is **0.5.2**. **No GitHub Release / tag** for this
+slice — Version 5 packs later. Same loop. Same A/B/C rules. Same gates.
+Needle stays **OFF**. Caps (`max_plan_tasks` **16**, default
+`Budget.tool_calls` **60**) unchanged. Do **not** claim live
+text_analyzer@12 PASS. Live NIM/OpenRouter success is **not** a gate.
+Do **not** invent a Class A patch for 403/429.
 
 Live E1–E3 confirmation is **deferred**, not a license to invent the
 next executor slice. Class B rows are input to a theme decision. They
@@ -610,9 +612,9 @@ control plane.
 |---|---|---|
 | `rad/router.py` free-first chain | local → free round-robin → paid (unless free-lock); Class C skip + rotate preferred (v0.5.0) | **Closed for pause doctrine** (RW-089). Live pin + singleton key still cannot invent a second brain — honest pause |
 | `rad/control/recovery.py` | HTTP 429 → `RATE_LIMIT` ask_user; HTTP 403 → AUTH ask_user; Class C before MODEL (v0.5.0) | **Closed for pause doctrine** (RW-089). Mid-run 429 no longer retries as TRANSIENT/MODEL |
-| `Doctor.c_providers` | READY only for inference-entitled brains (v0.5.1 / RW-090) | **Closed for catalog vs chat.** Residual: online `scan_provider_health` does **not** pass `skip_blocked_inference` — a `rad doctor` re-pings chat while last Class C still blocks. Resume already skips that re-burn (RW-091). On OpenRouter the ping would count against `free-models-per-day` (RW-086) |
-| `rad/health.py` `evaluate_live_gate` | resume denies Class C until an entitled brain recovers | **Closed for resume** (RW-091). Never live-used on v0.5.1. Last working-inference row remains RW-086 on **v0.4.7** |
-| `class_c_next_steps` + TROUBLESHOOTING | pause / resume copy: rotate key / wait quota / `rad use` | Copy ships. Residual is **use**, not more prose. Operator still has no written live campaign that runs G4-1 pause + G4-2 health + deferred E1–E3 together |
+| `Doctor.c_providers` | READY only for inference-entitled brains (v0.5.1 / RW-090); skip-blocked chat (v0.5.2 / RW-092) | **Closed for catalog vs chat and doctor re-ping.** Online scan defaults `skip_blocked_inference=True`. `--force` re-probes after a believed recovery |
+| `rad/health.py` `evaluate_live_gate` | resume denies Class C until an entitled brain recovers | **Closed for resume** (RW-091). Live confirmation still deferred. Last working-inference row remains RW-086 on **v0.4.7** |
+| `rad health` + CAMPAIGN_PLAYBOOK | pause / resume / wait / rotate / run next-action (v0.5.2 / RW-093) | **Closed for operator workflow.** Residual is **live use** on an entitled brain (honest FAIL / BLOCKED still valid) — not more prose |
 | `rad cost` / `RouterState.cost_report` | paid 14-day token spend | Free-tier quota remaining is not in the API until 429. Per-objective tool/model budgets are not a production rollup (**G4-6**). G4-2 already surfaces last Class C + Retry-After |
 | `rad events` / `trace` / `inspect` / `replay` / `why` | per-objective observability | Enough for one run. Last-Class-C surface ships (G4-2). Cost rollup waits on use data (G4-6) |
 | E1 / E2 / E3 (`TaskYield`, empty fallback `depends_on`, leftover retry stop) | scripted RW-083 / RW-087 / RW-088 | Live **not confirmed** (RW-084 Class C; RW-085/086 fallback chain, 0 TaskYield). Not a missing executor slice — a missing **use** on an entitled brain |
@@ -643,7 +645,7 @@ exhausted).
 |---|---|---|---|
 | **G4-1** | Live multi-provider / free-provider production doctrine | Scripted 403/429 is enough for the doctrine; live confirmation needs a recovered path | **ACCEPTED + IMPLEMENTED** as **v0.5.0** (scripted RW-089) |
 | **G4-2** | Live-gate resume / provider health observability | Scripted catalog-vs-inference + last-Class-C surface is enough to scope/build; live confirmation still deferred | **ACCEPTED + IMPLEMENTED** as **v0.5.1** (scripted RW-090 / RW-091) |
-| **G4-3** | Live-use campaign / operator workflow | Live E1–E3 confirmation needs an entitled brain; doctor skip-blocked / campaign playbook can be scripted | **recommended next v0.5.2 candidate — not accepted** |
+| **G4-3** | Live-use campaign / operator workflow | Live E1–E3 confirmation needs an entitled brain; doctor skip-blocked / campaign playbook is scripted | **ACCEPTED + IMPLEMENTED** as **v0.5.2** (scripted RW-092 / RW-093) |
 | **G4-4** | Extensibility / integrations (MCP, custom providers) | No — already partially in tree | **not a next theme** (no measured hole) |
 | **G4-5** | Fallback / LLM plan quality under tight budgets | Scripted possible; live confirmation needs a recovered brain | later candidate (Cycle 24 id was G4-2) |
 | **G4-6** | Operational scale: cost/budget reporting | Reporting can be scripted; free-quota *remaining* is not in the API until 429 | later candidate (Cycle 26 G4-3 reporting half) |
@@ -707,20 +709,20 @@ surfaces the doctrine; `free_lock` still drops paid.
 | Scripted 429 | rate-limit / `free-models-per-day` visible without a tool-burning retry (RW-086 shape) |
 | Invariants | Needle **OFF**; caps **16/60**; false DONE **0**; `free_lock` never silent paid; no Class A invented for 403/429; no live PASS claim |
 
-#### G4-3 — Live-use campaign / operator workflow (recommended next v0.5.2)
+#### G4-3 — ACCEPTED + IMPLEMENTED (live-use campaign / operator workflow)
 
 | field | value |
 |---|---|
-| Status | **CANDIDATE**. Recommended next **v0.5.2**. **Not accepted. Not implemented.** |
+| Status | **ACCEPTED + IMPLEMENTED** as **v0.5.2** (scripted RW-092 / RW-093). **No GitHub Release / tag** — Version 5 pack later |
 | Theme | **Live-use campaign / operator workflow** |
-| Version | proposed **v0.5.2** |
-| Problem | G4-1 closed **pause**. G4-2 closed the **safe resume / health** path. Production still has not **used** that path. Last working-inference live row is **RW-086** on tag `v0.4.7` (then 429). E1–E3 remain scripted only (RW-083 / RW-087 / RW-088). G4-1 / G4-2 themselves are scripted (RW-089 / RW-090 / RW-091) — never live-confirmed together. The operating loop’s next step is **use**, not another executor slice and not a cost dashboard. Leftover operator-workflow hole vs G4-2: `rad doctor` (online) calls `scan_provider_health` **without** `skip_blocked_inference`, so a health probe re-hits chat while last Class C still blocks — resume already skips that re-burn (RW-091). On OpenRouter that ping would count against `free-models-per-day` (RW-086) |
-| Entry | G4-1 shipped (v0.5.0 / RW-089) — **DONE**. G4-2 shipped (v0.5.1 / RW-090 / RW-091) — **DONE**. Sanath accepts G4-3 as v0.5.2. Grounded in deferred live E1–E3 (RW-084 Class C; RW-085/086 fallback chain, 0 TaskYield) and the doctor re-ping vs resume skip (`rad/health.py` / `rad/doctor.py`), not in a new catalog. An inference-entitled brain is required for the *live campaign*; the doctor skip-blocked slice can be **scripted** without it (same pattern as RW-090 / RW-091). Class C stays Class C. Live NIM/OpenRouter **PASS** is **not** required to *scope* or to *accept*; honest FAIL / BLOCKED is a valid campaign result |
-| Non-goals | Inventing a product Class A for 403/429. Auto-retry until chat works. Spending paid under `free_lock`. Raising caps (`max_plan_tasks` **16**, default `Budget.tool_calls` **60**). Needle on. Claiming live text_analyzer@12 PASS as a gate. A new executor slice (E4) without live evidence. Reopening F-17 / fallback plan quality (that is G4-5). MCP marketplace (that is G4-4). Full paid+free cost/budget rollup (that is G4-6). A new telemetry stack / SQLite. A control-plane rewrite. Treating `/v1/models` **200** as inference entitlement |
+| Version | **v0.5.2** |
+| Problem | G4-1 closed **pause**. G4-2 closed the **safe resume / health** path. Production still has not **used** that path. Last working-inference live row is **RW-086** on tag `v0.4.7` (then 429). E1–E3 remain scripted only (RW-083 / RW-087 / RW-088). G4-1 / G4-2 themselves are scripted (RW-089 / RW-090 / RW-091) — never live-confirmed together. The operating loop’s next step is **use**, not another executor slice and not a cost dashboard. Leftover operator-workflow hole vs G4-2: `rad doctor` (online) called `scan_provider_health` **without** `skip_blocked_inference`, so a health probe re-hit chat while last Class C still blocked — resume already skipped that re-burn (RW-091). On OpenRouter that ping would count against `free-models-per-day` (RW-086) |
+| Entry | G4-1 shipped (v0.5.0 / RW-089) — **DONE**. G4-2 shipped (v0.5.1 / RW-090 / RW-091) — **DONE**. Sanath accepts G4-3 as v0.5.2. Grounded in deferred live E1–E3 (RW-084 Class C; RW-085/086 fallback chain, 0 TaskYield) and the doctor re-ping vs resume skip (`rad/health.py` / `rad/doctor.py`), not in a new catalog. An inference-entitled brain is required for the *live campaign*; the doctor skip-blocked slice is **scripted** without it (RW-092 / RW-093). Class C stays Class C. Live NIM/OpenRouter **PASS** is **not** required to ship; honest FAIL / BLOCKED is a valid campaign result |
+| Non-goals | Inventing a product Class A for 403/429. Auto-retry until chat works. Spending paid under `free_lock`. Raising caps (`max_plan_tasks` **16**, default `Budget.tool_calls` **60**). Needle on. Claiming live text_analyzer@12 PASS as a gate. A new executor slice (E4) without live evidence. Reopening F-17 / fallback plan quality (that is G4-5). MCP marketplace (that is G4-4). Full paid+free cost/budget rollup (that is G4-6). A new telemetry stack / SQLite. A control-plane rewrite. Treating `/v1/models` **200** as inference entitlement. A GitHub Release / tag for this sub-version |
 | Needs live providers | **Yes** for E1–E3 live confirmation. **No** for the scripted doctor skip-blocked / campaign-playbook gate |
 | What it is not | Not Gen3 theme 4. Not “wait forever.” Not runbook-copy polish of G4-2 TROUBLESHOOTING. Not “raise max-tools to 24 and call it scale.” Not a second health probe that re-burns 429 |
 
-**Why this one next (investigated alternatives):**
+**Why this one (investigated alternatives):**
 
 | alternative | why not G4-3 |
 |---|---|
@@ -730,7 +732,7 @@ surfaces the doctrine; `free_lock` still drops paid.
 | Cost/budget reporting (now G4-6) | `rad cost` is paid-only; G4-2 already surfaces last Class C + Retry-After. A dashboard without a use campaign is inventing telemetry. Wait for use data |
 | Operational runbooks / `needs_user` UX polish | G4-2 already shipped TROUBLESHOOTING / OPERATIONS resume text. Residual copy is not a measured hole. The leftover is doctor re-ping vs resume skip, plus the unused live path |
 
-**Acceptance gates (when accepted — not this change):**
+**Acceptance gates (this change):**
 
 | gate | meaning |
 |---|---|
@@ -739,8 +741,10 @@ surfaces the doctrine; `free_lock` still drops paid.
 | Acceptance | `rad acceptance` |
 | Real-world suite | `rad realworld` (`live_nim` may stay BLOCKED) |
 | Scripted operator loop | last Class C still blocking → `rad doctor` / health scan does **not** re-burn chat (RW-086 quota shape); resume skip preserved (RW-091); `free_lock` never silent paid |
-| Live campaign (when an entitled brain exists) | one bounded objective recorded as an RW row; E1–E3 live **Y / N / BLOCKED** recorded honestly; G4-1 pause + G4-2 resume used if Class C hits mid-run |
-| Invariants | Needle **OFF**; caps **16/60**; false DONE **0**; Class C is not a product patch; no live PASS claim unless disk checks actually pass |
+| Live campaign (when an entitled brain exists) | one bounded objective recorded as an RW row; E1–E3 live **Y / N / BLOCKED** recorded honestly; G4-1 pause + G4-2 resume used if Class C hits mid-run. **Not required to ship this slice** |
+| Invariants | Needle **OFF**; caps **16/60**; false DONE **0**; Class C is not a product patch; no live PASS claim unless disk checks actually pass; **no GitHub Release / tag** |
+
+**What shipped:** skip-blocked doctor / `rad health`; campaign playbook; controller persist keeps key / Retry-After.
 
 #### G4-4 — Extensibility / integrations (MCP, custom providers)
 
@@ -806,33 +810,37 @@ Retry-After); doctor READY only for inference-entitled brains;
 `rad objective resume` live-gate refuses to re-burn the same 403/429
 until an entitled brain recovers; `free_lock` still drops paid.
 
-Recommended next **v0.5.2** candidate: **G4-3** (listed, not accepted).
-Later candidates: G4-4 / G4-5 / G4-6.
+### v0.5.2 — G4-3 (accepted + implemented)
 
-### Recommended next v0.5.2 — G4-3 (candidate, not accepted)
+**G4-3** (live-use campaign / operator workflow) is **accepted and
+implemented as v0.5.2**. **No GitHub Release / tag** — Version 5 pack
+later.
 
-**G4-3** (live-use campaign / operator workflow) is the recommended
-next slice. It is **listed, not accepted, not implemented**.
+Why this one: G4-1 closed **pause**. G4-2 closed **safe resume**. The
+operating loop’s next step is **use**. E1–E3 and G4-1/G4-2 have never
+been live-confirmed together. The leftover product hole was quota-safe
+operator workflow (doctor re-ping vs resume skip). Scripted RW-092 /
+RW-093 is the unit evidence. Live NIM/OpenRouter success is **not**
+required. Do **not** claim live text_analyzer@12 PASS.
 
-Why this one next: G4-1 closed **pause**. G4-2 closed **safe resume**.
-The operating loop’s next step is **use**. E1–E3 and G4-1/G4-2 have
-never been live-confirmed together on an inference-entitled brain.
-The leftover product hole is quota-safe operator workflow (doctor
-re-ping vs resume skip), not a cap raise, not MCP, and not Class B
-plan quality. Scripted doctor skip-blocked is enough to **build** the
-operator-loop slice; live E1–E3 confirmation still waits on a
-recovered brain and is **not** a live PASS claim.
+**What shipped:** online `rad doctor` / health scan skip chat while last
+Class C still blocks (unknown `key_fp` included; `--force` to re-probe);
+`rad health` pause / resume / wait / rotate / run surface; campaign
+playbook for when NIM or OpenRouter free recovers; controller persist
+keeps key / Retry-After; `free_lock` still drops paid.
 
-Next product work waits for a written accept. Stay **0.5.1**.
+Live E1–E3 confirmation still waits on a recovered brain. Later
+candidates: G4-4 / G4-5 / G4-6.
 
 ### Accepting a further v0.5.x theme
 
 A short written decision that names the theme, the evidence rows, the
 invariant that must not move (Needle off; caps unchanged unless proven;
 models propose / RAD decides; false DONE **0**; Class C is not a product
-patch), and the 0.5.x change. G4-2 is shipped as v0.5.1. G4-3 is
-listed, not accepted. G4-4 / G4-5 / G4-6 remain later candidates.
-Do not start v0.5.2 from this scope PR.
+patch), and the 0.5.x change. G4-1 / G4-2 / G4-3 are shipped as
+v0.5.0 / v0.5.1 / v0.5.2. G4-4 / G4-5 / G4-6 remain later candidates.
+**No GitHub Release / tag** for G4-3 — Version 5 packs later as one
+release.
 
 ---
 

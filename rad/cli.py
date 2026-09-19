@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from rad import __version__
-from rad.health import last_class_c
+from rad.health import last_class_c, operator_status
 from rad.home import DEFAULTS, RadHome, mask
 from rad.ui import ask, col, fail, info, ok, warn
 
@@ -390,11 +390,51 @@ def cmd_doctor(args) -> int:
     from rad.doctor import Doctor, render
     home = _home(args)
     print(col.bold(f"rad doctor{' --fix' if args.fix else ''}:"))
-    findings = Doctor(home, fix=args.fix, probe_network=not args.offline).run()
+    findings = Doctor(
+        home, fix=args.fix, probe_network=not args.offline,
+        force=bool(getattr(args, "force", False))).run()
     print(render(findings))
     if args.json:
         print(json.dumps([f.__dict__ for f in findings], indent=2))
     return 1 if any(f.status == "fail" for f in findings) else 0
+
+
+def cmd_health(args) -> int:
+    """Pause / resume / campaign surface. Skip-blocked unless --force."""
+    home = _home(args)
+    st = operator_status(home, force=bool(getattr(args, "force", False)))
+    if getattr(args, "json", False):
+        print(json.dumps(st.to_dict(), indent=2, default=str))
+        return 0 if st.next_action in ("resume", "run") and st.allow else 2
+    print(col.bold("rad health — live-use campaign / operator workflow (G4-3):"))
+    paint = col.green if st.allow else col.yellow
+    print(f"  next-action  {paint(st.next_action)}")
+    print(f"  live-gate    {'allow' if st.allow else 'deny'} — {st.reason}")
+    if st.next_steps:
+        print(col.dim("  next-steps   " + st.next_steps))
+    if st.entitled:
+        print(f"  entitled     {', '.join(st.entitled)}")
+    if st.catalog_only:
+        print(col.yellow("  catalog-only " + ", ".join(st.catalog_only)
+                         + " (not a live brain)"))
+    if st.skipped_inference:
+        print(col.dim("  skipped-chat " + ", ".join(st.skipped_inference)
+                      + " — last Class C still blocks"))
+    last = st.last or {}
+    if last.get("class_c"):
+        ra = st.retry_after
+        extra = f"; Retry-After {int(ra)}s" if ra else ""
+        print(col.yellow(
+            f"  last Class C {last.get('provider')} {last.get('kind')} "
+            f"HTTP {last.get('status')}{extra}"))
+    if st.paused_objectives:
+        print("  paused       " + ", ".join(st.paused_objectives)
+              + " — `rad objective resume <id>` after entitled")
+    if getattr(args, "campaign", False) or not st.allow:
+        print(col.bold("  campaign playbook:"))
+        for line in st.playbook:
+            print("    " + line)
+    return 0 if st.next_action in ("resume", "run") and st.allow else 2
 
 
 def cmd_storage(args) -> int:
@@ -1072,6 +1112,11 @@ def cmd_status(args) -> int:
     print(f"    jobs       {len(jobs)}   background routines {len(board)}")
     if last_event:
         print(f"    last event {last_event['kind']} at {time.strftime('%H:%M:%S', time.localtime(last_event['at']))}")
+    last_c = last_class_c(home)
+    if last_c and last_c.get("class_c"):
+        print(col.yellow(
+            f"    last Class C {last_c.get('provider')} {last_c.get('kind')} "
+            f"HTTP {last_c.get('status')} — `rad health` for pause/resume/campaign"))
     if active:
         print(col.bold("    active objectives:"))
         for obj in active[:8]:
@@ -1406,8 +1451,17 @@ def build_parser() -> argparse.ArgumentParser:
 
     dr = sub.add_parser("doctor", help="health check of RAD; --fix repairs what is safe")
     dr.add_argument("--fix", action="store_true"); dr.add_argument("--offline", action="store_true", help="skip provider probes")
+    dr.add_argument("--force", action="store_true",
+                    help="re-ping chat even if last Class C still blocks (quota-unsafe)")
     dr.add_argument("--json", action="store_true")
     dr.set_defaults(fn=cmd_doctor)
+
+    hl = sub.add_parser("health", help="live-use campaign: last Class C, live-gate, pause/resume next-action")
+    hl.add_argument("--force", action="store_true",
+                    help="re-ping chat even if last Class C still blocks (quota-unsafe)")
+    hl.add_argument("--campaign", action="store_true", help="print the live-use campaign playbook")
+    hl.add_argument("--json", action="store_true")
+    hl.set_defaults(fn=cmd_health)
 
     so = sub.add_parser("storage", help="schema/migrations/integrity/snapshots of ~/.rad")
     so.add_argument("storage_action", nargs="?", default="status",

@@ -2,7 +2,7 @@
 
 Living log of **measured** RAD failures found in live or reconstructed use.
 Architecture is frozen. Needle stays experimental and off by default. This is not AGI/ASI.
-Operating spine: [ROADMAP.md](ROADMAP.md) (adopted 2026-09-18). Gen1 complete on 0.2.3; **Gen2 complete** on 0.3.0–0.3.2. Verified coding loop is **implemented as v0.3.0** (F-20260918-24 / RW-064). Live retest **RW-065**. Plan-timeout resilience is **implemented as v0.3.1** (F-20260918-27 / scripted RW-066) and **used** (live RW-066 / F-20260918-28). Budget-aware planning is **implemented as v0.3.2** (F-20260918-29 / RW-067). Live NIM use of v0.3.2 is **RW-068 PASS** (F-20260918-30) and **RW-069 FAIL** (F-20260918-31). Path-aligned checks are **implemented as v0.4.0** (F-20260918-32 / RW-070). Live NIM retest of v0.4.0 is **RW-071 FAIL** (F-20260918-33; theme 1 live-confirmed). Multi-file contracts under tight budgets are **implemented as v0.4.1** (F-20260918-34 / RW-072). Live NIM retest of v0.4.1 is **RW-073 FAIL** (F-20260918-35; theme 1/2 live-confirmed). ASCII-tree `package_dir` is **implemented as v0.4.2** (F-20260918-36 / RW-074). Live NIM retest of v0.4.2 is **RW-075 FAIL** (F-20260918-37; ASCII-tree obj-checks live-confirmed). First-task thrash is **implemented as v0.4.3** (F-20260918-38 / RW-076). Live NIM retest of v0.4.3 is **RW-077 FAIL** (F-20260918-39; pip/DONE Class A **live-consistent**; mkdir File-exists action noise is F-40). mkdir already-exists action noise is **implemented as v0.4.4** (F-20260918-40 / RW-078). Live NIM retest of v0.4.4 is **RW-079 FAIL** (F-20260918-41; mkdir File-exists **not live-hit**; premature-test ENVIRONMENT is F-42). Premature-test ENVIRONMENT is **implemented as v0.4.5** (F-20260918-42 / RW-080). Live NIM retest of v0.4.5 is **RW-081 FAIL** (F-20260918-43; mkdir File-exists **live Y**; premature-test ENVIRONMENT **not live-hit**; pip/echo + root pollution residual). Pip thrash + root `analyzer.py` pollution Class A is **NOT CONFIRMED** (F-20260918-44 / scripted RW-082). Task-boundary yield / leftover-budget dispatch is **implemented as v0.4.6** (F-20260918-45 / scripted RW-083). Live NIM retest of v0.4.6 is **RW-084 BLOCKED Class C** (F-20260919-46; HTTP **403 Authorization failed** on all `chat/completions`; `/v1/models` **200**; tools **0/12**; E1 leftover-budget yield **not live-tested**). Live OpenRouter free retest of v0.4.6 is **RW-085 FAIL** (F-20260919-47; tools **11/12**; `xxd` ENVIRONMENT repair; E1 **not live**). Missing optional checksum/hex utility ENVIRONMENT is **Class A CONFIRMED** and **implemented as v0.4.7** (F-20260919-48 / scripted RW-086). Live OpenRouter free retest of v0.4.7 is **RW-086 FAIL** (F-20260919-49; tools **12/12**; xxd Class A thrash **CLEARED**; E1 **not live**; late HTTP **429** `free-models-per-day`). Independent later package files is **implemented as v0.4.8** (F-20260919-50 / scripted RW-087). Budget-aware retry stop is **implemented as v0.4.9** (F-20260919-51 / scripted RW-088). Gen3 is **complete (scripted)**; live E1–E3 confirmation is **deferred** until a provider recovers. Gen4 **G4-1** is **accepted and implemented as v0.5.0** (F-20260919-52 / scripted RW-089). **G4-2** is **accepted and implemented as v0.5.1** (F-20260919-53 / scripted RW-090 / RW-091). Recommended next **v0.5.2** candidate **G4-3** (live-use campaign / operator workflow) is listed in [ROADMAP.md](ROADMAP.md), **not accepted**. Live OpenRouter free-model loop is **paused** until `free-models-per-day` rate limit resets. Live NIM loop remains **paused** (Class C). This ledger is evidence. Do not rewrite RW-058–091. Scripted RW-066 (F-27) is preserved.
+Operating spine: [ROADMAP.md](ROADMAP.md) (adopted 2026-09-18). Gen1 complete on 0.2.3; **Gen2 complete** on 0.3.0–0.3.2. Verified coding loop is **implemented as v0.3.0** (F-20260918-24 / RW-064). Live retest **RW-065**. Plan-timeout resilience is **implemented as v0.3.1** (F-20260918-27 / scripted RW-066) and **used** (live RW-066 / F-20260918-28). Budget-aware planning is **implemented as v0.3.2** (F-20260918-29 / RW-067). Live NIM use of v0.3.2 is **RW-068 PASS** (F-20260918-30) and **RW-069 FAIL** (F-20260918-31). Path-aligned checks are **implemented as v0.4.0** (F-20260918-32 / RW-070). Live NIM retest of v0.4.0 is **RW-071 FAIL** (F-20260918-33; theme 1 live-confirmed). Multi-file contracts under tight budgets are **implemented as v0.4.1** (F-20260918-34 / RW-072). Live NIM retest of v0.4.1 is **RW-073 FAIL** (F-20260918-35; theme 1/2 live-confirmed). ASCII-tree `package_dir` is **implemented as v0.4.2** (F-20260918-36 / RW-074). Live NIM retest of v0.4.2 is **RW-075 FAIL** (F-20260918-37; ASCII-tree obj-checks live-confirmed). First-task thrash is **implemented as v0.4.3** (F-20260918-38 / RW-076). Live NIM retest of v0.4.3 is **RW-077 FAIL** (F-20260918-39; pip/DONE Class A **live-consistent**; mkdir File-exists action noise is F-40). mkdir already-exists action noise is **implemented as v0.4.4** (F-20260918-40 / RW-078). Live NIM retest of v0.4.4 is **RW-079 FAIL** (F-20260918-41; mkdir File-exists **not live-hit**; premature-test ENVIRONMENT is F-42). Premature-test ENVIRONMENT is **implemented as v0.4.5** (F-20260918-42 / RW-080). Live NIM retest of v0.4.5 is **RW-081 FAIL** (F-20260918-43; mkdir File-exists **live Y**; premature-test ENVIRONMENT **not live-hit**; pip/echo + root pollution residual). Pip thrash + root `analyzer.py` pollution Class A is **NOT CONFIRMED** (F-20260918-44 / scripted RW-082). Task-boundary yield / leftover-budget dispatch is **implemented as v0.4.6** (F-20260918-45 / scripted RW-083). Live NIM retest of v0.4.6 is **RW-084 BLOCKED Class C** (F-20260919-46; HTTP **403 Authorization failed** on all `chat/completions`; `/v1/models` **200**; tools **0/12**; E1 leftover-budget yield **not live-tested**). Live OpenRouter free retest of v0.4.6 is **RW-085 FAIL** (F-20260919-47; tools **11/12**; `xxd` ENVIRONMENT repair; E1 **not live**). Missing optional checksum/hex utility ENVIRONMENT is **Class A CONFIRMED** and **implemented as v0.4.7** (F-20260919-48 / scripted RW-086). Live OpenRouter free retest of v0.4.7 is **RW-086 FAIL** (F-20260919-49; tools **12/12**; xxd Class A thrash **CLEARED**; E1 **not live**; late HTTP **429** `free-models-per-day`). Independent later package files is **implemented as v0.4.8** (F-20260919-50 / scripted RW-087). Budget-aware retry stop is **implemented as v0.4.9** (F-20260919-51 / scripted RW-088). Gen3 is **complete (scripted)**; live E1–E3 confirmation is **deferred** until a provider recovers. Gen4 **G4-1** is **accepted and implemented as v0.5.0** (F-20260919-52 / scripted RW-089). **G4-2** is **accepted and implemented as v0.5.1** (F-20260919-53 / scripted RW-090 / RW-091). **G4-3** is **accepted and implemented as v0.5.2** (F-20260919-54 / scripted RW-092 / RW-093). **No GitHub Release / tag** for v0.5.2 — Version 5 pack later. Live OpenRouter free-model loop is **paused** until `free-models-per-day` rate limit resets. Live NIM loop remains **paused** (Class C). This ledger is evidence. Do not rewrite RW-058–093. Scripted RW-066 (F-27) is preserved.
 
 No secrets belong here: never paste API keys, vault contents, account tokens, or full
 provider payloads. Paths under `/tmp/…` and objective ids are fine.
@@ -2265,6 +2265,41 @@ Class C is **unblock the environment**, not a product patch.
 | Needle | **OFF** (`existing`) |
 | False completion | **0** |
 | Live this patch | **BLOCKED** (`live_nim` Class C) — not a live PASS claim |
+
+## Gen4 / v0.5.2 — Live-use campaign / operator workflow (RW-092 / RW-093) — 2026-09-19
+
+Investigate-first confirmed the Cycle 28 hole: G4-1 closed **pause**, G4-2
+closed **safe resume**, but online `rad doctor` still re-pinged chat while
+last Class C blocked (RW-086 quota) and the live path was unused. G4-3 is
+**accepted**. Smallest patch: skip-blocked doctor / health scan; `rad health`
+next-action surface; campaign playbook; preserve key / Retry-After on
+controller persist. Package **0.5.1 → 0.5.2**. **No GitHub Release / tag** —
+Version 5 pack later. Control plane preserved. Needle **OFF**. Caps **not**
+raised. RW-058–091 facts are **not rewritten**. No Class A invented for
+403/429. No live PASS claim.
+
+### F-20260919-54 — doctor re-ping + operator campaign surface (RW-092 / RW-093)
+
+| field | value |
+|---|---|
+| class | **capability** (Gen4 G4-3). Investigate-first: doctor re-ping vs resume skip (RW-086 quota); unused live path. Class C stays Class C |
+| status | **shipped in v0.5.2** |
+| found in | RW-086 / F-20260919-49 (429 `free-models-per-day`); ROADMAP G4-3 (PR #42 listed, this change accepts) |
+| fixed in | **v0.5.2** — skip-blocked `rad doctor` / `scan_provider_health`; `rad health` wait/rotate/resume/run; CAMPAIGN_PLAYBOOK; controller persist keeps key / Retry-After. F-17 check-less / caps unchanged |
+| objective / test | `tests/test_live_use_campaign.py`; RW-092 / RW-093 |
+| expected | last Class C still blocking → doctor / health do not re-burn chat; `--force` re-probes; expired Retry-After pings; operator next-action is wait/rotate until entitled then resume/run; playbook documents live campaign without requiring a live PASS |
+| actual | scripted **PASS** (see RW-092 / RW-093). Live text_analyzer@12 **not** claimed |
+| notes | Live RW-084/086 remain Class C paused. This PR does **not** claim live PASS. A1 not reopened. E1–E3 live still **not confirmed**. Needle off. Caps unchanged. **No release / tag.** |
+
+| gate | result |
+|---|---|
+| `python -m pytest -q` | **608 passed** in 11.12s |
+| `rad doctor --offline` | READY — 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR (`RAD_HOME=/tmp/rad-g43-gate`) |
+| `rad acceptance` | **50/50 PASSED** (`/tmp/rad-g43-gate/acceptance/20260919-064217_gate.json`) |
+| `rad realworld` | **10 passed / 1 BLOCKED / 0 failed** (`live_nim` BLOCKED; `/tmp/rad-g43-rw/realworld/20260919-064218_realworld.json`) |
+| Package | **0.5.2** |
+| Release / tag | **none** — Version 5 pack later |
+| Live this patch | **not re-run** — not a live PASS claim for RW-085 / RW-086 |
 
 ## How to add a finding
 

@@ -35,10 +35,12 @@ class Finding:
 
 
 class Doctor:
-    def __init__(self, home: RadHome, fix: bool = False, probe_network: bool = True) -> None:
+    def __init__(self, home: RadHome, fix: bool = False, probe_network: bool = True,
+                 force: bool = False) -> None:
         self.home = home
         self.fix = fix
         self.probe_network = probe_network
+        self.force = force
         self.storage = Storage(home)
 
     def run(self) -> List[Finding]:
@@ -221,13 +223,20 @@ class Doctor:
     def c_providers(self) -> Finding:
         if not self.probe_network:
             return Finding("providers", "ok", "skipped (offline mode)")
-        healths = scan_provider_health(self.home)
+        healths = scan_provider_health(
+            self.home, skip_blocked_inference=not self.force, force=self.force)
         entitled = [h for h in healths if h.inference_entitled]
         catalog_only = [h for h in healths if h.catalog_alive and not h.inference_entitled]
         free_lock = bool(self.home.cfg.get("free_lock"))
         pinned = str(self.home.cfg.get("force_provider") or "")
         detail: List[str] = []
         last = last_class_c(self.home)
+        skipped = [h.name for h in healths if h.skipped_inference]
+        if skipped:
+            detail.append(
+                "chat ping skipped for " + ", ".join(skipped)
+                + " — last Class C still blocks (Retry-After / persist); "
+                "`rad doctor --force` only after a believed recovery")
         if last and last.get("class_c"):
             ra = last.get("retry_after")
             until = last.get("retry_after_until")
