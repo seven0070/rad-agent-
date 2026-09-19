@@ -2599,10 +2599,10 @@ environment**, not a product patch.
 
 | gate | result |
 |---|---|
-| `python3 -m pytest -q` | pending this branch |
-| `rad doctor --offline` | pending this branch |
-| `rad acceptance` | pending this branch |
-| `rad realworld` | pending this branch |
+| `python3 -m pytest -q` | **646 passed** in 14.13s |
+| `rad doctor --offline` | READY — 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR (`RAD_HOME=/tmp/rad-g51-scope-gate`) |
+| `rad acceptance` | **50/50 PASSED** (`/tmp/rad-g51-scope-gate/acceptance/20260919-080144_gate.json`) |
+| `rad realworld` | **10 passed / 1 BLOCKED / 0 failed** (`live_nim` BLOCKED; `/tmp/rad-g51-scope-rw/realworld/20260919-080144_realworld.json`) |
 | Package | **0.5.5** (no bump; no v0.5.6; no v1.0.0) |
 | Product code | unchanged |
 | Gen3 | **COMPLETE (scripted)**; live E1–E3 **deferred** |
