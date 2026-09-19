@@ -1,0 +1,16 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Minimal surface — no arbitrary shell, no filesystem write, no HTTP plugin.",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "core:event:default",
+    "core:window:default",
+    "allow-backend-start",
+    "allow-backend-stop",
+    "allow-backend-info",
+    "allow-api-token",
+    "allow-default-home"
+  ]
+}

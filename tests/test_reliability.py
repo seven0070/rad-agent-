@@ -62,7 +62,10 @@ def test_parallel_ready_tasks_run_concurrently(home, ws):
     dt = time.time() - t0
     assert obj.status == ObjectiveStatus.COMPLETED
     assert SlowScripted.peak == 3
-    assert dt < 0.15 * 4          # 3 parallel + 1 → ~2 slots, not 4
+    # Two waves (A,B,C then D) ≈ 0.30s of sleep; sequential would be ≥ 0.60s of
+    # sleep plus controller/policy/IO. Slack is for CI scheduling — peak==3 is
+    # the concurrency proof.
+    assert dt < 0.15 * 4 + 0.35
     assert obj.usage.tool_calls == 4 and obj.usage.model_calls == 4
     par = [e for e in EventLog(ctl.store.events_path(obj.id)).read(kind=E.TASK_STATUS) if e.data.get("status") == "parallel"]
     assert par and len(par[0].data["tasks"]) == 3

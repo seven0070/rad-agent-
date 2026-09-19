@@ -12,7 +12,7 @@ rejected with a reason instead of being written (`rad doctor` re-checks the whol
 |---|---|---|
 | `workspace` | `null` → `~/.rad/workspace` | where the hands work (files, shells) — a boundary, not just a default |
 | `free_lock` | `false` | true = paid providers are never used, no matter what falls over |
-| `auto` | `false` | true = stop asking for confirmation (hard-blocked patterns stay blocked regardless) |
+| `auto` | `false` | confirmation policy = never for this home (ASK→ALLOW only). Same as `--auto`. DENY/hard/budget unchanged. Authority profiles AUTONOMOUS/UNRESTRICTED also set confirmation never without flipping this key. |
 | `force_provider` | `null` | pin one provider for every call |
 | `model` | `null` | pin a model id (otherwise each provider's default is used). `rad doctor` / `rad health` ping this pin, not a stale `default_model` |
 | `edge0_url` | `"http://127.0.0.1:8000/v1"` | local Edge0 endpoint (default http://127.0.0.1:8000) |
@@ -48,6 +48,9 @@ rejected with a reason instead of being written (`rad doctor` re-checks the whol
   auto-detected. Precedence: RAD's vault (`rad keys add`) → environment → `.env`.
 
 ## Permissions are configuration too
+
+Authority profiles live in `~/.rad/authority.json` (`rad authority show|set`). They feed
+`Policy.decide`; they do not replace it. UNRESTRICTED is never inferred from a missing file.
 
 `rad policy show` lists the capability defaults (see [TOOLS.md](TOOLS.md)) and
 `rad policy allow|ask|deny|limit <capability> [pattern]` edits them. The **hard layer**

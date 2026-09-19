@@ -29,7 +29,11 @@ Endpoints (all under /v1)
     GET  /policy                       → effective policy
     GET  /audit?n=                     → permission decisions
     GET  /lab/history · GET /evolve/candidates
-    POST /chat {text}                  → one brain turn (tools gated as ASK→declined, since no TTY)
+    POST /chat {text}                  → one Jerry/brain turn (tools gated as ASK→declined, since no TTY)
+    GET  /authority                    → profile, capabilities, scopes, confirmation, budgets
+    PUT  /authority                    → set profile (UNRESTRICTED needs confirm_unrestricted)
+    GET  /settings                     → safe config subset (no secrets)
+    PUT  /settings                     → limited keys only; cannot raise budgets or bypass policy
 """
 from __future__ import annotations
 
@@ -172,9 +176,20 @@ class Api:
         if p == ["policy"] and m == "GET":
             from rad.policy import Policy
             pol = Policy(self.home)
+            from rad.authority import Authority
             from rad.policy import BUILTIN_DEFAULTS
             return 200, {"defaults": {c: pol.default_for(c) for c in BUILTIN_DEFAULTS},
-                         "rules": [r.to_dict() for r in pol.rules], "web_allow": pol._data.get("web_allow", [])}
+                         "rules": [r.to_dict() for r in pol.rules], "web_allow": pol._data.get("web_allow", []),
+                         "authority": Authority(self.home).snapshot()}
+        if p == ["authority"] and m == "GET":
+            from rad.authority import Authority
+            return 200, Authority(self.home).snapshot()
+        if p == ["authority"] and m == "PUT":
+            return self._set_authority(b)
+        if p == ["settings"] and m == "GET":
+            return 200, self._settings()
+        if p == ["settings"] and m == "PUT":
+            return self._set_settings(b)
         if p == ["audit"] and m == "GET":
             from rad.policy import Policy
             return 200, {"audit": Policy(self.home).audit_tail(int(q.get("n", 50) or 50), effect=q.get("effect") or None)}
@@ -268,18 +283,12 @@ class Api:
             text = str(b.get("text", "")).strip()
             if not text:
                 raise ApiError(400, "text required")
-            s = self._session_factory(self.home, auto=False) if self._session_factory else None
-            if s is None:
-                from rad.session import Session
-                s = Session(self.home, auto=False)          # ASK → declined (no TTY); ALLOW tools still work
-            try:
-                reply = s.think(text)
-            finally:
-                try:
-                    s.close()
-                except Exception:
-                    pass
-            return 200, {"reply": reply}
+            from rad.jerry import Jerry
+            j = Jerry(self.home, session_factory=self._session_factory)
+            # ASK → declined when confirmation is interactive (no TTY). AUTONOMOUS /
+            # UNRESTRICTED confirmation=never is applied inside Policy.decide, not here.
+            reply = j.chat(text, auto=False)
+            return 200, {"reply": reply, "via": "jerry"}
         raise ApiError(404, "unknown route")
 
     # ---- helpers --------------------------------------------------------------------------
@@ -338,17 +347,83 @@ class Api:
                     last_event = {"kind": evs[-1].kind, "at": evs[-1].at, "seq": evs[-1].seq}
             except Exception:
                 pass
+        authority = {}
+        try:
+            from rad.authority import Authority
+            authority = Authority(self.home).snapshot()
+        except Exception:
+            pass
         return {"ok": True, "version": __version__, "schema": st.version(),
                 "pending_migrations": [m.name for m in st.pending()],
                 "home": str(self.home.root), "workspace": str(self.home.workspace()),
                 "auto": bool(self.home.cfg.get("auto")), "chain": chain,
+                "authority": {k: authority.get(k) for k in
+                              ("profile", "confirmation", "unrestricted", "confirmation_is_automatic")
+                              if authority},
                 "objectives": {"total": len(objs), "by_status": by_status, "open_tasks": tasks_open},
                 "memory": mem, "jobs": jobs, "background_routines": routines,
                 "running_objectives": sorted(k for k, t in self._runs.items() if t.is_alive()),
                 "last_event": last_event}
 
     def _may_run(self) -> bool:
-        return bool(self.home.cfg.get("auto"))
+        if bool(self.home.cfg.get("auto")):
+            return True
+        try:
+            from rad.authority import confirmation_is_automatic
+            return confirmation_is_automatic(self.home)
+        except Exception:
+            return False
+
+    _SETTINGS_KEYS = ("workspace", "free_lock", "force_provider", "model", "tts", "stt",
+                      "allow_outside_workspace", "allow_localhost_web")
+
+    def _settings(self) -> Dict[str, Any]:
+        from rad.authority import Authority
+        cfg = self.home.cfg
+        return {"workspace": str(self.home.workspace()),
+                "free_lock": bool(cfg.get("free_lock")),
+                "force_provider": cfg.get("force_provider"),
+                "model": cfg.get("model"),
+                "tts": cfg.get("tts"),
+                "stt": cfg.get("stt"),
+                "allow_outside_workspace": bool(cfg.get("allow_outside_workspace")),
+                "allow_localhost_web": bool(cfg.get("allow_localhost_web")),
+                "auto": bool(cfg.get("auto")),
+                "api_port": int(cfg.get("api_port") or 7331),
+                "tool_router": cfg.get("tool_router") or "existing",
+                "authority": Authority(self.home).snapshot(),
+                "note": "settings cannot raise budgets, change Needle, or bypass Policy.decide"}
+
+    def _set_settings(self, b: Dict[str, Any]) -> Tuple[int, Any]:
+        forbidden = {"max_plan_tasks", "max_tool_rounds", "tool_calls", "budget",
+                     "tool_router", "auto"}
+        hit = sorted(k for k in b if k in forbidden)
+        if hit:
+            raise ApiError(400, f"cannot change {hit} via HTTP (budgets/Needle/--auto stay CLI/authority)")
+        updates = {k: b[k] for k in self._SETTINGS_KEYS if k in b}
+        if not updates:
+            raise ApiError(400, f"no updatable keys; allowed: {list(self._SETTINGS_KEYS)}")
+        self.home.update(**updates)
+        return 200, self._settings()
+
+    def _set_authority(self, b: Dict[str, Any]) -> Tuple[int, Any]:
+        from rad.authority import Authority, PROFILES
+        profile = str(b.get("profile") or "").upper()
+        if not profile:
+            raise ApiError(400, f"profile required ({', '.join(PROFILES)})")
+        try:
+            auth = Authority(self.home)
+            auth.set_profile(
+                profile,
+                confirm_unrestricted=bool(b.get("confirm_unrestricted")),
+                capabilities=b.get("capabilities") if isinstance(b.get("capabilities"), dict) else None,
+                scopes=b.get("scopes") if isinstance(b.get("scopes"), dict) else None,
+                confirmation=b.get("confirmation"),
+                actor="api",
+            )
+        except ValueError as e:
+            raise ApiError(409 if "UNRESTRICTED" in str(e) else 400, str(e))
+        return 200, auth.snapshot()
 
     def _background(self, key: str, fn: Callable[[], Any]) -> None:
         with self._lock:

@@ -26,7 +26,7 @@ runs commands with your confirmation, and **teaches itself new skills from a sin
 | 🧩 **Tools** | Any MCP server + custom skills, even ones Rad writes itself | hands + `rad connect` |
 | 🧬 **Memory** | Portable markdown/JSON — local disk, Google Drive, … | disk + Drive |
 | 🗣️ **Voice** | Any TTS/STT engine | Piper + Whisper (free, offline) |
-| 👤 **Face** | CLI now; web/phone later — same brain, different door | terminal |
+| 👤 **Face** | CLI now; **RAD Desktop 0.1** (Tauri) as a surface over `rad serve` | terminal + desktop/ |
 
 Nothing is a closed list. `rad provider add` accepts **any** OpenAI-compatible endpoint and it
 behaves like a first-class provider.
@@ -457,7 +457,7 @@ understand → success criteria → plan → task graph → execute → observe 
 [BENCHMARKS](docs/BENCHMARKS.md) · [EVOLUTION](docs/EVOLUTION.md) · [API](docs/API.md) ·
 [OPERATIONS](docs/OPERATIONS.md) · [TROUBLESHOOTING](docs/TROUBLESHOOTING.md) ·
 [MIGRATION](docs/MIGRATION.md) · [DEVELOPMENT](docs/DEVELOPMENT.md) · [ACCEPTANCE](docs/ACCEPTANCE.md) ·
-[ROADMAP](docs/ROADMAP.md) · [AUDIT-2026-09](docs/AUDIT-2026-09.md) · [ADR-001 Needle tool-router](docs/ADR-001-NEEDLE-TOOL-ROUTER.md).
+[ROADMAP](docs/ROADMAP.md) · [DESKTOP](docs/DESKTOP.md) · [AUDIT-2026-09](docs/AUDIT-2026-09.md) · [ADR-001 Needle tool-router](docs/ADR-001-NEEDLE-TOOL-ROUTER.md).
 
 Every document describes shipped behaviour: `docs/CLI.md` is generated from the argument parser and
 the acceptance gate fails if the docs mention a command that does not exist.

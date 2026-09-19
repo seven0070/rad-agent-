@@ -45,6 +45,13 @@ class RouterState:
                     need_vision: bool = False) -> List[ChainEntry]:
         force = force or self.home.cfg.get("force_provider")
         free_lock = (self.home.cfg.get("free_lock") if free_lock is None else free_lock)
+        if not free_lock:
+            try:
+                from rad.authority import Authority
+                if not Authority(self.home).allows_paid_models():
+                    free_lock = True
+            except Exception:
+                pass
         entries: List[ChainEntry] = []
         for spec in P.all_specs(self.home):
             if need_vision and not spec.supports_vision:

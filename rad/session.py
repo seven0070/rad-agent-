@@ -207,7 +207,7 @@ SLASH_HELP = """
   /evolve <direction> tell Rad how to evolve right now
   /use <provider>     pin a provider (also: /free = free-lock on)
   /free | /free-off   free-lock on/off
-  /auto | /auto-off   hands act without confirmation on/off
+  /auto | /auto-off   confirmation policy never/ask (ASK→ALLOW only; not a policy bypass)
   /cost               paid spend so far
   /sleep              consolidate memory now
   /dna                show current DNA
@@ -323,12 +323,22 @@ def repl(home: RadHome, auto: bool = False, voice: bool = False) -> None:
         if line == "/auto":
             s.auto = True
             home.update(auto=True)
-            ok("auto mode ON — hands act without confirmation")
+            try:
+                from rad.authority import Authority
+                Authority(home).note_session_auto(True, actor="user")
+            except Exception:
+                pass
+            ok("auto mode ON — confirmation policy = never (ASK→ALLOW; DENY/hard/budget unchanged)")
             continue
         if line == "/auto-off":
             s.auto = False
             home.update(auto=False)
-            ok("auto mode OFF")
+            try:
+                from rad.authority import Authority
+                Authority(home).note_session_auto(False, actor="user")
+            except Exception:
+                pass
+            ok("auto mode OFF — confirmation policy = ask")
             continue
         if line == "/cost":
             print(s.router.cost_report())

@@ -51,6 +51,11 @@ def cmd_chat(args) -> int:
         home.update(model=args.model)
     if args.auto:
         home.update(auto=True)
+        try:
+            from rad.authority import Authority
+            Authority(home).note_session_auto(True, actor="user")
+        except Exception:
+            pass
     repl(home, auto=home.cfg.get("auto", False), voice=args.voice)
     return 0
 
@@ -501,7 +506,11 @@ def cmd_serve(args) -> int:
     srv = make_server(home, host=host, port=port)
     print(col.bold(f"rad api  http://{host}:{port}/v1"))
     print(f"  token: {tok}   (stored 0600 at {home.root / 'api.token'}; --rotate-token to replace)")
-    print(f"  auto={'on' if home.cfg.get('auto') else 'off — POST /objectives creates PENDING only'}   log: {home.root / 'logs' / 'api.jsonl'}")
+    from rad.authority import Authority
+    auth = Authority(home)
+    confirm = "never" if (home.cfg.get("auto") or auth.confirmation_is_automatic()) else "ask"
+    print(f"  confirmation={confirm}  profile={auth.state.profile}  "
+          f"auto={'on' if home.cfg.get('auto') else 'off'}   log: {home.root / 'logs' / 'api.jsonl'}")
     print(col.dim("  curl -H \"Authorization: Bearer $TOKEN\" http://%s:%d/v1/health" % (host, port)))
     try:
         srv.serve_forever()
@@ -509,6 +518,33 @@ def cmd_serve(args) -> int:
         pass
     finally:
         srv.server_close()
+    return 0
+
+
+def cmd_desktop(args) -> int:
+    """Launch RAD Desktop if a built binary exists; otherwise print the foundation path.
+
+    Desktop is a surface over `rad serve`. It never executes tools itself.
+    """
+    root = Path(__file__).resolve().parent.parent / "desktop"
+    info("RAD Desktop 0.1.0-alpha — surface over the existing Python HTTP API")
+    info("  backend: rad serve   (Policy.decide + Executor unchanged)")
+    info(f"  ui source: {root}")
+    if not root.exists():
+        fail("desktop/ is not in this checkout")
+        return 1
+    built = [
+        root / "src-tauri" / "target" / "release" / "rad-desktop",
+        root / "src-tauri" / "target" / "debug" / "rad-desktop",
+    ]
+    for p in built:
+        if p.exists():
+            ok(f"launching {p}")
+            subprocess.Popen([str(p)], start_new_session=True)
+            return 0
+    print("  not built yet. From desktop/:")
+    print("    npm install && npm run tauri dev")
+    print("  The frontend talks only to /v1/* ; it has no arbitrary-shell command.")
     return 0
 
 
@@ -1396,7 +1432,8 @@ def build_parser() -> argparse.ArgumentParser:
     # chat (default)
     c = sub.add_parser("chat", help="talk to Rad (default)")
     c.add_argument("--voice", action="store_true", help="voice mode: speak + listen")
-    c.add_argument("--auto", action="store_true", help="hands act without confirmation")
+    c.add_argument("--auto", action="store_true",
+                   help="confirmation policy = never (ASK→ALLOW only; does not bypass DENY/hard/budget)")
     c.add_argument("--use", help="pin a provider")
     c.add_argument("--free-lock", action="store_true", help="paid providers impossible")
     c.add_argument("--model", help="pin a model name")
@@ -1453,6 +1490,9 @@ def build_parser() -> argparse.ArgumentParser:
     sv.add_argument("--port", type=int, default=None); sv.add_argument("--host", default=None)
     sv.add_argument("--rotate-token", action="store_true"); sv.add_argument("--i-know-this-exposes-rad", action="store_true")
     sv.set_defaults(fn=cmd_serve)
+
+    desk = sub.add_parser("desktop", help="RAD Desktop 0.1 — launch or print the Tauri surface path")
+    desk.set_defaults(fn=cmd_desktop)
 
     dr = sub.add_parser("doctor", help="health check of RAD; --fix repairs what is safe")
     dr.add_argument("--fix", action="store_true"); dr.add_argument("--offline", action="store_true", help="skip provider probes")
@@ -1647,7 +1687,8 @@ def build_parser() -> argparse.ArgumentParser:
     pl.add_argument("plan_goal", nargs="*")
     pl.add_argument("plan_action", nargs="?", default=None, choices=["status", "done", "clear", "run"])
     pl.add_argument("--step", type=int, default=0); pl.add_argument("--note", default=None)
-    pl.add_argument("--auto", action="store_true", help="hands act without confirmation")
+    pl.add_argument("--auto", action="store_true",
+                    help="confirmation policy = never (ASK→ALLOW only; not a policy bypass)")
     pl.add_argument("--max", type=int, default=None, help="run at most N steps")
     pl.set_defaults(fn=cmd_plan)
 
