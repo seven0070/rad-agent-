@@ -17,6 +17,7 @@ from rad.home import DEFAULTS, RadHome, mask
 from rad.ui import ask, col, fail, info, ok, warn
 
 from rad import providers as P
+from rad.control.objectives import ObjectiveStore, usage_rollup_report
 
 
 # ---------------------------------------------------------------- helpers
@@ -118,8 +119,12 @@ def cmd_use(args) -> int:
 
 
 def cmd_cost(args) -> int:
+    home = _home(args)
     print(col.bold("Paid spend (free/local never appears here):"))
-    print(_router(_home(args)).cost_report())
+    print(_router(home).cost_report())
+    print()
+    print(col.bold("Objective usage (persisted records; not remaining quota):"))
+    print(usage_rollup_report(ObjectiveStore(home).usage_rollup()))
     return 0
 
 
@@ -1407,7 +1412,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     pr = sub.add_parser("providers", help="show detected providers + chain"); pr.set_defaults(fn=cmd_providers)
     u = sub.add_parser("use", help="pin a provider"); u.add_argument("provider"); u.set_defaults(fn=cmd_use)
-    co = sub.add_parser("cost", help="paid spend so far"); co.set_defaults(fn=cmd_cost)
+    co = sub.add_parser("cost", help="paid spend + objective usage rollup"); co.set_defaults(fn=cmd_cost)
 
     se = sub.add_parser("see", help="vision: look at an image")
     se.add_argument("image"); se.add_argument("question", nargs="*"); se.set_defaults(fn=cmd_see)

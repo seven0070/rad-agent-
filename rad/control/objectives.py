@@ -64,6 +64,84 @@ class Usage:
         return asdict(self)
 
 
+# G4-6: roll up persisted Usage. Remaining free-tier quota is not a field —
+# the provider does not expose it until HTTP 429 (RW-086). Do not invent one.
+USAGE_ROLLUP_FIELDS = ("tool_calls", "model_calls", "money_usd", "tokens")
+REMAINING_QUOTA_NOTE = "remaining free-tier quota is not in the API until HTTP 429"
+
+
+@dataclass
+class UsageRollup:
+    """Cross-objective spend from persisted ``objective.json`` Usage records."""
+    count: int = 0
+    tool_calls: int = 0
+    model_calls: int = 0
+    money_usd: float = 0.0
+    tokens: int = 0
+    rows: List[Dict[str, Any]] = field(default_factory=list)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "count": self.count,
+            "tool_calls": self.tool_calls,
+            "model_calls": self.model_calls,
+            "money_usd": self.money_usd,
+            "tokens": self.tokens,
+            "objectives": self.rows,
+        }
+
+
+def rollup_usage(objectives: List[Objective]) -> UsageRollup:
+    """Sum tool_calls / model_calls / money_usd / tokens across objectives.
+
+    Reads records that already exist. Does not probe providers. Does not
+    invent remaining-quota.
+    """
+    out = UsageRollup()
+    for o in objectives:
+        u = o.usage or Usage()
+        row = {
+            "id": o.id,
+            "status": o.status,
+            "goal": o.goal,
+            "tool_calls": int(u.tool_calls or 0),
+            "model_calls": int(u.model_calls or 0),
+            "money_usd": float(u.money_usd or 0.0),
+            "tokens": int(u.tokens or 0),
+        }
+        out.rows.append(row)
+        out.tool_calls += row["tool_calls"]
+        out.model_calls += row["model_calls"]
+        out.money_usd += row["money_usd"]
+        out.tokens += row["tokens"]
+    out.count = len(out.rows)
+    out.money_usd = round(out.money_usd, 6)
+    return out
+
+
+def usage_rollup_report(rollup: UsageRollup) -> str:
+    """Operator-visible rollup. Paid 14-day tokens stay on ``rad cost`` above this."""
+    lines: List[str] = []
+    if not rollup.rows:
+        lines.append("  no objective usage recorded")
+    else:
+        for row in rollup.rows:
+            goal = (row.get("goal") or "").replace("\n", " ")[:60]
+            lines.append(
+                f"  {row['id']}  {row['status']:<12} "
+                f"tools {row['tool_calls']:>5}  model {row['model_calls']:>5}  "
+                f"${row['money_usd']:.4f}  tokens {row['tokens']:>6}  {goal}"
+            )
+        lines.append(
+            f"  total: {rollup.count} objective"
+            f"{'s' if rollup.count != 1 else ''}  "
+            f"tools {rollup.tool_calls}  model {rollup.model_calls}  "
+            f"${rollup.money_usd:.4f}  tokens {rollup.tokens}"
+        )
+    lines.append(f"  {REMAINING_QUOTA_NOTE}")
+    return "\n".join(lines)
+
+
 @dataclass
 class Objective:
     id: str
@@ -175,6 +253,10 @@ class ObjectiveStore:
                 out.append(o)
         out.sort(key=lambda o: -o.created)
         return out
+
+    def usage_rollup(self) -> UsageRollup:
+        """Production rollup of persisted Usage. No live provider required."""
+        return rollup_usage(self.list())
 
     def save_tasks(self, oid: str, items: List[Dict[str, Any]]) -> None:
         _write_json(self.dir(oid) / "tasks.json", items)

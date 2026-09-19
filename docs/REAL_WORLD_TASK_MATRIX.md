@@ -45,16 +45,19 @@ operator workflow) is **implemented as v0.5.2** (scripted RW-092 / RW-093).
 (fallback / LLM plan quality) is **implemented as v0.5.3** (scripted
 RW-094 / RW-095). **G4-7** (coding artifact completeness / named
 package-file contracts) is **implemented as v0.5.4** (scripted RW-096 /
-RW-097). Recommended next **v0.5.5** candidate **G4-6** (cost/budget
-reporting) is listed, not accepted. Package stays **0.5.4**. **No
-per-slice GitHub Release.** Do not rewrite RW-058–097.
+RW-097). **G4-6** (cost/budget reporting) is **implemented as v0.5.5**
+(scripted RW-098 / RW-099). Package is **0.5.5**. **No
+per-slice GitHub Release.** Do not rewrite RW-058–099.
 
 Every `VERIFIED` / `completed` cell is from the control-plane verifier **and** a disk
 check (file exists / contents / hash). A model `DONE:` line is never enough.
 
 Status vocabulary: **PASS** | **FAIL** | **BLOCKED** | **NOT TESTED**.
 
-Scripted G4-7 (RW-096 / RW-097) is at the top (**PASS**; named
+Scripted G4-6 (RW-098 / RW-099) is at the top (**PASS**; persisted
+`Usage` rollup on `rad cost`; remaining-quota not invented; no live
+PASS required), then
+scripted G4-7 (RW-096 / RW-097) (**PASS**; named
 `file_exists` / `json_field` objective contracts; empty `{}` and missing
 README not VERIFIED; no live PASS required), then
 scripted G4-5 (RW-094 / RW-095) (**PASS**; near-JSON recover / compact
@@ -74,8 +77,18 @@ cleared; xxd ENVIRONMENT Class A **CONFIRMED**), then scripted RW-086
 (v0.4.7), then live NIM RW-084 (**BLOCKED Class C**), then scripted RW-083.
 G4-3 is **shipped** as v0.5.2 (scripted); **Version 5 pack** shipped.
 G4-5 is **shipped** as v0.5.3 (scripted RW-094 / RW-095). **G4-7** is
-**shipped** as v0.5.4 (scripted RW-096 / RW-097). G4-6 is **scoped**
-(listed, not accepted) — no new RW row. RW-058–097 are **not rewritten**.
+**shipped** as v0.5.4 (scripted RW-096 / RW-097). **G4-6** is
+**shipped** as v0.5.5 (scripted RW-098 / RW-099). RW-058–099 are **not rewritten**.
+
+# Scripted cost/budget reporting (RW-098 / RW-099)
+
+Lane: scripted objective store + `rad cost` (no NIM / no OpenRouter) on
+**v0.5.5**. Needle `existing` / off. Caps unchanged. **Not** a live PASS.
+
+| id | date | task | goal (short) | plan | steps | tools | result | disk / verify | ENVIRONMENT? | class | notes |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| RW-098 | 2026-09-19 | report (scripted) — persist Usage rolls up (Cycle 24 / RW-086 shape) | two offline `objective.json` records with tools/model/money/tokens | n/a (records already on disk) | store.save + rollup | default **60** unchanged | **PASS** (totals 15 tools / 6 model / $0.02 / 950 tokens) | `~/.rad/objectives/<id>/objective.json`; remaining-quota **not** a field | **N** | capability (Gen4 G4-6; G4-2 last Class C untouched) | Tests `test_cost_budget_report.py`. Needle OFF. Caps unchanged. No live PASS claim. |
+| RW-099 | 2026-09-19 | report (scripted) — `rad cost` surfaces rollup without a live provider | one offline completed objective (tools 12 / $0) | n/a | `rad cost` | remaining=n/a | **PASS** (paid 14-day section + objective rollup; remaining-quota not invented; last Class C / Retry-After preserved) | persisted Usage + `provider_health.json` unchanged | **N** | capability (Gen4 G4-6; no remaining-quota API) | Tests `test_cost_budget_report.py`. Needle OFF. Caps unchanged. No live PASS claim. |
 
 # Scripted coding artifact completeness (RW-096 / RW-097)
 
