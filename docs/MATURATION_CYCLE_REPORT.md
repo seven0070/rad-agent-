@@ -6,6 +6,79 @@ Default `Budget.tool_calls` remains **60**.
 
 ---
 
+# Cycle 24 — Scope Gen4 v0.5.x; Gen3 complete (scripted); stay 0.4.9 (2026-09-19)
+
+**Date:** 2026-09-19
+**Baseline:** `origin/main` `05ea0df302aa6bfd15eccfb84341aeed75d6e1d0` (merge PR #37; package **0.4.9**, tag **v0.4.9**)
+**Package at start:** `0.4.9`
+**This branch:** `cursor/gen4-v05-scope-450a` — package **0.4.9** (no bump)
+**Architecture:** control plane preserved. Needle stays off. Caps unchanged.
+**Kind:** docs / scope only. No `rad/` product change. RW-058–088 are **not rewritten**.
+
+## Why this cycle
+
+Gen3 themes 1–3 have measured wins on 0.4.x (themes 1–2 live-confirmed;
+theme 3 slices A–D used / live-confirmed as recorded; E1/E2/E3 scripted
+RW-083 / RW-087 / RW-088; slice F live xxd thrash **CLEARED**). Live
+E1–E3 confirmation is **deferred** (NIM Class C paused RW-084; OpenRouter
+free paused RW-086 429). Residual Class B remains (fallback PLAN,
+incomplete package, free-model thrash). Gen4 had been a one-line
+“Production Scale / not started”. This cycle **scopes** it as **planned /
+scoped** (not started as a build) and marks Gen3 **complete (scripted)**
+with the live-confirmation caveat.
+
+## Code findings (lightweight; no patch)
+
+| existing | role | gap vs measured Gen3-use |
+|---|---|---|
+| `rad/router.py` free-first chain | local → free RR → paid; 401/403 skip | Live runs pin one free brain; 403/429 paused the loop instead of a written rotate/pause doctrine |
+| `recovery.py` 429/403 classes | TRANSIENT/NETWORK vs AUTH; `switch_model` exists | Mid-run 429 still burned tools (RW-086). Class C stays Class C |
+| `rad cost` | paid 14-day spend | Free-tier quota invisible; no production rollup of tool/model budgets |
+| `Planner._fallback` (F-17) + E2 | clause-split, no checks on fallback *tasks* | Live RW-085/086 `source=fallback` — residual Class B after E1–E3 |
+| MCP + `rad provider add` | already first-class; acceptance handshakes MCP | No measured hole. Not a first theme |
+
+## Decision
+
+| item | value |
+|---|---|
+| Package | **0.4.9** (no 0.5.0) |
+| Gen3 | **COMPLETE (scripted)**. Live E1–E3 confirmation **deferred** |
+| Gen4 | **PLANNED / SCOPED**. Not accepted. Not implemented |
+| Recommended first v0.5.0 candidate | **G4-1** — live multi-provider / free-provider production doctrine (see ROADMAP). **Not** accepted here |
+| Other candidates | G4-2 fallback/LLM plan quality; G4-3 operational scale; G4-4 extensibility (not first — already in tree) |
+| Next product work | Waits for an accepted v0.5.0 theme |
+| Invariants | Needle OFF; caps 16/60; false DONE 0; no redesign; Class C is not a product patch |
+
+## Quality gates (this branch)
+
+Isolated homes `/tmp/rad-gen4-scope-gate` (doctor, acceptance) and `/tmp/rad-gen4-scope-rw` (realworld).
+
+| gate | result |
+|------|--------|
+| `rad version` | **PASS** v0.4.9 |
+| `python3 -m pytest -q` | **PASS** 569 passed in 11.62s |
+| `rad doctor --offline` | **PASS** 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR, verdict READY, exit 0 |
+| `rad acceptance` | **PASS** 50/50 — `/tmp/rad-gen4-scope-gate/acceptance/20260919-053618_gate.json` |
+| `rad realworld` | **PASS** 10/11 + 1 BLOCKED — `/tmp/rad-gen4-scope-rw/realworld/20260919-053622_realworld.json` |
+| Needle default | **PASS** (`existing`) |
+| Caps | **PASS** `max_plan_tasks` 16; `Budget.tool_calls` 60 |
+| Package | **0.4.9** (no bump) |
+| Live this patch | not re-run; suite `live_nim` **BLOCKED** (Class C) |
+
+## Remaining limitations
+
+1. Live text_analyzer@12 remains Class B FAIL. This cycle does not change that.
+2. E1/E2/E3 are scripted only. Live confirmation **deferred**.
+3. Both live free paths remain **paused**.
+4. G4-1 is listed, not accepted.
+
+## Roadmap pointer
+
+Operating spine: [ROADMAP.md](ROADMAP.md). **Generation 3 complete (scripted).**
+**Generation 4 planned / scoped.** Stay **0.4.9**. Gen5 is not started.
+
+---
+
 # Cycle 23 — Budget-aware retry stop (E3); v0.4.9 (2026-09-19)
 
 **Date:** 2026-09-19
