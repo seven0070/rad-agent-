@@ -8,9 +8,11 @@ or a substitute for the file.
 Package-layout goals (e.g. files under `text_analyzer/`, or an ASCII tree
 `text_analyzer/` + `├── file`) get check paths joined to that directory so
 root-only checks cannot thrash a package write (RW-069 / RW-073 / Gen3
-theme 1). Multi-file goals also infer exact line-count and non-empty JSON
-contracts so weak artifacts cannot become VERIFIED (RW-071 / Gen3 theme 2).
-Fallback *tasks* stay check-less (F-17). First-task thrash (RW-075): a missing
+theme 1). Multi-file goals also infer exact line-count, named-file
+`file_exists`, and `json_field` for keys the goal names so weak artifacts
+(`{}` summary, missing README.md / analyzer.py) cannot become VERIFIED
+(RW-071 / Gen3 theme 2; G4-7 / RW-096 / RW-097). Fallback *tasks* stay
+check-less (F-17). First-task thrash (RW-075): a missing
 `requirements.txt` from `pip install -r` is not an environment prerequisite, and
 an invented tool named `DONE` / `DONE: …` is a protocol mistake, not a failed
 contract (Gen3 theme 3 slice B). mkdir / create **already exists** after
@@ -39,8 +41,28 @@ CODING_MARKERS_RE = re.compile(
 )
 JSON_PATH_RE = re.compile(r"\b([\w./-]+\.json)\b", re.I)
 TEST_FILE_RE = re.compile(r"\b((?:[\w.-]+/)*test_\w+\.py)\b", re.I)
+NAMED_PKG_FILE_RE = re.compile(r"\b((?:[\w.-]+/)*[\w.-]+\.(?:py|md))\b", re.I)
+TEST_PY_NAME_RE = re.compile(r"(?:^|/)test_\w+\.py$", re.I)
 TXT_PATH_RE = re.compile(r"\b((?:[\w.-]+/)*[\w.-]+\.txt)\b", re.I)
 LINE_COUNT_RE = re.compile(r"\b(?:exact\s+)?(\d+)[ -]lines?\b", re.I)
+JSON_PAREN_RE = re.compile(
+    r"([\w./-]+\.json)\b[^\n]{0,80}?\(([^)]{1,120})\)",
+    re.I,
+)
+JSON_KEY_WORD_RE = re.compile(r"\bkeys?\s+([A-Za-z_][\w]*)\b", re.I)
+JSON_KEYS_LIST_RE = re.compile(
+    r"\bkeys?\s*[:=]\s*([A-Za-z_][\w]*(?:\s*[,/]\s*[A-Za-z_][\w]*)+)",
+    re.I,
+)
+JSON_KEY_STOP = frozenset({
+    "a", "an", "and", "are", "as", "accurate", "classic", "correct", "count",
+    "counts", "empty", "equal", "equals", "exact", "false", "field", "fields",
+    "for", "have", "including", "integer", "is", "json", "key", "keys", "must",
+    "named", "non", "nonempty", "object", "of", "required", "result", "results",
+    "string", "summary", "the", "to", "true", "valid", "value", "values", "with",
+})
+INFER_CODING_CHECK_CAP = 8
+MERGE_CODING_CHECK_CAP = 10
 DONE_PREFIX_RE = re.compile(r"^\s*DONE\s*:", re.I)
 DONE_TOOL_RE = re.compile(r"^\s*DONE(?:\s*:.*)?\s*$", re.I)
 _PIP_REQ_ERR = re.compile(
@@ -343,12 +365,68 @@ def align_checks(checks: Iterable[Check], package_dir: Optional[str]) -> List[Ch
     return [align_check(c, package_dir) for c in checks]
 
 
+def _check_ident(kind: str, path: str, cmd: str, field: str = "") -> tuple:
+    """Dedupe key. json_field must keep one entry per (path, field)."""
+    if kind == "json_field":
+        return (kind, path, field)
+    return (kind, path or cmd)
+
+
+def _json_field_names(blob: str, json_path: str) -> List[str]:
+    """Keys the goal names for a JSON artifact (parenthetical, 'key X', 'keys: a, b')."""
+    out: List[str] = []
+    seen = set()
+
+    def add(raw: str) -> None:
+        tok = (raw or "").strip()
+        if not tok or not re.match(r"^[A-Za-z_][\w]*$", tok):
+            return
+        low = tok.lower()
+        if low in JSON_KEY_STOP or low in seen:
+            return
+        seen.add(low)
+        out.append(tok)
+
+    name = Path(json_path).name
+    for m in JSON_PAREN_RE.finditer(blob or ""):
+        mentioned = align_rel_path(m.group(1), None)
+        if Path(mentioned).name.lower() != name.lower():
+            continue
+        for tok in re.split(r"[\s,/|;]+", m.group(2) or ""):
+            add(tok)
+    for m in JSON_KEY_WORD_RE.finditer(blob or ""):
+        add(m.group(1))
+    for m in JSON_KEYS_LIST_RE.finditer(blob or ""):
+        for tok in re.split(r"[\s,/]+", m.group(1) or ""):
+            add(tok)
+    return out
+
+
+def _named_package_files(blob: str, package_dir: Optional[str]) -> List[str]:
+    """README.md / main module / other named .py|.md the goal requires (not test_*.py)."""
+    out: List[str] = []
+    seen = set()
+    for m in NAMED_PKG_FILE_RE.finditer(blob or ""):
+        path = align_rel_path(m.group(1), package_dir)
+        if is_done_pollution_path(path):
+            continue
+        norm = path.replace("\\", "/")
+        if TEST_PY_NAME_RE.search(norm):
+            continue
+        if norm in seen:
+            continue
+        seen.add(norm)
+        out.append(path)
+    return out
+
+
 def infer_coding_checks(goal: str, criteria: Optional[List[str]] = None) -> List[Check]:
     """Structured objective checks for coding/verification goals.
 
     Fallback plans still emit *tasks* without checks (F-17 contract). This only
-    fills *objective_checks* so invalid JSON / failing tests cannot become VERIFIED.
-    Bare paths are joined to the goal's package directory when one is named.
+    fills *objective_checks* so invalid JSON / failing tests / missing named
+    package files / empty `{}` summaries cannot become VERIFIED. Bare paths are
+    joined to the goal's package directory when one is named.
     """
     blob = (goal or "") + "\n" + "\n".join(criteria or [])
     if not is_coding_or_verify_goal(blob):
@@ -356,25 +434,31 @@ def infer_coding_checks(goal: str, criteria: Optional[List[str]] = None) -> List
     package_dir = infer_package_dir(goal, criteria)
     out: List[Check] = []
     seen = set()
+    json_paths: List[str] = []
+    covered_paths = set()
     for m in JSON_PATH_RE.finditer(blob):
         path = align_rel_path(m.group(1), package_dir)
         if is_done_pollution_path(path):
             continue
-        key = ("json_valid", path)
+        key = _check_ident("json_valid", path, "")
         if key in seen:
             continue
         seen.add(key)
+        json_paths.append(path)
+        covered_paths.add(path.replace("\\", "/"))
         out.append(Check("json_valid", {"path": path}, f"{path} is valid JSON"))
     test_file = None
     m = TEST_FILE_RE.search(blob)
     if m:
         test_file = align_rel_path(m.group(1), package_dir)
+        covered_paths.add(test_file.replace("\\", "/"))
     low = blob.lower()
     wants_tests = bool(test_file) or bool(re.search(r"\b(pytest|run the tests?|write the tests?)\b", low))
     if wants_tests:
         cmd = f"python3 {test_file}" if test_file else "python3 -m pytest -q"
         cmd = align_shell_command(cmd, package_dir)
         out.append(Check("shell_ok", {"command": cmd}, "tests exit 0"))
+        seen.add(_check_ident("shell_ok", "", cmd))
     line_m = LINE_COUNT_RE.search(blob)
     if line_m:
         n = int(line_m.group(1))
@@ -388,14 +472,35 @@ def infer_coding_checks(goal: str, criteria: Optional[List[str]] = None) -> List
         if chosen is None and txts:
             chosen = txts[0]
         if chosen:
-            key = ("file_line_count", chosen)
+            key = _check_ident("file_line_count", chosen, "")
             if key not in seen:
                 seen.add(key)
+                covered_paths.add(chosen.replace("\\", "/"))
                 out.append(Check(
                     "file_line_count", {"path": chosen, "n": n},
                     f"{chosen} has exactly {n} lines",
                 ))
-    return out[:6]
+    for path in json_paths:
+        for field in _json_field_names(blob, path):
+            key = _check_ident("json_field", path, "", field)
+            if key in seen:
+                continue
+            seen.add(key)
+            out.append(Check(
+                "json_field",
+                {"path": path, "key": field, "truthy": False},
+                f"{path} has {field}",
+            ))
+    for path in _named_package_files(blob, package_dir):
+        norm = path.replace("\\", "/")
+        if norm in covered_paths:
+            continue
+        key = _check_ident("file_exists", path, "")
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(Check("file_exists", {"path": path}, f"{path} exists"))
+    return out[:INFER_CODING_CHECK_CAP]
 
 
 def merge_coding_checks(existing: Optional[Iterable[Check]],
@@ -410,7 +515,8 @@ def merge_coding_checks(existing: Optional[Iterable[Check]],
         args = c.args or {}
         path = str(args.get("path", "")).replace("\\", "/")
         cmd = str(args.get("command", ""))
-        seen.add((c.kind, path or cmd))
+        field = str(args.get("key", "")) if c.kind == "json_field" else ""
+        seen.add(_check_ident(c.kind, path, cmd, field))
         if c.kind in ("json_valid", "json_field", "json_min_len") and path:
             json_paths.add(path)
         if c.kind == "file_line_count" and path:
@@ -421,7 +527,8 @@ def merge_coding_checks(existing: Optional[Iterable[Check]],
         args = c.args or {}
         path = str(args.get("path", "")).replace("\\", "/")
         cmd = str(args.get("command", ""))
-        key = (c.kind, path or cmd)
+        field = str(args.get("key", "")) if c.kind == "json_field" else ""
+        key = _check_ident(c.kind, path, cmd, field)
         if key in seen:
             continue
         if c.kind == "json_valid" and path in json_paths:
@@ -438,4 +545,4 @@ def merge_coding_checks(existing: Optional[Iterable[Check]],
             line_paths.add(path)
         if c.kind in ("shell_ok", "shell_output"):
             has_shell = True
-    return out[:8]
+    return out[:MERGE_CODING_CHECK_CAP]

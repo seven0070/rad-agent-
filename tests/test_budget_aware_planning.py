@@ -84,7 +84,7 @@ def _plan(llm, goal: str = "implement word_counter and write result.json", **kw)
 # ---------------------------------------------------------------- architecture freeze
 
 def test_budget_aware_planning_does_not_raise_caps_or_enable_needle(home):
-    assert __version__ == "0.5.3"
+    assert __version__ == "0.5.4"
     assert Budget().tool_calls == 60
     assert TOOLS_PER_TASK == 2
     assert SMALL_PLAN_MAX == 3

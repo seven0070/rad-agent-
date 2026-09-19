@@ -11,9 +11,9 @@ done, nothing checks, nothing survives a crash. The control plane inverts that:
 | `objectives.py` | `Objective` (goal, criteria, budget/usage, status) + `ObjectiveStore` (disk) |
 | `tasks.py` | `Task` with explicit state machine, `Check` (machine-verifiable condition) |
 | `graph.py` | `TaskGraph` DAG: ready-set, doom propagation, optional branches, cycle check |
-| `planner.py` | LLM → task graph *with checks*; bounded retry (default 1) on timeout/empty/malformed JSON *before* fallback; fat plans retried/selected to fit remaining tool budget; deterministic fallback without a brain (goal clause-split, no checks — F-17; compacted when still fat; independent later file-write clauses get empty `depends_on` — E2 / RW-087); coding goals infer `json_valid` / test `shell_ok` / exact `file_line_count` as *objective* checks and merge them into LLM plans that omitted them (fallback *tasks* stay check-less); package-layout goals get check paths joined to the named directory including ASCII-tree `pkg/` layouts (RW-069 / RW-073) |
+| `planner.py` | LLM → task graph *with checks*; bounded retry (default 1) on timeout/empty/malformed JSON *before* fallback; fat plans retried/selected to fit remaining tool budget; deterministic fallback without a brain (goal clause-split, no checks — F-17; compacted when still fat; independent later file-write clauses get empty `depends_on` — E2 / RW-087); coding goals infer `json_valid` / test `shell_ok` / exact `file_line_count` / named-file `file_exists` / `json_field` for named keys as *objective* checks and merge them into LLM plans that omitted them (fallback *tasks* stay check-less); package-layout goals get check paths joined to the named directory including ASCII-tree `pkg/` layouts (RW-069 / RW-073) |
 | `budgetplan.py` | budget-aware planning helpers: remaining tools, 2-tools/task estimate, fat vs small (F-21), fallback compact; leftover-tool reserve for intra-run yield (E1); E2 empty `depends_on` on independent fallback file clauses so those tasks can enter the READY set |
-| `codingloop.py` | verified coding loop helpers: coding-goal detection, DONE: pollution, broken-artifact repair hints, package-dir path alignment, merge of omitted json/line-count/test contracts |
+| `codingloop.py` | verified coding loop helpers: coding-goal detection, DONE: pollution, broken-artifact repair hints, package-dir path alignment, merge of omitted json/line-count/test/named-file/json-field contracts |
 | `controller.py` | lifecycle: create / plan / run / resume / pause / cancel; the drive loop |
 | `observer.py` | `Observation` per tool call, `Artifact` registry (sha256, versions, lineage) |
 | `verifier.py` | tool → checks → artifacts → objective; result is `VERIFIED` / `FAILED` / `UNVERIFIED` |
@@ -93,9 +93,10 @@ skip-blocked doctor / `rad health` operator workflow; **Version 5 pack**
 shipped as GitHub Release **v0.5.2**. Theme **G4-5** is **implemented as
 v0.5.3** — near-JSON LLM plan recovery and compact coding-plan retry so
 RW-085/086-shaped misses are less often clause-carve; F-17 fallback
-*tasks* stay check-less. Recommended next **G4-7** (coding artifact
-completeness / named package-file contracts) is **listed, not
-accepted** — stay **0.5.3**. **No per-slice GitHub Release** — see
+*tasks* stay check-less. Theme **G4-7** is **implemented as v0.5.4** —
+named package-file `file_exists` and `json_field` for keys the goal names
+so empty `{}` / missing README cannot VERIFIED; F-17 stays closed.
+Package is **0.5.4**. **No per-slice GitHub Release** — see
 [ROADMAP.md](ROADMAP.md).
 
 ## Parallelism (Phase 3)

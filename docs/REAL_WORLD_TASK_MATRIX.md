@@ -43,9 +43,9 @@ as v0.5.1** (scripted RW-090 / RW-091). **G4-3** (live-use campaign /
 operator workflow) is **implemented as v0.5.2** (scripted RW-092 / RW-093).
 **Version 5 pack** shipped as GitHub Release **v0.5.2**. **G4-5**
 (fallback / LLM plan quality) is **implemented as v0.5.3** (scripted
-RW-094 / RW-095). Recommended next **G4-7** (coding artifact
-completeness / named package-file contracts) is **listed, not
-accepted**. Package stays **0.5.3**. **No per-slice GitHub Release.**
+RW-094 / RW-095). **G4-7** (coding artifact completeness / named
+package-file contracts) is **implemented as v0.5.4** (scripted RW-096 /
+RW-097). Package is **0.5.4**. **No per-slice GitHub Release.**
 Do not rewrite RW-058–095.
 
 Every `VERIFIED` / `completed` cell is from the control-plane verifier **and** a disk
@@ -53,7 +53,12 @@ check (file exists / contents / hash). A model `DONE:` line is never enough.
 
 Status vocabulary: **PASS** | **FAIL** | **BLOCKED** | **NOT TESTED**.
 
-Scripted G4-3 (RW-092 / RW-093) is at the top (**PASS**; doctor skip-blocked;
+Scripted G4-7 (RW-096 / RW-097) is at the top (**PASS**; named
+`file_exists` / `json_field` objective contracts; empty `{}` and missing
+README not VERIFIED; no live PASS required), then
+scripted G4-5 (RW-094 / RW-095) (**PASS**; near-JSON recover / compact
+coding retry; F-17 check-less fallback), then
+scripted G4-3 (RW-092 / RW-093) (**PASS**; doctor skip-blocked;
 `rad health` wait/rotate/resume/run; playbook; no live PASS required), then
 scripted G4-2 (RW-090 / RW-091) (**PASS**; catalog ≠ inference; last Class C
 persists; resume live-gated; 429 Retry-After visible), then
@@ -67,8 +72,18 @@ free-model loop **paused**), then live OpenRouter RW-085 (**FAIL**; Class C
 cleared; xxd ENVIRONMENT Class A **CONFIRMED**), then scripted RW-086
 (v0.4.7), then live NIM RW-084 (**BLOCKED Class C**), then scripted RW-083.
 G4-3 is **shipped** as v0.5.2 (scripted); **Version 5 pack** shipped.
-G4-5 is **shipped** as v0.5.3 (scripted RW-094 / RW-095). Recommended
-next **G4-7** is listed, not accepted. RW-058–095 are **not rewritten**.
+G4-5 is **shipped** as v0.5.3 (scripted RW-094 / RW-095). **G4-7** is
+**shipped** as v0.5.4 (scripted RW-096 / RW-097). RW-058–095 are **not rewritten**.
+
+# Scripted coding artifact completeness (RW-096 / RW-097)
+
+Lane: scripted planner + verifier + controller (no NIM / no OpenRouter) on
+**v0.5.4**. Needle `existing` / off. Caps unchanged. **Not** a live PASS.
+
+| id | date | task | goal (short) | plan | steps | tools | result | disk / verify | ENVIRONMENT? | class | notes |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| RW-096 | 2026-09-19 | verify (scripted) — named package-file `file_exists` (RW-081/085/086 shape) | ASCII-tree `text_analyzer/` names README.md + analyzer.py | merged objective contracts | infer + scripted write | default **60** unchanged; scripted remaining=20 | **PASS** (missing README / analyzer **not VERIFIED**; complete package **VERIFIED**) | README.md / analyzer.py contracted; false DONE **0** | **N** | capability (Gen4 G4-7; F-17 stays closed) | Tests `test_coding_artifact_completeness.py`. Needle OFF. Caps unchanged. No live PASS claim. |
+| RW-097 | 2026-09-19 | verify (scripted) — named JSON `json_field` (RW-081/086 shape) | ASCII-tree `summary.json (accurate lines/words/characters)` | merged objective contracts | infer + scripted write | remaining=20 | **PASS** (`{}` + alt-schema **not VERIFIED**; classic keys **VERIFIED**; empty `{}` still `json_valid`) | named keys contracted; false DONE **0** | **N** | capability (Gen4 G4-7; F-17 stays closed) | Tests `test_coding_artifact_completeness.py`. Needle OFF. Caps unchanged. No live PASS claim. |
 
 # Scripted LLM plan quality (RW-094 / RW-095)
 
