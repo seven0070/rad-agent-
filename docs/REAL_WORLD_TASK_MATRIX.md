@@ -26,19 +26,79 @@ pip/echo + root pollution residual). Pip thrash + root pollution Class A is
 **NOT CONFIRMED** (RW-082; stay **0.4.5**). Gen3 theme 3 slice E1 (task-boundary
 yield / leftover-budget dispatch) is **implemented as v0.4.6** (RW-083). Live
 NIM retest of v0.4.6 is **RW-084 BLOCKED Class C** (HTTP 403 on
-`chat/completions`; E1 **not live-tested**). Live NIM loop **paused**. E2/E3
-remain candidates. Do not rewrite RW-058–083. Scripted theme-2 RW-066 (F-27) is preserved.
+`chat/completions`; E1 **not live-tested**). Live OpenRouter free retest of
+v0.4.6 is **RW-085 FAIL** (tools **11/12**; `xxd` ENVIRONMENT repair; E1
+**not live**). Optional checksum-utility ENVIRONMENT is **implemented as
+v0.4.7** (RW-086). Live NIM loop **paused**. E2/E3 remain candidates. Do not
+rewrite RW-058–084. Scripted theme-2 RW-066 (F-27) is preserved.
 
 Every `VERIFIED` / `completed` cell is from the control-plane verifier **and** a disk
 check (file exists / contents / hash). A model `DONE:` line is never enough.
 
 Status vocabulary: **PASS** | **FAIL** | **BLOCKED** | **NOT TESTED**.
 
-Live NIM retest of v0.4.6 (RW-084) is at the top (**BLOCKED Class C**; live
-NIM **paused**), then scripted RW-083 (E1 leftover-budget dispatch), then
-live NIM retest of v0.4.5 (RW-081), then scripted RW-082
-(pip/root-pollution investigation), then RW-079 / RW-080. RW-058–083 are
-**not rewritten**.
+Live OpenRouter retest of v0.4.6 (RW-085) is at the top (**FAIL**; Class C
+cleared; E1 not live; xxd ENVIRONMENT Class A **CONFIRMED**), then scripted
+RW-086 (v0.4.7), then live NIM RW-084 (**BLOCKED Class C**), then scripted
+RW-083. RW-058–084 are **not rewritten**.
+
+# Live OpenRouter retest of v0.4.6 (RW-085) — FAIL
+
+Lane: operator production `rad objective run` on **v0.4.6** (tag `v0.4.6`,
+`8f09be5839e25c236349121a4ec77606d0d5ed2d`). Needle `existing` / off.
+`max_plan_tasks` **16**. Default `Budget.tool_calls` **60** (this run used
+`--max-tasks 8 --max-tools 12`). RW-058–084 are **not rewritten**. **Not** an
+end-to-end PASS. Package **0.4.6** on the live run; this branch bumps to
+**0.4.7** for optional checksum-utility ENVIRONMENT. E1 remains
+shipped/scripted (RW-083). Live E1 **not confirmed**. Class C vs RW-084
+**cleared**.
+
+Authoritative live facts: operator report for `obj_3181e63d` /
+`/tmp/rad_prod_rw085_15d26f58`. This agent did not re-run the live objective.
+
+| id | Date | Category | Objective | #tasks | #actions | Tools | Result | Verification | Recovery | Failure class | Notes |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| RW-085 | 2026-09-19 IST 09:34:38–09:57:47 | coding (live OpenRouter free) — v0.4.6 text_analyzer retest vs RW-081 / RW-084 | production ASCII-tree `text_analyzer/` layout (analyzer.py, **exact 3-line** input.txt, summary.json, test_analyzer.py, README.md); stdlib; real tests; `--max-tasks 8 --max-tools 12`; Needle `existing` / off | `PLAN_CREATED` **source=`fallback`**, **attempts=2**, 4 tasks carved from goal newlines, `fit=true`, `compacted=false`, `estimated_tools=8`; t_07ad6720 Create package **BLOCKED** (depends on repair; verify FAILED); t_cdb9c8e2 / t_9b2837e2 / t_a51bef19 **BLOCKED** (attempts=0); t_1dfa6d3f Repair prerequisite **NEEDS_USER** (attempts=2) | tools **11/12** (`run_shell` 8, `write_file` 4, `run_python` 2, `read_file` 2, `list_dir` 2 — **0** invented `DONE`); model calls **14.0/80** (provider=`openrouter`); retries **2.0/6**; wall ~1389s event / usage `seconds≈928.8`; process exit 2; money **`$0`** | 11/12 | **FAIL** vs success criteria (`needs_user`); **NOT DONE**, **not VERIFIED** complete | First task actions **ok=false** (5 actions, **1 error**: `xxd: not found` exit 127); `file_nonempty` input.txt OK. Objective checks **all package-joined** under `text_analyzer/` (2 checks; 0 bare) | **ENVIRONMENT_FAILURE** → `repair` (`xxd`); then VALIDATION retry; then replan → NEEDS_USER. 0 TaskYield. 0 leftover-budget dispatch | **B** residual (fallback PLAN / free-model quality / missing README / alt summary / failing tests / later tasks 0 attempts) + Class A `xxd` ENVIRONMENT (F-48 / v0.4.7). Class C **cleared**. E1 live **N** | Provider **openrouter** / `nvidia/nemotron-3.5-lightning:free`. Home `/tmp/rad_prod_rw085_15d26f58`; `obj_3181e63d`. Disk: workspace root **only** `text_analyzer/`. `input.txt` **PASS** 3-line sha256 `bf69eb737ca6f3949b5626701cb8472a2fc683e6b05e3101744eccd49dab629b`. Package `summary.json` present, alt schema. README **absent**. False DONE **0**. Caps unchanged. Needle OFF. |
+
+### RW-085 vs RW-081 / RW-084
+
+| | RW-081 (v0.4.5 NIM) | RW-084 (v0.4.6 NIM) | RW-085 (v0.4.6 OpenRouter free) |
+|---|---|---|---|
+| home | `/tmp/rad_prod_rw081_5a76b128` | `/tmp/rad_prod_rw084_3d9cc3ac` | `/tmp/rad_prod_rw085_15d26f58` |
+| objective id | `obj_b6d32fcc` | `obj_a8118606` | `obj_3181e63d` |
+| package | 0.4.5 | **0.4.6** | **0.4.6** (live) / **0.4.7** (this branch) |
+| `--max-tasks` / `--max-tools` | 8 / 12 | 8 / 12 | 8 / 12 |
+| Needle | `existing` / off | `existing` / off | `existing` / off |
+| Status | `needs_user` @ 12/12 | `needs_user` @ **0/12** | `needs_user` @ **11/12** |
+| Brain | nvidia / llama-3.2-11b-vision | nvidia **403** | **openrouter / nemotron-3.5-lightning:free** |
+| PLAN | llm attempts=2 | fallback (provider fail) | **fallback** attempts=2 |
+| `input.txt` sha256 | `bf69eb73…` OK | absent | `bf69eb73…` OK |
+| `summary.json` | `{}` empty | absent | present, alt schema |
+| README | present | absent | **absent** |
+| objective_checks | package-joined Y | package-joined Y (create only) | package-joined Y |
+| Root pollution | Y (root analyzer.py) | N/A | **N** |
+| Recovery | none | MODEL_FAILURE | **ENVIRONMENT → repair** (`xxd`) |
+| E1 leftover-budget yield | N/A (pre-E1) | not live-tested | **not live** (0 yields) |
+| Fake DONE | 0 | 0 | 0 |
+| Residual class | **B** | **C** | **B** (+ Class A xxd → v0.4.7) |
+
+| metric | value |
+|---|---|
+| Package (live run) | **0.4.6** (tag `v0.4.6` / `8f09be5839e25c236349121a4ec77606d0d5ed2d`) |
+| E1 live | **N** — fallback chain + ENVIRONMENT repair; 0 TaskYield. Scripted RW-083 remains unit evidence |
+| vs RW-084 Class C | **cleared** — OpenRouter HTTP 200 / tools 11/12 / `$0` |
+| Residual | **Class B** — fallback PLAN; wrong summary; missing README; failing tests; later tasks 0 attempts. Class A `xxd` ENVIRONMENT **CONFIRMED** (this patch) |
+| RW-058–084 | preserved (not rewritten) |
+| Default max-tools / max-tasks | **unchanged** (this run used `--max-tasks 8 --max-tools 12` only) |
+| Needle | **OFF** (`existing`) |
+| False completion | **0** |
+| Recommendation | Record **FAIL**. Class C cleared. E1 not live. Confirm Class A on `xxd` → v0.4.7. Do not claim live PASS. |
+
+# Scripted optional checksum ENVIRONMENT (RW-086)
+
+| id | date | task | goal (short) | plan | steps | tools | result | disk / verify | ENVIRONMENT? | class | notes |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| RW-086 | 2026-09-19 | coding (scripted) — missing `xxd` ≠ ENVIRONMENT | RW-085 shape: ASCII-tree `text_analyzer/`; write input then `xxd` exit 127 | 2 planned (LLM) | write input + xxd noise; write analyzer | default **60** unchanged; scripted cap **12** | **PASS** (t1 VERIFIED despite xxd; t2 VERIFIED; no Repair prerequisite; empty JSON still **not** VERIFIED) | `text_analyzer/input.txt` + `analyzer.py` on disk; no root pollution; false DONE **0** | **N** — TOOL / action-noise, not Repair-prerequisite | **A** (Gen3 theme 3 slice F; live quality stays **B**) | Tests `test_xxd_environment.py`. Needle OFF. Caps unchanged. F-17 / F-26 / E1 / pip/DONE/mkdir/premature-test preserved. No live PASS claim. |
 
 # Live NIM retest of v0.4.6 (RW-084) — BLOCKED Class C
 

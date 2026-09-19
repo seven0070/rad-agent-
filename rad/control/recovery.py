@@ -18,6 +18,7 @@ from typing import Any, Dict, List, Optional
 from rad.control.codingloop import (
     is_done_protocol_tool,
     is_mkdir_already_exists,
+    is_missing_optional_checksum_utility,
     is_missing_python_script,
     is_pip_requirements_file_missing,
     looks_like_broken_artifact,
@@ -78,9 +79,12 @@ def classify(task: Task, observations: List[Observation], error: str = "",
     # pip -r missing requirements.txt is not a missing env dependency (RW-075).
     # python can't-open-file on a .py script the agent has not written yet is
     # sequencing, not a broken host environment (RW-079).
+    # Missing optional xxd/hexdump/sha*sum is checksum theater, not a broken
+    # RAD host (RW-085). Genuine python/pip/gcc command-not-found stays ENVIRONMENT.
     if (_ENV.search(text) and not _ALREADY_EXISTS.search(text)
             and not _pip_requirements_missing(observations, text)
-            and not _missing_python_script(observations, text)):
+            and not _missing_python_script(observations, text)
+            and not _optional_checksum_missing(observations, text)):
         return FailureClass.ENVIRONMENT
     if any(o.status == "error" for o in observations):
         return FailureClass.TOOL          # a concrete tool error is more specific than "checks failed"
@@ -234,6 +238,18 @@ def _missing_python_script(observations: List[Observation], text: str) -> bool:
     return False
 
 
+def _optional_checksum_missing(observations: List[Observation], text: str) -> bool:
+    if is_missing_optional_checksum_utility(text, ""):
+        return True
+    for o in observations:
+        if o.status == "success":
+            continue
+        cmd = str((o.args or {}).get("command", ""))
+        if is_missing_optional_checksum_utility(o.output or "", cmd):
+            return True
+    return False
+
+
 def _thrash_hint(observations: List[Observation]) -> str:
     bits: List[str] = []
     if any(is_done_protocol_tool(o.tool) for o in observations if o.status == "error"):
@@ -251,6 +267,10 @@ def _thrash_hint(observations: List[Observation]) -> str:
            for o in observations if o.status != "success"):
         bits.append("Do not run python test_*.py (or other scripts) before writing them. "
                     "Write the test file first, then run it.")
+    if any(is_missing_optional_checksum_utility(o.output or "", str((o.args or {}).get("command", "")))
+           for o in observations if o.status != "success"):
+        bits.append("Do not call xxd/hexdump (or missing host checksum utilities) to inspect files. "
+                    "Use write_file, read_file, or python hashlib. Write the remaining files.")
     return (" " + " ".join(bits)) if bits else ""
 
 

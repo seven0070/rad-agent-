@@ -72,6 +72,7 @@ If the goal is a multi-file package, do NOT emit a standalone mkdir/create-direc
 write_file creates parent directories. Prefer fewer tasks that each write and verify.
 Do not mkdir a path write_file already created.
 Do not run tests (python test_*.py / pytest) before those test files exist. Write files first, then run tests.
+For stdlib-only coding, do not call xxd/hexdump (or other optional host checksum utilities) to inspect files. Use write_file, read_file, or python hashlib.
 For "exact N-line" files include file_line_count.
 
 GOAL: {goal}
