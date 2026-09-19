@@ -24,18 +24,69 @@ v0.4.5** (RW-080; Gen3 theme 3 slice D). Live NIM retest of v0.4.5 is **RW-081**
 (FAIL; mkdir File-exists **live Y**; premature-test ENVIRONMENT **not live-hit**;
 pip/echo + root pollution residual). Pip thrash + root pollution Class A is
 **NOT CONFIRMED** (RW-082; stay **0.4.5**). Gen3 theme 3 slice E1 (task-boundary
-yield / leftover-budget dispatch) is **implemented as v0.4.6** (RW-083). E2/E3
-remain candidates. Do not rewrite RW-058–082. Scripted theme-2 RW-066 (F-27) is preserved.
+yield / leftover-budget dispatch) is **implemented as v0.4.6** (RW-083). Live
+NIM retest of v0.4.6 is **RW-084 BLOCKED Class C** (HTTP 403 on
+`chat/completions`; E1 **not live-tested**). Live NIM loop **paused**. E2/E3
+remain candidates. Do not rewrite RW-058–083. Scripted theme-2 RW-066 (F-27) is preserved.
 
 Every `VERIFIED` / `completed` cell is from the control-plane verifier **and** a disk
 check (file exists / contents / hash). A model `DONE:` line is never enough.
 
 Status vocabulary: **PASS** | **FAIL** | **BLOCKED** | **NOT TESTED**.
 
-Live NIM retest of v0.4.5 (RW-081) is at the top, then scripted RW-083
-(E1 leftover-budget dispatch), then scripted RW-082
-(pip/root-pollution investigation), then RW-079 / RW-080. RW-058–082 are
+Live NIM retest of v0.4.6 (RW-084) is at the top (**BLOCKED Class C**; live
+NIM **paused**), then scripted RW-083 (E1 leftover-budget dispatch), then
+live NIM retest of v0.4.5 (RW-081), then scripted RW-082
+(pip/root-pollution investigation), then RW-079 / RW-080. RW-058–083 are
 **not rewritten**.
+
+# Live NIM retest of v0.4.6 (RW-084) — BLOCKED Class C
+
+Lane: operator production `rad objective run` on **v0.4.6** (tag `v0.4.6`,
+`8f09be5839e25c236349121a4ec77606d0d5ed2d`). Needle `existing` / off.
+`max_plan_tasks` **16**. Default `Budget.tool_calls` **60** (this run used
+`--max-tasks 8 --max-tools 12`). RW-058–083 are **not rewritten**. **Not** an
+end-to-end PASS. Package **0.4.6** on the live run **and** this branch (no
+bump). E1 remains shipped/scripted (RW-083). Live E1 gate **deferred**. Live
+NIM loop **paused / Class C blocked**.
+
+Authoritative live facts: operator report for `obj_a8118606` /
+`/tmp/rad_prod_rw084_3d9cc3ac`. This agent did not re-run NIM.
+
+| id | Date | Category | Objective | #tasks | #actions | Tools | Result | Verification | Recovery | Failure class | Notes |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| RW-084 | 2026-09-19 IST 08:34:20–08:34:22 | coding (live NIM) — v0.4.6 text_analyzer retest vs RW-081 | production ASCII-tree `text_analyzer/` layout (analyzer.py, exact 3-line input.txt, summary.json, test_analyzer.py, README.md); stdlib; real tests; `--max-tasks 8 --max-tools 12`; Needle `existing` / off; NIM 11B intended | `PLAN_CREATED` **source=`fallback`** (LLM plan unavailable), 4 tasks carved from goal newlines; t_ad22c64b Create layout **NEEDS_USER** (`MODEL_FAILURE`; 3 attempts; HTTP 403); t_e74ab370 / t_5cb4bd78 / t_bf095942 **BLOCKED** (unmet prereq) | tools **0/12** (none); model calls **3.0/80** (all nvidia HTTP 403); retries **2.0/6**; wall ~1.5s / usage `seconds≈0.91`; process exit 2 | 0/12 unused | **BLOCKED Class C** (`needs_user`); **NOT DONE**; 0 tool calls | none — no task reached verify. objective_checks package-joined at create (`json_valid text_analyzer/summary.json`; `shell_ok python3 text_analyzer/test_analyzer.py`) — **never executed** | retry×2 (`MODEL_FAILURE`, another brain) then replan → no usable plan → NEEDS_USER. 0 ENVIRONMENT. 0 TaskYield. 0 leftover-budget dispatch | **C** (NVIDIA NIM inference unauthorized). E1 **not live-tested**. Class A/B **not live-hit** | Provider nvidia / `meta/llama-3.2-11b-vision-instruct`. Home `/tmp/rad_prod_rw084_3d9cc3ac`; `obj_a8118606`. `GET /v1/models` **200**; all `chat/completions` **403 Authorization failed**. Workspace empty; `text_analyzer/` absent. False DONE **0**. Caps unchanged. Needle OFF. Stay **0.4.6**. Live NIM **paused**. |
+
+### RW-084 vs RW-081 (E1 live comparison **N**)
+
+| | RW-081 (v0.4.5) | RW-084 (v0.4.6) |
+|---|---|---|
+| home | `/tmp/rad_prod_rw081_5a76b128` | `/tmp/rad_prod_rw084_3d9cc3ac` |
+| objective id | `obj_b6d32fcc` | `obj_a8118606` |
+| package | 0.4.5 | **0.4.6** |
+| `--max-tasks` / `--max-tools` | 8 / 12 | 8 / 12 |
+| Needle | `existing` / off | `existing` / off |
+| Status | `needs_user` @ 12/12 tools | `needs_user` @ **0/12** tools (`MODEL_FAILURE`) |
+| NIM | worked (9 model calls) | **403** inference (`/v1/models` **200**) |
+| E1 leftover-budget yield | N/A (pre-E1) | **not live-tested** |
+| `input.txt` sha256 | `bf69eb73…` OK | **absent** |
+| objective_checks | package-joined Y (executed path) | package-joined Y (create only; never executed) |
+| Residual class | **B** | **C** |
+| Fake DONE | 0 | 0 |
+
+| metric | value |
+|---|---|
+| Package (live run) | **0.4.6** (tag `v0.4.6` / `8f09be5839e25c236349121a4ec77606d0d5ed2d`) |
+| E1 live | **N** — Class C blocked the gate. Scripted RW-083 remains unit evidence |
+| vs RW-081 E1 | **cannot compare** — RW-081 had working inference |
+| Residual | **Class C** — refresh NIM inference credentials; do not invent a product fix |
+| Prior Class A (mkdir / premature-test / pip / invented DONE) | **not hit** |
+| Operator decision (2026-09-19) | **pause** live NIM loop until inference-entitled credentials work on integrate.api; do not keep retrying keys that list models but fail chat |
+| RW-058–083 | preserved (not rewritten) |
+| Default max-tools / max-tasks | **unchanged** (this run used `--max-tasks 8 --max-tools 12` only) |
+| Needle | **OFF** (`existing`) |
+| False completion | **0** |
+| Recommendation | Record **BLOCKED Class C**. Stay **0.4.6**. Live NIM **paused**. Do not claim E1 live. |
 
 # Scripted E1 leftover-budget dispatch (RW-083)
 

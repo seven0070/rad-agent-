@@ -6,6 +6,76 @@ Default `Budget.tool_calls` remains **60**.
 
 ---
 
+# Cycle 19 — Record live NIM RW-084 Class C; pause live NIM; stay 0.4.6 (2026-09-19)
+
+**Date:** 2026-09-19
+**Baseline:** `origin/main` `8f09be5839e25c236349121a4ec77606d0d5ed2d` (merge PR #32; package **0.4.6**, tag **v0.4.6**)
+**Package at start:** `0.4.6`
+**This branch:** `cursor/rw084-class-c-docs-9f8b` — package **0.4.6** (no bump)
+**Architecture:** control plane preserved. Needle stays off. Caps unchanged.
+**Kind:** docs only. No `rad/` product change. RW-058–083 are **not rewritten**.
+
+## Why this cycle
+
+Intended live gate for E1 on tag **v0.4.6**. Operator ran RW-081-shape ASCII-tree
+`text_analyzer/` at `--max-tasks 8 --max-tools 12`, Needle **OFF**, NIM 11B
+intended. Run **BLOCKED Class C** before any tool: HTTP **403 Authorization
+failed** on all `chat/completions`; `/v1/models` **200**; tools **0/12**. E1
+leftover-budget yield **not live-tested**. Cannot compare E1 vs RW-081 (RW-081
+had working inference). False DONE **0**.
+
+## Decision
+
+| item | value |
+|---|---|
+| Package | **0.4.6** (no bump) |
+| Class | **C** — provider/key; not a RAD product defect this run |
+| E1 | remains **shipped / scripted** (RW-083). Live gate **deferred** |
+| Live NIM loop | **PAUSED** until inference-entitled credentials work on integrate.api. Do not keep retrying keys that list models but fail chat |
+| Next live | RW-085 (or next) only after a key that can `chat/completions` |
+| Invariants | Needle OFF; caps 16/60; false DONE 0; stay 0.4.6 |
+
+## Live facts (operator report only)
+
+| item | value |
+|---|---|
+| Home / obj | `/tmp/rad_prod_rw084_3d9cc3ac` / `obj_a8118606` |
+| Status | `needs_user` — MODEL_FAILURE → retry×2 → replan → NEEDS_USER |
+| Tools / models / retries | **0/12** / **3.0/80** (all 403) / **2.0/6** |
+| PLAN | `source=fallback` (LLM plan unavailable); 4 newline-carved tasks |
+| Disk | workspace empty; `text_analyzer/` absent |
+| Wall | 2026-09-19 IST 08:34:20–08:34:22 (~1.5s; usage `seconds≈0.91`); exit 2 |
+
+## Quality gates (this branch)
+
+Isolated homes `/tmp/rad-rw084-gate` (doctor, acceptance) and `/tmp/rad-rw084-rw` (realworld).
+
+| gate | result |
+|------|--------|
+| `rad version` | **PASS** v0.4.6 |
+| `python3 -m pytest -q` | **PASS** 530 passed in 10.76s |
+| `rad doctor --offline` | **PASS** 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR, verdict READY, exit 0 |
+| `rad acceptance` | **PASS** 50/50 — `/tmp/rad-rw084-gate/acceptance/20260919-031510_gate.json` |
+| `rad realworld` | **PASS** 10/11 + 1 BLOCKED — `/tmp/rad-rw084-rw/realworld/20260919-031511_realworld.json` |
+| Needle default | **PASS** (`existing`) — unchanged |
+| Caps | **PASS** `max_plan_tasks` 16; `Budget.tool_calls` 60 — unchanged |
+| Package | **0.4.6** (no bump) |
+| Live NIM this patch | **BLOCKED Class C** (RW-084 recorded; loop **paused**) |
+
+## Remaining limitations
+
+1. Live 11B text_analyzer@12 E1 confirmation is **deferred** (Class C).
+2. Last working-inference live row remains RW-081 Class B FAIL @ 12/12.
+3. Scripted RW-083 remains the E1 unit evidence.
+
+## Roadmap pointer
+
+Operating spine: [ROADMAP.md](ROADMAP.md). **Generation 3 in progress.** Theme 3
+slice E1 **IMPLEMENTED** as **v0.4.6** (scripted). Live NIM **paused / Class C
+blocked**. Stay **0.4.6**. Gen4–5 are not started.
+
+---
+
 # Cycle 18 — v0.4.6 Gen3 theme 3 slice E1 (task-boundary yield) (2026-09-18)
 
 **Date:** 2026-09-18

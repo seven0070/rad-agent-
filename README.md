@@ -385,7 +385,7 @@ and how to add a tool, a scenario or a migration.
 
 ## Roadmap
 
-Operating spine (Gen1–Gen5, the build → test → validate → release → use → discover gaps loop): [docs/ROADMAP.md](docs/ROADMAP.md). Gen1 complete on 0.2.3; Gen2 complete on 0.3.0–0.3.2; Gen3 in progress (path-aligned checks **v0.4.0**; multi-file contracts **v0.4.1**; ASCII-tree package_dir **v0.4.2**; first-task thrash **v0.4.3**; mkdir already-exists action noise **v0.4.4**; premature-test ENVIRONMENT **v0.4.5**; task-boundary yield / leftover-budget dispatch **v0.4.6**; live RW-081 **FAIL**, pip/root-pollution Class A **NOT CONFIRMED** — no live PASS claim). The list below is a product-idea backlog, not a generation commitment.
+Operating spine (Gen1–Gen5, the build → test → validate → release → use → discover gaps loop): [docs/ROADMAP.md](docs/ROADMAP.md). Gen1 complete on 0.2.3; Gen2 complete on 0.3.0–0.3.2; Gen3 in progress (path-aligned checks **v0.4.0**; multi-file contracts **v0.4.1**; ASCII-tree package_dir **v0.4.2**; first-task thrash **v0.4.3**; mkdir already-exists action noise **v0.4.4**; premature-test ENVIRONMENT **v0.4.5**; task-boundary yield / leftover-budget dispatch **v0.4.6**; live RW-084 **BLOCKED Class C**, live NIM **paused**; E1 scripted RW-083; last working-inference live row RW-081 **FAIL** — no live PASS claim; stay **0.4.6**). The list below is a product-idea backlog, not a generation commitment.
 
 LoRA fine-tune of Rad's personality into Edge0 weights · expert pruning/distillation for lighter
 35b · web/phone face · remote-MCP tool execution hardening · multi-user sessions ·
