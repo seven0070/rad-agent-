@@ -211,6 +211,8 @@ class Policy:
         self.audit_path = home.root / "audit.jsonl"
         self._data = self._load()
         self._mtime = self._stat()
+        self._auth = None
+        self._auth_mtime = None
 
     def _stat(self) -> float:
         try:
@@ -224,6 +226,24 @@ class Policy:
         if m != self._mtime:
             self._data = self._load()
             self._mtime = m
+
+    def _auth_stat(self) -> float:
+        try:
+            return (self.home.root / "authority.json").stat().st_mtime_ns
+        except OSError:
+            return 0.0
+
+    def _authority(self):
+        """Cached Authority; reload when authority.json changes (same pattern as policy.json).
+
+        Import is inside the method because rad.authority imports policy constants.
+        """
+        from rad.authority import Authority
+        m = self._auth_stat()
+        if self._auth is None or m != self._auth_mtime:
+            self._auth = Authority(self.home)
+            self._auth_mtime = m
+        return self._auth
 
     # ---- persistence
     def _load(self) -> Dict[str, Any]:
@@ -286,9 +306,9 @@ class Policy:
                agent_caps: Optional[List[str]] = None, path: Optional[Path] = None,
                tool: str = "") -> Decision:
         self._refresh()
-        from rad.authority import Authority, normalize_cap
+        from rad.authority import normalize_cap
         capability = normalize_cap(capability)
-        auth = Authority(self.home)
+        auth = self._authority()
         auth_auto = auth.confirmation_is_automatic()
         # 1. hard layer — nothing below can override
         if capability == CAP_SHELL and (why := hard_check_shell(resource)):

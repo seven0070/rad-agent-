@@ -66,6 +66,15 @@ def test_standard_hard_and_deny_rules_unchanged(home, ws):
     assert "BLOCKED by safety policy" in run_tool("run_shell", {"command": "sudo id"}, ctx(home, auto=True))
 
 
+def test_policy_reloads_authority_when_file_changes(home, ws):
+    """ToolCtx keeps one Policy; a profile change must take effect on the next decide()."""
+    pol = Policy(home)
+    assert pol.decide(CAP_WRITE, "x.txt", auto=True, path=ws / "x.txt").effect == ALLOW
+    Authority(home).set_profile(SAFE)
+    d = pol.decide(CAP_WRITE, "x.txt", auto=True, path=ws / "x.txt")
+    assert d.effect == UNAUTHORIZED and d.by == "authority"
+
+
 # ---------------------------------------------------------------- 4. SAFE denies outside its profile
 
 def test_safe_denies_write_shell_packages_even_with_auto(home, ws):
