@@ -2155,10 +2155,10 @@ raised. RW-058–088 facts are **not rewritten**.
 
 | gate | result |
 |---|---|
-| `python3 -m pytest -q` | **pending this cycle** |
-| `rad doctor --offline` | **pending this cycle** |
-| `rad acceptance` | **pending this cycle** |
-| `rad realworld` | **pending this cycle** (`live_nim` expected BLOCKED) |
+| `python3 -m pytest -q` | **583 passed** in 11.33s |
+| `rad doctor --offline` | READY — 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR (`RAD_HOME=/tmp/rad-g41-gate`) |
+| `rad acceptance` | **50/50 PASSED** (`/tmp/rad-g41-gate/acceptance/20260919-055207_gate.json`) |
+| `rad realworld` | **10 passed / 1 BLOCKED / 0 failed** (`live_nim` BLOCKED; `/tmp/rad-g41-rw/realworld/20260919-055207_realworld.json`) |
 | Package | **0.5.0** |
 | Live this patch | **not re-run** — not a live PASS claim for RW-085 / RW-086 |
 

@@ -40,11 +40,11 @@ Isolated homes `/tmp/rad-g41-gate` (doctor, acceptance) and `/tmp/rad-g41-rw` (r
 
 | gate | result |
 |------|--------|
-| `rad version` | **pending** v0.5.0 |
-| `python3 -m pytest -q` | **pending** |
-| `rad doctor --offline` | **pending** |
-| `rad acceptance` | **pending** |
-| `rad realworld` | **pending** (`live_nim` expected BLOCKED) |
+| `rad version` | **PASS** v0.5.0 |
+| `python3 -m pytest -q` | **PASS** 583 passed in 11.33s |
+| `rad doctor --offline` | **PASS** 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR, verdict READY, exit 0 |
+| `rad acceptance` | **PASS** 50/50 — `/tmp/rad-g41-gate/acceptance/20260919-055207_gate.json` |
+| `rad realworld` | **PASS** 10/11 + 1 BLOCKED — `/tmp/rad-g41-rw/realworld/20260919-055207_realworld.json` |
 | Needle default | **PASS** (`existing`) |
 | Caps | **PASS** `max_plan_tasks` 16; `Budget.tool_calls` 60 |
 | Package | **0.5.0** |
