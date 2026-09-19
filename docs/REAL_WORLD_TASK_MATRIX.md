@@ -38,8 +38,9 @@ remains **paused** (Class C). Independent later package files is
 **implemented as v0.4.9** (scripted RW-088). Gen3 is
 **complete (scripted)**; live E1–E3 confirmation is **deferred** until a
 provider recovers. Gen4 **G4-1** is **implemented as v0.5.0** (scripted
-RW-089). Do not rewrite RW-058–088. Scripted theme-2 RW-066 (F-27) is
-preserved.
+RW-089). Recommended next **G4-2** (live-gate resume / provider health)
+is **scoped, not accepted** (Cycle 26 / ROADMAP). Do not rewrite
+RW-058–089. Scripted theme-2 RW-066 (F-27) is preserved.
 
 Every `VERIFIED` / `completed` cell is from the control-plane verifier **and** a disk
 check (file exists / contents / hash). A model `DONE:` line is never enough.
