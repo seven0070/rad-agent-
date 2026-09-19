@@ -1,6 +1,6 @@
 # RAD Desktop 0.1.0-alpha
 
-Tauri 2 + React + TypeScript + Vite **surface** over the existing RAD Python HTTP API.
+Tauri 2 + React + TypeScript + Vite desktop app with a **self-managed** RAD Python backend.
 
 Desktop does **not** move the control plane into TypeScript. The only way to act is still:
 
@@ -9,10 +9,6 @@ Objective → Planner → Task Graph → Executor → `Policy.decide` → Tools
 ## Run
 
 ```bash
-# terminal 1 — optional; the app can spawn this itself
-rad serve
-
-# terminal 2
 cd desktop
 npm install
 npm run tauri dev
@@ -22,10 +18,23 @@ Browser-only (no Tauri): `VITE_RAD_TOKEN=$(cat ~/.rad/api.token) npm run dev` th
 
 `rad desktop` prints this path and launches a built binary if one exists.
 
+## Standalone behavior
+
+- The Tauri app can start RAD itself from bundled `rad/` sources.
+- It no longer requires a separately installed `rad` Python package for the desktop flow.
+- It still requires a local Python 3.9+ runtime unless you additionally bundle Python at packaging time.
+
+## Installers
+
+- Run `npm run tauri:build` inside `/home/runner/work/rad-agent-/rad-agent-/desktop` to build installers for the current OS.
+- Bundles are emitted under `desktop/src-tauri/target/release/bundle/`.
+- Cross-platform installers are produced in GitHub Actions by `.github/workflows/desktop-installers.yml`.
+- The workflow builds Linux, macOS, and Windows bundles on native runners and uploads each OS bundle as an artifact.
+
 ## Security boundary
 
 - Frontend talks only to `/v1/*` (chat, objectives, authority, settings, tasks, events).
-- Tauri commands are a fixed `python3 -m rad serve` spawn plus token/home reads.
+- Tauri commands use a fixed `python3 -m rad serve` spawn against bundled RAD sources plus token/home reads.
 - There is **no** arbitrary-shell command and no `tauri-plugin-shell`.
 - UNRESTRICTED requires an explicit checkbox; it does not bypass Policy.decide.
 
