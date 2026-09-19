@@ -75,15 +75,15 @@ Operator decision (2026-09-19): **pause** live OpenRouter free runs until
 
 ## Quality gates (this branch)
 
-Isolated homes pending this commit (`/tmp/rad-rw086-gate`, `/tmp/rad-rw086-rw`).
+Isolated homes `/tmp/rad-rw086-gate` (doctor, acceptance) and `/tmp/rad-rw086-rw` (realworld).
 
 | gate | result |
 |------|--------|
-| `rad version` | pending this commit |
-| `python3 -m pytest -q` | pending this commit |
-| `rad doctor --offline` | pending this commit |
-| `rad acceptance` | pending this commit |
-| `rad realworld` | pending this commit |
+| `rad version` | **PASS** v0.4.7 |
+| `python3 -m pytest -q` | **PASS** 547 passed in 10.97s |
+| `rad doctor --offline` | **PASS** 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR, verdict READY, exit 0 |
+| `rad acceptance` | **PASS** 50/50 — `/tmp/rad-rw086-gate/acceptance/20260919-045809_gate.json` |
+| `rad realworld` | **PASS** 10/11 + 1 BLOCKED — `/tmp/rad-rw086-rw/realworld/20260919-045810_realworld.json` |
 | Needle default | **PASS** (`existing`) — unchanged |
 | Caps | **PASS** `max_plan_tasks` 16; `Budget.tool_calls` 60 — unchanged |
 | Package | **0.4.7** (no bump) |
