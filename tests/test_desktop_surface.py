@@ -21,11 +21,12 @@ def test_frontend_has_no_arbitrary_shell():
         if p.suffix in {".ts", ".tsx", ".js"}:
             src += p.read_text(encoding="utf-8") + "\n"
     rust = (DESK / "src-tauri" / "src" / "lib.rs").read_text(encoding="utf-8")
+    compact_rust = "".join(rust.split())
     assert "run_shell" not in src
     assert "shell.execute" not in src or "capabilities" in src  # conceptual name in UI is ok
     assert "invoke(\"shell" not in src
     assert "tauri-plugin-shell" not in rust
-    assert 'args(["-m", "rad", "serve"' in rust
+    assert 'args(["-m","rad","serve",' in compact_rust
     # no user-controlled command interpolation
     assert ".arg(cmd)" not in rust
     assert "std::process::Command::new(user" not in rust
