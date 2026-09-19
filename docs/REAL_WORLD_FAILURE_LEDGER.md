@@ -2222,10 +2222,10 @@ are **not rewritten**. No Class A invented for 403/429.
 
 | gate | result |
 |---|---|
-| `python3 -m pytest -q` | *(recorded after gates)* |
-| `rad doctor --offline` | *(recorded after gates)* |
-| `rad acceptance` | *(recorded after gates)* |
-| `rad realworld` | *(recorded after gates)* |
+| `python3 -m pytest -q` | **596 passed** in 11.22s |
+| `rad doctor --offline` | READY — 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR (`RAD_HOME=/tmp/rad-g42-gate`) |
+| `rad acceptance` | **50/50 PASSED** (`/tmp/rad-g42-gate/acceptance/20260919-061250_gate.json`) |
+| `rad realworld` | **10 passed / 1 BLOCKED / 0 failed** (`live_nim` BLOCKED; `/tmp/rad-g42-rw/realworld/20260919-061257_realworld.json`) |
 | Package | **0.5.1** |
 | Live this patch | **not re-run** — not a live PASS claim for RW-085 / RW-086 |
 

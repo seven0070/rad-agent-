@@ -46,10 +46,10 @@ Isolated homes `/tmp/rad-g42-gate` (doctor, acceptance) and `/tmp/rad-g42-rw` (r
 | gate | result |
 |------|--------|
 | `rad version` | **PASS** v0.5.1 |
-| `python3 -m pytest -q` | *(recorded after gates)* |
-| `rad doctor --offline` | *(recorded after gates)* |
-| `rad acceptance` | *(recorded after gates)* |
-| `rad realworld` | *(recorded after gates)* |
+| `python3 -m pytest -q` | **PASS** 596 passed in 11.22s |
+| `rad doctor --offline` | **PASS** 20 READY · 0 WARNING · 3 OPTIONAL · 0 ERROR, verdict READY, exit 0 |
+| `rad acceptance` | **PASS** 50/50 — `/tmp/rad-g42-gate/acceptance/20260919-061250_gate.json` |
+| `rad realworld` | **PASS** 10/11 + 1 BLOCKED — `/tmp/rad-g42-rw/realworld/20260919-061257_realworld.json` |
 | Needle default | **PASS** (`existing`) — unchanged |
 | Caps | **PASS** `max_plan_tasks` 16; `Budget.tool_calls` 60 — unchanged |
 | Package | **0.5.1** |
