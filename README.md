@@ -26,7 +26,7 @@ runs commands with your confirmation, and **teaches itself new skills from a sin
 | 🧩 **Tools** | Any MCP server + custom skills, even ones Rad writes itself | hands + `rad connect` |
 | 🧬 **Memory** | Portable markdown/JSON — local disk, Google Drive, … | disk + Drive |
 | 🗣️ **Voice** | Any TTS/STT engine | Piper + Whisper (free, offline) |
-| 👤 **Face** | CLI now; **RAD Desktop 0.1** (Tauri) as a surface over `rad serve` | terminal + desktop/ |
+| 👤 **Face** | CLI now; **RAD Desktop 1.0.1** (Tauri) as a surface over `rad serve` | terminal + desktop/ |
 
 Nothing is a closed list. `rad provider add` accepts **any** OpenAI-compatible endpoint and it
 behaves like a first-class provider.

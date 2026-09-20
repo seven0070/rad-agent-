@@ -99,7 +99,7 @@ Global: `--home <dir>` (or `RAD_HOME`), `--quiet`, `--json` where noted.
 | `rad config` | show/get/set/unset RAD configuration |
 | `rad workspace` | show/set the hands workspace |
 | `rad serve` | local JSON API over the control plane (loopback, bearer token) |
-| `rad desktop` | RAD Desktop 0.1 — launch a built Tauri binary or print the surface path |
+| `rad desktop` | RAD Desktop 1.0.1 — launch a built Tauri binary or print the surface path |
 
 ## Command groups
 

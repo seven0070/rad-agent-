@@ -19,10 +19,13 @@ Endpoints (all under /v1)
     GET  /objectives?active=1          → list
     POST /objectives {goal, criteria?, constraints?, budget?, run?} → objective (202 if started)
     GET  /objectives/{id}              → objective + tasks
-    POST /objectives/{id}/resume|pause|cancel
+    POST /objectives/{id}/resume|pause|cancel|run
     GET  /objectives/{id}/events?kind=&since_seq=
-    GET  /objectives/{id}/trace        → tasks with verification + attempts
+    GET  /objectives/{id}/trace        → tasks with verification + observations + artifacts
+    GET  /objectives/{id}/artifacts    → observer registry
+    GET  /objectives/{id}/artifacts/{id} → workspace-jailed redacted body
     GET  /objectives/{id}/why          → provenance report
+    GET  /usage                        → stored usage totals (no invented prices)
     GET  /memory/recall?q=&k=          → memories
     POST /memory {text, layer?}        → remember (USER_PROVIDED)
     GET  /user                         → user model
@@ -127,14 +130,25 @@ class Api:
             if len(p) == 2 and m == "GET":
                 d = obj.to_dict(); d["tasks"] = ctl.store.load_tasks(obj.id)
                 return 200, d
-            if len(p) == 3 and m == "POST" and p[2] in ("resume", "pause", "cancel"):
+            if len(p) == 3 and m == "POST" and p[2] in ("resume", "pause", "cancel", "run"):
                 if p[2] == "pause":
                     o = ctl.pause(obj.id)
                 elif p[2] == "cancel":
                     o = ctl.cancel(obj.id)
+                elif p[2] == "run":
+                    # Desktop Run is operator confirmation — ASK→ALLOW for this objective only.
+                    obj.auto = True
+                    try:
+                        ctl.store.save(obj)
+                    except Exception:
+                        pass
+                    oid = obj.id
+                    self._background(oid, lambda: ctl.run(ctl.store.resolve(oid) or obj))
+                    return 202, {**self._obj_summary(obj), "started": True,
+                                 "note": "started after operator confirmation (Desktop Run)"}
                 else:
                     if not self._may_run():
-                        raise ApiError(409, "config auto=false: HTTP cannot answer confirmation prompts; run `rad objective resume` in a terminal or set auto")
+                        raise ApiError(409, "config auto=false: HTTP cannot answer confirmation prompts; use Desktop Run, `rad objective resume`, or AUTONOMOUS")
                     self._background(obj.id, lambda: ctl.resume(obj.id))
                     return 202, {"id": obj.id, "status": "resuming"}
                 return 200, self._obj_summary(o or obj)
@@ -145,8 +159,15 @@ class Api:
                        if e.seq > since]
                 return 200, {"events": evs[-int(q.get("n", 500) or 500):]}
             if len(p) == 3 and m == "GET" and p[2] == "trace":
+                observations, artifacts = self._inspect(ctl, obj.id)
                 return 200, {"objective": self._obj_summary(obj), "tasks": ctl.store.load_tasks(obj.id),
-                             "verification": obj.verification}
+                             "verification": obj.verification, "observations": observations,
+                             "artifacts": artifacts}
+            if len(p) == 3 and m == "GET" and p[2] == "artifacts":
+                _obs, artifacts = self._inspect(ctl, obj.id)
+                return 200, {"artifacts": artifacts}
+            if len(p) == 4 and m == "GET" and p[2] == "artifacts":
+                return self._artifact_body(ctl, obj.id, p[3])
             if len(p) == 3 and m == "GET" and p[2] == "why":
                 from rad.control.provenance import Provenance
                 pv = Provenance(ctl.store.dir(obj.id))
@@ -289,6 +310,8 @@ class Api:
             # UNRESTRICTED confirmation=never is applied inside Policy.decide, not here.
             reply = j.chat(text, auto=False)
             return 200, {"reply": reply, "via": "jerry"}
+        if p == ["usage"] and m == "GET":
+            return 200, self._usage()
         raise ApiError(404, "unknown route")
 
     # ---- helpers --------------------------------------------------------------------------
@@ -471,6 +494,77 @@ class Api:
         return {"id": e.id, "layer": e.layer, "text": e.text, "origin": e.origin, "confidence": e.confidence,
                 "verification": e.verification, "strength": e.strength}
 
+    def _usage(self) -> Dict[str, Any]:
+        store = self._ctl().store
+        per = []
+        totals = {"tool_calls": 0, "model_calls": 0, "retries": 0, "tokens": 0, "money_usd": 0.0,
+                  "paid_calls": 0, "free_calls": 0, "seconds": 0.0}
+        for o in store.list(active_only=False):
+            u = o.usage.to_dict() if hasattr(o.usage, "to_dict") else (o.usage or {})
+            b = o.budget.to_dict() if hasattr(o.budget, "to_dict") else (o.budget or {})
+            per.append({"id": o.id, "goal": o.goal, "status": o.status, "usage": u, "budget": b})
+            for k in totals:
+                try:
+                    totals[k] += float(u.get(k, 0) or 0)
+                except Exception:
+                    pass
+        return {
+            "totals": totals,
+            "per_objective": per,
+            "free_lock": bool(self.home.cfg.get("free_lock")),
+            "note": "No provider list price is invented. money_usd is stored usage only.",
+            "remaining_quota_note": "remaining free-tier quota is not in the API until HTTP 429",
+        }
+
+    def _inspect(self, ctl, oid: str) -> Tuple[list, list]:
+        from rad.control.observer import Observer
+        from rad.policy import redact
+        ob = Observer(ctl.store.dir(oid))
+        observations = []
+        for o in ob.observations():
+            d = o.to_dict()
+            d["output"] = redact(str(d.get("output") or ""))[:4000]
+            d["args"] = {k: redact(str(v))[:240] if isinstance(v, str) else v
+                         for k, v in (d.get("args") or {}).items()}
+            observations.append(d)
+        artifacts = list(ob.artifacts().values())
+        return observations, artifacts
+
+    def _artifact_body(self, ctl, oid: str, art_id: str) -> Tuple[int, Any]:
+        from rad.control.observer import Observer
+        from rad.policy import redact
+        ob = Observer(ctl.store.dir(oid))
+        reg = ob.artifacts()
+        art = reg.get(art_id)
+        if not art:
+            hits = [a for a in reg.values()
+                    if a.get("location", "").endswith(art_id) or Path(a.get("location", "")).name == art_id
+                    or a.get("id") == art_id]
+            art = hits[-1] if hits else None
+        if not art:
+            raise ApiError(404, "artifact not registered")
+        loc = Path(str(art.get("location") or ""))
+        workspace = Path(self.home.workspace()).resolve()
+        try:
+            resolved = loc.resolve()
+        except Exception:
+            raise ApiError(400, "artifact path unreadable")
+        if workspace not in resolved.parents and resolved != workspace:
+            raise ApiError(403, "artifact outside workspace")
+        if not resolved.is_file():
+            raise ApiError(404, "artifact file missing")
+        data = resolved.read_bytes()
+        truncated = len(data) > 64 * 1024
+        if truncated:
+            data = data[:64 * 1024]
+        if b"\x00" in data[:1024]:
+            return 200, {"id": art.get("id"), "path": art.get("location"), "binary": True, "text": "",
+                         "sha256": art.get("sha256"), "truncated": False}
+        text = redact(data.decode("utf-8", errors="replace"))
+        return 200, {"id": art.get("id"), "path": art.get("location"), "text": text, "binary": False,
+                     "sha256": art.get("sha256"), "truncated": truncated, "version": art.get("version")}
+
+
 
 # ---------------------------------------------------------------- HTTP layer
 
@@ -494,8 +588,17 @@ def make_server(home: RadHome, host: str = "127.0.0.1", port: int = 7331, api: O
             self.send_header("Content-Length", str(len(data)))
             self.send_header("Cache-Control", "no-store")
             self.send_header("X-Content-Type-Options", "nosniff")
+            self._cors()
             self.end_headers()
             self.wfile.write(data)
+
+        def _cors(self) -> None:
+            origin = self.headers.get("Origin", "")
+            if origin.startswith("http://127.0.0.1:") or origin.startswith("http://localhost:"):
+                self.send_header("Access-Control-Allow-Origin", origin)
+                self.send_header("Access-Control-Allow-Headers", "Authorization, Content-Type")
+                self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS")
+                self.send_header("Vary", "Origin")
 
         def _authed(self) -> bool:
             h = self.headers.get("Authorization", "")
@@ -505,6 +608,13 @@ def make_server(home: RadHome, host: str = "127.0.0.1", port: int = 7331, api: O
             t0 = time.time()
             status = 500
             try:
+                if method == "OPTIONS":
+                    self.send_response(204)
+                    self._cors()
+                    self.send_header("Content-Length", "0")
+                    self.end_headers()
+                    status = 204
+                    return
                 if not self._authed():
                     status = 401
                     self._send(401, {"error": "missing or invalid bearer token"})
@@ -512,7 +622,7 @@ def make_server(home: RadHome, host: str = "127.0.0.1", port: int = 7331, api: O
                 u = urlparse(self.path)
                 q = {k: v[-1] for k, v in parse_qs(u.query).items()}
                 body: Dict[str, Any] = {}
-                if method == "POST":
+                if method in ("POST", "PUT", "PATCH"):
                     n = int(self.headers.get("Content-Length", 0) or 0)
                     if n > MAX_BODY:
                         status = 413; self._send(413, {"error": "body too large"}); return
@@ -543,5 +653,11 @@ def make_server(home: RadHome, host: str = "127.0.0.1", port: int = 7331, api: O
 
         def do_POST(self):
             self._do("POST")
+
+        def do_PUT(self):
+            self._do("PUT")
+
+        def do_OPTIONS(self):
+            self._do("OPTIONS")
 
     return ThreadingHTTPServer((host, port), H)
