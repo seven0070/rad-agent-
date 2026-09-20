@@ -120,7 +120,7 @@ export default function ChatView({
       {/* Session Top Header */}
       <header className="session-header">
         <div className="session-header-left">
-          <div className="hermes-logo-mark" style={{ width: 24, height: 24, fontSize: 12 }}>
+          <div className="rad-logo-mark" style={{ width: 24, height: 24, fontSize: 12 }}>
             RAD
           </div>
           <span className="session-title">
@@ -190,8 +190,8 @@ export default function ChatView({
             onClick={onToggleInspector}
             title="Toggle Right Inspector Drawer"
             style={{
-              borderColor: isInspectorOpen ? "var(--hermes-indigo)" : undefined,
-              color: isInspectorOpen ? "var(--hermes-indigo-light)" : undefined,
+              borderColor: isInspectorOpen ? "var(--rad-indigo)" : undefined,
+              color: isInspectorOpen ? "var(--rad-indigo-light)" : undefined,
             }}
           >
             {isInspectorOpen ? "◨ Inspector [Open]" : "◨ Inspector"}
@@ -202,7 +202,7 @@ export default function ChatView({
       {/* Main Chat / Stream Message Feed */}
       <div className="chat-feed" ref={feedRef}>
         {!objective ? (
-          /* Empty / Welcome State matching Hermes */
+          /* Empty / Welcome State matching RAD Agent Desktop */
           <div
             style={{
               margin: "auto",
@@ -216,13 +216,13 @@ export default function ChatView({
             }}
           >
             <div
-              className="hermes-logo-mark"
+              className="rad-logo-mark"
               style={{
                 width: 52,
                 height: 52,
                 fontSize: 24,
                 borderRadius: 14,
-                boxShadow: "0 0 24px var(--hermes-indigo-glow)",
+                boxShadow: "0 0 24px var(--rad-indigo-glow)",
               }}
             >
               RAD
@@ -240,7 +240,7 @@ export default function ChatView({
                 RAD Autonomous Agent
               </h2>
               <p style={{ margin: 0, fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5 }}>
-                Hermes-class desktop execution surface with deterministic Python control plane,
+                RAD Agent desktop execution surface with deterministic Python control plane,
                 multi-level machine verification, and atomic checkpoint persistence.
               </p>
             </div>
@@ -288,7 +288,7 @@ export default function ChatView({
                     setInputPrompt(item.prompt);
                   }}
                 >
-                  <div style={{ fontWeight: 600, fontSize: 13, color: "var(--hermes-indigo-light)" }}>
+                  <div style={{ fontWeight: 600, fontSize: 13, color: "var(--rad-indigo-light)" }}>
                     ✦ {item.label}
                   </div>
                   <div style={{ fontSize: 12, color: "var(--text-dim)", marginTop: 2 }}>
@@ -306,7 +306,7 @@ export default function ChatView({
                 <div
                   style={{
                     fontSize: 11,
-                    color: "var(--hermes-indigo-light)",
+                    color: "var(--rad-indigo-light)",
                     fontWeight: 600,
                     marginBottom: 4,
                     display: "flex",
@@ -328,7 +328,7 @@ export default function ChatView({
               <details className="thinking-accordion" open>
                 <summary className="thinking-header">
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ color: "var(--hermes-amber)" }}>✦</span>
+                    <span style={{ color: "var(--rad-amber)" }}>✦</span>
                     <span>Agent Reasoning & Step Planning</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -345,7 +345,7 @@ export default function ChatView({
                 </summary>
                 <div className="thinking-content">
                   {live?.current_task ? (
-                    <div style={{ marginBottom: 8, color: "var(--hermes-indigo-light)" }}>
+                    <div style={{ marginBottom: 8, color: "var(--rad-indigo-light)" }}>
                       ▶ Current execution: <strong>{live.current_task.text}</strong> (status:{" "}
                       {live.current_task.status}, attempt {live.current_task.attempts || 1})
                     </div>
@@ -374,7 +374,7 @@ export default function ChatView({
                                   ? "var(--emerald-verif)"
                                   : t.status === "failed"
                                   ? "var(--rose-danger)"
-                                  : "var(--hermes-amber)",
+                                  : "var(--rad-amber)",
                             }}
                           >
                             {t.status === "completed" ? "✓" : t.status === "failed" ? "✕" : "○"}

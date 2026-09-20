@@ -191,10 +191,10 @@ export default function App() {
 
   return (
     <div className={`app ${isInspectorOpen ? "" : "inspector-collapsed"}`}>
-      {/* 1. Left Sidebar (Hermes Navigation & Recent Sessions) */}
+      {/* 1. Left Sidebar (RAD Agent Navigation & Recent Sessions) */}
       <aside className="sidebar">
         <div className="sidebar-header">
-          <div className="hermes-logo-mark">RAD</div>
+          <div className="rad-logo-mark">RAD</div>
           <div className="brand-text">
             <span className="brand-title">RAD Desktop</span>
             <span className="brand-subtitle">

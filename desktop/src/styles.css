@@ -1,10 +1,10 @@
 /* ==========================================================================
-   Hermes Agent Design System for RAD Desktop
-   Obsidian, Celestial Indigo, Hermes Amber & Emerald Verification
+   RAD Agent Desktop Design System
+   Obsidian, Celestial Indigo, RAD Amber & Emerald Verification
    ========================================================================== */
 
 :root {
-  /* Surface colors (Hermes Obsidian palette) */
+  /* Surface colors (Obsidian palette) */
   --bg-canvas: #090a0f;
   --bg-surface: #11141c;
   --bg-card: #181c26;
@@ -20,16 +20,39 @@
   --text-muted: #94a3b8;
   --text-dim: #64748b;
 
-  /* Brand Accents */
-  --hermes-indigo: #6366f1;
-  --hermes-indigo-light: #818cf8;
-  --hermes-indigo-glow: rgba(99, 102, 241, 0.22);
-  --hermes-amber: #f59e0b;
-  --hermes-amber-glow: rgba(245, 158, 11, 0.20);
+  /* Stroke & Color tokens from RAD Desktop Design System */
+  --shadow-rad: 0 16px 36px -8px rgba(0, 0, 0, 0.7), 0 4px 12px rgba(0, 0, 0, 0.5);
+  --stroke-rad: rgba(255, 255, 255, 0.08);
+  --ui-stroke-primary: rgba(255, 255, 255, 0.16);
+  --ui-stroke-secondary: rgba(255, 255, 255, 0.10);
+  --ui-stroke-tertiary: #1e2433;
+  --ui-stroke-quaternary: rgba(255, 255, 255, 0.04);
+  --ui-text-primary: #f8fafc;
+  --ui-text-secondary: #cbd5e1;
+  --ui-text-tertiary: #94a3b8;
+  --ui-bg-quaternary: rgba(255, 255, 255, 0.04);
+  --ui-widget-surface-background: #141822;
+  --chrome-action-hover: rgba(255, 255, 255, 0.06);
+  --theme-primary: #6366f1;
+  --ui-accent: #6366f1;
+
+  /* RAD Brand Accents */
+  --rad-indigo: #6366f1;
+  --rad-indigo-light: #818cf8;
+  --rad-indigo-glow: rgba(99, 102, 241, 0.22);
+  --rad-amber: #f59e0b;
+  --rad-amber-glow: rgba(245, 158, 11, 0.20);
   --emerald-verif: #10b981;
   --emerald-glow: rgba(16, 185, 129, 0.22);
   --rose-danger: #f43f5e;
   --sky-info: #0ea5e9;
+
+  /* Backward-compatible aliases */
+  --hermes-indigo: var(--rad-indigo);
+  --hermes-indigo-light: var(--rad-indigo-light);
+  --hermes-indigo-glow: var(--rad-indigo-glow);
+  --hermes-amber: var(--rad-amber);
+  --hermes-amber-glow: var(--rad-amber-glow);
 
   /* Authority Profiles */
   --prof-safe: #10b981;
@@ -96,18 +119,19 @@ button, input, textarea, select { font: inherit; color: inherit; }
   padding: 6px 8px;
 }
 
+.rad-logo-mark,
 .hermes-logo-mark {
   width: 28px;
   height: 28px;
   border-radius: var(--radius-sm);
-  background: linear-gradient(135deg, var(--hermes-indigo), #4338ca);
+  background: linear-gradient(135deg, var(--rad-indigo), #4338ca);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 800;
   font-size: 14px;
   color: #fff;
-  box-shadow: 0 0 12px var(--hermes-indigo-glow);
+  box-shadow: 0 0 12px var(--rad-indigo-glow);
 }
 
 .brand-text {
