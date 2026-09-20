@@ -1,8 +1,8 @@
 {
   "name": "rad-desktop",
   "private": true,
-  "version": "1.0.1",
-  "description": "RAD Desktop 1.0.1 — operator surface over the existing Python HTTP API.",
+  "version": "0.2.0-alpha",
+  "description": "RAD Desktop 0.1 — authority foundation. Surface over the existing Python HTTP API.",
   "type": "module",
   "scripts": {
     "dev": "vite",

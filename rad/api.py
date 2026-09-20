@@ -19,13 +19,19 @@ Endpoints (all under /v1)
     GET  /objectives?active=1          → list
     POST /objectives {goal, criteria?, constraints?, budget?, run?} → objective (202 if started)
     GET  /objectives/{id}              → objective + tasks
-    POST /objectives/{id}/resume|pause|cancel|run
+    POST /objectives/{id}/resume|pause|cancel|run   (run = plan + start a PENDING objective)
     GET  /objectives/{id}/events?kind=&since_seq=
-    GET  /objectives/{id}/trace        → tasks with verification + observations + artifacts
-    GET  /objectives/{id}/artifacts    → observer registry
-    GET  /objectives/{id}/artifacts/{id} → workspace-jailed redacted body
+    GET  /objectives/{id}/trace        → tasks with verification + attempts
     GET  /objectives/{id}/why          → provenance report
-    GET  /usage                        → stored usage totals (no invented prices)
+    GET  /objectives/{id}/artifacts    → artifact registry for the objective
+    GET  /objectives/{id}/artifact-content?ref= → redacted text preview of a REGISTERED
+                                                   artifact (workspace/home only; no arbitrary paths)
+    GET  /objectives/{id}/plan         → plan summary (version, source, tasks, checks)
+    GET  /objectives/{id}/recovery     → recovery decisions + failure classes
+    GET  /objectives/{id}/observations → recorded observations (redacted output)
+    GET  /objectives/{id}/live         → live execution view (current task, budget, events)
+    GET  /usage                        → cross-objective Usage rollup (persisted data only)
+    GET  /memory?layer=&n=             → list memories by layer
     GET  /memory/recall?q=&k=          → memories
     POST /memory {text, layer?}        → remember (USER_PROVIDED)
     GET  /user                         → user model
@@ -55,6 +61,14 @@ from rad import __version__
 from rad.home import RadHome
 
 MAX_BODY = 256 * 1024
+
+
+def _is_within(child: Path, parent: Path) -> bool:
+    try:
+        child.relative_to(parent)
+        return True
+    except (ValueError, TypeError):
+        return False
 
 
 class ApiError(Exception):
@@ -119,7 +133,13 @@ class Api:
         if p == ["objectives"] and m == "GET":
             store = self._ctl().store
             objs = store.list(active_only=q.get("active") == "1")
-            return 200, {"objectives": [self._obj_summary(o) for o in objs]}
+            rows = []
+            for o in objs:
+                try:
+                    rows.append(self._obj_summary(o, store.load_tasks(o.id)))
+                except Exception:
+                    rows.append(self._obj_summary(o))
+            return 200, {"objectives": rows}
         if p == ["objectives"] and m == "POST":
             return self._create_objective(b)
         if len(p) >= 2 and p[0] == "objectives":
@@ -135,20 +155,14 @@ class Api:
                     o = ctl.pause(obj.id)
                 elif p[2] == "cancel":
                     o = ctl.cancel(obj.id)
-                elif p[2] == "run":
-                    # Desktop Run is operator confirmation — ASK→ALLOW for this objective only.
-                    obj.auto = True
-                    try:
-                        ctl.store.save(obj)
-                    except Exception:
-                        pass
-                    oid = obj.id
-                    self._background(oid, lambda: ctl.run(ctl.store.resolve(oid) or obj))
-                    return 202, {**self._obj_summary(obj), "started": True,
-                                 "note": "started after operator confirmation (Desktop Run)"}
                 else:
                     if not self._may_run():
-                        raise ApiError(409, "config auto=false: HTTP cannot answer confirmation prompts; use Desktop Run, `rad objective resume`, or AUTONOMOUS")
+                        raise ApiError(409, "config auto=false: HTTP cannot answer confirmation prompts; run `rad objective run` in a terminal or set auto")
+                    if p[2] == "run":
+                        # Controller.run plans a PENDING objective if it has no plan yet;
+                        # resume assumes a plan exists. Same background-thread semantics.
+                        self._background(obj.id, lambda: ctl.run(obj))
+                        return 202, {"id": obj.id, "status": "starting"}
                     self._background(obj.id, lambda: ctl.resume(obj.id))
                     return 202, {"id": obj.id, "status": "resuming"}
                 return 200, self._obj_summary(o or obj)
@@ -159,15 +173,8 @@ class Api:
                        if e.seq > since]
                 return 200, {"events": evs[-int(q.get("n", 500) or 500):]}
             if len(p) == 3 and m == "GET" and p[2] == "trace":
-                observations, artifacts = self._inspect(ctl, obj.id)
                 return 200, {"objective": self._obj_summary(obj), "tasks": ctl.store.load_tasks(obj.id),
-                             "verification": obj.verification, "observations": observations,
-                             "artifacts": artifacts}
-            if len(p) == 3 and m == "GET" and p[2] == "artifacts":
-                _obs, artifacts = self._inspect(ctl, obj.id)
-                return 200, {"artifacts": artifacts}
-            if len(p) == 4 and m == "GET" and p[2] == "artifacts":
-                return self._artifact_body(ctl, obj.id, p[3])
+                             "verification": obj.verification}
             if len(p) == 3 and m == "GET" and p[2] == "why":
                 from rad.control.provenance import Provenance
                 pv = Provenance(ctl.store.dir(obj.id))
@@ -176,6 +183,100 @@ class Api:
                     raise ApiError(400, "q=<artifact path | claim text> required")
                 art = pv.artifact(claim)
                 return 200, {"artifact": art} if art else pv.why(claim)
+            if len(p) == 3 and m == "GET" and p[2] == "artifacts":
+                from rad.control.observer import Observer
+                reg = Observer(ctl.store.dir(obj.id)).artifacts()
+                rows = sorted(reg.values(), key=lambda a: (-a.get("version", 0), a.get("at", 0)))
+                return 200, {"objective_id": obj.id, "count": len(rows), "artifacts": rows}
+            if len(p) == 3 and m == "GET" and p[2] == "artifact-content":
+                return self._artifact_content(ctl, obj, q.get("ref", ""))
+            if len(p) == 3 and m == "GET" and p[2] == "plan":
+                from rad.control.events import EventLog
+                log = EventLog(ctl.store.events_path(obj.id))
+                plans = [e for e in log.read(kind="PLAN_CREATED")]
+                replans = [e for e in log.read(kind="REPLAN")]
+                tasks = ctl.store.load_tasks(obj.id)
+                return 200, {"objective_id": obj.id,
+                             "plan_version": max([int(e.data.get("plan_version", 0)) for e in plans + replans] + [obj.plan_version]),
+                             "source": plans[-1].data.get("source", "") if plans else "",
+                             "attempts": plans[-1].data.get("attempts", 0) if plans else 0,
+                             "estimated_tools": plans[-1].data.get("estimated_tools"),
+                             "compacted": plans[-1].data.get("compacted", False) if plans else False,
+                             "replans": [{"plan_version": e.data.get("plan_version"), "task": e.data.get("task_id"),
+                                          "new_tasks": e.data.get("new_tasks", []),
+                                          "superseded": e.data.get("superseded", []), "at": e.at} for e in replans],
+                             "tasks": [{"id": t.get("id"), "text": t.get("text"), "depends_on": t.get("depends_on"),
+                                        "checks": [c.get("description") or c.get("kind") for c in (t.get("checks") or [])],
+                                        "status": t.get("status"), "plan_version": t.get("plan_version")} for t in tasks]}
+            if len(p) == 3 and m == "GET" and p[2] == "recovery":
+                from rad.control.events import EventLog
+                log = EventLog(ctl.store.events_path(obj.id))
+                tasks = {t.get("id"): t for t in ctl.store.load_tasks(obj.id)}
+                decisions = []
+                for e in log.read(kind="RECOVERY_DECISION"):
+                    tid = e.task_id
+                    decisions.append({"at": e.at, "task_id": tid, "task": tasks.get(tid, {}).get("text", ""),
+                                      "strategy": e.data.get("strategy"), "failure_class": e.data.get("failure_class"),
+                                      "reason": str(e.data.get("reason", ""))[:300]})
+                failed = [{"id": t.get("id"), "text": t.get("text", "")[:200], "status": t.get("status"),
+                           "failure_class": t.get("failure_class", ""), "note": str(t.get("note", ""))[:300],
+                           "attempts": t.get("attempts", 0)}
+                          for t in tasks.values() if t.get("failure_class") or t.get("status") in ("FAILED", "RETRYING")]
+                return 200, {"objective_id": obj.id, "decisions": decisions, "failed_tasks": failed,
+                             "retries_used": obj.usage.retries, "retry_budget": obj.budget.retries}
+            if len(p) == 3 and m == "GET" and p[2] == "observations":
+                from rad.control.observer import Observer
+                from rad.policy import redact
+                obs = Observer(ctl.store.dir(obj.id))
+                rows = []
+                for p in sorted(obs.dir.glob("obs_*.json")):
+                    o = obs.load(p.stem)
+                    if not o:
+                        continue
+                    if q.get("task") and o.task_id != q["task"]:
+                        continue
+                    rows.append({
+                        "id": o.id, "task_id": o.task_id, "tool": o.tool,
+                        "args": {k: redact(str(v))[:200] for k, v in list(o.args.items())[:8]},
+                        "status": o.status, "duration_ms": o.duration_ms,
+                        "output": redact(o.output)[:800], "artifacts": list(o.artifacts),
+                        "evidence_kinds": sorted({str(e.get("kind")) for e in o.evidence if e.get("kind")}),
+                        "at": o.at,
+                    })
+                rows.sort(key=lambda r: r["at"])
+                return 200, {"objective_id": obj.id, "count": len(rows),
+                             "observations": rows[-int(q.get("n", 400) or 400):]}
+            if len(p) == 3 and m == "GET" and p[2] == "live":
+                from rad.control.budgets import BudgetManager
+                from rad.control.events import EventLog
+                from rad.control.observer import Observer
+                tasks = ctl.store.load_tasks(obj.id)
+                open_tasks = [t for t in tasks if str(t.get("status")) not in ("COMPLETED", "CANCELLED")]
+                current = next((t for t in tasks if str(t.get("status")) in
+                                ("RUNNING", "OBSERVING", "VERIFYING", "RETRYING")), None)
+                evs = []
+                try:
+                    since = int(q.get("since_seq", 0) or 0)
+                    evs = [e.__dict__ for e in EventLog(ctl.store.events_path(obj.id)).read() if e.seq > since]
+                except (ValueError, OSError):
+                    evs = []
+                arts = Observer(ctl.store.dir(obj.id)).artifacts()
+                return 200, {"objective": self._obj_summary(obj),
+                             "status": obj.status,
+                             "plan_version": obj.plan_version,
+                             "current_task": {"id": current.get("id"), "text": current.get("text"),
+                                              "status": current.get("status"),
+                                              "started": current.get("started"),
+                                              "attempts": current.get("attempts", 0)} if current else None,
+                             "tasks": {"total": len(tasks), "open": len(open_tasks),
+                                       "by_status": {s: sum(1 for t in tasks if str(t.get("status")) == s)
+                                                     for s in sorted({str(t.get("status")) for t in tasks})}},
+                             "budget": BudgetManager(obj.budget, obj.usage, objective_id=obj.id).to_dict(),
+                             "usage": obj.usage.to_dict(),
+                             "artifacts": len(arts),
+                             "retries": {"used": obj.usage.retries, "budget": obj.budget.retries},
+                             "verification": (obj.verification or {}).get("objective", {}).get("status", ""),
+                             "events": evs[-int(q.get("n", 50) or 50):]}
             raise ApiError(404, "unknown objective route")
         if p == ["memory", "recall"] and m == "GET":
             from rad.memory import Memory
@@ -191,6 +292,26 @@ class Api:
                 raise ApiError(400, "layer must be episodic|semantic|procedural")
             e = Memory(self.home).add(layer, text, origin="USER_PROVIDED", source="api")
             return 201, self._mem(e)
+        if p == ["memory"] and m == "GET":
+            from rad.memory import Memory
+            mem = Memory(self.home)
+            layer = q.get("layer") or ""
+            layers = (layer,) if layer in ("working", "episodic", "semantic", "procedural") \
+                else ("working", "episodic", "semantic", "procedural")
+            n = max(1, min(200, int(q.get("n", 50) or 50)))
+            out: Dict[str, Any] = {}
+            for l in layers:
+                try:
+                    items = list(mem.scan(l))
+                except Exception:
+                    items = []
+                out[l] = [self._mem(e) for e in items[-n:]]
+            return 200, {"memories": out}
+        if p == ["usage"] and m == "GET":
+            from rad.control.objectives import REMAINING_QUOTA_NOTE
+            store = self._ctl().store
+            r = store.usage_rollup()
+            return 200, {**r.to_dict(), "note": REMAINING_QUOTA_NOTE}
         if p == ["user"] and m == "GET":
             from rad.usermodel import UserModel
             return 200, UserModel(self.home).data()
@@ -310,8 +431,6 @@ class Api:
             # UNRESTRICTED confirmation=never is applied inside Policy.decide, not here.
             reply = j.chat(text, auto=False)
             return 200, {"reply": reply, "via": "jerry"}
-        if p == ["usage"] and m == "GET":
-            return 200, self._usage()
         raise ApiError(404, "unknown route")
 
     # ---- helpers --------------------------------------------------------------------------
@@ -483,87 +602,79 @@ class Api:
         return 201, {**self._obj_summary(obj), "started": False,
                      "note": "created PENDING: run it with `rad objective run` (config auto=false)" if run else "created PENDING"}
 
+    def _artifact_content(self, ctl, obj, ref: str) -> Tuple[int, Any]:
+        """Redacted text preview of a REGISTERED artifact of this objective.
+
+        The client supplies an artifact ref (id / path / filename), never a raw path: the
+        only way in is through the objective's artifact registry. Even then the file must
+        live inside the workspace or the RAD home, must be text, and is capped + redacted.
+        """
+        from rad.control.observer import Observer
+        from rad.policy import redact
+        from pathlib import Path as _P
+        ref = (ref or "").strip()
+        if not ref:
+            raise ApiError(400, "ref=<artifact id|path|filename> required")
+        reg = Observer(ctl.store.dir(obj.id)).artifacts()
+        art = reg.get(ref)
+        if not art:
+            hits = [a for a in reg.values() if a["location"] == ref or _P(a["location"]).name == ref]
+            hits.sort(key=lambda a: -a.get("version", 1))
+            art = hits[0] if hits else None
+        if not art:
+            raise ApiError(404, f"not an artifact of {obj.id}")
+        loc = _P(art["location"])
+        try:
+            resolved = loc.expanduser().resolve()
+        except Exception:
+            raise ApiError(400, "unresolvable artifact location")
+        roots = []
+        try:
+            roots.append(self.home.workspace().resolve())
+        except Exception:
+            pass
+        try:
+            roots.append(_P(self.home.root).resolve())
+        except Exception:
+            pass
+        if not any(_is_within(resolved, r) for r in roots):
+            raise ApiError(403, "artifact location outside workspace/home")
+        if not resolved.is_file():
+            raise ApiError(404, "artifact file not found on disk")
+        try:
+            if resolved.stat().st_size > MAX_BODY:
+                raise ApiError(413, "artifact too large to preview (≤256 KB)")
+            raw = resolved.read_bytes()
+            text = raw.decode("utf-8")
+        except UnicodeDecodeError:
+            raise ApiError(415, "artifact is not UTF-8 text")
+        except ApiError:
+            raise
+        except OSError as e:
+            raise ApiError(404, f"cannot read artifact: {e}")
+        lines = text.splitlines()
+        truncated = len(lines) > 400
+        return 200, {"artifact": art, "path": str(resolved), "sha256": art.get("sha256", ""),
+                     "bytes": len(raw), "lines": len(lines), "truncated": truncated,
+                     "preview": redact("\n".join(lines[:400]))}
+
     @staticmethod
-    def _obj_summary(o) -> Dict[str, Any]:
-        return {"id": o.id, "goal": o.goal, "status": o.status, "created": o.created, "updated": o.updated,
-                "usage": o.usage.to_dict(), "budget": o.budget.to_dict(), "result": (o.result or "")[:2000],
-                "verification": (o.verification or {}).get("objective", {}).get("status", "")}
+    def _obj_summary(o, tasks: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
+        d = {"id": o.id, "goal": o.goal, "status": o.status, "created": o.created, "updated": o.updated,
+             "usage": o.usage.to_dict(), "budget": o.budget.to_dict(), "result": (o.result or "")[:2000],
+             "verification": (o.verification or {}).get("objective", {}).get("status", ""),
+             "result_summary": o.result_summary or "", "failure": (o.failure or "")[:500],
+             "plan_version": getattr(o, "plan_version", 0)}
+        if tasks is not None:
+            d["tasks_total"] = len(tasks)
+            d["tasks_completed"] = sum(1 for t in tasks if str(t.get("status")) == "COMPLETED")
+            d["tasks_failed"] = sum(1 for t in tasks if str(t.get("status")) in ("FAILED", "BLOCKED"))
+        return d
 
     @staticmethod
     def _mem(e) -> Dict[str, Any]:
         return {"id": e.id, "layer": e.layer, "text": e.text, "origin": e.origin, "confidence": e.confidence,
                 "verification": e.verification, "strength": e.strength}
-
-    def _usage(self) -> Dict[str, Any]:
-        store = self._ctl().store
-        per = []
-        totals = {"tool_calls": 0, "model_calls": 0, "retries": 0, "tokens": 0, "money_usd": 0.0,
-                  "paid_calls": 0, "free_calls": 0, "seconds": 0.0}
-        for o in store.list(active_only=False):
-            u = o.usage.to_dict() if hasattr(o.usage, "to_dict") else (o.usage or {})
-            b = o.budget.to_dict() if hasattr(o.budget, "to_dict") else (o.budget or {})
-            per.append({"id": o.id, "goal": o.goal, "status": o.status, "usage": u, "budget": b})
-            for k in totals:
-                try:
-                    totals[k] += float(u.get(k, 0) or 0)
-                except Exception:
-                    pass
-        return {
-            "totals": totals,
-            "per_objective": per,
-            "free_lock": bool(self.home.cfg.get("free_lock")),
-            "note": "No provider list price is invented. money_usd is stored usage only.",
-            "remaining_quota_note": "remaining free-tier quota is not in the API until HTTP 429",
-        }
-
-    def _inspect(self, ctl, oid: str) -> Tuple[list, list]:
-        from rad.control.observer import Observer
-        from rad.policy import redact
-        ob = Observer(ctl.store.dir(oid))
-        observations = []
-        for o in ob.observations():
-            d = o.to_dict()
-            d["output"] = redact(str(d.get("output") or ""))[:4000]
-            d["args"] = {k: redact(str(v))[:240] if isinstance(v, str) else v
-                         for k, v in (d.get("args") or {}).items()}
-            observations.append(d)
-        artifacts = list(ob.artifacts().values())
-        return observations, artifacts
-
-    def _artifact_body(self, ctl, oid: str, art_id: str) -> Tuple[int, Any]:
-        from rad.control.observer import Observer
-        from rad.policy import redact
-        ob = Observer(ctl.store.dir(oid))
-        reg = ob.artifacts()
-        art = reg.get(art_id)
-        if not art:
-            hits = [a for a in reg.values()
-                    if a.get("location", "").endswith(art_id) or Path(a.get("location", "")).name == art_id
-                    or a.get("id") == art_id]
-            art = hits[-1] if hits else None
-        if not art:
-            raise ApiError(404, "artifact not registered")
-        loc = Path(str(art.get("location") or ""))
-        workspace = Path(self.home.workspace()).resolve()
-        try:
-            resolved = loc.resolve()
-        except Exception:
-            raise ApiError(400, "artifact path unreadable")
-        if workspace not in resolved.parents and resolved != workspace:
-            raise ApiError(403, "artifact outside workspace")
-        if not resolved.is_file():
-            raise ApiError(404, "artifact file missing")
-        data = resolved.read_bytes()
-        truncated = len(data) > 64 * 1024
-        if truncated:
-            data = data[:64 * 1024]
-        if b"\x00" in data[:1024]:
-            return 200, {"id": art.get("id"), "path": art.get("location"), "binary": True, "text": "",
-                         "sha256": art.get("sha256"), "truncated": False}
-        text = redact(data.decode("utf-8", errors="replace"))
-        return 200, {"id": art.get("id"), "path": art.get("location"), "text": text, "binary": False,
-                     "sha256": art.get("sha256"), "truncated": truncated, "version": art.get("version")}
-
 
 
 # ---------------------------------------------------------------- HTTP layer
@@ -588,17 +699,8 @@ def make_server(home: RadHome, host: str = "127.0.0.1", port: int = 7331, api: O
             self.send_header("Content-Length", str(len(data)))
             self.send_header("Cache-Control", "no-store")
             self.send_header("X-Content-Type-Options", "nosniff")
-            self._cors()
             self.end_headers()
             self.wfile.write(data)
-
-        def _cors(self) -> None:
-            origin = self.headers.get("Origin", "")
-            if origin.startswith("http://127.0.0.1:") or origin.startswith("http://localhost:"):
-                self.send_header("Access-Control-Allow-Origin", origin)
-                self.send_header("Access-Control-Allow-Headers", "Authorization, Content-Type")
-                self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS")
-                self.send_header("Vary", "Origin")
 
         def _authed(self) -> bool:
             h = self.headers.get("Authorization", "")
@@ -608,13 +710,6 @@ def make_server(home: RadHome, host: str = "127.0.0.1", port: int = 7331, api: O
             t0 = time.time()
             status = 500
             try:
-                if method == "OPTIONS":
-                    self.send_response(204)
-                    self._cors()
-                    self.send_header("Content-Length", "0")
-                    self.end_headers()
-                    status = 204
-                    return
                 if not self._authed():
                     status = 401
                     self._send(401, {"error": "missing or invalid bearer token"})
@@ -622,7 +717,7 @@ def make_server(home: RadHome, host: str = "127.0.0.1", port: int = 7331, api: O
                 u = urlparse(self.path)
                 q = {k: v[-1] for k, v in parse_qs(u.query).items()}
                 body: Dict[str, Any] = {}
-                if method in ("POST", "PUT", "PATCH"):
+                if method == "POST":
                     n = int(self.headers.get("Content-Length", 0) or 0)
                     if n > MAX_BODY:
                         status = 413; self._send(413, {"error": "body too large"}); return
@@ -653,11 +748,5 @@ def make_server(home: RadHome, host: str = "127.0.0.1", port: int = 7331, api: O
 
         def do_POST(self):
             self._do("POST")
-
-        def do_PUT(self):
-            self._do("PUT")
-
-        def do_OPTIONS(self):
-            self._do("OPTIONS")
 
     return ThreadingHTTPServer((host, port), H)

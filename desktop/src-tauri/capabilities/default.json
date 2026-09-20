@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Minimal surface — no arbitrary shell, no filesystem write, no HTTP plugin.",
+  "description": "Minimal surface — no arbitrary shell, no filesystem write, no HTTP plugin. Backend lifecycle only: start/stop/restart/health with a fixed sidecar argv.",
   "windows": ["main"],
   "permissions": [
     "core:default",
@@ -10,6 +10,8 @@
     "allow-backend-start",
     "allow-backend-stop",
     "allow-backend-info",
+    "allow-backend-restart",
+    "allow-backend-health",
     "allow-api-token",
     "allow-default-home"
   ]

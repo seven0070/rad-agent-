@@ -38,9 +38,11 @@ voice = ["faster-whisper>=1.0", "sounddevice>=0.4", "piper-tts>=1.2"]
 agi = ["autogen-agentchat>=0.4", "kuzu>=0.9"]
 dev = ["pytest>=7"]
 pack = ["build>=1.2"]
+sidecar = ["pyinstaller>=6.0"]
 
 [project.scripts]
 rad = "rad.cli:main"
+rad-backend = "rad.sidecar:main"
 
 [tool.setuptools.packages.find]
 include = ["rad*"]

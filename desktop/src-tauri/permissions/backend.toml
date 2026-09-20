@@ -22,3 +22,13 @@ commands.allow = ["api_token"]
 identifier = "allow-default-home"
 description = "Return RAD_HOME / ~/.rad."
 commands.allow = ["default_home"]
+
+[[permission]]
+identifier = "allow-backend-restart"
+description = "Stop and re-start the managed RAD backend (fixed sidecar argv)."
+commands.allow = ["backend_restart"]
+
+[[permission]]
+identifier = "allow-backend-health"
+description = "Health-check the RAD backend on loopback."
+commands.allow = ["backend_health"]

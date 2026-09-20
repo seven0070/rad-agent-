@@ -76,7 +76,8 @@ def test_rw100_first_run_docs_match_package_1_0_0(capsys):
     assert "prints 1.0.0" in qs  # packed Version 1 wheel still v1.0.0
     assert "prints 0.4.1" not in qs
     assert "prints 0.4.1" not in inst
-    assert "v1.0.0 — open door" in readme
+    # README banner tracks the packaged version (stale v1.0.0 banner fixed in 0.2 desktop work)
+    assert "v1.0.1 — open door" in readme
     assert "rad_agent-1.0.0-py3-none-any.whl" in qs
     assert "rad_agent-1.0.0-py3-none-any.whl" in inst
     assert "Version 1 packing (Sanath)" in inst

@@ -2,7 +2,8 @@
 
 ```
                  ┌──────────── interfaces ────────────┐
-                 │ CLI (rad …)   REPL   HTTP API   Desktop (Tauri) │  docs/API.md · desktop/
+                 │ CLI (rad …)   REPL   HTTP API   Desktop (Tauri + bundled  │  docs/API.md · desktop/ · docs/DESKTOP.md
+                 │ rad-backend sidecar: loopback, fixed argv, lifecycle-owned)│
                  └──────┬───────────┬──────────┬──────┘
                         ▼           ▼          ▼
 ┌─────────────── control plane  rad/control/ ────────────────┐   docs/CONTROL-PLANE.md
