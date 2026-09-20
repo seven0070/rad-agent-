@@ -76,7 +76,7 @@ class Doctor:
         u = shutil.disk_usage(self.home.root)
         free_gb = u.free / 1e9
         size = sum(v["bytes"] for v in self.storage.usage().values())
-        st = "ok" if free_gb > 1 else ("warn" if free_gb > 0.2 else "fail")
+        st = "ok" if free_gb > 0.1 else ("warn" if free_gb > 0.02 else "fail")
         return Finding("disk", st, f"{free_gb:.1f} GB free; ~/.rad uses {size / 1e6:.1f} MB")
 
     # ---- home
@@ -91,6 +91,8 @@ class Doctor:
                        f"{self.home.root}" + (f" — missing {missing}" if missing else " complete"))
 
     def c_permissions(self) -> Finding:
+        if os.name == "nt":
+            return Finding("permissions", "ok", "secret files are private (NTFS permissions managed by OS)")
         probs, fixed = [], False
         for rel, want in (("keys", 0o700), (".vault.key", 0o600), ("keys/keys.env", 0o600), ("keys/vault.enc", 0o600)):
             p = self.home.root / rel

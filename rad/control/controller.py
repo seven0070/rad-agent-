@@ -907,6 +907,7 @@ class Controller:
         """Experience → memory, with honest origins, then *validated* lessons.
         Runs for failed and blocked objectives too — the outcome is recorded honestly."""
         try:
+            from pathlib import Path
             from rad.memory import Memory, OBSERVED
             from rad.world import WorldModel
             mem = Memory(self.home)
@@ -914,7 +915,7 @@ class Controller:
             summary = (f"objective '{obj.goal[:120]}' finished ({ver['status']}); "
                        f"{len(graph.tasks)} tasks, {obj.usage.retries} retries, "
                        f"{obj.usage.tool_calls} tool calls"
-                       + (f"; artifacts: {', '.join(a['location'].rsplit('/', 1)[-1] for a in arts[:5])}"
+                       + (f"; artifacts: {', '.join(Path(a['location']).name for a in arts[:5])}"
                           if arts else ""))
             mem.add("episodic", summary, tags=["objective", obj.id], origin=OBSERVED, source=obj.id,
                     importance=0.6)

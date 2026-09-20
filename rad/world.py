@@ -17,6 +17,7 @@ Backends (socket pattern, like the trainer/battery):
 from __future__ import annotations
 
 import json
+from pathlib import Path
 import re
 import time
 from typing import Any, Callable, Dict, List, Optional
@@ -330,7 +331,7 @@ class WorldModel:
         d = self.data()
         n = 0
         for a in artifacts:
-            name = a["location"].rsplit("/", 1)[-1]
+            name = Path(a["location"]).name
             n += self._add_entity(d, name, "artifact", f"{objective_id}/{task_id}", OBSERVED)
             n += self._add_relation(d, objective_id, "created", name, f"{objective_id}/{task_id}", OBSERVED)
         if artifacts:

@@ -191,6 +191,18 @@ class AgentRegistry:
 
 # ---------------------------------------------------------------- blackboard
 
+_BLACKBOARD_LOCKS: Dict[str, Any] = {}
+_LOCKS_GUARD = __import__("threading").Lock()
+
+
+def _get_path_lock(path: Path):
+    p_str = str(path.resolve())
+    with _LOCKS_GUARD:
+        if p_str not in _BLACKBOARD_LOCKS:
+            _BLACKBOARD_LOCKS[p_str] = __import__("threading").Lock()
+        return _BLACKBOARD_LOCKS[p_str]
+
+
 class Blackboard:
     """Shared notes between agents working on one objective. Every note has an author and
     optional evidence (observation ids / URLs). Read-mostly; appends are atomic."""
@@ -206,20 +218,25 @@ class Blackboard:
             return []
 
     def post(self, author: str, text: str, kind: str = "note", evidence: Optional[List[str]] = None) -> Dict[str, Any]:
-        import fcntl  # POSIX advisory lock; fine for a personal agent
+        try:
+            import fcntl  # POSIX advisory lock; fine for a personal agent
+        except (ImportError, ModuleNotFoundError):
+            fcntl = None
         note = {"id": "n_" + uuid.uuid4().hex[:6], "author": author, "kind": kind, "text": text[:4000],
                 "evidence": evidence or [], "at": time.time()}
         self.path.touch()
-        with open(self.path, "r+", encoding="utf-8") as f:
-            try:
-                fcntl.flock(f, fcntl.LOCK_EX)
-            except Exception:
-                pass
-            raw = f.read()
-            items = json.loads(raw) if raw.strip() else []
-            items.append(note)
-            f.seek(0); f.truncate()
-            json.dump(items, f, ensure_ascii=False, indent=1)
+        with _get_path_lock(self.path):
+            with open(self.path, "r+", encoding="utf-8") as f:
+                if fcntl is not None:
+                    try:
+                        fcntl.flock(f, fcntl.LOCK_EX)
+                    except Exception:
+                        pass
+                raw = f.read()
+                items = json.loads(raw) if raw.strip() else []
+                items.append(note)
+                f.seek(0); f.truncate()
+                json.dump(items, f, ensure_ascii=False, indent=1)
         return note
 
     def render(self, max_notes: int = 12) -> str:

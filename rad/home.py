@@ -58,7 +58,16 @@ def _write_json(path: Path, data: Any) -> None:
     tmp = path.with_suffix(path.suffix + ".tmp")
     with open(tmp, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
-    os.chmod(tmp, 0o600)
+    try:
+        os.chmod(tmp, 0o600)
+    except Exception:
+        pass
+    if os.name == "nt" and path.exists():
+        import stat
+        try:
+            os.chmod(path, stat.S_IWRITE)
+        except Exception:
+            pass
     tmp.replace(path)
 
 
