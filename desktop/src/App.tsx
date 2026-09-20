@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AuthoritySnapshot, ObjectiveRow, RadClient, Status } from "./api";
+import { AuthoritySnapshot, DEFAULT_AUTH_BUDGETS, ObjectiveRow, RadClient, Status } from "./api";
 import { apiBase, backendStop, isTauri, launchAndConnect, ConnState } from "./backend";
 import { Ctx } from "./ctx";
 import ActiveRun from "./pages/ActiveRun";
@@ -160,7 +160,7 @@ export default function App() {
         capabilities: {},
         policy_capabilities: {},
         passthrough: true,
-        budgets: { tool_calls: 60, model_calls: 80, retries: 6, note: "" },
+        budgets: DEFAULT_AUTH_BUDGETS,
         invariants: {},
         updated: 0,
       },

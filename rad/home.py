@@ -46,6 +46,19 @@ DEFAULTS: Dict[str, Any] = {
 
 
 def _read_json(path: Path, default: Any) -> Any:
+    if os.name == "nt":
+        import time
+        for attempt in range(15):
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except (PermissionError, json.JSONDecodeError):
+                if attempt == 14:
+                    return default
+                time.sleep(0.02)
+            except Exception:
+                return default
+        return default
     try:
         with open(path, "r", encoding="utf-8") as f:
             return json.load(f)
@@ -62,13 +75,34 @@ def _write_json(path: Path, data: Any) -> None:
         os.chmod(tmp, 0o600)
     except Exception:
         pass
-    if os.name == "nt" and path.exists():
+    if os.name == "nt":
         import stat
-        try:
-            os.chmod(path, stat.S_IWRITE)
-        except Exception:
-            pass
-    tmp.replace(path)
+        import time
+        if path.exists():
+            try:
+                os.chmod(path, stat.S_IWRITE)
+            except Exception:
+                pass
+        for attempt in range(25):
+            try:
+                tmp.replace(path)
+                return
+            except (PermissionError, OSError):
+                if attempt == 24:
+                    try:
+                        with open(path, "w", encoding="utf-8") as f:
+                            json.dump(data, f, indent=2, ensure_ascii=False)
+                        try:
+                            tmp.unlink(missing_ok=True)
+                        except Exception:
+                            pass
+                        return
+                    except Exception:
+                        pass
+                    raise
+                time.sleep(0.02)
+    else:
+        tmp.replace(path)
 
 
 class RadHome:

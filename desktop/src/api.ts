@@ -18,6 +18,13 @@ export interface AuthoritySnapshot {
   updated: number;
 }
 
+export const DEFAULT_AUTH_BUDGETS = {
+  tool_calls: 60,
+  model_calls: 80,
+  retries: 6,
+  note: "",
+};
+
 export interface Status {
   ok: boolean;
   version: string;
@@ -430,3 +437,16 @@ export const ROUTES = [
   "/v1/memory",
   "/v1/memory/recall",
 ] as const;
+
+export const SETTINGS_SAFE_KEYS = [
+  "workspace",
+  "free_lock",
+  "force_provider",
+  "model",
+  "tts",
+  "stt",
+  "allow_outside_workspace",
+  "allow_localhost_web",
+] as const;
+
+export type SettingsSafeKey = (typeof SETTINGS_SAFE_KEYS)[number];

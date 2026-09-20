@@ -183,10 +183,22 @@
           "markdownDescription": "Read ~/.rad/api.token (0600)."
         },
         {
+          "description": "Health-check the RAD backend on loopback.",
+          "type": "string",
+          "const": "allow-backend-health",
+          "markdownDescription": "Health-check the RAD backend on loopback."
+        },
+        {
           "description": "Read managed backend pid/port/home.",
           "type": "string",
           "const": "allow-backend-info",
           "markdownDescription": "Read managed backend pid/port/home."
+        },
+        {
+          "description": "Stop and re-start the managed RAD backend (fixed sidecar argv).",
+          "type": "string",
+          "const": "allow-backend-restart",
+          "markdownDescription": "Stop and re-start the managed RAD backend (fixed sidecar argv)."
         },
         {
           "description": "Start the RAD Python API with a fixed argv (no user shell).",

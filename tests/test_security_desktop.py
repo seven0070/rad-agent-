@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 from pathlib import Path
 
 import pytest
@@ -28,10 +29,10 @@ def ctx(home, auto=False):
 
 @pytest.fixture
 def ws(home, tmp_path):
-    w = tmp_path / "ws"
-    w.mkdir()
-    home.update(workspace=str(w))
-    return w
+    p = tmp_path / "ws"
+    p.mkdir()
+    home.update(workspace=str(p))
+    return p
 
 
 # ------------------------------------------------------------ credential protection
@@ -41,7 +42,8 @@ def test_api_token_permissions_and_isolation(home):
     tok = token_for(home)
     assert len(tok) >= 32
     mode = os.stat(home.root / "api.token").st_mode & 0o777
-    assert mode == 0o600
+    if sys.platform != "win32":
+        assert mode == 0o600
     # a wrong token is rejected at the handler boundary (401 simulated by the HTTP layer;
     # here: the token value is not guessable and the file is the only source)
     assert tok != token_for(home, rotate=True)
@@ -69,7 +71,8 @@ def test_credential_file_protected(home, ws):
     from rad.api import token_for
     token_for(home)  # materialize
     assert (home.root / "api.token").exists()
-    assert os.stat(home.root / "api.token").st_mode & 0o777 == 0o600
+    if sys.platform != "win32":
+        assert os.stat(home.root / "api.token").st_mode & 0o777 == 0o600
     # the model's read tool cannot fetch the token file even with auto on
     out = run_tool("read_file", {"path": str(home.root / "api.token")}, ctx(home, auto=True))
     assert "BLOCKED" in out or "UNAUTHORIZED" in out or "DENIED" in out or "error" in out.lower()

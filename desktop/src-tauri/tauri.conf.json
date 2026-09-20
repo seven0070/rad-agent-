@@ -26,6 +26,7 @@
     "active": true,
     "targets": "all",
     "externalBin": [
+      "binaries/rad",
       "binaries/rad-backend"
     ],
     "icon": [
