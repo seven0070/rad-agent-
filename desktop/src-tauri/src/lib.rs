@@ -185,19 +185,27 @@ fn chrono_free_now() -> String {
 fn http_health(port: u16, token: Option<&str>) -> HealthReport {
     use std::io::{Read, Write};
     use std::net::TcpStream;
-    let addr = format!("127.0.0.1:{}", port);
-    let mut stream = match addr
-        .parse::<std::net::SocketAddr>()
-        .and_then(|a| TcpStream::connect_timeout(&a, Duration::from_millis(HEALTH_TIMEOUT_MS)))
-    {
+    let addr_str = format!("127.0.0.1:{}", port);
+    let addr: std::net::SocketAddr = match addr_str.parse() {
+        Ok(a) => a,
+        Err(e) => {
+            return HealthReport {
+                ok: false,
+                port,
+                version: None,
+                error: Some(format!("addr parse error: {}", e)),
+            };
+        }
+    };
+    let mut stream = match TcpStream::connect_timeout(&addr, Duration::from_millis(HEALTH_TIMEOUT_MS)) {
         Ok(s) => s,
         Err(e) => {
             return HealthReport {
                 ok: false,
                 port,
                 version: None,
-                error: Some(format!("connect {}: {}", addr, e)),
-            }
+                error: Some(format!("connect {}: {}", addr_str, e)),
+            };
         }
     };
     let _ = stream.set_read_timeout(Some(Duration::from_millis(HEALTH_TIMEOUT_MS)));
@@ -322,9 +330,9 @@ fn api_token(home: Option<String>) -> Result<String, String> {
 
 #[tauri::command]
 fn backend_info(state: tauri::State<State>) -> BackendInfo {
-    let guard = state.backend.lock().ok();
-    if let Some(g) = guard {
-        if let Some(b) = g.as_ref() {
+    let mut guard = state.backend.lock().ok();
+    if let Some(ref mut g) = guard {
+        if let Some(b) = g.as_mut() {
             let alive = b.child.try_wait().ok().flatten().is_none();
             if alive {
                 return BackendInfo {
@@ -372,8 +380,8 @@ fn backend_start(
     let port = port.unwrap_or(DEFAULT_PORT);
     let home = home.map(PathBuf::from).unwrap_or_else(default_rad_home);
     {
-        let guard = state.backend.lock().map_err(|e| e.to_string())?;
-        if let Some(b) = guard.as_ref() {
+        let mut guard = state.backend.lock().map_err(|e| e.to_string())?;
+        if let Some(b) = guard.as_mut() {
             if b.child.try_wait().ok().flatten().is_none() {
                 return Ok(BackendInfo {
                     running: true,
@@ -404,7 +412,7 @@ fn backend_start(
         python = Some(python_bin());
     }
     let (bin, args): (String, Vec<String>) = match sidecar {
-        Some(p) => (
+        Some(ref p) => (
             p.to_string_lossy().to_string(),
             vec!["serve".into(), "--host".into(), "127.0.0.1".into(), "--port".into(), port.to_string(), "--home".into(), home.to_string_lossy().to_string()],
         ),
@@ -481,16 +489,6 @@ fn backend_start(
         *guard = Some(Backend { child, port, home, sidecar: is_sidecar });
     }
     Ok(info)
-}
-
-fn which_python() -> Option<String> {
-    let py = python_bin();
-    let ok = Command::new(&py).arg("--version").stdout(Stdio::null()).stderr(Stdio::null()).status().map(|s| s.success()).unwrap_or(false);
-    if ok {
-        Some(py)
-    } else {
-        None
-    }
 }
 
 #[tauri::command]
