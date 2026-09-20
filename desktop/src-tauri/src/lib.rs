@@ -1,7 +1,7 @@
 //! RAD Desktop backend lifecycle. Fixed `rad serve` argv only — no arbitrary shell.
 
 use serde::Serialize;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 use std::sync::Mutex;
 
@@ -32,6 +32,13 @@ fn default_rad_home() -> PathBuf {
 }
 
 fn dirs_fallback() -> PathBuf {
+    if let Ok(h) = std::env::var("RAD_HOME") {
+        return PathBuf::from(h);
+    }
+    #[cfg(windows)]
+    if let Some(profile) = std::env::var_os("USERPROFILE") {
+        return PathBuf::from(profile).join(".rad");
+    }
     if let Some(home) = std::env::var_os("HOME") {
         return PathBuf::from(home).join(".rad");
     }
@@ -39,10 +46,55 @@ fn dirs_fallback() -> PathBuf {
 }
 
 fn python_bin() -> String {
-    std::env::var("RAD_PYTHON").unwrap_or_else(|_| "python3".into())
+    std::env::var("RAD_PYTHON").unwrap_or_else(|_| {
+        if cfg!(windows) {
+            "python".into()
+        } else {
+            "python3".into()
+        }
+    })
 }
 
-fn token_path(home: &PathBuf) -> PathBuf {
+enum RadProgram {
+    PythonModule,
+    Direct(PathBuf),
+}
+
+fn target_triple() -> Option<&'static str> {
+    match (std::env::consts::OS, std::env::consts::ARCH) {
+        ("windows", "x86_64") => Some("x86_64-pc-windows-msvc"),
+        ("macos", "aarch64") => Some("aarch64-apple-darwin"),
+        ("macos", "x86_64") => Some("x86_64-apple-darwin"),
+        ("linux", "x86_64") => Some("x86_64-unknown-linux-gnu"),
+        ("linux", "aarch64") => Some("aarch64-unknown-linux-gnu"),
+        _ => None,
+    }
+}
+
+fn rad_program() -> RadProgram {
+    if let Ok(bin) = std::env::var("RAD_BIN") {
+        return RadProgram::Direct(PathBuf::from(bin));
+    }
+    if let Some(triple) = target_triple() {
+        let exe_dir = std::env::current_exe()
+            .ok()
+            .and_then(|p| p.parent().map(PathBuf::from));
+        let name = if cfg!(windows) {
+            format!("rad-{triple}.exe")
+        } else {
+            format!("rad-{triple}")
+        };
+        if let Some(mut candidate) = exe_dir {
+            candidate.push(name);
+            if candidate.is_file() {
+                return RadProgram::Direct(candidate);
+            }
+        }
+    }
+    RadProgram::PythonModule
+}
+
+fn token_path(home: &Path) -> PathBuf {
     home.join("api.token")
 }
 
@@ -106,15 +158,30 @@ fn backend_start(
         }
     }
     // Fixed argv: never interpolate a user command string.
-    let mut cmd = Command::new(python_bin());
-    cmd.args(["-m", "rad", "serve", "--host", "127.0.0.1", "--port", &port.to_string()])
-        .env("RAD_HOME", &home)
+    let program = rad_program();
+    let mut cmd = match &program {
+        RadProgram::PythonModule => {
+            let mut c = Command::new(python_bin());
+            c.args(["-m", "rad", "serve", "--host", "127.0.0.1", "--port", &port.to_string()]);
+            c
+        }
+        RadProgram::Direct(p) => {
+            let mut c = Command::new(p);
+            c.args(["serve", "--host", "127.0.0.1", "--port", &port.to_string()]);
+            c
+        }
+    };
+    cmd.env("RAD_HOME", &home)
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::null());
+    let label = match &program {
+        RadProgram::PythonModule => python_bin(),
+        RadProgram::Direct(p) => p.display().to_string(),
+    };
     let child = cmd
         .spawn()
-        .map_err(|e| format!("failed to start rad serve via {}: {e}", python_bin()))?;
+        .map_err(|e| format!("failed to start rad serve via {label}: {e}"))?;
     let pid = child.id();
     let mut guard = state.backend.lock().map_err(|e| e.to_string())?;
     *guard = Some(Backend {

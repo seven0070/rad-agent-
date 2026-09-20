@@ -1,0 +1,133 @@
+# Release Desktop — triggered by `rad-desktop-*` tags.
+# Windows-first: builds the `rad` PyInstaller sidecar, then `tauri build`
+# (which bundles the sidecar via externalBin), then uploads installer bundles
+# + the sidecar to the GitHub release.
+#
+# NOTE: desktop releases use the independent `rad-desktop-*` tag scheme and are
+# decoupled from control-plane (Python package) tags.
+# No secrets required (default GITHUB_TOKEN is used by softprops/action-gh-release).
+
+name: Release Desktop
+
+on:
+  push:
+    tags:
+      - 'rad-desktop-*'
+
+jobs:
+  build-windows:
+    name: Build + release Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build rad sidecar (PyInstaller onefile)
+        run: powershell -File scripts/build-sidecar.ps1
+      - name: Verify sidecar artifact
+        shell: pwsh
+        run: |
+          $sidecar = 'desktop/src-tauri/binaries/rad-x86_64-pc-windows-msvc.exe'
+          if (-not (Test-Path -LiteralPath $sidecar)) { throw "Sidecar missing: $sidecar" }
+          $size = (Get-Item -LiteralPath $sidecar).Length
+          if ($size -lt 1MB) { throw "Sidecar too small: $size bytes (expected > 1MB)" }
+          Write-Output "Sidecar OK: $sidecar ($([math]::Round($size / 1MB, 2)) MB)"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - name: Install frontend dependencies
+        working-directory: desktop
+        run: npm ci
+      - name: Build Tauri app (bundles sidecar via externalBin)
+        working-directory: desktop
+        run: npm run tauri build
+      - name: Upload release artifacts
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          body: |
+            RAD Desktop release.
+
+            > Desktop releases use the independent `rad-desktop-*` tag scheme and
+            > are decoupled from control-plane (Python package) tags.
+          files: |
+            desktop/src-tauri/target/release/bundle/**/*.msi
+            desktop/src-tauri/target/release/bundle/**/*.exe
+            desktop/src-tauri/binaries/rad-x86_64-pc-windows-msvc.exe
+
+  # ---------------------------------------------------------------------------
+  # Phase 7 stretch — macOS + Linux. Keep commented out so Windows ships first.
+  # Enabling requires: rust targets added (aarch64/x86_64 as needed) and the
+  # sidecar scripts validated on the target platforms (build-sidecar.sh runs on
+  # the host and PyInstaller builds natively for the host arch).
+  # ---------------------------------------------------------------------------
+  # build-macos:
+  #   name: Build + release macOS (aarch64 + x86_64)
+  #   runs-on: macos-14
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-python@v5
+  #       with:
+  #         python-version: '3.12'
+  #     - name: Build rad sidecar (arm64)
+  #       run: bash scripts/build-sidecar.sh darwin-arm64
+  #     - name: Build rad sidecar (x86_64)
+  #       run: bash scripts/build-sidecar.sh darwin-x64
+  #     - uses: actions/setup-node@v4
+  #       with:
+  #         node-version: 20
+  #         cache: npm
+  #         cache-dependency-path: desktop/package-lock.json
+  #     - name: Install frontend dependencies
+  #       working-directory: desktop
+  #       run: npm ci
+  #     - name: Build Tauri app (arm64)
+  #       working-directory: desktop
+  #       run: npm run tauri build -- --target aarch64-apple-darwin
+  #     - name: Build Tauri app (x86_64)
+  #       working-directory: desktop
+  #       run: npm run tauri build -- --target x86_64-apple-darwin
+  #     - name: Upload release artifacts
+  #       uses: softprops/action-gh-release@v2
+  #       with:
+  #         files: |
+  #           desktop/src-tauri/target/release/bundle/**/*.app
+  #           desktop/src-tauri/target/release/bundle/**/*.dmg
+  #           desktop/src-tauri/binaries/rad-aarch64-apple-darwin
+  #           desktop/src-tauri/binaries/rad-x86_64-apple-darwin
+
+  # build-linux:
+  #   name: Build + release Linux x64
+  #   runs-on: ubuntu-22.04
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-python@v5
+  #       with:
+  #         python-version: '3.12'
+  #     - name: Install Linux webkit dependencies
+  #       run: |
+  #         sudo apt-get update
+  #         sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+  #     - name: Build rad sidecar (linux x64)
+  #       run: bash scripts/build-sidecar.sh linux-x64
+  #     - uses: actions/setup-node@v4
+  #       with:
+  #         node-version: 20
+  #         cache: npm
+  #         cache-dependency-path: desktop/package-lock.json
+  #     - name: Install frontend dependencies
+  #       working-directory: desktop
+  #       run: npm ci
+  #     - name: Build Tauri app
+  #       working-directory: desktop
+  #       run: npm run tauri build
+  #     - name: Upload release artifacts
+  #       uses: softprops/action-gh-release@v2
+  #       with:
+  #         files: |
+  #           desktop/src-tauri/target/release/bundle/**/*.deb
+  #           desktop/src-tauri/target/release/bundle/**/*.AppImage
+  #           desktop/src-tauri/binaries/rad-x86_64-unknown-linux-gnu

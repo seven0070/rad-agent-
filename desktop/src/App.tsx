@@ -7,6 +7,7 @@ import {
   Settings,
   Status,
   TaskRow,
+  Verification,
 } from "./api";
 import {
   apiBase,
@@ -16,19 +17,43 @@ import {
   backendStop,
   isTauri,
 } from "./backend";
+import { ActiveRun } from "./views/ActiveRun";
+import { Memory } from "./views/Memory";
+import { ObjectiveDetail as ObjectiveDetailView } from "./views/ObjectiveDetail";
+import { ToolsTrace } from "./views/ToolsTrace";
+import { VerificationCard } from "./views/VerificationCard";
 
-type Page = "chat" | "objectives" | "tasks" | "permissions" | "settings";
+type Page =
+  | "chat"
+  | "active"
+  | "objectives"
+  | "objective"
+  | "tasks"
+  | "tools"
+  | "memory"
+  | "verification"
+  | "permissions"
+  | "settings";
 
 const PAGES: { id: Page; label: string }[] = [
   { id: "chat", label: "Chat" },
+  { id: "active", label: "Active" },
   { id: "objectives", label: "Objectives" },
   { id: "tasks", label: "Tasks" },
+  { id: "tools", label: "Tools" },
+  { id: "memory", label: "Memory" },
+  { id: "verification", label: "Verification" },
   { id: "permissions", label: "Permissions" },
   { id: "settings", label: "Settings" },
 ];
 
+function chipClass(v: string | undefined | null) {
+  return `chip ${(v || "pending").toLowerCase()}`;
+}
+
 export default function App() {
   const [page, setPage] = useState<Page>("chat");
+  const [objectiveId, setObjectiveId] = useState<string | null>(null);
   const [client, setClient] = useState<RadClient | null>(null);
   const [status, setStatus] = useState<Status | null>(null);
   const [auth, setAuth] = useState<AuthoritySnapshot | null>(null);
@@ -36,6 +61,15 @@ export default function App() {
   const [error, setError] = useState("");
   const [manualBase, setManualBase] = useState(apiBase());
   const [manualToken, setManualToken] = useState("");
+
+  const openObjective = useCallback((id: string) => {
+    setObjectiveId(id);
+    setPage("objective");
+  }, []);
+
+  const backObjective = useCallback(() => {
+    setPage("objectives");
+  }, []);
 
   const connect = useCallback(async (base: string, token: string) => {
     const c = new RadClient(base, token);
@@ -137,6 +171,9 @@ export default function App() {
             client={client}
             auth={auth}
             status={status}
+            objectiveId={objectiveId}
+            onOpenObjective={openObjective}
+            onBackObjective={backObjective}
             onAuth={setAuth}
             onRefresh={refresh}
           />
@@ -211,16 +248,51 @@ function Surface(props: {
   client: RadClient;
   auth: AuthoritySnapshot;
   status: Status | null;
+  objectiveId: string | null;
+  onOpenObjective: (id: string) => void;
+  onBackObjective: () => void;
   onAuth: (a: AuthoritySnapshot) => void;
   onRefresh: () => Promise<void>;
 }) {
   switch (props.page) {
     case "chat":
       return <Chat client={props.client} />;
+    case "active":
+      return (
+        <ActiveRun
+          client={props.client}
+          onOpenObjective={props.onOpenObjective}
+          onBack={props.onBackObjective}
+        />
+      );
     case "objectives":
-      return <Objectives client={props.client} />;
+      return <Objectives client={props.client} onView={props.onOpenObjective} />;
+    case "objective":
+      return props.objectiveId ? (
+        <ObjectiveDetailView
+          key={props.objectiveId}
+          client={props.client}
+          id={props.objectiveId}
+          onBack={props.onBackObjective}
+          onOpenObjective={props.onOpenObjective}
+        />
+      ) : (
+        <div>
+          <h1>Objective</h1>
+          <p className="lead">Pick an objective from the Objectives page.</p>
+          <button className="btn" onClick={props.onBackObjective}>
+            ← Objectives
+          </button>
+        </div>
+      );
     case "tasks":
       return <Tasks client={props.client} />;
+    case "tools":
+      return <ToolsTrace client={props.client} onOpenObjective={props.onOpenObjective} />;
+    case "memory":
+      return <Memory client={props.client} />;
+    case "verification":
+      return <VerificationPage client={props.client} onOpenObjective={props.onOpenObjective} />;
     case "permissions":
       return <Permissions client={props.client} auth={props.auth} onAuth={props.onAuth} />;
     case "settings":
@@ -244,7 +316,10 @@ function Chat({ client }: { client: RadClient }) {
     setBusy(true);
     try {
       const r = await client.chat(t);
-      setMsgs((m) => [...m, { who: "jerry", text: r.reply }]);
+      setMsgs((m) => [
+        ...m,
+        { who: "jerry", text: r.via ? `${r.reply}\n— via ${r.via}` : r.reply },
+      ]);
     } catch (e) {
       setMsgs((m) => [...m, { who: "jerry", text: e instanceof Error ? e.message : String(e) }]);
     } finally {
@@ -288,15 +363,23 @@ function Chat({ client }: { client: RadClient }) {
   );
 }
 
-function Objectives({ client }: { client: RadClient }) {
+function Objectives({
+  client,
+  onView,
+}: {
+  client: RadClient;
+  onView: (id: string) => void;
+}) {
   const [rows, setRows] = useState<ObjectiveRow[]>([]);
+  const [activeOnly, setActiveOnly] = useState(false);
   const [goal, setGoal] = useState("");
   const [detail, setDetail] = useState<string>("");
+  const [traceId, setTraceId] = useState<string>("");
   const [err, setErr] = useState("");
   const load = useCallback(async () => {
-    const r = await client.objectives();
+    const r = await client.objectives(activeOnly);
     setRows(r.objectives);
-  }, [client]);
+  }, [client, activeOnly]);
   useEffect(() => {
     void load();
   }, [load]);
@@ -312,8 +395,9 @@ function Objectives({ client }: { client: RadClient }) {
     }
   };
   const inspect = async (id: string) => {
+    setTraceId(id);
     const t = await client.trace(id);
-    setDetail(JSON.stringify({ verification: t.verification, tasks: t.tasks }, null, 2));
+    setDetail(JSON.stringify({ objective_id: id, verification: t.verification, tasks: t.tasks }, null, 2));
   };
   return (
     <div>
@@ -329,6 +413,15 @@ function Objectives({ client }: { client: RadClient }) {
           <button className="btn ghost" onClick={() => void load()}>
             Refresh
           </button>
+          <label className="row" style={{ marginLeft: 12, width: "auto" }}>
+            <input
+              type="checkbox"
+              checked={activeOnly}
+              onChange={(e) => setActiveOnly(e.target.checked)}
+              style={{ width: "auto", marginRight: 6 }}
+            />
+            active only
+          </label>
         </div>
         {err && <p className="err">{err}</p>}
         {detail && <pre className="lead" style={{ whiteSpace: "pre-wrap" }}>{detail}</pre>}
@@ -341,15 +434,26 @@ function Objectives({ client }: { client: RadClient }) {
               <th>status</th>
               <th>verification</th>
               <th>goal</th>
+              <th>actions</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((o) => (
-              <tr key={o.id} onClick={() => void inspect(o.id)} style={{ cursor: "pointer" }}>
+              <tr key={o.id} className={o.id === traceId ? "sel-row" : ""}>
                 <td>{o.id.slice(0, 12)}</td>
-                <td>{o.status}</td>
-                <td>{o.verification || "—"}</td>
+                <td><span className={chipClass(o.status)}>{o.status}</span></td>
+                <td><span className={chipClass(o.verification)}>{o.verification || "—"}</span></td>
                 <td>{o.goal}</td>
+                <td>
+                  <div className="row">
+                    <button className="btn ghost" style={{ padding: "1px 6px", fontSize: 11 }} onClick={() => void inspect(o.id)}>
+                      trace
+                    </button>
+                    <button className="btn ghost" style={{ padding: "1px 6px", fontSize: 11 }} onClick={() => onView(o.id)}>
+                      view
+                    </button>
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -552,6 +656,106 @@ function SettingsPage({
         <div>Needle / tool_router: {s.tool_router} (off unless you set it in CLI)</div>
         <div>Version: {status?.version}</div>
       </div>
+    </div>
+  );
+}
+
+function VerificationPage({
+  client,
+  onOpenObjective,
+}: {
+  client: RadClient;
+  onOpenObjective: (id: string) => void;
+}) {
+  const [rows, setRows] = useState<ObjectiveRow[]>([]);
+  const [rowsErr, setRowsErr] = useState("");
+  const [id, setId] = useState("");
+  const [trace, setTrace] = useState<{
+    objective: ObjectiveRow;
+    tasks: TaskRow[];
+    verification: Verification;
+  } | null>(null);
+  const [err, setErr] = useState("");
+
+  useEffect(() => {
+    void client
+      .objectives()
+      .then((r) => setRows(r.objectives))
+      .catch((e) => setRowsErr(e instanceof Error ? e.message : String(e)));
+  }, [client]);
+
+  useEffect(() => {
+    if (!id) return;
+    let live = true;
+    const load = async () => {
+      try {
+        const t = await client.trace(id);
+        if (live) {
+          setTrace(t);
+          setErr("");
+        }
+      } catch (e) {
+        if (live) setErr(e instanceof Error ? e.message : String(e));
+      }
+    };
+    void load();
+  }, [id, client]);
+
+  return (
+    <div>
+      <h1>Verification</h1>
+      <p className="lead">
+        The desktop never computes VERIFIED — it only displays the control-plane pass/fail
+        status. {rowsErr}
+      </p>
+      <div className="card">
+        <table>
+          <thead>
+            <tr>
+              <th>id</th>
+              <th>status</th>
+              <th>verification</th>
+              <th>goal</th>
+              <th>actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((o) => (
+              <tr key={o.id} className={o.id === id ? "sel-row" : ""}>
+                <td>{o.id.slice(0, 12)}</td>
+                <td><span className={chipClass(o.status)}>{o.status}</span></td>
+                <td><span className={chipClass(o.verification)}>{o.verification || "—"}</span></td>
+                <td>{o.goal}</td>
+                <td>
+                  <div className="row">
+                    <button className="btn ghost" style={{ padding: "1px 6px", fontSize: 11 }} onClick={() => setId(o.id)}>
+                      trace
+                    </button>
+                    <button className="btn ghost" style={{ padding: "1px 6px", fontSize: 11 }} onClick={() => onOpenObjective(o.id)}>
+                      view
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {id && (
+        <div className="card">
+          <h3>Trace — {trace?.objective.id || id}</h3>
+          {err && <p className="err">{err}</p>}
+          {trace && (
+            <>
+              <div className="row" style={{ marginBottom: 10 }}>
+                <span className={chipClass(trace.objective.status)}>{trace.objective.status}</span>
+                <span className="meta">{trace.objective.goal}</span>
+              </div>
+              <VerificationCard verification={trace.verification} tasks={trace.tasks} />
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }

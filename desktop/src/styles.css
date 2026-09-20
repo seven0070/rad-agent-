@@ -158,3 +158,100 @@ table { width: 100%; border-collapse: collapse; font-size: 13px; }
 th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); }
 th { color: var(--muted); font-weight: 500; }
 .connect { max-width: 460px; margin: 12vh auto; }
+
+/* ——— Phase 3: detail views, chips, verification, events ——— */
+
+/* cards */
+.card h2 { font-size: 17px; margin: 14px 0 8px; }
+.card h3 { font-size: 14px; margin: 12px 0 8px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+.card ul { margin: 4px 0 8px; padding-left: 18px; font-size: 13px; }
+.card ul li { margin: 3px 0; }
+
+/* chips */
+.chip {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  white-space: nowrap;
+}
+.chip.running { background: rgba(60, 141, 255, 0.14); border-color: var(--standard); color: var(--accent-2); }
+.chip.completed { background: rgba(62, 207, 142, 0.12); border-color: var(--ok); color: var(--ok); }
+.chip.verified { background: rgba(62, 207, 142, 0.16); border-color: var(--ok); color: var(--ok); }
+.chip.planning { background: rgba(179, 136, 255, 0.12); border-color: var(--autonomous); color: var(--autonomous); }
+.chip.pending { background: var(--bg-3); border-color: var(--line); color: var(--muted); }
+.chip.paused { background: rgba(232, 184, 74, 0.12); border-color: var(--warn); color: var(--warn); }
+.chip.needs_user { background: rgba(232, 184, 74, 0.14); border-color: var(--warn); color: var(--warn); }
+.chip.failed { background: rgba(240, 113, 120, 0.12); border-color: var(--danger); color: var(--danger); }
+.chip.cancelled { color: var(--muted); border-color: var(--line); }
+.chip.expired { color: var(--muted); border-color: var(--line); text-decoration: line-through; }
+.chip.user_provided { background: rgba(62, 207, 142, 0.12); border-color: var(--ok); color: var(--ok); }
+.chip.episodic, .chip.semantic, .chip.procedural { background: rgba(76, 141, 255, 0.1); border-color: var(--standard); color: var(--accent-2); }
+.chip.sel { background: rgba(122, 162, 255, 0.18); border-color: var(--accent); color: var(--accent-2); }
+
+/* key/value rows */
+.kv { display: flex; flex-direction: column; gap: 4px; }
+.kv-row { display: flex; gap: 10px; font-size: 13px; align-items: baseline; }
+.kv-row .k { color: var(--muted); min-width: 130px; flex: 0 0 130px; }
+.kv-row .v { color: var(--text); overflow-wrap: anywhere; }
+
+/* verification checks */
+.checks { display: flex; flex-direction: column; gap: 6px; }
+.check {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  font-size: 13px;
+}
+.check.ok { border-left: 3px solid var(--ok); }
+.check.bad { border-left: 3px solid var(--danger); }
+.check .verdict { font-weight: 600; }
+.verdict { font-size: 13px; }
+
+/* events stream */
+.events { display: flex; flex-direction: column; gap: 4px; max-height: 320px; overflow: auto; }
+.event {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  font-size: 12px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+}
+.event .seq { color: var(--muted); min-width: 34px; }
+.event .at { color: var(--muted); min-width: 72px; font-variant-numeric: tabular-nums; }
+.event .kind { font-weight: 600; color: var(--accent-2); }
+.event .data { color: var(--muted); overflow-wrap: anywhere; flex: 1; }
+
+/* mono + trace */
+.mono { font-family: "Cascadia Code", "JetBrains Mono", Consolas, monospace; font-size: 12px; }
+.trace-pre {
+  font-family: "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+  font-size: 11.5px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 10px;
+  overflow: auto;
+  white-space: pre-wrap;
+  max-height: 300px;
+  margin: 6px 0;
+}
+.meta { color: var(--muted); font-size: 12px; }
+
+/* selected row highlight */
+.sel-row td { background: rgba(122, 162, 255, 0.07); }
+
+/* empty state */
+.empty { color: var(--muted); font-size: 13px; padding: 10px 0; }

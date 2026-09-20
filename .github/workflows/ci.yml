@@ -2,7 +2,15 @@ name: CI
 
 on:
   push:
+    paths-ignore:
+      - 'desktop/**'
+      - 'tests/test_desktop*'
+      - 'scripts/**'
   pull_request:
+    paths-ignore:
+      - 'desktop/**'
+      - 'tests/test_desktop*'
+      - 'scripts/**'
 
 jobs:
   test:
