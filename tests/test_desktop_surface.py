@@ -25,13 +25,26 @@ def test_frontend_has_no_arbitrary_shell():
         if p.suffix in {".ts", ".tsx", ".js"}:
             src += p.read_text(encoding="utf-8") + "\n"
     rust = (DESK / "src-tauri" / "src" / "lib.rs").read_text(encoding="utf-8")
+    cargo = (DESK / "src-tauri" / "Cargo.toml").read_text(encoding="utf-8")
     assert "run_shell" not in src
     assert "shell.execute" not in src or "capabilities" in src  # conceptual name in UI is ok
     assert "invoke(\"shell" not in src
+    # no shell plugin anywhere in the Rust crate (manifest or source)
     assert "tauri-plugin-shell" not in rust
+    assert "tauri-plugin-shell" not in cargo
+    # dev path stays: `python -m rad serve` launched with a fixed argv literal
     assert 'args(["-m", "rad", "serve"' in rust
-    # no user-controlled command interpolation
+    assert "Command::new(python_bin())" in rust  # python backend launch is the allowed dev form
+    # Phase 2 sidecar resolver must exist and be wired into the bundle
+    assert "fn rad_program" in rust
+    conf = (DESK / "src-tauri" / "tauri.conf.json").read_text(encoding="utf-8")
+    assert '"externalBin"' in conf
+    assert '"binaries/rad"' in conf
+    # the resolved program is fixed (RAD_BIN env, sidecar path, or python_bin()) —
+    # never a user-supplied command string
     assert ".arg(cmd)" not in rust
+    assert "Command::new(cmd)" not in rust
+    assert "Command::new(user" not in rust
     assert "std::process::Command::new(user" not in rust
 
 

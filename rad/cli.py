@@ -538,6 +538,8 @@ def cmd_desktop(args) -> int:
         root / "src-tauri" / "target" / "debug" / "rad-desktop",
     ]
     for p in built:
+        if sys.platform == "win32" and p.with_suffix(".exe").exists():
+            p = p.with_suffix(".exe")
         if p.exists():
             ok(f"launching {p}")
             subprocess.Popen([str(p)], start_new_session=True)

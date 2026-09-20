@@ -1,17 +1,13 @@
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ApiError,
-  ArtifactRow,
   AuthoritySnapshot,
-  EventRow,
   ObjectiveRow,
-  ObservationRow,
-  Profile,
   RadClient,
   Settings,
   Status,
   TaskRow,
-  verifyLabel,
+  Verification,
 } from "./api";
 import {
   apiBase,
@@ -21,43 +17,43 @@ import {
   backendStop,
   isTauri,
 } from "./backend";
+import { ActiveRun } from "./views/ActiveRun";
+import { Memory } from "./views/Memory";
+import { ObjectiveDetail as ObjectiveDetailView } from "./views/ObjectiveDetail";
+import { ToolsTrace } from "./views/ToolsTrace";
+import { VerificationCard } from "./views/VerificationCard";
 
 type Page =
   | "chat"
+  | "active"
   | "objectives"
-  | "execution"
-  | "graph"
-  | "trace"
+  | "objective"
+  | "tasks"
+  | "tools"
+  | "memory"
   | "verification"
-  | "artifacts"
-  | "provenance"
-  | "usage"
   | "permissions"
   | "settings";
 
 const PAGES: { id: Page; label: string }[] = [
-  { id: "chat", label: "Jerry" },
+  { id: "chat", label: "Chat" },
+  { id: "active", label: "Active" },
   { id: "objectives", label: "Objectives" },
-  { id: "execution", label: "Execution" },
-  { id: "graph", label: "Task graph" },
-  { id: "trace", label: "Trace" },
+  { id: "tasks", label: "Tasks" },
+  { id: "tools", label: "Tools" },
+  { id: "memory", label: "Memory" },
   { id: "verification", label: "Verification" },
-  { id: "artifacts", label: "Artifacts" },
-  { id: "provenance", label: "Why" },
-  { id: "usage", label: "Usage" },
   { id: "permissions", label: "Permissions" },
   { id: "settings", label: "Settings" },
 ];
 
-const HINTS = [
-  "Build a small Flask API.",
-  "Research this topic and produce a report.",
-  "Write three facts about RAD to facts.md, then summarise into summary.txt",
-  "Continue the previous objective.",
-];
+function chipClass(v: string | undefined | null) {
+  return `chip ${(v || "pending").toLowerCase()}`;
+}
 
 export default function App() {
   const [page, setPage] = useState<Page>("chat");
+  const [objectiveId, setObjectiveId] = useState<string | null>(null);
   const [client, setClient] = useState<RadClient | null>(null);
   const [status, setStatus] = useState<Status | null>(null);
   const [auth, setAuth] = useState<AuthoritySnapshot | null>(null);
@@ -65,22 +61,27 @@ export default function App() {
   const [error, setError] = useState("");
   const [manualBase, setManualBase] = useState(apiBase());
   const [manualToken, setManualToken] = useState("");
-  const [selectedId, setSelectedId] = useState("");
-  const [objectives, setObjectives] = useState<ObjectiveRow[]>([]);
+
+  const openObjective = useCallback((id: string) => {
+    setObjectiveId(id);
+    setPage("objective");
+  }, []);
+
+  const backObjective = useCallback(() => {
+    setPage("objectives");
+  }, []);
 
   const connect = useCallback(async (base: string, token: string) => {
     const c = new RadClient(base, token);
     const h = await c.health();
     if (!h.ok) throw new Error("backend not healthy");
-    const [st, a, o] = await Promise.all([c.status(), c.authority(), c.objectives()]);
+    const [st, a] = await Promise.all([c.status(), c.authority()]);
     setClient(c);
     setStatus(st);
     setAuth(a);
-    setObjectives(o.objectives);
-    if (!selectedId && o.objectives[0]) setSelectedId(o.objectives[0].id);
     setBackend("connected");
     setError("");
-  }, [selectedId]);
+  }, []);
 
   const boot = useCallback(async () => {
     setBackend("connecting");
@@ -88,12 +89,13 @@ export default function App() {
     try {
       if (isTauri()) {
         const info = await backendInfo();
+        let token = "";
         try {
           await backendStart(info.port || 7331);
         } catch {
           /* may already be running externally */
         }
-        const token = await apiToken();
+        token = await apiToken();
         if (!token) throw new Error("no API token — start `rad serve` once to create ~/.rad/api.token");
         await connect(apiBase(info.port || 7331), token);
         return;
@@ -116,22 +118,10 @@ export default function App() {
 
   const refresh = useCallback(async () => {
     if (!client) return;
-    const [st, a, o] = await Promise.all([client.status(), client.authority(), client.objectives()]);
+    const [st, a] = await Promise.all([client.status(), client.authority()]);
     setStatus(st);
     setAuth(a);
-    setObjectives(o.objectives);
-    if (selectedId && !o.objectives.some((x) => x.id === selectedId) && o.objectives[0]) {
-      setSelectedId(o.objectives[0].id);
-    }
-    if (!selectedId && o.objectives[0]) setSelectedId(o.objectives[0].id);
-  }, [client, selectedId]);
-
-  useEffect(() => {
-    if (!client) return;
-    const live = objectives.some((o) => o.status === "running" || o.status === "planning");
-    const t = window.setInterval(() => void refresh(), live ? 1200 : 4000);
-    return () => window.clearInterval(t);
-  }, [client, objectives, refresh]);
+  }, [client]);
 
   const shutdown = useCallback(async () => {
     try {
@@ -149,11 +139,15 @@ export default function App() {
       <aside className="sidebar">
         <div className="brand">
           RAD Desktop
-          <span>1.0.1 · operator surface</span>
+          <span>0.1.0-alpha · authority foundation</span>
         </div>
         <nav className="nav">
           {PAGES.map((p) => (
-            <button key={p.id} className={page === p.id ? "active" : ""} onClick={() => setPage(p.id)}>
+            <button
+              key={p.id}
+              className={page === p.id ? "active" : ""}
+              onClick={() => setPage(p.id)}
+            >
               {p.label}
             </button>
           ))}
@@ -177,33 +171,27 @@ export default function App() {
             client={client}
             auth={auth}
             status={status}
-            objectives={objectives}
-            selectedId={selectedId}
-            setSelectedId={setSelectedId}
+            objectiveId={objectiveId}
+            onOpenObjective={openObjective}
+            onBackObjective={backObjective}
             onAuth={setAuth}
             onRefresh={refresh}
-            go={(p, id) => {
-              if (id) setSelectedId(id);
-              setPage(p);
-            }}
           />
         )}
       </main>
       <footer className="status">
         <span>
           <i className={`dot ${backend === "connected" ? "ok" : "off"}`} />
-          {backend === "connected" ? "control plane" : backend}
+          {backend === "connected" ? "backend connected" : backend}
         </span>
         <span className={`pill ${auth?.profile || "STANDARD"}`}>{auth?.profile || "—"}</span>
         <span>{model}</span>
         <span>
           budget {auth?.budgets.tool_calls ?? 60} tools / {auth?.budgets.model_calls ?? 80} model
         </span>
-        <span className="needle">Needle OFF</span>
         <span style={{ marginLeft: "auto" }}>
-          RAD {status?.version || "1.0.1"}
           {isTauri() && (
-            <button className="btn ghost" style={{ padding: "2px 8px", marginLeft: 10 }} onClick={() => void shutdown()}>
+            <button className="btn ghost" style={{ padding: "2px 8px" }} onClick={() => void shutdown()}>
               shut down
             </button>
           )}
@@ -227,8 +215,8 @@ function Connect(props: {
     <div className="connect">
       <h1>Connect to RAD</h1>
       <p className="lead">
-        Desktop is a surface over the existing Python API. It cannot run tools, raise budgets, or
-        bypass Policy.decide.
+        Desktop is a surface over the existing Python API. It cannot run tools, raise budgets,
+        or bypass Policy.decide.
       </p>
       {props.error && <p className="err">{props.error}</p>}
       <div className="card">
@@ -260,41 +248,51 @@ function Surface(props: {
   client: RadClient;
   auth: AuthoritySnapshot;
   status: Status | null;
-  objectives: ObjectiveRow[];
-  selectedId: string;
-  setSelectedId: (id: string) => void;
+  objectiveId: string | null;
+  onOpenObjective: (id: string) => void;
+  onBackObjective: () => void;
   onAuth: (a: AuthoritySnapshot) => void;
   onRefresh: () => Promise<void>;
-  go: (p: Page, id?: string) => void;
 }) {
   switch (props.page) {
     case "chat":
-      return <Chat client={props.client} go={props.go} />;
-    case "objectives":
+      return <Chat client={props.client} />;
+    case "active":
       return (
-        <Objectives
+        <ActiveRun
           client={props.client}
-          rows={props.objectives}
-          selectedId={props.selectedId}
-          onSelect={props.setSelectedId}
-          onRefresh={props.onRefresh}
-          go={props.go}
+          onOpenObjective={props.onOpenObjective}
+          onBack={props.onBackObjective}
         />
       );
-    case "execution":
-      return <Execution client={props.client} id={props.selectedId} objectives={props.objectives} setId={props.setSelectedId} />;
-    case "graph":
-      return <Graph client={props.client} id={props.selectedId} objectives={props.objectives} setId={props.setSelectedId} />;
-    case "trace":
-      return <Trace client={props.client} id={props.selectedId} objectives={props.objectives} setId={props.setSelectedId} />;
+    case "objectives":
+      return <Objectives client={props.client} onView={props.onOpenObjective} />;
+    case "objective":
+      return props.objectiveId ? (
+        <ObjectiveDetailView
+          key={props.objectiveId}
+          client={props.client}
+          id={props.objectiveId}
+          onBack={props.onBackObjective}
+          onOpenObjective={props.onOpenObjective}
+        />
+      ) : (
+        <div>
+          <h1>Objective</h1>
+          <p className="lead">Pick an objective from the Objectives page.</p>
+          <button className="btn" onClick={props.onBackObjective}>
+            ← Objectives
+          </button>
+        </div>
+      );
+    case "tasks":
+      return <Tasks client={props.client} />;
+    case "tools":
+      return <ToolsTrace client={props.client} onOpenObjective={props.onOpenObjective} />;
+    case "memory":
+      return <Memory client={props.client} />;
     case "verification":
-      return <Verification client={props.client} id={props.selectedId} objectives={props.objectives} setId={props.setSelectedId} />;
-    case "artifacts":
-      return <Artifacts client={props.client} id={props.selectedId} objectives={props.objectives} setId={props.setSelectedId} />;
-    case "provenance":
-      return <Provenance client={props.client} id={props.selectedId} objectives={props.objectives} setId={props.setSelectedId} />;
-    case "usage":
-      return <Usage client={props.client} go={props.go} />;
+      return <VerificationPage client={props.client} onOpenObjective={props.onOpenObjective} />;
     case "permissions":
       return <Permissions client={props.client} auth={props.auth} onAuth={props.onAuth} />;
     case "settings":
@@ -306,62 +304,24 @@ function Surface(props: {
   }
 }
 
-function Picker({
-  id,
-  setId,
-  objectives,
-}: {
-  id: string;
-  setId: (v: string) => void;
-  objectives: ObjectiveRow[];
-}) {
-  return (
-    <label>
-      Objective
-      <select value={id} onChange={(e) => setId(e.target.value)}>
-        {!objectives.length && <option value="">None</option>}
-        {objectives.map((o) => (
-          <option key={o.id} value={o.id}>
-            {o.goal.slice(0, 80)}
-          </option>
-        ))}
-      </select>
-    </label>
-  );
-}
-
-function Chat({ client, go }: { client: RadClient; go: (p: Page, id?: string) => void }) {
+function Chat({ client }: { client: RadClient }) {
   const [text, setText] = useState("");
-  const [msgs, setMsgs] = useState<Array<{ who: "user" | "jerry"; text: string; proposal?: string }>>([]);
+  const [msgs, setMsgs] = useState<Array<{ who: "user" | "jerry"; text: string }>>([]);
   const [busy, setBusy] = useState(false);
-  const send = async (raw?: string) => {
-    const t = (raw ?? text).trim();
+  const send = async () => {
+    const t = text.trim();
     if (!t || busy) return;
     setText("");
     setMsgs((m) => [...m, { who: "user", text: t }]);
     setBusy(true);
     try {
-      if (t === "run_tool" || t === "execute_tool" || t === "call_tool") {
-        setMsgs((m) => [
-          ...m,
-          { who: "jerry", text: "Jerry has no tool runner. Tools run only through the executor / Policy.decide." },
-        ]);
-        return;
-      }
       const r = await client.chat(t);
-      const proposal = /^(build|create|write|research|implement|make|generate|plan|fix)\b/i.test(t) ? t : undefined;
-      setMsgs((m) => [...m, { who: "jerry", text: r.reply, proposal }]);
+      setMsgs((m) => [
+        ...m,
+        { who: "jerry", text: r.via ? `${r.reply}\n— via ${r.via}` : r.reply },
+      ]);
     } catch (e) {
       setMsgs((m) => [...m, { who: "jerry", text: e instanceof Error ? e.message : String(e) }]);
-    } finally {
-      setBusy(false);
-    }
-  };
-  const start = async (goal: string) => {
-    setBusy(true);
-    try {
-      const o = await client.createObjective(goal, true);
-      go("objectives", o.id);
     } finally {
       setBusy(false);
     }
@@ -370,44 +330,20 @@ function Chat({ client, go }: { client: RadClient; go: (p: Page, id?: string) =>
     <div className="chat">
       <h1>Jerry</h1>
       <p className="lead">
-        Operator layer over the RAD session. Tools still pass Policy.decide and the executor. Jerry
-        cannot run a private tool path.
+        Operator layer over the RAD session. Tools still pass Policy.decide and the executor.
+        Jerry cannot run a private tool path.
       </p>
       <div className="msgs">
         {msgs.length === 0 && (
-          <div className="bubble jerry">
-            Ask anything. Objectives you create go through the control plane.
-            <div className="hint-col">
-              {HINTS.map((h) => (
-                <button key={h} className="btn ghost hint" onClick={() => void send(h)}>
-                  {h}
-                </button>
-              ))}
-            </div>
-          </div>
+          <div className="bubble jerry">Ask anything. Objectives you create go through the control plane.</div>
         )}
         {msgs.map((m, i) => (
           <div key={i} className={`bubble ${m.who}`}>
             {m.text}
-            {m.proposal && (
-              <div className="proposal">
-                <div className="muted">Proposed objective</div>
-                <div>{m.proposal}</div>
-                <button className="btn" disabled={busy} onClick={() => void start(m.proposal!)}>
-                  Start on control plane
-                </button>
-              </div>
-            )}
           </div>
         ))}
       </div>
-      <form
-        className="row"
-        onSubmit={(e: FormEvent) => {
-          e.preventDefault();
-          void send();
-        }}
-      >
+      <div className="row">
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
@@ -419,81 +355,54 @@ function Chat({ client, go }: { client: RadClient; go: (p: Page, id?: string) =>
           }}
           placeholder="Message Jerry…"
         />
-        <button className="btn" disabled={busy} type="submit">
+        <button className="btn" disabled={busy} onClick={() => void send()}>
           Send
         </button>
-      </form>
+      </div>
     </div>
   );
 }
 
 function Objectives({
   client,
-  rows,
-  selectedId,
-  onSelect,
-  onRefresh,
-  go,
+  onView,
 }: {
   client: RadClient;
-  rows: ObjectiveRow[];
-  selectedId: string;
-  onSelect: (id: string) => void;
-  onRefresh: () => Promise<void>;
-  go: (p: Page, id?: string) => void;
+  onView: (id: string) => void;
 }) {
+  const [rows, setRows] = useState<ObjectiveRow[]>([]);
+  const [activeOnly, setActiveOnly] = useState(false);
   const [goal, setGoal] = useState("");
-  const [detail, setDetail] = useState<ObjectiveRow & { tasks?: TaskRow[] } | null>(null);
-  const [events, setEvents] = useState<EventRow[]>([]);
+  const [detail, setDetail] = useState<string>("");
+  const [traceId, setTraceId] = useState<string>("");
   const [err, setErr] = useState("");
-  const loadDetail = useCallback(
-    async (id: string) => {
-      if (!id) {
-        setDetail(null);
-        return;
-      }
-      const [o, ev] = await Promise.all([client.objective(id), client.events(id)]);
-      setDetail(o);
-      setEvents(ev.events || []);
-    },
-    [client],
-  );
+  const load = useCallback(async () => {
+    const r = await client.objectives(activeOnly);
+    setRows(r.objectives);
+  }, [client, activeOnly]);
   useEffect(() => {
-    void loadDetail(selectedId);
-    const t = window.setInterval(() => void loadDetail(selectedId), 1500);
-    return () => window.clearInterval(t);
-  }, [loadDetail, selectedId]);
-
+    void load();
+  }, [load]);
   const create = async () => {
     setErr("");
     try {
       const o = await client.createObjective(goal);
       setGoal("");
-      onSelect(o.id);
-      await onRefresh();
-      await loadDetail(o.id);
+      setDetail(o.note || (o.started ? "started" : "created PENDING"));
+      await load();
     } catch (e) {
       setErr(e instanceof ApiError ? e.message : String(e));
     }
   };
-  const act = async (action: "pause" | "resume" | "cancel" | "run") => {
-    if (!selectedId) return;
-    setErr("");
-    try {
-      await client.lifecycle(selectedId, action);
-      await onRefresh();
-      await loadDetail(selectedId);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : String(e));
-    }
+  const inspect = async (id: string) => {
+    setTraceId(id);
+    const t = await client.trace(id);
+    setDetail(JSON.stringify({ objective_id: id, verification: t.verification, tasks: t.tasks }, null, 2));
   };
   return (
     <div>
       <h1>Objectives</h1>
-      <p className="lead">
-        Existing control plane. Desktop displays objectives, tasks and verification — it is not a React
-        task engine.
-      </p>
+      <p className="lead">Existing control plane. Desktop displays objectives, tasks and verification — it is not a React task engine.</p>
       <div className="card">
         <label>New objective</label>
         <input value={goal} onChange={(e) => setGoal(e.target.value)} placeholder="goal" />
@@ -501,11 +410,21 @@ function Objectives({
           <button className="btn" onClick={() => void create()}>
             Create
           </button>
-          <button className="btn ghost" onClick={() => void onRefresh()}>
+          <button className="btn ghost" onClick={() => void load()}>
             Refresh
           </button>
+          <label className="row" style={{ marginLeft: 12, width: "auto" }}>
+            <input
+              type="checkbox"
+              checked={activeOnly}
+              onChange={(e) => setActiveOnly(e.target.checked)}
+              style={{ width: "auto", marginRight: 6 }}
+            />
+            active only
+          </label>
         </div>
         {err && <p className="err">{err}</p>}
+        {detail && <pre className="lead" style={{ whiteSpace: "pre-wrap" }}>{detail}</pre>}
       </div>
       <div className="card">
         <table>
@@ -515,455 +434,69 @@ function Objectives({
               <th>status</th>
               <th>verification</th>
               <th>goal</th>
+              <th>actions</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((o) => (
-              <tr
-                key={o.id}
-                onClick={() => onSelect(o.id)}
-                style={{ cursor: "pointer", background: o.id === selectedId ? "var(--bg-3)" : undefined }}
-              >
+              <tr key={o.id} className={o.id === traceId ? "sel-row" : ""}>
                 <td>{o.id.slice(0, 12)}</td>
-                <td>
-                  <span className={`pill ${o.status}`}>{o.status}</span>
-                </td>
-                <td>
-                  <Verify v={verifyLabel(o.verification)} />
-                </td>
+                <td><span className={chipClass(o.status)}>{o.status}</span></td>
+                <td><span className={chipClass(o.verification)}>{o.verification || "—"}</span></td>
                 <td>{o.goal}</td>
+                <td>
+                  <div className="row">
+                    <button className="btn ghost" style={{ padding: "1px 6px", fontSize: 11 }} onClick={() => void inspect(o.id)}>
+                      trace
+                    </button>
+                    <button className="btn ghost" style={{ padding: "1px 6px", fontSize: 11 }} onClick={() => onView(o.id)}>
+                      view
+                    </button>
+                  </div>
+                </td>
               </tr>
             ))}
-            {!rows.length && (
-              <tr>
-                <td colSpan={4} className="muted">
-                  No objectives yet.
-                </td>
-              </tr>
-            )}
           </tbody>
         </table>
       </div>
-      {detail && (
-        <div className="card">
-          <div className="muted mono">{detail.id}</div>
-          <h2 className="sub">{detail.goal}</h2>
-          <div className="row">
-            <span className={`pill ${detail.status}`}>{detail.status}</span>
-            <Verify v={verifyLabel(detail.verification)} />
-          </div>
-          <div className="row" style={{ marginTop: 12 }}>
-            <button className="btn" onClick={() => void act("run")}>
-              Run
-            </button>
-            <button className="btn ghost" onClick={() => void act("pause")}>
-              Pause
-            </button>
-            <button className="btn ghost" onClick={() => void act("resume")}>
-              Resume
-            </button>
-            {detail.status === "needs_user" && (
-              <button className="btn ghost" onClick={() => void act("resume")}>
-                Recover
-              </button>
-            )}
-            <button className="btn ghost" onClick={() => void act("cancel")}>
-              Cancel
-            </button>
-            <button className="btn ghost" onClick={() => go("graph", detail.id)}>
-              Graph
-            </button>
-          </div>
-          {detail.result && <p className="lead">{detail.result}</p>}
-          <TaskGraph tasks={detail.tasks || []} />
-          <h3 className="sub">Live execution</h3>
-          <EventLog events={events} tasks={detail.tasks || []} />
-        </div>
-      )}
     </div>
   );
 }
 
-function Verify({ v }: { v: string }) {
-  if (!v || v === "—") return <span className="pill">not checked</span>;
-  if (v === "VERIFIED") return <span className="pill COMPLETED">VERIFIED</span>;
-  if (v === "FAILED") return <span className="pill FAILED">FAILED</span>;
-  return <span className="pill VERIFYING">UNVERIFIED — not DONE</span>;
-}
-
-function TaskGraph({ tasks, current }: { tasks: TaskRow[]; current?: string }) {
-  if (!tasks.length) return <p className="muted">No tasks yet. The planner has not produced a graph.</p>;
-  return (
-    <div className="graph">
-      <p className="muted small">
-        PENDING → READY → RUNNING → OBSERVING → VERIFYING → COMPLETED. FAILED → RETRYING → READY.
-      </p>
-      {tasks.map((t) => (
-        <div key={t.id} className={`node ${t.id === current ? "current" : ""}`}>
-          <div className="row">
-            <span className={`pill ${t.status}`}>{t.status}</span>
-            <Verify v={t.verification?.status || ""} />
-            <span className="muted mono">{t.id}</span>
-            {(t.attempts || 0) > 1 && <span className="warn">retry {t.attempts}</span>}
-          </div>
-          <div>{t.title || t.text || t.id}</div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function EventLog({ events, tasks }: { events: EventRow[]; tasks: TaskRow[] }) {
-  if (!events.length) return <p className="muted">No events yet.</p>;
-  return (
-    <ol className="elog">
-      {events.slice(-80).map((e, i) => {
-        const task = tasks.find((t) => t.id === e.task_id);
-        return (
-          <li key={`${e.seq}-${i}`}>
-            <span className="muted">{new Date((e.at || 0) * (e.at < 1e12 ? 1000 : 1)).toLocaleTimeString()}</span>{" "}
-            <span className="kind">{e.kind}</span>
-            {task ? ` · ${task.title || task.text}` : ""}
-          </li>
-        );
-      })}
-    </ol>
-  );
-}
-
-function useTrace(client: RadClient, id: string) {
-  const [tasks, setTasks] = useState<TaskRow[]>([]);
-  const [obs, setObs] = useState<ObservationRow[]>([]);
-  const [arts, setArts] = useState<ArtifactRow[]>([]);
-  const [obj, setObj] = useState<ObjectiveRow | null>(null);
-  const [events, setEvents] = useState<EventRow[]>([]);
+function Tasks({ client }: { client: RadClient }) {
+  const [rows, setRows] = useState<TaskRow[]>([]);
   useEffect(() => {
-    if (!id) return;
-    let stop = false;
-    const load = async () => {
-      try {
-        const [t, ev] = await Promise.all([client.trace(id), client.events(id)]);
-        if (stop) return;
-        setObj(t.objective);
-        setTasks(t.tasks || []);
-        setObs(t.observations || []);
-        setArts(t.artifacts || []);
-        setEvents(ev.events || []);
-      } catch {
-        /* keep last */
-      }
-    };
-    void load();
-    const n = window.setInterval(() => void load(), 1500);
-    return () => {
-      stop = true;
-      window.clearInterval(n);
-    };
-  }, [client, id]);
-  return { tasks, obs, arts, obj, events };
-}
-
-function Execution({
-  client,
-  id,
-  objectives,
-  setId,
-}: {
-  client: RadClient;
-  id: string;
-  objectives: ObjectiveRow[];
-  setId: (v: string) => void;
-}) {
-  const { tasks, events, obj } = useTrace(client, id);
-  const running = tasks.find((t) => t.status === "RUNNING");
-  return (
-    <div>
-      <h1>Live execution</h1>
-      <p className="lead">Events from the control-plane log. This is not a second event system.</p>
-      <div className="card">
-        <Picker id={id} setId={setId} objectives={objectives} />
-      </div>
-      {running && (
-        <div className="card">
-          <div className="muted">current task</div>
-          <div>{running.title || running.text}</div>
-        </div>
-      )}
-      {obj && (
-        <div className="row" style={{ marginBottom: 12 }}>
-          <span className={`pill ${obj.status}`}>{obj.status}</span>
-          <Verify v={verifyLabel(obj.verification)} />
-        </div>
-      )}
-      <EventLog events={events} tasks={tasks} />
-    </div>
-  );
-}
-
-function Graph({
-  client,
-  id,
-  objectives,
-  setId,
-}: {
-  client: RadClient;
-  id: string;
-  objectives: ObjectiveRow[];
-  setId: (v: string) => void;
-}) {
-  const { tasks, obj } = useTrace(client, id);
-  return (
-    <div>
-      <h1>Task graph</h1>
-      <p className="lead">Derived from persisted control-plane state.</p>
-      <div className="card">
-        <Picker id={id} setId={setId} objectives={objectives} />
-      </div>
-      <TaskGraph tasks={tasks} current={undefined} />
-      {obj && <p className="muted">{obj.status}</p>}
-    </div>
-  );
-}
-
-function Trace({
-  client,
-  id,
-  objectives,
-  setId,
-}: {
-  client: RadClient;
-  id: string;
-  objectives: ObjectiveRow[];
-  setId: (v: string) => void;
-}) {
-  const { obs } = useTrace(client, id);
-  return (
-    <div>
-      <h1>Tool trace</h1>
-      <p className="lead">Every tool call. Secrets are never shown. Desktop cannot run tools.</p>
-      <div className="card">
-        <Picker id={id} setId={setId} objectives={objectives} />
-      </div>
-      {obs.map((o) => (
-        <article key={o.id} className="card">
-          <div className="row">
-            <span className="muted mono">{o.at ? new Date(o.at * (o.at < 1e12 ? 1000 : 1)).toLocaleTimeString() : ""}</span>
-            <span className="pill">{o.tool}</span>
-            <span className={`pill ${o.status === "success" ? "COMPLETED" : "FAILED"}`}>{o.status}</span>
-          </div>
-          <pre className="pre">{o.output}</pre>
-        </article>
-      ))}
-      {!obs.length && <p className="muted">No tool calls yet.</p>}
-    </div>
-  );
-}
-
-function Verification({
-  client,
-  id,
-  objectives,
-  setId,
-}: {
-  client: RadClient;
-  id: string;
-  objectives: ObjectiveRow[];
-  setId: (v: string) => void;
-}) {
-  const { tasks, obj } = useTrace(client, id);
-  return (
-    <div>
-      <h1>Verification</h1>
-      <p className="lead">Machine evidence only. A model's DONE claim is never shown as VERIFIED.</p>
-      <div className="card">
-        <Picker id={id} setId={setId} objectives={objectives} />
-      </div>
-      {obj && (
-        <div className="card">
-          <div className="row">
-            <span>Objective</span>
-            <Verify v={verifyLabel(obj.verification)} />
-          </div>
-        </div>
-      )}
-      {tasks.map((t) => (
-        <article key={t.id} className="card">
-          <div className="row">
-            <span>{t.title || t.text}</span>
-            <Verify v={t.verification?.status || ""} />
-          </div>
-          <ul className="muted">
-            {(t.verification?.evidence || []).map((e, i) => (
-              <li key={i}>
-                {e.check} — {e.ok ? "pass" : "fail"} — {e.detail}
-              </li>
-            ))}
-            {!t.verification?.evidence?.length && <li>no machine checks listed (UNVERIFIED, not VERIFIED)</li>}
-          </ul>
-        </article>
-      ))}
-    </div>
-  );
-}
-
-function Artifacts({
-  client,
-  id,
-  objectives,
-  setId,
-}: {
-  client: RadClient;
-  id: string;
-  objectives: ObjectiveRow[];
-  setId: (v: string) => void;
-}) {
-  const { arts } = useTrace(client, id);
-  const [body, setBody] = useState("");
-  const open = async (a: ArtifactRow) => {
-    const r = await client.artifactBody(id, a.id);
-    setBody(r.binary ? "(binary)" : r.text || "");
-  };
-  return (
-    <div>
-      <h1>Artifacts</h1>
-      <p className="lead">Workspace files produced by tasks. No arbitrary browser filesystem access.</p>
-      <div className="card">
-        <Picker id={id} setId={setId} objectives={objectives} />
-      </div>
-      {arts.map((a) => (
-        <button key={a.id} className="card art" onClick={() => void open(a)}>
-          <div>{PathName(a.location)}</div>
-          <div className="muted mono">
-            {a.location} · sha256 {(a.sha256 || "").slice(0, 16)} · v{a.version}
-          </div>
-        </button>
-      ))}
-      {!arts.length && <p className="muted">No artifacts yet.</p>}
-      {body && <pre className="pre">{body}</pre>}
-    </div>
-  );
-}
-
-function PathName(p: string) {
-  const parts = p.replace(/\\/g, "/").split("/");
-  return parts[parts.length - 1] || p;
-}
-
-function Provenance({
-  client,
-  id,
-  objectives,
-  setId,
-}: {
-  client: RadClient;
-  id: string;
-  objectives: ObjectiveRow[];
-  setId: (v: string) => void;
-}) {
-  const [q, setQ] = useState("");
-  const [report, setReport] = useState<Record<string, unknown> | null>(null);
-  const go = async () => {
-    if (!id || !q.trim()) return;
-    setReport(await client.why(id, q.trim()));
-  };
-  return (
-    <div>
-      <h1>Provenance</h1>
-      <p className="lead">creator → task → tool → observation → verification → artifact. Equivalent to rad why.</p>
-      <div className="card">
-        <Picker id={id} setId={setId} objectives={objectives} />
-      </div>
-      <div className="row">
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="artifact path or claim" />
-        <button className="btn" onClick={() => void go()}>
-          Why
-        </button>
-      </div>
-      {report && (
-        <div className="chain">
-          {Object.entries(report).map(([k, v]) => (
-            <div key={k} className="card">
-              <div className="muted">{k.toUpperCase()}</div>
-              <pre className="pre">{typeof v === "string" ? v : JSON.stringify(v, null, 2)}</pre>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function Usage({ client, go }: { client: RadClient; go: (p: Page, id?: string) => void }) {
-  const [u, setU] = useState<Awaited<ReturnType<RadClient["usage"]>> | null>(null);
-  useEffect(() => {
-    void client.usage().then(setU);
-    const t = window.setInterval(() => void client.usage().then(setU), 2500);
-    return () => window.clearInterval(t);
+    void client.tasks().then((r) => setRows(r.tasks));
   }, [client]);
-  if (!u) return <p className="muted">Loading usage…</p>;
   return (
     <div>
-      <h1>Usage</h1>
-      <p className="lead">{u.note}</p>
-      <div className="stats">
-        {["tool_calls", "model_calls", "retries", "tokens", "paid_calls", "free_calls"].map((k) => (
-          <div key={k} className="card">
-            <div className="muted">{k.replace("_", " ")}</div>
-            <div className="tabular">{u.totals[k] ?? 0}</div>
-          </div>
-        ))}
-        <div className="card">
-          <div className="muted">stored USD</div>
-          <div className="tabular">{u.totals.money_usd ?? 0}</div>
-        </div>
-        <div className="card">
-          <div className="muted">free-lock</div>
-          <div>{u.free_lock ? "on" : "off"}</div>
-        </div>
-      </div>
-      <p className="muted">{u.remaining_quota_note}</p>
-      <table>
-        <thead>
-          <tr>
-            <th>objective</th>
-            <th>tools</th>
-            <th>model</th>
-            <th>tokens</th>
-          </tr>
-        </thead>
-        <tbody>
-          {u.per_objective.map((o) => (
-            <tr key={o.id} onClick={() => go("objectives", o.id)} style={{ cursor: "pointer" }}>
-              <td>{o.goal.slice(0, 48)}</td>
-              <td>
-                {o.usage.tool_calls}/{o.budget.tool_calls}
-              </td>
-              <td>
-                {o.usage.model_calls}/{o.budget.model_calls}
-              </td>
-              <td>{o.usage.tokens}</td>
+      <h1>Tasks</h1>
+      <p className="lead">Read-only view of control-plane tasks and their verification status.</p>
+      <div className="card">
+        <table>
+          <thead>
+            <tr>
+              <th>status</th>
+              <th>verified</th>
+              <th>task</th>
+              <th>objective</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {rows.map((t) => (
+              <tr key={`${t.objective_id}-${t.id}`}>
+                <td>{t.status}</td>
+                <td>{t.verification?.status || "—"}</td>
+                <td>{t.title || t.text || t.id}</td>
+                <td>{t.goal || t.objective_id}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
-
-const CONCEPT_CAPS = [
-  "filesystem.read",
-  "filesystem.write",
-  "filesystem.delete",
-  "shell.execute",
-  "network.request",
-  "browser.access",
-  "mcp.use",
-  "skills.install",
-  "package.install",
-  "process.spawn",
-  "model.free",
-  "model.paid",
-];
 
 function Permissions({
   client,
@@ -976,22 +509,8 @@ function Permissions({
 }) {
   const [profile, setProfile] = useState(auth.profile);
   const [confirmU, setConfirmU] = useState(false);
-  const [custom, setCustom] = useState<Record<string, string>>({});
-  const [workspaceOnly, setWorkspaceOnly] = useState(auth.scopes.workspace_only);
-  const [extraPaths, setExtraPaths] = useState(auth.scopes.extra_paths.join("\n"));
-  const [hosts, setHosts] = useState(auth.scopes.hosts.join("\n"));
-  const [customConfirm, setCustomConfirm] = useState<"ask" | "never">("ask");
   const [err, setErr] = useState("");
   const [ok, setOk] = useState("");
-  useEffect(() => {
-    setProfile(auth.profile);
-    const caps: Record<string, string> = {};
-    for (const [k, v] of Object.entries(auth.capabilities)) caps[k] = v.effect;
-    setCustom(caps);
-    setWorkspaceOnly(auth.scopes.workspace_only);
-    setExtraPaths(auth.scopes.extra_paths.join("\n"));
-    setHosts(auth.scopes.hosts.join("\n"));
-  }, [auth]);
   const apply = async () => {
     setErr("");
     setOk("");
@@ -999,13 +518,6 @@ function Permissions({
       const next = await client.setAuthority({
         profile,
         confirm_unrestricted: profile === "UNRESTRICTED" ? confirmU : undefined,
-        capabilities: profile === "CUSTOM" ? custom : undefined,
-        confirmation: profile === "CUSTOM" ? customConfirm : undefined,
-        scopes: {
-          workspace_only: workspaceOnly,
-          extra_paths: extraPaths.split("\n").map((s) => s.trim()).filter(Boolean),
-          hosts: hosts.split("\n").map((s) => s.trim()).filter(Boolean),
-        },
       });
       onAuth(next);
       setOk(`profile ${next.profile}`);
@@ -1018,28 +530,25 @@ function Permissions({
     <div>
       <h1>Permissions</h1>
       <p className="lead">
-        Authority is what is allowed. Scope is how far. Confirmation is whether to ask. Budget and
-        Policy.decide stay in the Python core. Automatic confirmation only changes ASK→ALLOW.
+        Authority is what is allowed. Scope is how far. Confirmation is whether to ask.
+        Budget and Policy.decide stay in the Python core.
       </p>
       {auth.unrestricted && (
         <div className="banner">
-          UNRESTRICTED is explicitly user-authorized autonomy — not a hidden or “unsafe by definition”
-          path. Hard layer, executor, budgets, audit, provenance and verification remain. It does not
-          remove provider/model content policies.
+          UNRESTRICTED is explicitly user-authorized autonomy — not a hidden or “unsafe by
+          definition” path. Hard layer, executor, budgets, audit, provenance and verification remain.
         </div>
       )}
       <div className="card">
         <label>Authority profile</label>
-        <select value={profile} onChange={(e) => setProfile(e.target.value as Profile)}>
+        <select value={profile} onChange={(e) => setProfile(e.target.value as typeof profile)}>
           {["SAFE", "STANDARD", "AUTONOMOUS", "UNRESTRICTED", "CUSTOM"].map((p) => (
             <option key={p} value={p}>
               {p}
             </option>
           ))}
         </select>
-        <p className="lead" style={{ marginTop: 10 }}>
-          {auth.blurb}
-        </p>
+        <p className="lead" style={{ marginTop: 10 }}>{auth.blurb}</p>
         {profile === "UNRESTRICTED" && (
           <label>
             <input
@@ -1051,50 +560,6 @@ function Permissions({
             I explicitly authorize UNRESTRICTED autonomy within configured scope
           </label>
         )}
-        {profile === "CUSTOM" && (
-          <div className="grid" style={{ marginTop: 12 }}>
-            {CONCEPT_CAPS.map((cap) => (
-              <label key={cap}>
-                {cap}
-                <select value={custom[cap] || "ASK"} onChange={(e) => setCustom((c) => ({ ...c, [cap]: e.target.value }))}>
-                  {["ALLOW", "ASK", "LIMITED", "DENY"].map((eff) => (
-                    <option key={eff} value={eff}>
-                      {eff}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            ))}
-            <label>
-              Confirmation
-              <select value={customConfirm} onChange={(e) => setCustomConfirm(e.target.value as "ask" | "never")}>
-                <option value="ask">always required (ask)</option>
-                <option value="never">automatic (ASK→ALLOW only)</option>
-              </select>
-            </label>
-          </div>
-        )}
-        {(profile === "CUSTOM" || profile === "UNRESTRICTED" || profile === "AUTONOMOUS") && (
-          <div style={{ marginTop: 12 }}>
-            <label>
-              <input
-                type="checkbox"
-                checked={workspaceOnly}
-                onChange={(e) => setWorkspaceOnly(e.target.checked)}
-                style={{ width: "auto", marginRight: 8 }}
-              />
-              workspace-only
-            </label>
-            <label>
-              Extra paths (server-validated, no `..`)
-              <textarea value={extraPaths} onChange={(e) => setExtraPaths(e.target.value)} />
-            </label>
-            <label>
-              Hosts
-              <textarea value={hosts} onChange={(e) => setHosts(e.target.value)} />
-            </label>
-          </div>
-        )}
         <div className="row" style={{ marginTop: 12 }}>
           <button className={profile === "UNRESTRICTED" ? "btn warn" : "btn"} onClick={() => void apply()}>
             Apply profile
@@ -1105,12 +570,7 @@ function Permissions({
       </div>
       <div className="card">
         <label>Confirmation</label>
-        <div>
-          {auth.confirmation}{" "}
-          {auth.confirmation_is_automatic
-            ? "(ASK→ALLOW; DENY/hard/budget/scope/verification unchanged)"
-            : "(always required for ASK)"}
-        </div>
+        <div>{auth.confirmation} {auth.confirmation_is_automatic ? "(ASK→ALLOW; DENY/hard/budget unchanged)" : ""}</div>
         <label style={{ marginTop: 10 }}>Scope</label>
         <div>
           workspace_only={String(auth.scopes.workspace_only)}
@@ -1195,8 +655,107 @@ function SettingsPage({
         <div>Home: {status?.home}</div>
         <div>Needle / tool_router: {s.tool_router} (off unless you set it in CLI)</div>
         <div>Version: {status?.version}</div>
-        <div>Auto via HTTP: {String(status?.auto)} — comes from authority confirmation, not a UI toggle</div>
       </div>
+    </div>
+  );
+}
+
+function VerificationPage({
+  client,
+  onOpenObjective,
+}: {
+  client: RadClient;
+  onOpenObjective: (id: string) => void;
+}) {
+  const [rows, setRows] = useState<ObjectiveRow[]>([]);
+  const [rowsErr, setRowsErr] = useState("");
+  const [id, setId] = useState("");
+  const [trace, setTrace] = useState<{
+    objective: ObjectiveRow;
+    tasks: TaskRow[];
+    verification: Verification;
+  } | null>(null);
+  const [err, setErr] = useState("");
+
+  useEffect(() => {
+    void client
+      .objectives()
+      .then((r) => setRows(r.objectives))
+      .catch((e) => setRowsErr(e instanceof Error ? e.message : String(e)));
+  }, [client]);
+
+  useEffect(() => {
+    if (!id) return;
+    let live = true;
+    const load = async () => {
+      try {
+        const t = await client.trace(id);
+        if (live) {
+          setTrace(t);
+          setErr("");
+        }
+      } catch (e) {
+        if (live) setErr(e instanceof Error ? e.message : String(e));
+      }
+    };
+    void load();
+  }, [id, client]);
+
+  return (
+    <div>
+      <h1>Verification</h1>
+      <p className="lead">
+        The desktop never computes VERIFIED — it only displays the control-plane pass/fail
+        status. {rowsErr}
+      </p>
+      <div className="card">
+        <table>
+          <thead>
+            <tr>
+              <th>id</th>
+              <th>status</th>
+              <th>verification</th>
+              <th>goal</th>
+              <th>actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((o) => (
+              <tr key={o.id} className={o.id === id ? "sel-row" : ""}>
+                <td>{o.id.slice(0, 12)}</td>
+                <td><span className={chipClass(o.status)}>{o.status}</span></td>
+                <td><span className={chipClass(o.verification)}>{o.verification || "—"}</span></td>
+                <td>{o.goal}</td>
+                <td>
+                  <div className="row">
+                    <button className="btn ghost" style={{ padding: "1px 6px", fontSize: 11 }} onClick={() => setId(o.id)}>
+                      trace
+                    </button>
+                    <button className="btn ghost" style={{ padding: "1px 6px", fontSize: 11 }} onClick={() => onOpenObjective(o.id)}>
+                      view
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {id && (
+        <div className="card">
+          <h3>Trace — {trace?.objective.id || id}</h3>
+          {err && <p className="err">{err}</p>}
+          {trace && (
+            <>
+              <div className="row" style={{ marginBottom: 10 }}>
+                <span className={chipClass(trace.objective.status)}>{trace.objective.status}</span>
+                <span className="meta">{trace.objective.goal}</span>
+              </div>
+              <VerificationCard verification={trace.verification} tasks={trace.tasks} />
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }

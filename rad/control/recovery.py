@@ -60,7 +60,7 @@ class Decision:
 _NET = re.compile(r"network:|timed? ?out|connection (reset|refused)|temporar|HTTP 5\d\d", re.I)
 _AUTH = re.compile(r"HTTP 401|HTTP 403|unauthori[sz]ed|invalid api key|forbidden", re.I)
 _PERM = re.compile(r"blocked by safety policy|user declined|permission denied|outside the workspace", re.I)
-_ENV = re.compile(r"command not found|: not found|no such file|not installed|ModuleNotFoundError|No module named|ENOENT", re.I)
+_ENV = re.compile(r"command not found|: not found|no such file|not installed|ModuleNotFoundError|No module named|ENOENT|is not recognized", re.I)
 _ALREADY_EXISTS = re.compile(r"already exists|FileExistsError|\bFile exists\b", re.I)
 _MODEL = re.compile(r"all providers failed|no brain available|brain error|no model selected", re.I)
 

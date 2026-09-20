@@ -724,8 +724,13 @@ def run_python_isolated(code: str, ctx: ToolCtx, timeout: int = 60) -> str:
 
 
 def _shell(cmd: str, ctx: ToolCtx, timeout: int = 180) -> str:
+    import shutil
     ws = ctx.home.workspace()
-    shell = ["cmd", "/c"] if os.name == "nt" else ["sh", "-c"]
+    if os.name == "nt":
+        sh_bin = shutil.which("sh")
+        shell = [sh_bin, "-c"] if sh_bin else ["cmd", "/c"]
+    else:
+        shell = ["sh", "-c"]
     try:
         proc = subprocess.run(shell + [cmd], cwd=str(ws), capture_output=True,
                               text=True, timeout=timeout, env=_shell_env())

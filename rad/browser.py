@@ -57,6 +57,7 @@ class ActionOutcome:
     checks: List[Dict[str, Any]] = field(default_factory=list)
     error: str = ""
     url: str = ""
+    driver: str = ""
     at: float = field(default_factory=time.time)
     duration_ms: int = 0
     untrusted: bool = True
@@ -65,6 +66,7 @@ class ActionOutcome:
 
     def to_dict(self) -> Dict[str, Any]:
         return {"action": self.action, "ok": self.ok, "verified": self.verified, "url": self.url,
+                "driver": self.driver,
                 "data": self.data, "checks": self.checks, "error": self.error,
                 "at": self.at, "duration_ms": self.duration_ms, "untrusted": self.untrusted,
                 "injection_flags": self.injection_flags, "artifact": self.artifact}

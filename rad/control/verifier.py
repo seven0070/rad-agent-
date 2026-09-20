@@ -365,7 +365,12 @@ class Verifier:
         return p if p.is_absolute() else self.ws / p
 
     def _sh(self, cmd: str):
-        shell = ["cmd", "/c"] if os.name == "nt" else ["sh", "-c"]
+        import shutil
+        if os.name == "nt":
+            sh_bin = shutil.which("sh")
+            shell = [sh_bin, "-c"] if sh_bin else ["cmd", "/c"]
+        else:
+            shell = ["sh", "-c"]
         try:
             pr = subprocess.run(shell + [cmd], cwd=str(self.ws), capture_output=True, text=True,
                                 timeout=self.shell_timeout)

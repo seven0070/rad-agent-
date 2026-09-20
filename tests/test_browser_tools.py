@@ -22,8 +22,10 @@ PAGE = ("<html><body><h1>hello rad</h1>"
 def ctx(home, monkeypatch):
     """A ToolCtx whose HTTP layer is stubbed, so verification logic is exercised offline."""
     import rad.tools as T
+    import rad.browser as B
     monkeypatch.setattr(T, "http_get", lambda url, timeout=25.0, max_bytes=0:
                         (200, PAGE.encode(), "text/html"))
+    monkeypatch.setattr(B, "playwright_available", lambda: False)
     return ToolCtx(home=home, router=None, auto=True)
 
 
@@ -97,8 +99,10 @@ def test_sandbox_url_grants_scope_browser_actions(home):
 
 def test_loopback_needs_explicit_opt_in(home, monkeypatch):
     import rad.tools as T
+    import rad.browser as B
     monkeypatch.setattr(T, "http_get", lambda url, timeout=25.0, max_bytes=0:
                         (200, PAGE.encode(), "text/html"))
+    monkeypatch.setattr(B, "playwright_available", lambda: False)
     c = ToolCtx(home=home, router=None, auto=True)
     blocked = run_tool("browser_navigate", {"url": "http://127.0.0.1:8000/"}, c)
     assert blocked.startswith("BLOCKED by safety policy")
@@ -138,7 +142,9 @@ def test_localhost_optin_is_settable_and_actually_unblocks(home, monkeypatch):
     import http.server
     import threading
     import urllib.request
+    import rad.browser as B
 
+    monkeypatch.setattr(B, "playwright_available", lambda: False)
     from rad.home import DEFAULTS
     from rad.tools import ToolCtx, run_tool
 

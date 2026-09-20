@@ -2,6 +2,39 @@
 
 export type Profile = "SAFE" | "STANDARD" | "AUTONOMOUS" | "UNRESTRICTED" | "CUSTOM";
 
+export type ObjectiveStatus =
+  | "pending"
+  | "planning"
+  | "running"
+  | "paused"
+  | "needs_user"
+  | "completed"
+  | "failed"
+  | "cancelled"
+  | "expired";
+
+export type MemoryLayer = "episodic" | "semantic" | "procedural";
+
+export interface BudgetFields {
+  tool_calls?: number;
+  model_calls?: number;
+  retries?: number;
+  seconds?: number;
+  money_usd?: number;
+  tokens?: number;
+  agents?: number;
+}
+
+export interface UsageFields {
+  tool_calls: number;
+  model_calls: number;
+  retries: number;
+  seconds: number;
+  money_usd: number;
+  tokens: number;
+  agents: number;
+}
+
 export interface AuthoritySnapshot {
   profile: Profile;
   blurb: string;
@@ -18,9 +51,18 @@ export interface AuthoritySnapshot {
   updated: number;
 }
 
+export interface Health {
+  ok: boolean;
+  version: string;
+  schema: number;
+  running: string[];
+}
+
 export interface Status {
   ok: boolean;
   version: string;
+  schema?: number;
+  pending_migrations?: string[];
   home?: string;
   workspace?: string;
   auto?: boolean;
@@ -32,20 +74,51 @@ export interface Status {
     confirmation_is_automatic?: boolean;
   };
   objectives?: { total: number; by_status: Record<string, number>; open_tasks: number };
+  memory?: Record<string, number>;
+  jobs?: number;
+  background_routines?: number;
+  running_objectives?: string[];
+  last_event?: { kind: string; at: number; seq: number };
+}
+
+export interface Verification {
+  status?: string;
+  [key: string]: unknown;
 }
 
 export interface ObjectiveRow {
   id: string;
   goal: string;
   status: string;
-  verification?: string | { status?: string };
+  created?: number;
+  updated?: number;
+  verification?: string;
   usage?: Record<string, number>;
   budget?: Record<string, number>;
   result?: string;
-  created?: number;
-  updated?: number;
-  started?: boolean;
-  note?: string;
+}
+
+export interface ObjectiveDetail {
+  id: string;
+  goal: string;
+  status: string;
+  created: number;
+  updated: number;
+  success_criteria: string[];
+  constraints: string[];
+  priority: string;
+  budget: BudgetFields;
+  usage: UsageFields;
+  deadline: number | null;
+  finished: number | null;
+  result: string;
+  failure: string;
+  verification: Verification;
+  auto: boolean;
+  tags: string[];
+  result_summary: string;
+  budget_status: Record<string, unknown>;
+  plan_version: number;
   tasks?: TaskRow[];
 }
 
@@ -56,41 +129,89 @@ export interface TaskRow {
   status: string;
   objective_id?: string;
   goal?: string;
-  depends_on?: string[];
-  attempts?: number;
-  verification?: { status?: string; evidence?: Array<{ check?: string; ok?: boolean; detail?: string }> };
-  current_tool?: string;
+  verification?: Verification;
 }
 
-export interface ObservationRow {
-  id: string;
-  at?: number;
-  tool: string;
-  status?: string;
-  output?: string;
-  args?: Record<string, unknown>;
-  task_id?: string;
-  evidence?: Array<Record<string, unknown>>;
-}
-
-export interface ArtifactRow {
-  id: string;
-  location: string;
-  sha256?: string;
-  version?: number;
-  size?: number;
-  task_id?: string;
-  creator?: string;
-  type?: string;
-}
-
-export interface EventRow {
-  seq?: number;
+export interface RadEvent {
+  seq: number;
   kind: string;
   at: number;
-  task_id?: string;
   objective_id?: string;
+  task_id?: string;
   data?: Record<string, unknown>;
+  [key: string]: unknown;
+}
+
+export interface MemoryRow {
+  id: string;
+  layer: MemoryLayer;
+  text: string;
+  origin: string;
+  confidence: number;
+  verification?: string;
+  strength: number;
+}
+
+export interface ToolRow {
+  name: string;
+  capability: string;
+  policy: string;
+  description: string;
+}
+
+export interface DoctorFinding {
+  check: string;
+  status: string;
+  message: string;
+  fixed: boolean;
+  detail?: string[];
+}
+
+export interface WhySupport {
+  score: number;
+  tool: string;
+  source: string;
+  trusted: boolean;
+  observation: string;
+  task: string;
+  at: number;
+  excerpt: string;
+}
+
+export interface WhyReport {
+  claim: string;
+  support: WhySupport[];
+  verdict: string;
+}
+
+export interface ArtifactReport {
+  artifact: Record<string, unknown>;
+  versions: Array<Record<string, unknown>>;
+  action: Record<string, unknown> | null;
+  task: { id: string; text: string; attempt?: number | null };
+  evidence: Array<Record<string, unknown>>;
+  verification: Verification;
+}
+
+export interface WorldView {
+  matches?: Array<Record<string, unknown>>;
+  entities?: Record<string, unknown> | unknown[];
+  relations?: Array<Record<string, unknown>>;
+  disputes?: Array<Record<string, unknown>>;
+  counts?: { entities: number; relations: number };
+}
+
+export interface PolicyView {
+  defaults: Record<string, string>;
+  rules: Array<Record<string, unknown>>;
+  web_allow: unknown[];
+  authority: AuthoritySnapshot;
+}
+
+export interface AgentsView {
+  agents: Array<Record<string, unknown>>;
+  states: Record<string, unknown>;
+  runs: Array<Record<string, unknown>>;
 }
 
 export interface Settings {
@@ -108,6 +229,27 @@ export interface Settings {
   authority: AuthoritySnapshot;
   note: string;
 }
+
+export const BUDGET_KEYS = [
+  "tool_calls",
+  "model_calls",
+  "retries",
+  "seconds",
+  "money_usd",
+  "tokens",
+  "agents",
+] as const;
+
+export const SETTINGS_SAFE_KEYS = [
+  "workspace",
+  "free_lock",
+  "force_provider",
+  "model",
+  "tts",
+  "stt",
+  "allow_outside_workspace",
+  "allow_localhost_web",
+] as const;
 
 export class ApiError extends Error {
   status: number;
@@ -142,13 +284,31 @@ export class RadClient {
   }
 
   health() {
-    return this.req<{ ok: boolean; version: string }>("GET", "/v1/health");
+    return this.req<Health>("GET", "/v1/health");
   }
   status() {
     return this.req<Status>("GET", "/v1/status");
   }
+  doctor(fix = false, probe = false) {
+    return this.req<{ findings: DoctorFinding[]; fix_applied: boolean }>(
+      "GET",
+      `/v1/doctor?fix=${fix ? 1 : 0}&probe=${probe ? 1 : 0}`,
+    );
+  }
   authority() {
     return this.req<AuthoritySnapshot>("GET", "/v1/authority");
+  }
+  policy() {
+    return this.req<PolicyView>("GET", "/v1/policy");
+  }
+  audit(n = 50) {
+    return this.req<Array<Record<string, unknown>>>("GET", `/v1/audit?n=${n}`);
+  }
+  user() {
+    return this.req<Record<string, unknown>>(
+      "GET",
+      `/v1/user?${new URLSearchParams({ t: String(Date.now()) }).toString()}`,
+    );
   }
   setAuthority(body: {
     profile: Profile;
@@ -163,10 +323,20 @@ export class RadClient {
     return this.req<Settings>("GET", "/v1/settings");
   }
   setSettings(body: Record<string, unknown>) {
-    return this.req<Settings>("PUT", "/v1/settings", body);
+    const safe: Record<string, unknown> = {};
+    for (const key of Object.keys(body)) {
+      if ((SETTINGS_SAFE_KEYS as readonly string[]).includes(key)) safe[key] = body[key];
+    }
+    return this.req<Settings>("PUT", "/v1/settings", safe);
   }
   chat(text: string) {
     return this.req<{ reply: string; via?: string }>("POST", "/v1/chat", { text });
+  }
+  world(q?: string) {
+    const params = new URLSearchParams();
+    if (q !== undefined) params.set("q", q);
+    const qs = params.toString();
+    return this.req<WorldView>("GET", `/v1/world${qs ? `?${qs}` : ""}`);
   }
   objectives(active = false) {
     return this.req<{ objectives: ObjectiveRow[] }>(
@@ -174,83 +344,126 @@ export class RadClient {
       `/v1/objectives${active ? "?active=1" : ""}`,
     );
   }
-  createObjective(goal: string, run = true) {
-    return this.req<ObjectiveRow>(
-      "POST",
-      "/v1/objectives",
-      { goal, run },
-    );
+  createObjective(
+    goal: string,
+    opts: { run?: boolean; criteria?: string[]; constraints?: string[]; budget?: BudgetFields } = {},
+  ) {
+    const { run, criteria, constraints, budget } = opts;
+    if (budget) {
+      for (const key of Object.keys(budget)) {
+        if (!(BUDGET_KEYS as readonly string[]).includes(key)) {
+          throw new TypeError(`unknown budget key "${key}", allowed: ${BUDGET_KEYS.join(", ")}`);
+        }
+      }
+    }
+    const body: Record<string, unknown> = { goal };
+    if (run !== undefined) body.run = run;
+    if (criteria !== undefined) body.criteria = criteria;
+    if (constraints !== undefined) body.constraints = constraints;
+    if (budget !== undefined) body.budget = budget;
+    return this.req<ObjectiveRow & { started?: boolean; note?: string }>("POST", "/v1/objectives", body);
   }
   objective(id: string) {
-    return this.req<ObjectiveRow & { tasks?: TaskRow[] }>("GET", `/v1/objectives/${id}`);
+    return this.req<ObjectiveDetail>("GET", `/v1/objectives/${id}`);
   }
-  lifecycle(id: string, action: "pause" | "resume" | "cancel" | "run") {
-    return this.req<ObjectiveRow>(
-      "POST",
-      `/v1/objectives/${id}/${action}`,
-      {},
+  objectiveEvents(id: string, opts: { kind?: string; sinceSeq?: number; n?: number } = {}) {
+    const params = new URLSearchParams();
+    if (opts.kind !== undefined) params.set("kind", opts.kind);
+    if (opts.sinceSeq !== undefined) params.set("since_seq", String(opts.sinceSeq));
+    if (opts.n !== undefined) params.set("n", String(opts.n));
+    const qs = params.toString();
+    return this.req<{ events: RadEvent[] }>(
+      "GET",
+      `/v1/objectives/${id}/events${qs ? `?${qs}` : ""}`,
+    );
+  }
+  objectiveAction(id: string, action: "resume" | "pause" | "cancel") {
+    if (action === "resume") {
+      return this.req<{ id: string; status: "resuming" }>("POST", `/v1/objectives/${id}/resume`);
+    }
+    return this.req<ObjectiveRow>("POST", `/v1/objectives/${id}/${action}`);
+  }
+  objectiveWhy(id: string, q: string) {
+    return this.req<ArtifactReport | WhyReport>(
+      "GET",
+      `/v1/objectives/${id}/why?${new URLSearchParams({ q }).toString()}`,
     );
   }
   trace(id: string) {
     return this.req<{
       objective: ObjectiveRow;
       tasks: TaskRow[];
-      verification: Record<string, unknown>;
-      observations?: ObservationRow[];
-      artifacts?: ArtifactRow[];
+      verification: Verification;
     }>("GET", `/v1/objectives/${id}/trace`);
-  }
-  events(id: string, n = 200) {
-    return this.req<{ events: EventRow[] }>("GET", `/v1/objectives/${id}/events?n=${n}`);
-  }
-  globalEvents(n = 80) {
-    return this.req<{ events: EventRow[] }>("GET", `/v1/events?n=${n}`);
-  }
-  why(id: string, q: string) {
-    return this.req<Record<string, unknown>>(
-      "GET",
-      `/v1/objectives/${id}/why?q=${encodeURIComponent(q)}`,
-    );
-  }
-  artifacts(id: string) {
-    return this.req<{ artifacts: ArtifactRow[] }>("GET", `/v1/objectives/${id}/artifacts`);
-  }
-  artifactBody(id: string, artId: string) {
-    return this.req<{ path: string; text: string; binary?: boolean; sha256?: string }>(
-      "GET",
-      `/v1/objectives/${id}/artifacts/${encodeURIComponent(artId)}`,
-    );
-  }
-  usage() {
-    return this.req<{
-      totals: Record<string, number>;
-      per_objective: Array<{ id: string; goal: string; status: string; usage: Record<string, number>; budget: Record<string, number> }>;
-      free_lock: boolean;
-      note: string;
-      remaining_quota_note: string;
-    }>("GET", "/v1/usage");
   }
   tasks() {
     return this.req<{ tasks: TaskRow[] }>("GET", "/v1/tasks");
+  }
+  tools() {
+    return this.req<{ tools: ToolRow[] }>("GET", "/v1/tools");
+  }
+  memoryRecall(q = "", k = 5) {
+    const params = new URLSearchParams();
+    if (q) params.set("q", q);
+    params.set("k", String(k));
+    return this.req<{ memories: MemoryRow[] }>("GET", `/v1/memory/recall?${params.toString()}`);
+  }
+  memoryAdd(text: string, layer: MemoryLayer = "semantic") {
+    return this.req<MemoryRow>("POST", "/v1/memory", { text, layer });
+  }
+  events(n = 80, opts: { kind?: string; objective?: string } = {}) {
+    const params = new URLSearchParams();
+    params.set("n", String(n));
+    if (opts.kind !== undefined) params.set("kind", opts.kind);
+    if (opts.objective !== undefined) params.set("objective", opts.objective);
+    return this.req<{ events: RadEvent[]; n: number; stream: string }>(
+      "GET",
+      `/v1/events?${params.toString()}`,
+    );
+  }
+  benchmarks() {
+    return this.req<Record<string, unknown>>("GET", "/v1/benchmarks");
+  }
+  labHistory(n = 20) {
+    return this.req<{ runs: Array<Record<string, unknown>> }>("GET", `/v1/lab/history?n=${n}`);
+  }
+  evolveCandidates(n = 20) {
+    return this.req<{ candidates: Array<Record<string, unknown>> }>(
+      "GET",
+      `/v1/evolve/candidates?n=${n}`,
+    );
+  }
+  agents() {
+    return this.req<AgentsView>("GET", "/v1/agents");
   }
 }
 
 export const ROUTES = [
   "/v1/health",
   "/v1/status",
+  "/v1/doctor",
   "/v1/authority",
-  "/v1/settings",
-  "/v1/chat",
-  "/v1/objectives",
-  "/v1/tasks",
-  "/v1/events",
-  "/v1/usage",
   "/v1/policy",
   "/v1/audit",
+  "/v1/user",
+  "/v1/settings",
+  "/v1/chat",
+  "/v1/world",
+  "/v1/objectives",
+  "/v1/objectives/{id}",
+  "/v1/objectives/{id}/resume",
+  "/v1/objectives/{id}/pause",
+  "/v1/objectives/{id}/cancel",
+  "/v1/objectives/{id}/events",
+  "/v1/objectives/{id}/trace",
+  "/v1/objectives/{id}/why",
+  "/v1/memory",
+  "/v1/memory/recall",
+  "/v1/tasks",
+  "/v1/events",
+  "/v1/tools",
+  "/v1/benchmarks",
+  "/v1/lab/history",
+  "/v1/evolve/candidates",
+  "/v1/agents",
 ] as const;
-
-export function verifyLabel(v: ObjectiveRow["verification"]): string {
-  if (!v) return "—";
-  if (typeof v === "string") return v || "—";
-  return v.status || "—";
-}

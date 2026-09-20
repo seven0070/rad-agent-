@@ -1,5 +1,6 @@
 """Phase 10: skill manifests wired into the policy gate, and the local HTTP API."""
 import json
+import os
 import threading
 import urllib.error
 import urllib.request
@@ -221,7 +222,10 @@ def test_http_requires_token_and_serves(home, server):
         _t.sleep(0.05)
     assert len(log) >= 6, f"expected every request to be logged, got {len(log)}"
     assert all("body" not in json.loads(l) for l in log)
-    assert oct((home.root / "api.token").stat().st_mode & 0o777) == "0o600"
+    if os.name != "nt":
+        assert oct((home.root / "api.token").stat().st_mode & 0o777) == "0o600"
+    else:
+        assert (home.root / "api.token").exists()
     from rad.api import token_for
     new = token_for(home, rotate=True)
     assert new != tok

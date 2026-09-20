@@ -216,7 +216,7 @@ class Storage:
         findings: List[Dict[str, Any]] = []
 
         def bad(path: Path, problem: str, fixable: bool = True):
-            f = {"path": str(path.relative_to(root)), "problem": problem, "fixable": fixable, "repaired": False}
+            f = {"path": path.relative_to(root).as_posix(), "problem": problem, "fixable": fixable, "repaired": False}
             if repair and fixable:
                 q = path.with_name(path.name + f".corrupt-{int(time.time())}")
                 path.rename(q); f["repaired"] = True; f["quarantined_as"] = q.name
@@ -245,24 +245,25 @@ class Storage:
             except Exception:
                 broken = -1
             if broken:
-                findings.append({"path": str(p.relative_to(root)), "problem": f"{broken} unparsable line(s)", "fixable": False, "repaired": False})
+                findings.append({"path": p.relative_to(root).as_posix(), "problem": f"{broken} unparsable line(s)", "fixable": False, "repaired": False})
         objs = root / "objectives"
         if objs.exists():
             for d in objs.iterdir():
                 if d.is_dir() and not (d / "objective.json").exists():
-                    findings.append({"path": str(d.relative_to(root)), "problem": "objective dir without objective.json", "fixable": False, "repaired": False})
+                    findings.append({"path": d.relative_to(root).as_posix(), "problem": "objective dir without objective.json", "fixable": False, "repaired": False})
         for p in (root / "memory" / "long").rglob("*.md"):
             txt = p.read_text(encoding="utf-8", errors="replace")
             if not txt.startswith("---"):
-                findings.append({"path": str(p.relative_to(root)), "problem": "memory file without front-matter", "fixable": False, "repaired": False})
-        for p in (root / "keys",):
-            if p.exists():
-                mode = oct(p.stat().st_mode & 0o777)
-                if p.stat().st_mode & 0o077:
-                    f = {"path": "keys/", "problem": f"permissions {mode} too open", "fixable": True, "repaired": False}
-                    if repair:
-                        os.chmod(p, 0o700); f["repaired"] = True
-                    findings.append(f)
+                findings.append({"path": p.relative_to(root).as_posix(), "problem": "memory file without front-matter", "fixable": False, "repaired": False})
+        if os.name != "nt":
+            for p in (root / "keys",):
+                if p.exists():
+                    mode = oct(p.stat().st_mode & 0o777)
+                    if p.stat().st_mode & 0o077:
+                        f = {"path": "keys/", "problem": f"permissions {mode} too open", "fixable": True, "repaired": False}
+                        if repair:
+                            os.chmod(p, 0o700); f["repaired"] = True
+                        findings.append(f)
         return findings
 
     # ---- backups

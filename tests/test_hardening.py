@@ -158,7 +158,10 @@ def test_snapshot_excludes_keys_and_restore_roundtrip(home):
     with tarfile.open(p) as tar:
         names = tar.getnames()
     assert "user.json" in names and not any(n.startswith("keys") for n in names)
-    assert oct(p.stat().st_mode & 0o777) == "0o600"
+    if os.name != "nt":
+        assert oct(p.stat().st_mode & 0o777) == "0o600"
+    else:
+        assert p.exists()
     UserModel(home).set("preferences", "editor", "emacs", origin="USER_PROVIDED")
     restored = st.restore(p)
     assert "user.json" in restored
