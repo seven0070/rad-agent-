@@ -527,7 +527,7 @@ def cmd_desktop(args) -> int:
     Desktop is a surface over `rad serve`. It never executes tools itself.
     """
     root = Path(__file__).resolve().parent.parent / "desktop"
-    info("RAD Desktop 0.1.0-alpha — surface over the existing Python HTTP API")
+    info("RAD Desktop 1.0.1 — surface over the existing Python HTTP API")
     info("  backend: rad serve   (Policy.decide + Executor unchanged)")
     info(f"  ui source: {root}")
     if not root.exists():
@@ -1491,7 +1491,7 @@ def build_parser() -> argparse.ArgumentParser:
     sv.add_argument("--rotate-token", action="store_true"); sv.add_argument("--i-know-this-exposes-rad", action="store_true")
     sv.set_defaults(fn=cmd_serve)
 
-    desk = sub.add_parser("desktop", help="RAD Desktop 0.1 — launch or print the Tauri surface path")
+    desk = sub.add_parser("desktop", help="RAD Desktop 1.0.1 — launch or print the Tauri surface path")
     desk.set_defaults(fn=cmd_desktop)
 
     dr = sub.add_parser("doctor", help="health check of RAD; --fix repairs what is safe")

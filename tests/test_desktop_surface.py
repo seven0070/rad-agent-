@@ -8,11 +8,15 @@ DESK = ROOT / "desktop"
 def test_desktop_stack_present():
     assert (DESK / "package.json").exists()
     pkg = (DESK / "package.json").read_text(encoding="utf-8")
-    assert "0.1.0-alpha" in pkg
+    assert "1.0.1" in pkg
     assert "@tauri-apps/api" in pkg
     assert (DESK / "src-tauri" / "tauri.conf.json").exists()
     assert (DESK / "src-tauri" / "src" / "lib.rs").exists()
     assert (DESK / "src" / "App.tsx").exists()
+    app = (DESK / "src" / "App.tsx").read_text(encoding="utf-8")
+    for label in ("Jerry", "Objectives", "Execution", "Task graph", "Trace",
+                  "Verification", "Artifacts", "Why", "Usage", "Permissions", "Settings"):
+        assert label in app
 
 
 def test_frontend_has_no_arbitrary_shell():
@@ -34,6 +38,14 @@ def test_frontend_has_no_arbitrary_shell():
 def test_api_client_only_known_routes():
     text = (DESK / "src" / "api.ts").read_text(encoding="utf-8")
     assert "/v1/chat" in text and "/v1/authority" in text
+    assert "/v1/usage" in text
     assert "/v1/shell" not in text
     assert "run_tool" not in text
     assert "ROUTES" in text
+
+
+def test_http_layer_supports_put():
+    src = (ROOT / "rad" / "api.py").read_text(encoding="utf-8")
+    assert "def do_PUT" in src
+    assert "def do_OPTIONS" in src
+    assert '"run"' in src

@@ -38,10 +38,15 @@ export interface ObjectiveRow {
   id: string;
   goal: string;
   status: string;
-  verification?: string;
+  verification?: string | { status?: string };
   usage?: Record<string, number>;
   budget?: Record<string, number>;
   result?: string;
+  created?: number;
+  updated?: number;
+  started?: boolean;
+  note?: string;
+  tasks?: TaskRow[];
 }
 
 export interface TaskRow {
@@ -51,7 +56,41 @@ export interface TaskRow {
   status: string;
   objective_id?: string;
   goal?: string;
-  verification?: { status?: string };
+  depends_on?: string[];
+  attempts?: number;
+  verification?: { status?: string; evidence?: Array<{ check?: string; ok?: boolean; detail?: string }> };
+  current_tool?: string;
+}
+
+export interface ObservationRow {
+  id: string;
+  at?: number;
+  tool: string;
+  status?: string;
+  output?: string;
+  args?: Record<string, unknown>;
+  task_id?: string;
+  evidence?: Array<Record<string, unknown>>;
+}
+
+export interface ArtifactRow {
+  id: string;
+  location: string;
+  sha256?: string;
+  version?: number;
+  size?: number;
+  task_id?: string;
+  creator?: string;
+  type?: string;
+}
+
+export interface EventRow {
+  seq?: number;
+  kind: string;
+  at: number;
+  task_id?: string;
+  objective_id?: string;
+  data?: Record<string, unknown>;
 }
 
 export interface Settings {
@@ -136,7 +175,7 @@ export class RadClient {
     );
   }
   createObjective(goal: string, run = true) {
-    return this.req<ObjectiveRow & { started?: boolean; note?: string }>(
+    return this.req<ObjectiveRow>(
       "POST",
       "/v1/objectives",
       { goal, run },
@@ -145,21 +184,54 @@ export class RadClient {
   objective(id: string) {
     return this.req<ObjectiveRow & { tasks?: TaskRow[] }>("GET", `/v1/objectives/${id}`);
   }
+  lifecycle(id: string, action: "pause" | "resume" | "cancel" | "run") {
+    return this.req<ObjectiveRow>(
+      "POST",
+      `/v1/objectives/${id}/${action}`,
+      {},
+    );
+  }
   trace(id: string) {
     return this.req<{
       objective: ObjectiveRow;
       tasks: TaskRow[];
       verification: Record<string, unknown>;
+      observations?: ObservationRow[];
+      artifacts?: ArtifactRow[];
     }>("GET", `/v1/objectives/${id}/trace`);
+  }
+  events(id: string, n = 200) {
+    return this.req<{ events: EventRow[] }>("GET", `/v1/objectives/${id}/events?n=${n}`);
+  }
+  globalEvents(n = 80) {
+    return this.req<{ events: EventRow[] }>("GET", `/v1/events?n=${n}`);
+  }
+  why(id: string, q: string) {
+    return this.req<Record<string, unknown>>(
+      "GET",
+      `/v1/objectives/${id}/why?q=${encodeURIComponent(q)}`,
+    );
+  }
+  artifacts(id: string) {
+    return this.req<{ artifacts: ArtifactRow[] }>("GET", `/v1/objectives/${id}/artifacts`);
+  }
+  artifactBody(id: string, artId: string) {
+    return this.req<{ path: string; text: string; binary?: boolean; sha256?: string }>(
+      "GET",
+      `/v1/objectives/${id}/artifacts/${encodeURIComponent(artId)}`,
+    );
+  }
+  usage() {
+    return this.req<{
+      totals: Record<string, number>;
+      per_objective: Array<{ id: string; goal: string; status: string; usage: Record<string, number>; budget: Record<string, number> }>;
+      free_lock: boolean;
+      note: string;
+      remaining_quota_note: string;
+    }>("GET", "/v1/usage");
   }
   tasks() {
     return this.req<{ tasks: TaskRow[] }>("GET", "/v1/tasks");
-  }
-  events(n = 80) {
-    return this.req<{ events: Array<{ kind: string; at: number; data: Record<string, unknown> }> }>(
-      "GET",
-      `/v1/events?n=${n}`,
-    );
   }
 }
 
@@ -172,6 +244,13 @@ export const ROUTES = [
   "/v1/objectives",
   "/v1/tasks",
   "/v1/events",
+  "/v1/usage",
   "/v1/policy",
   "/v1/audit",
 ] as const;
+
+export function verifyLabel(v: ObjectiveRow["verification"]): string {
+  if (!v) return "—";
+  if (typeof v === "string") return v || "—";
+  return v.status || "—";
+}
