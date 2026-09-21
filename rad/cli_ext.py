@@ -80,8 +80,9 @@ def paper_ledger(args, papers_dir: Path | None = None):
     if not entries:
         print("ledger empty — completed battles land here"); return []
     for e in entries:
-        icon = {"CONFIRMED": "[+]", "NOT_REPLICATED": "[!]", "NO_CLAIM_TO_TEST": "[-]"}.get(e["replication_verdict"], "[?]")
-        print(f"  {icon} {e['paper_title'][:48]:<48} -> {e['replication_verdict']}")
+        icon = {"CONFIRMED": "[+]", "NOT_REPLICATED": "[!]", "NO_CLAIM_TO_TEST": "[-]", "INCONCLUSIVE": "[?]"}.get(e["replication_verdict"], "[?]")
+        note = f" (amended: {e['amendments'][-1]['was']}->{e['replication_verdict']})" if e.get("amendments") else ""
+        print(f"  {icon} {e['paper_title'][:48]:<48} -> {e['replication_verdict']}{note}")
     if "--export" in args:
         out = args[args.index("--export") + 1]
         ldg.export_ledger(out); print(f"  exported -> {out}")

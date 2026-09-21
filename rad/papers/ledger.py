@@ -46,9 +46,41 @@ def record_battle_outcome(battle_id: str) -> dict:
         f.write(json.dumps(entry) + "\n")
     return entry
 
-def read_ledger() -> list:
+def record_amendment(battle_id: str, field: str, was: str, now: str, reason: str) -> dict:
+    """Append-only ledger amendment. Never rewrites history; links corrections."""
+    amendment = {
+        "amendment_of": battle_id,
+        "field": field,
+        "was": was,
+        "now": now,
+        "reason": reason,
+        "amended_at": datetime.now(timezone.utc).isoformat(),
+    }
+    LEDGER_FILE.parent.mkdir(parents=True, exist_ok=True)
+    with open(LEDGER_FILE, "a", encoding="utf-8") as f:
+        f.write(json.dumps(amendment) + "\n")
+    return amendment
+
+def read_ledger(apply_amendments: bool = True) -> list:
     if not LEDGER_FILE.exists(): return []
-    return [json.loads(l) for l in LEDGER_FILE.read_text(encoding="utf-8").splitlines() if l.strip()]
+    raw = [json.loads(l) for l in LEDGER_FILE.read_text(encoding="utf-8").splitlines() if l.strip()]
+    if not apply_amendments:
+        return raw
+    entries = []
+    by_id = {}
+    for item in raw:
+        if "amendment_of" in item:
+            target_id = item["amendment_of"]
+            if target_id in by_id:
+                target = by_id[target_id]
+                field = item.get("field")
+                if field:
+                    target[field] = item.get("now")
+                target.setdefault("amendments", []).append(item)
+        else:
+            by_id[item.get("battle_id")] = item
+            entries.append(item)
+    return entries
 
 def export_ledger(output_path=None) -> str:
     entries = read_ledger()
