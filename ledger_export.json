@@ -1,16 +1,15 @@
 {
   "format": "rad-replication-ledger",
   "version": 1,
-  "exported_at": "2026-09-21T10:47:06.165054+00:00",
+  "exported_at": "2026-09-21T11:08:22.955744+00:00",
   "entry_count": 7,
   "summary": {
     "total_battles": 7,
     "verdicts": {
       "INCONCLUSIVE": 2,
-      "CONFIRMED": 4,
-      "NOT_REPLICATED": 1
+      "CONFIRMED": 5
     },
-    "replication_rate": 0.571,
+    "replication_rate": 0.714,
     "papers_tested": 2
   },
   "entries": [
@@ -244,9 +243,19 @@
         }
       },
       "battle_verdict": "mixed",
-      "replication_verdict": "NOT_REPLICATED",
+      "replication_verdict": "CONFIRMED",
       "coi_flags": [
         "evaluates on ALFWorld and HotpotQA"
+      ],
+      "amendments": [
+        {
+          "amendment_of": "battle-2303.11366-5-52869b1a25be",
+          "field": "replication_verdict",
+          "was": "NOT_REPLICATED",
+          "now": "CONFIRMED",
+          "reason": "claim-scoped reanalysis v1.1 (merged, validated by Entry #6): verified_rate +1.0 claim-critical; cost +1 observational Pareto",
+          "amended_at": "2026-09-21T11:02:12.494940+00:00"
+        }
       ]
     },
     {
