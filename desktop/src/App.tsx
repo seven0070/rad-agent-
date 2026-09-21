@@ -1,8 +1,22 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { AuthoritySnapshot, DEFAULT_AUTH_BUDGETS, ObjectiveRow, RadClient, Status } from "./api";
 import { apiBase, backendStop, isTauri, launchAndConnect, ConnState } from "./backend";
 import ChatView from "./components/ChatView";
 import InspectorDrawer from "./components/InspectorDrawer";
+import { ErrorBoundary } from "./components/ErrorBoundary";
+import {
+  IconSession,
+  IconObjectives,
+  IconTasks,
+  IconTrace,
+  IconVerification,
+  IconArtifacts,
+  IconAuthority,
+  IconMemory,
+  IconLedger,
+  IconVitals,
+  IconSettings,
+} from "./components/Icons";
 import { Ctx } from "./ctx";
 import Artifacts from "./pages/Artifacts";
 import AuthorityPage from "./pages/Authority";
@@ -29,18 +43,18 @@ type Page =
   | "vitals"
   | "settings";
 
-const PAGES: { id: Page; label: string; icon: string }[] = [
-  { id: "active", label: "Agent Session", icon: "✦" },
-  { id: "objectives", label: "Objectives", icon: "☵" },
-  { id: "tasks", label: "Tasks", icon: "☑" },
-  { id: "trace", label: "Telemetry Trace", icon: "⚡" },
-  { id: "verification", label: "Verification", icon: "🛡" },
-  { id: "artifacts", label: "Artifacts", icon: "☷" },
-  { id: "authority", label: "Authority", icon: "⚖" },
-  { id: "memory", label: "Memory", icon: "◉" },
-  { id: "ledger", label: "Replication Ledger", icon: "📜" },
-  { id: "vitals", label: "Vitals", icon: "💓" },
-  { id: "settings", label: "Settings", icon: "⚙" },
+const PAGES: { id: Page; label: string; icon: ReactNode }[] = [
+  { id: "active", label: "Agent Session", icon: <IconSession size={14} /> },
+  { id: "objectives", label: "Objectives", icon: <IconObjectives size={14} /> },
+  { id: "tasks", label: "Tasks", icon: <IconTasks size={14} /> },
+  { id: "trace", label: "Telemetry Trace", icon: <IconTrace size={14} /> },
+  { id: "verification", label: "Verification", icon: <IconVerification size={14} /> },
+  { id: "artifacts", label: "Artifacts", icon: <IconArtifacts size={14} /> },
+  { id: "authority", label: "Authority", icon: <IconAuthority size={14} /> },
+  { id: "memory", label: "Memory", icon: <IconMemory size={14} /> },
+  { id: "ledger", label: "Replication Ledger", icon: <IconLedger size={14} /> },
+  { id: "vitals", label: "Vitals", icon: <IconVitals size={14} /> },
+  { id: "settings", label: "Settings", icon: <IconSettings size={14} /> },
 ];
 
 export default function App() {
@@ -222,7 +236,7 @@ export default function App() {
         </button>
 
         <div className="nav-section-title">Views</div>
-        <nav className="nav-menu">
+        <nav className="nav-menu" aria-label="Application views">
           {PAGES.map((p) => {
             const isActive = page === p.id;
             return (
@@ -230,13 +244,27 @@ export default function App() {
                 key={p.id}
                 className={`nav-item ${isActive ? "active" : ""}`}
                 onClick={() => setPage(p.id)}
+                aria-current={isActive ? "page" : undefined}
               >
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontSize: 13, opacity: 0.7 }}>{p.icon}</span>
+                <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+                  <span
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: 16,
+                      height: 16,
+                      opacity: isActive ? 1 : 0.65,
+                      color: isActive ? "var(--hermes-indigo-light)" : "inherit",
+                      transition: "opacity 0.15s ease, color 0.15s ease",
+                    }}
+                  >
+                    {p.icon}
+                  </span>
                   <span>{p.label}</span>
                 </div>
                 {p.id === "objectives" && objectives.length > 0 && (
-                  <span className="nav-badge">{objectives.length}</span>
+                  <span className="nav-badge font-mono tabular-nums">{objectives.length}</span>
                 )}
                 {p.id === "active" && isRunning(selected) && (
                   <span className="live-pulse-dot" />
@@ -300,28 +328,33 @@ export default function App() {
           />
         ) : (
           <Ctx.Provider value={ctxValue}>
-            {page === "active" && (
-              <ChatView
-                objective={selected}
-                onSelectObjective={(newId) => {
-                  setSelectedId(newId);
-                  setPage("active");
-                }}
-                isInspectorOpen={isInspectorOpen}
-                onToggleInspector={() => setIsInspectorOpen((prev) => !prev)}
-                onSelectArtifact={(artId) => setSelectedArtifactId(artId)}
-              />
-            )}
-            {page === "objectives" && <Objectives />}
-            {page === "tasks" && <Tasks />}
-            {page === "trace" && <Trace />}
-            {page === "verification" && <Verification />}
-            {page === "artifacts" && <Artifacts />}
-            {page === "authority" && <AuthorityPage />}
-            {page === "memory" && <Memory />}
-            {page === "ledger" && <Ledger />}
-            {page === "vitals" && <Vitals />}
-            {page === "settings" && <SettingsPage onShutdown={shutdown} />}
+            <ErrorBoundary
+              key={page}
+              fallbackTitle={`Error Rendering ${PAGES.find((p) => p.id === page)?.label || "Surface"}`}
+            >
+              {page === "active" && (
+                <ChatView
+                  objective={selected}
+                  onSelectObjective={(newId) => {
+                    setSelectedId(newId);
+                    setPage("active");
+                  }}
+                  isInspectorOpen={isInspectorOpen}
+                  onToggleInspector={() => setIsInspectorOpen((prev) => !prev)}
+                  onSelectArtifact={(artId) => setSelectedArtifactId(artId)}
+                />
+              )}
+              {page === "objectives" && <Objectives />}
+              {page === "tasks" && <Tasks />}
+              {page === "trace" && <Trace />}
+              {page === "verification" && <Verification />}
+              {page === "artifacts" && <Artifacts />}
+              {page === "authority" && <AuthorityPage />}
+              {page === "memory" && <Memory />}
+              {page === "ledger" && <Ledger />}
+              {page === "vitals" && <Vitals />}
+              {page === "settings" && <SettingsPage onShutdown={shutdown} />}
+            </ErrorBoundary>
           </Ctx.Provider>
         )}
       </main>
