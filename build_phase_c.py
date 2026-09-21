@@ -260,8 +260,9 @@ def load_bearing_probe(search_root: Path) -> dict:
     hits = []
     for f in Path(search_root).rglob("*.py"):
         f_res = f.resolve()
-        if "/integrate/" in str(f_res).replace("\\", "/"):
-            continue  # exclude the gate's own modules from self-matching
+        f_str = str(f_res).replace("\\", "/")
+        if "/integrate/" in f_str or f_res.name == "acceptance.py":
+            continue  # exclude the gate's own modules and acceptance suite naming collision
         try:
             src = f.read_text(encoding="utf-8", errors="replace")
         except Exception:
