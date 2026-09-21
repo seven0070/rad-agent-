@@ -45,11 +45,19 @@ print(f"    parses: {bool(p3)}")
 if p3:
     from rad.papers.quote_locator import locate_verbatim
     full = get_paper_text("2303.17651") or ""
-    claims = p3.get("claims", [{}])
+    # normalize bare {"claim": ..., "evidence_hint": ...} that qwen sometimes returns
+    if "claim" in p3 and "claims" not in p3:
+        p3 = {"claims": [p3]}
+    claims = p3.get("claims", [])
     hint = str(claims[0].get("evidence_hint", "") if claims else "")
     loc = locate_verbatim(full, hint)
     print(f"[5] locator: hint={hint[:60]!r}")
     print(f"    -> ratio={loc and loc['ratio']}, verbatim={loc and loc['verbatim'][:60]!r}")
+    if loc:
+        print("    [5] PASS — locator pinned a real verbatim span")
+    else:
+        print("    [5] RETRY — hint didn't locate; try min_ratio=0.50 or different hint")
+
 
 print()
 print("VERDICT: stages [2]-[3] slow/False = format issue; [4] >60s = context size;")

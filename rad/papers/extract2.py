@@ -66,6 +66,12 @@ def extract_card_v2(slug: str, brain_fn, max_retries: int = 1) -> dict:
         if parsed is None:
             last_err = "unparseable JSON (after think-strip)"
             continue
+        # normalize bare {"claim": ..., "evidence_hint": ...} -> {"claims": [...]}
+        if "claim" in parsed and "claims" not in parsed:
+            parsed = {"claims": [parsed], "card_type": parsed.get("card_type", "technique"),
+                      "mechanism": parsed.get("mechanism", ""),
+                      "implementation_surface": parsed.get("implementation_surface", []),
+                      "coi_flags": parsed.get("coi_flags", [])}
         # locate + pin verbatim spans (the law, enforced here)
         pinned = []
         for c in parsed.get("claims", [])[:3]:
