@@ -1335,15 +1335,20 @@ def cmd_brain(args) -> int:
         return 0
     if args.brain_action == "promote":
         from rad.battery import Benchmark
+        from rad.integrate.hooks import promotion_gate
         bench = Benchmark(home)
         info("  benchmark battle: candidate vs current brain…")
-        res = b.promote(args.name, bench, margin=args.margin)
-        if res["promoted"]:
-            ok(f"PROMOTED: {res['candidate']} — {res['new']} vs {res['old']} (margin {args.margin})")
-        else:
-            warn(f"rejected: {res['candidate']} — {res['new']} vs current {res['old']} "
-                 f"(needs +{args.margin}). The throne stands.")
-        return 0
+        try:
+            res = b.promote(args.name, bench, margin=args.margin)
+            if res["promoted"]:
+                ok(f"PROMOTED: {res['candidate']} — {res['new']} vs {res['old']} (margin {args.margin})")
+            else:
+                warn(f"rejected: {res['candidate']} — {res['new']} vs current {res['old']} "
+                     f"(needs +{args.margin}). The throne stands.")
+            return 0
+        except PermissionError as e:
+            fail(f"PROMOTION BLOCKED by gate: {e}")
+            return 1
     if args.brain_action == "rollback":
         prev = b.rollback()
         if prev:

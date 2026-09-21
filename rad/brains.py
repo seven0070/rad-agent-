@@ -69,14 +69,30 @@ class Brains:
         return gens
 
     def promote(self, name: str, bench, margin: float = 0.0,
-                categories: Optional[List[str]] = None) -> Dict[str, Any]:
+                categories: Optional[List[str]] = None,
+                canary_tasks: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
         """Benchmark the candidate against current. Promote iff it wins by margin."""
-        from rad.battery import build_caller
+        from rad.battery import build_caller, CapabilityBattery
+        from rad.integrate.hooks import promotion_gate, make_battery_fn
         d = self.data()
         cand = d["candidates"].get(name)
         if not cand:
             raise ValueError(f"no brain candidate named '{name}'")
         cur = self.current()
+        cur_cfg = {"provider": cur.get("provider", "default"), "model": cur.get("model", "")} if cur else None
+
+        # Fail-closed promotion gates: canary integrity check & contamination firewall
+        battery_obj = bench if isinstance(bench, CapabilityBattery) else CapabilityBattery(home=self.home)
+        promotion_gate(
+            corpus_dir=self.home.root / "corpus",
+            battery_dir=self.home.root / "battery",
+            battery_fn=make_battery_fn(battery_obj) if (cur and canary_tasks) else None,
+            current_config=cur_cfg,
+            tasks=canary_tasks,
+            results_dir=self.home.root / "battery",
+            check_canary=bool(cur and canary_tasks),
+            check_contamination=True,
+        )
 
         def run(c: Dict[str, Any]):
             caller = build_caller(self.home, provider=c["provider"], model=c.get("model") or None,
