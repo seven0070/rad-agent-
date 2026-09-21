@@ -1,15 +1,16 @@
 {
   "format": "rad-replication-ledger",
   "version": 1,
-  "exported_at": "2026-09-21T09:20:56.441596+00:00",
-  "entry_count": 4,
+  "exported_at": "2026-09-21T09:45:41.353015+00:00",
+  "entry_count": 5,
   "summary": {
-    "total_battles": 4,
+    "total_battles": 5,
     "verdicts": {
       "INCONCLUSIVE": 1,
-      "CONFIRMED": 3
+      "CONFIRMED": 3,
+      "NOT_REPLICATED": 1
     },
-    "replication_rate": 0.75,
+    "replication_rate": 0.6,
     "papers_tested": 1
   },
   "entries": [
@@ -199,6 +200,51 @@
       },
       "battle_verdict": "candidate_wins",
       "replication_verdict": "CONFIRMED",
+      "coi_flags": [
+        "evaluates on ALFWorld and HotpotQA"
+      ]
+    },
+    {
+      "ledger_ts": "2026-09-21T09:45:20.182427+00:00",
+      "battle_id": "battle-2303.11366-5-52869b1a25be",
+      "slug": "2303.11366",
+      "paper_title": "Reflexion: Language Agents with Verbal Reinforcement Learning",
+      "paper_url": "https://arxiv.org/abs/2303.11366",
+      "paper_sha256": "81852dc631885da185a14c7cb16d6aa2e3989da97c8ed55bdd4084d06a075413",
+      "seed": 5,
+      "task_count": 1,
+      "claimed": [
+        {
+          "claim": "Reflexion converts environment feedback into verbal feedback context for subsequent episodes.",
+          "claimed_gain": "verbal reinforcement signal"
+        },
+        {
+          "claim": "Self-reflective feedback acts as a semantic gradient providing concrete direction to improve upon prior mistakes.",
+          "claimed_gain": "few-shot improvement"
+        }
+      ],
+      "measured": {
+        "verified_rate": {
+          "baseline": 0.0,
+          "candidate": 1.0,
+          "delta": 1.0,
+          "n": 1
+        },
+        "false_done": {
+          "baseline": 0.0,
+          "candidate": 0.0,
+          "delta": 0.0,
+          "n": 1
+        },
+        "cost": {
+          "baseline": 2.0,
+          "candidate": 3.0,
+          "delta": 1.0,
+          "n": 1
+        }
+      },
+      "battle_verdict": "mixed",
+      "replication_verdict": "NOT_REPLICATED",
       "coi_flags": [
         "evaluates on ALFWorld and HotpotQA"
       ]

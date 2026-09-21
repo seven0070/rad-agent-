@@ -24,6 +24,7 @@ The replication ledger (`rad/papers/ledger.py`) enforces an append-only audit tr
 - Epistemic note: the ledger is strictly append-only from `b6e7a43` forward. Line 1 in the active ledger is a faithful reconstruction of the original Battle #1 trial outcome preceding the formalization of the amendment protocol.
 - Provenance: Battle `-3-` (`battle-2303.11366-3-8e643d3351fb`) used a scaffolded reflection prompt during initial neural wiring; superseded by clean re-run `-4-` (`battle-2303.11366-4-8e643d3351fb`) which used a 100% unscaffolded reflection prompt driven solely by binary disk-grader failure events (`disk_fail:`).
 - Empirical n=6 scale (`scripts/run_n6.py`): across 6 deterministic probe tasks, baseline scored 0.00 verified rate (1.00 false-done), candidate with local `qwen3:4b` scored 0.67 verified rate (0.33 false-done, delta = +0.67). Reflection repaired JSON, logic, Python code, and summarization tasks, while revealing reflection limits on complex arithmetic and honesty self-reporting.
+- Battle #4 (brain-as-executor, `scripts/run_battle5_executor.py`): testing unaided execution against reflexive loop on `qwen3:4b`. Baseline failed single-shot disk write (`vr=0.0, cost=2.0`); candidate utilized environment feedback between episodes, generated corrected file write action, and verified on disk (`vr=1.0, cost=3.0`). Delta: `+1.0` verified rate, `+1.0` cost. Verdict: `mixed` → replication verdict `NOT_REPLICATED` under strict multi-metric evaluation (accuracy gain traded for compute).
 
 ## Integration hooks & Facades (VERIFIED → INTEGRATED)
 
