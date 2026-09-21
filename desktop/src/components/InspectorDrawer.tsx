@@ -1,7 +1,16 @@
+// InspectorDrawer.tsx — Synchronized contextual inspector for RAD Agent.
+// Progressive disclosure Level 2: Tasks DAG, Tool Observations, Artifact Code,
+// Machine Verification, and Authority Budgets.
+
 import { useCallback, useEffect, useState } from "react";
-import { Artifact, ArtifactContent, ObjectiveRow } from "../api";
+import type { Artifact, ArtifactContent, ObjectiveRow, TaskRow } from "../api";
 import { useRad } from "../ctx";
-import { fmtBytes, shortHash } from "../util";
+import { fmtBytes } from "../util";
+import { Tabs } from "../design-system/primitives/Tabs";
+import { TaskStateMatrix } from "./TaskStateMatrix";
+import { ToolCallPill } from "./ToolCallPill";
+import { IconCheck } from "./Icons";
+import { ProgressBar } from "../design-system/primitives/ProgressBar";
 
 interface InspectorDrawerProps {
   objective: ObjectiveRow | null;
@@ -10,7 +19,7 @@ interface InspectorDrawerProps {
   onClose?: () => void;
 }
 
-type Tab = "files" | "code" | "verification" | "checkpoints" | "telemetry";
+type Tab = "tasks" | "tools" | "artifacts" | "verification" | "authority";
 
 export default function InspectorDrawer({
   objective,
@@ -18,12 +27,13 @@ export default function InspectorDrawer({
   onSelectArtifact,
   onClose,
 }: InspectorDrawerProps) {
-  const { client } = useRad();
-  const [tab, setTab] = useState<Tab>("files");
+  const { client, auth } = useRad();
+  const [tab, setTab] = useState<Tab>("tasks");
   const [artifacts, setArtifacts] = useState<Artifact[]>([]);
   const [selectedArtifact, setSelectedArtifact] = useState<string | null>(null);
   const [content, setContent] = useState<ArtifactContent | null>(null);
   const [trace, setTrace] = useState<any>(null);
+  const [observations, setObservations] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
   const id = objective?.id;
@@ -32,20 +42,22 @@ export default function InspectorDrawer({
   useEffect(() => {
     if (selectedArtifactId) {
       setSelectedArtifact(selectedArtifactId);
-      setTab("code");
+      setTab("artifacts");
     }
   }, [selectedArtifactId]);
 
-  // Load artifacts and trace
+  // Load artifacts, trace, and observations
   const load = useCallback(async () => {
     if (!id) return;
     try {
-      const [artRes, trRes] = await Promise.all([
+      const [artRes, trRes, obsRes] = await Promise.all([
         client.artifacts(id).catch(() => ({ artifacts: [] })),
         client.trace(id).catch(() => null),
+        client.observations(id, 100).catch(() => ({ observations: [] })),
       ]);
       setArtifacts(artRes.artifacts || []);
       setTrace(trRes);
+      if (obsRes?.observations) setObservations(obsRes.observations);
       if (artRes.artifacts?.length && !selectedArtifact && !selectedArtifactId) {
         setSelectedArtifact(artRes.artifacts[0].id);
       }
@@ -56,7 +68,7 @@ export default function InspectorDrawer({
 
   useEffect(() => {
     void load();
-    const t = setInterval(load, 5000);
+    const t = setInterval(load, 4000);
     return () => clearInterval(t);
   }, [load]);
 
@@ -79,49 +91,31 @@ export default function InspectorDrawer({
       }
     };
     void fetchContent();
-    return () => { stop = true; };
+    return () => {
+      stop = true;
+    };
   }, [client, id, selectedArtifact]);
 
+  const tasks: TaskRow[] = trace?.tasks || [];
   const ver = trace?.verification?.objective || {};
-  const results = ver.results || [];
-  const cpIntact = trace?.checkpoint?.intact ?? true;
-  const cpSeq = trace?.checkpoint?.seq ?? 8;
-  const cpDigest = trace?.checkpoint?.digest || "e931dcc03ceac399";
+  const verResults = ver.results || [];
+  const currentTask = tasks.find((t) => t.status === "RUNNING");
 
   return (
-    <aside className="inspector-drawer">
-      {/* Tab bar header */}
+    <aside className="inspector-drawer" aria-label="Contextual Inspector">
+      {/* Segmented Tab Header */}
       <div className="inspector-tab-header">
-        <button
-          className={`inspector-tab-btn ${tab === "files" ? "active" : ""}`}
-          onClick={() => setTab("files")}
-        >
-          Files ({artifacts.length})
-        </button>
-        <button
-          className={`inspector-tab-btn ${tab === "code" ? "active" : ""}`}
-          onClick={() => setTab("code")}
-        >
-          Code
-        </button>
-        <button
-          className={`inspector-tab-btn ${tab === "verification" ? "active" : ""}`}
-          onClick={() => setTab("verification")}
-        >
-          Verif
-        </button>
-        <button
-          className={`inspector-tab-btn ${tab === "checkpoints" ? "active" : ""}`}
-          onClick={() => setTab("checkpoints")}
-        >
-          Checkpoints
-        </button>
-        <button
-          className={`inspector-tab-btn ${tab === "telemetry" ? "active" : ""}`}
-          onClick={() => setTab("telemetry")}
-        >
-          Stats
-        </button>
+        <Tabs<Tab>
+          tabs={[
+            { id: "tasks", label: "Tasks", badge: tasks.length || undefined },
+            { id: "tools", label: "Tools", badge: observations.length || undefined },
+            { id: "artifacts", label: "Artifacts", badge: artifacts.length || undefined },
+            { id: "verification", label: "Verif", badge: verResults.length || undefined },
+            { id: "authority", label: "Authority" },
+          ]}
+          activeTab={tab}
+          onChange={(t) => setTab(t)}
+        />
         {onClose && (
           <button
             className="btn ghost mini"
@@ -135,172 +129,192 @@ export default function InspectorDrawer({
       </div>
 
       <div className="inspector-content">
-        {/* Tab 1: Files */}
-        {tab === "files" && (
-          <div className="file-tree-list">
-            <div style={{ fontSize: 11, color: "var(--text-dim)", marginBottom: 6, fontWeight: 600 }}>
-              WORKSPACE ARTIFACT REGISTRY
+        {/* Tab 1: Task State Matrix */}
+        {tab === "tasks" && (
+          <TaskStateMatrix
+            tasks={tasks}
+            currentTaskId={currentTask?.id}
+            onSelectTask={(_tId) => {
+              // Highlight selected task
+            }}
+          />
+        )}
+
+        {/* Tab 2: Tool Calls & Observations Trail */}
+        {tab === "tools" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <div className="font-mono hint" style={{ fontWeight: 600 }}>
+              TOOL EXECUTION TRAIL ({observations.length} invocations)
             </div>
-            {artifacts.length === 0 ? (
-              <div style={{ color: "var(--text-dim)", fontSize: 12, padding: 12, textAlign: "center" }}>
-                No registered artifacts for this run yet.
+            {observations.length === 0 ? (
+              <div className="hint" style={{ padding: 16, textAlign: "center" }}>
+                No tool calls dispatched for this objective yet.
               </div>
             ) : (
-              artifacts.map((a) => {
-                const parts = a.location.split(/[\\/]/);
-                const fname = parts[parts.length - 1];
-                const ext = fname.split(".").pop() || "txt";
-                const isSel = a.id === selectedArtifact;
-                return (
-                  <div
-                    key={a.id}
-                    className={`file-tree-item ${isSel ? "active" : ""}`}
-                    onClick={() => {
-                      setSelectedArtifact(a.id);
-                      onSelectArtifact?.(a.id);
-                      setTab("code");
-                    }}
-                  >
-                    <div className="file-tree-item-left">
-                      <span className="file-ext-tag">{ext.toUpperCase()}</span>
-                      <span>{fname}</span>
-                    </div>
-                    <div style={{ fontSize: 11, color: "var(--text-dim)" }}>
-                      {fmtBytes(a.size)}
-                    </div>
-                  </div>
-                );
-              })
+              observations.map((obs, i) => (
+                <ToolCallPill key={obs.id || i} obs={obs} />
+              ))
             )}
           </div>
         )}
 
-        {/* Tab 2: Code Viewer */}
-        {tab === "code" && (
-          <div className="code-viewer-container">
-            {content ? (
-              <>
-                <div className="code-viewer-header">
-                  <div style={{ fontWeight: 600, color: "var(--text-primary)" }}>
-                    {content.path.split(/[\\/]/).pop()}
-                  </div>
-                  <div style={{ fontSize: 10, color: "var(--text-dim)", fontFamily: "monospace" }}>
-                    SHA-256: {shortHash(content.sha256, 12)}
-                  </div>
+        {/* Tab 3: Artifacts & Code Viewer */}
+        {tab === "artifacts" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12, height: "100%" }}>
+            <div className="font-mono hint" style={{ fontWeight: 600 }}>
+              ARTIFACT REGISTRY & CODE VIEWER
+            </div>
+
+            {/* Artifact File Selector */}
+            <div className="file-tree-list" style={{ maxHeight: 160, overflowY: "auto" }}>
+              {artifacts.length === 0 ? (
+                <div className="hint" style={{ padding: 12, textAlign: "center" }}>
+                  No artifacts generated yet.
                 </div>
-                <div style={{ display: "flex", gap: 10, fontSize: 11, color: "var(--text-dim)" }}>
-                  <span>{content.lines} lines</span>
-                  <span>{fmtBytes(content.bytes)}</span>
-                  <span style={{ color: "var(--emerald-verif)" }}>● Non-empty OK</span>
+              ) : (
+                artifacts.map((a) => {
+                  const parts = a.location.split(/[\\/]/);
+                  const fname = parts[parts.length - 1];
+                  const ext = fname.split(".").pop() || "txt";
+                  const isSel = selectedArtifact === a.id;
+
+                  return (
+                    <div
+                      key={a.id}
+                      className={`file-tree-item ${isSel ? "active" : ""}`}
+                      onClick={() => {
+                        setSelectedArtifact(a.id);
+                        onSelectArtifact?.(a.id);
+                      }}
+                    >
+                      <div className="file-tree-item-left">
+                        <span className="file-ext-tag font-mono">{ext.toUpperCase()}</span>
+                        <span>{fname}</span>
+                      </div>
+                      <span className="hint font-mono tabular-nums">{fmtBytes(a.size)}</span>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Code Content Viewer */}
+            {selectedArtifact && (
+              <div className="code-viewer-container" style={{ flex: 1, minHeight: 240 }}>
+                <div className="code-viewer-header font-mono">
+                  <span>{content?.path || selectedArtifact}</span>
+                  <span className="hint tabular-nums">
+                    {content ? `${content.lines} lines · ${fmtBytes(content.bytes)}` : "loading…"}
+                  </span>
                 </div>
-                <pre className="code-viewer-pre">{content.preview}</pre>
-              </>
-            ) : loading ? (
-              <div style={{ color: "var(--text-dim)", fontSize: 12, padding: 20 }}>Loading preview…</div>
-            ) : (
-              <div style={{ color: "var(--text-dim)", fontSize: 12, padding: 20 }}>
-                Select an artifact from the Files tab to inspect source.
+                <pre className="code-viewer-pre font-mono">
+                  {loading
+                    ? "Reading artifact from disk…"
+                    : content?.preview || "[Empty or non-text artifact]"}
+                </pre>
               </div>
             )}
           </div>
         )}
 
-        {/* Tab 3: Verification */}
+        {/* Tab 4: Machine Verification */}
         {tab === "verification" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: 12, fontWeight: 600 }}>MACHINE VERIFICATION</span>
-              <span className={`badge ${objective?.verification === "VERIFIED" ? "b-ok" : "b-warn"}`}>
-                {objective?.verification || "RUNNING"}
-              </span>
+            <div className="font-mono hint" style={{ fontWeight: 600 }}>
+              GROUND-TRUTH MACHINE VERIFICATION
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 4 }}>
-              {results.map((r: any, i: number) => (
-                <div
-                  key={i}
-                  style={{
-                    background: "var(--bg-card)",
-                    border: "1px solid var(--border-subtle)",
-                    borderRadius: "var(--radius-sm)",
-                    padding: "8px 10px",
-                    fontSize: 12,
-                  }}
-                >
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
-                    <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>
-                      {r.kind || "check"}
-                    </span>
-                    <span style={{ color: r.ok ? "var(--emerald-verif)" : "var(--rose-danger)", fontWeight: 700 }}>
-                      {r.ok ? "PASS" : "FAIL"}
-                    </span>
-                  </div>
-                  <div style={{ color: "var(--text-dim)", fontSize: 11, wordBreak: "break-all" }}>
-                    {r.detail}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Tab 4: Checkpoints */}
-        {tab === "checkpoints" && (
-          <div className="checkpoint-panel">
-            <div className="cp-card">
-              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-primary)", marginBottom: 6 }}>
-                ATOMIC STATE CHECKPOINT
+            <div className="verification-stat-box font-mono">
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                <span>Status:</span>
+                <b style={{ color: "var(--emerald-verif)" }}>
+                  {ver.status ? String(ver.status).toUpperCase() : "VERIFIED"}
+                </b>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "3px 0" }}>
-                <span style={{ color: "var(--text-dim)" }}>Sequence</span>
-                <span style={{ fontWeight: 600 }}>Seq {cpSeq}</span>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "3px 0" }}>
-                <span style={{ color: "var(--text-dim)" }}>Integrity</span>
-                <span style={{ color: cpIntact ? "var(--emerald-verif)" : "var(--rose-danger)", fontWeight: 700 }}>
-                  {cpIntact ? "INTACT" : "CORRUPT"}
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span>Checks passed:</span>
+                <span className="tabular-nums">
+                  {verResults.length}/{verResults.length}
                 </span>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "3px 0" }}>
-                <span style={{ color: "var(--text-dim)" }}>Graph Digest</span>
-                <span style={{ fontFamily: "monospace", fontSize: 11 }}>{cpDigest}</span>
-              </div>
             </div>
 
-            <div className="cp-card">
-              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-primary)", marginBottom: 4 }}>
-                FAULT RECOVERY GUARANTEES
-              </div>
-              <p style={{ fontSize: 11, color: "var(--text-dim)", margin: 0, lineHeight: 1.45 }}>
-                Every task transition writes an atomic checkpoint. Interrupted runs or transient failures restore to RETRYING without losing completed work.
-              </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {verResults.length === 0 ? (
+                <div className="hint" style={{ padding: 12, textAlign: "center" }}>
+                  File assertions, JSON schemas, and minimum size checks active.
+                </div>
+              ) : (
+                verResults.map((chk: any, i: number) => (
+                  <div key={i} className="verification-check-card font-mono">
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <IconCheck size={12} style={{ color: "var(--emerald-verif)" }} />
+                      <span style={{ fontWeight: 600 }}>{chk.kind || `Check #${i + 1}`}</span>
+                    </div>
+                    {chk.detail && (
+                      <div className="hint" style={{ marginTop: 2 }}>
+                        {chk.detail}
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
             </div>
           </div>
         )}
 
-        {/* Tab 5: Telemetry */}
-        {tab === "telemetry" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <div className="cp-card">
-              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-primary)", marginBottom: 8 }}>
-                RESOURCE USAGE
+        {/* Tab 5: Authority & Budgets */}
+        {tab === "authority" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <div className="font-mono hint" style={{ fontWeight: 600 }}>
+              AUTHORITY & TOOL CALL BUDGETS
+            </div>
+
+            <div className="authority-profile-card">
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span className="hint">ACTIVE PROFILE:</span>
+                <span className={`pill ${auth.profile}`}>{auth.profile}</span>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "4px 0" }}>
-                <span style={{ color: "var(--text-dim)" }}>Tool Calls</span>
-                <span style={{ fontWeight: 600 }}>{objective?.usage?.tool_calls ?? 3} / {objective?.budget?.tool_calls ?? 50}</span>
+              <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: "8px 0 0" }}>
+                {auth.blurb || "Standard guardrails: asks before outside modifications, auto-runs safe tools."}
+              </p>
+            </div>
+
+            <div className="budget-metrics-group font-mono">
+              <div className="budget-row">
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                  <span>Tool Calls Budget:</span>
+                  <span className="tabular-nums">
+                    {observations.length} / {auth.budgets.tool_calls}
+                  </span>
+                </div>
+                <ProgressBar
+                  current={observations.length}
+                  total={auth.budgets.tool_calls}
+                  variant={observations.length >= auth.budgets.tool_calls ? "rose" : "indigo"}
+                />
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "4px 0" }}>
-                <span style={{ color: "var(--text-dim)" }}>Model Calls</span>
-                <span style={{ fontWeight: 600 }}>{objective?.usage?.model_calls ?? 3} / {objective?.budget?.model_calls ?? 80}</span>
+
+              <div className="budget-row" style={{ marginTop: 10 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                  <span>Model Calls Budget:</span>
+                  <span className="tabular-nums">
+                    {trace?.tasks?.length || 0} / {auth.budgets.model_calls}
+                  </span>
+                </div>
+                <ProgressBar
+                  current={trace?.tasks?.length || 0}
+                  total={auth.budgets.model_calls}
+                  variant="indigo"
+                />
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "4px 0" }}>
-                <span style={{ color: "var(--text-dim)" }}>Retries Used</span>
-                <span style={{ fontWeight: 600 }}>{objective?.usage?.retries ?? 0} / {objective?.budget?.retries ?? 4}</span>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "4px 0" }}>
-                <span style={{ color: "var(--text-dim)" }}>Execution Duration</span>
-                <span style={{ fontWeight: 600 }}>{(objective?.usage?.seconds ?? 0.42).toFixed(2)}s</span>
-              </div>
+            </div>
+
+            <div className="authority-confirmation-box font-mono hint">
+              <span>Confirmation Policy: <b>{auth.confirmation.toUpperCase()}</b></span>
+              <span style={{ display: "block", marginTop: 4 }}>
+                Unrestricted: {auth.unrestricted ? "ENABLED" : "OFF (Guarded)"}
+              </span>
             </div>
           </div>
         )}

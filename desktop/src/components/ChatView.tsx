@@ -1,7 +1,16 @@
+// ChatView.tsx — Main execution workbench with progressive disclosure.
+// Level 0: Default clean stream (goal, progress, clear conversational feed).
+// Level 1: Expandable reasoning trace and compact tool call pills.
+// Level 2: Contextual inspector linking to deep operational views.
+
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Artifact, ObjectiveRow } from "../api";
+import type { Artifact, ObjectiveRow, TaskRow } from "../api";
 import { useRad } from "../ctx";
-import { fmtBytes, fmtTime, redactText, shortHash } from "../util";
+import { fmtBytes, fmtTime, shortHash } from "../util";
+import { RunProgressHeader } from "./RunProgressHeader";
+import { ToolCallPill } from "./ToolCallPill";
+import { IconCheck, IconArtifacts } from "./Icons";
+import { Button } from "../design-system/primitives/Button";
 
 interface ChatViewProps {
   objective: ObjectiveRow | null;
@@ -26,11 +35,13 @@ export default function ChatView({
   const [observations, setObservations] = useState<any[]>([]);
   const [artifacts, setArtifacts] = useState<Artifact[]>([]);
   const [trace, setTrace] = useState<any>(null);
-  const [expandedTools, setExpandedTools] = useState<Record<string, boolean>>({});
+  const [isReasoningOpen, setIsReasoningOpen] = useState(false);
 
   const feedRef = useRef<HTMLDivElement>(null);
   const id = objective?.id;
-  const isRunning = objective ? ["running", "planning"].includes(objective.status.toLowerCase()) : false;
+  const isRunning = objective
+    ? ["running", "planning"].includes(objective.status.toLowerCase())
+    : false;
 
   // Poll live data, observations, artifacts, and trace
   const loadData = useCallback(async () => {
@@ -77,7 +88,6 @@ export default function ChatView({
 
     setSubmitting(true);
     try {
-      // Check if it's a slash command
       if (text.startsWith("/plan ")) {
         const goal = text.replace(/^\/plan\s+/, "").trim();
         const created = await client.createObjective(goal, false);
@@ -105,188 +115,68 @@ export default function ChatView({
     }
   };
 
-  const toggleToolExpanded = (obsId: string) => {
-    setExpandedTools((prev) => ({ ...prev, [obsId]: !prev[obsId] }));
-  };
-
   const modelName = status?.chain?.[0] || "gemini-2.5-pro";
-  const tasks = trace?.tasks || [];
+  const tasks: TaskRow[] = trace?.tasks || [];
+  const completedTasks = tasks.filter((t) => t.status === "COMPLETED").length;
+  const currentTaskTitle = live?.current_task?.text || (tasks.find((t) => t.status === "RUNNING")?.text);
   const verification = trace?.verification?.objective || {};
   const verResults = verification?.results || [];
   const isVerified = (objective?.verification || "").toUpperCase() === "VERIFIED";
 
   return (
     <div className="chat-view-container">
-      {/* Session Top Header */}
-      <header className="session-header">
-        <div className="session-header-left">
-          <div className="rad-logo-mark" style={{ width: 24, height: 24, fontSize: 12 }}>
-            RAD
-          </div>
-          <span className="session-title">
-            {objective?.goal || "New Autonomous Session"}
-          </span>
-          {objective && (
-            <>
-              <span
-                className={`badge ${
-                  objective.status === "completed"
-                    ? "b-ok"
-                    : objective.status === "failed"
-                    ? "b-bad"
-                    : "os-running"
-                }`}
-              >
-                {objective.status.toUpperCase()}
-              </span>
-              <span
-                style={{
-                  fontSize: 11,
-                  fontFamily: "monospace",
-                  color: "var(--text-dim)",
-                  background: "var(--bg-card)",
-                  padding: "2px 6px",
-                  borderRadius: 4,
-                  border: "1px solid var(--border-subtle)",
-                }}
-              >
-                {objective.id.slice(0, 12)}
-              </span>
-            </>
-          )}
-        </div>
+      {/* 1. Top Active Run Bar with Stepped Progress */}
+      <RunProgressHeader
+        objective={objective}
+        tasksCount={tasks.length}
+        completedTasksCount={completedTasks}
+        currentTaskTitle={currentTaskTitle}
+        isInspectorOpen={isInspectorOpen}
+        onToggleInspector={onToggleInspector}
+        onAction={handleAction}
+      />
 
-        <div className="session-header-actions">
-          {isRunning && (
-            <>
-              <button
-                className="btn ghost mini"
-                onClick={() => handleAction("pause")}
-                title="Pause run"
-              >
-                ❚❚ Pause
-              </button>
-              <button
-                className="btn ghost mini"
-                onClick={() => handleAction("cancel")}
-                title="Cancel run"
-                style={{ color: "var(--rose-danger)" }}
-              >
-                ✕ Stop
-              </button>
-            </>
-          )}
-          {objective?.status === "paused" && (
-            <button
-              className="btn ghost mini"
-              onClick={() => handleAction("resume")}
-              title="Resume run"
-            >
-              ▶ Resume
-            </button>
-          )}
-          <button
-            className={`btn ghost mini ${isInspectorOpen ? "active" : ""}`}
-            onClick={onToggleInspector}
-            title="Toggle Right Inspector Drawer"
-            style={{
-              borderColor: isInspectorOpen ? "var(--rad-indigo)" : undefined,
-              color: isInspectorOpen ? "var(--rad-indigo-light)" : undefined,
-            }}
-          >
-            {isInspectorOpen ? "◨ Inspector [Open]" : "◨ Inspector"}
-          </button>
-        </div>
-      </header>
-
-      {/* Main Chat / Stream Message Feed */}
+      {/* 2. Main Execution Feed */}
       <div className="chat-feed" ref={feedRef}>
         {!objective ? (
-          /* Empty / Welcome State matching RAD Agent Desktop */
-          <div
-            style={{
-              margin: "auto",
-              maxWidth: 580,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              textAlign: "center",
-              gap: 16,
-              padding: "40px 20px",
-            }}
-          >
-            <div
-              className="rad-logo-mark"
-              style={{
-                width: 52,
-                height: 52,
-                fontSize: 24,
-                borderRadius: 14,
-                boxShadow: "0 0 24px var(--rad-indigo-glow)",
-              }}
-            >
+          /* Welcome Screen */
+          <div className="workbench-welcome-card">
+            <div className="rad-logo-mark" style={{ width: 48, height: 48, fontSize: 22, borderRadius: 12 }}>
               RAD
             </div>
             <div>
-              <h2
-                style={{
-                  fontSize: 20,
-                  fontWeight: 700,
-                  letterSpacing: "-0.02em",
-                  margin: "0 0 6px",
-                  color: "var(--text-primary)",
-                }}
-              >
-                RAD Autonomous Agent
+              <h2 style={{ fontSize: 18, fontWeight: 700, margin: "0 0 6px", color: "var(--text-primary)" }}>
+                RAD Autonomous Execution Workbench
               </h2>
-              <p style={{ margin: 0, fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5 }}>
-                RAD Agent desktop execution surface with deterministic Python control plane,
-                multi-level machine verification, and atomic checkpoint persistence.
+              <p className="lead" style={{ maxWidth: 520, margin: "0 auto", color: "var(--text-muted)" }}>
+                Deterministic Python control plane with task DAG planning, progressive tool inspection,
+                and ground-truth machine verification.
               </p>
             </div>
 
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr",
-                gap: 8,
-                width: "100%",
-                marginTop: 12,
-              }}
-            >
+            <div className="workbench-quick-prompts">
               {[
                 {
-                  label: "Complete Autonomous Audit",
-                  desc: "Inspect RAD workspace files and generate JSON/CSV/Markdown reports with recovery proof.",
-                  prompt:
-                    "Perform a complete autonomous project audit of the RAD workspace. Generate a JSON machine-readable audit, a CSV metrics table, and a Markdown executive report. Validate every generated artifact independently.",
+                  label: "Complete Autonomous Project Audit",
+                  desc: "Inspect RAD workspace files and generate JSON/CSV/Markdown reports with verification proof.",
+                  prompt: "Perform a complete autonomous project audit of the RAD workspace. Generate a JSON machine-readable audit, a CSV metrics table, and a Markdown executive report. Validate every generated artifact independently.",
                 },
                 {
-                  label: "Verify System & Artifacts",
+                  label: "Verify System & Artifact Integrity",
                   desc: "Execute Level 1-5 checks on file existence, minimum size, hashes, and schema validity.",
-                  prompt:
-                    "Verify all workspace artifacts and generate independent Level 1-5 verification proof.",
+                  prompt: "Verify all workspace artifacts and generate independent Level 1-5 verification proof.",
                 },
                 {
-                  label: "Inspect Checkpoint Integrity",
+                  label: "Inspect Checkpoint Sequence",
                   desc: "Validate state machine transitions, journal seq, and rollback consistency.",
-                  prompt:
-                    "Audit checkpoint sequences, verify journal digests, and inspect state transitions.",
+                  prompt: "Audit checkpoint sequences, verify journal digests, and inspect state transitions.",
                 },
               ].map((item, i) => (
                 <div
                   key={i}
-                  className="card"
-                  style={{
-                    padding: "12px 14px",
-                    textAlign: "left",
-                    cursor: "pointer",
-                    transition: "all 0.15s ease",
-                    marginBottom: 0,
-                  }}
-                  onClick={() => {
-                    setInputPrompt(item.prompt);
-                  }}
+                  className="card card-interactive"
+                  style={{ textAlign: "left", cursor: "pointer", marginBottom: 0 }}
+                  onClick={() => setInputPrompt(item.prompt)}
                 >
                   <div style={{ fontWeight: 600, fontSize: 13, color: "var(--rad-indigo-light)" }}>
                     ✦ {item.label}
@@ -300,7 +190,7 @@ export default function ChatView({
           </div>
         ) : (
           <>
-            {/* User Goal Bubble */}
+            {/* Operator Goal Bubble */}
             <div className="chat-msg-user">
               <div className="chat-bubble-user">
                 <div
@@ -314,7 +204,7 @@ export default function ChatView({
                   }}
                 >
                   <span>OBJECTIVE GOAL</span>
-                  <span style={{ color: "var(--text-dim)" }}>
+                  <span className="font-mono tabular-nums" style={{ color: "var(--text-dim)" }}>
                     {fmtTime(objective.created || 0)}
                   </span>
                 </div>
@@ -324,190 +214,150 @@ export default function ChatView({
 
             {/* Agent Execution Flow */}
             <div className="chat-msg-agent">
-              {/* 1. Thinking / Step Planning Accordion */}
-              <details className="thinking-accordion" open>
-                <summary className="thinking-header">
+              {/* Level 1: Collapsible Reasoning & Planning Trace */}
+              <div className="thinking-accordion">
+                <div
+                  className="thinking-header"
+                  onClick={() => setIsReasoningOpen((prev) => !prev)}
+                  role="button"
+                  tabIndex={0}
+                  aria-expanded={isReasoningOpen}
+                >
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <span style={{ color: "var(--rad-amber)" }}>✦</span>
-                    <span>Agent Reasoning & Step Planning</span>
+                    <span style={{ fontWeight: 600 }}>Agent Reasoning & Planning</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <span className="thinking-meta-pill">
+                    <span className="thinking-meta-pill font-mono">
                       Plan v{live?.plan_version || trace?.objective?.plan_version || 1}
                     </span>
-                    <span className="thinking-meta-pill">
-                      {tasks.length > 0 ? `${tasks.length} tasks` : "Planning"}
+                    <span className="thinking-meta-pill font-mono">
+                      {tasks.length > 0 ? `${completedTasks}/${tasks.length} tasks` : "Planning"}
                     </span>
-                    <span className="thinking-meta-pill">
-                      Model: {modelName}
+                    <span className="thinking-meta-pill font-mono">
+                      {modelName}
+                    </span>
+                    <span style={{ fontSize: 11, color: "var(--text-dim)", marginLeft: 4 }}>
+                      {isReasoningOpen ? "▲" : "▼"}
                     </span>
                   </div>
-                </summary>
-                <div className="thinking-content">
-                  {live?.current_task ? (
-                    <div style={{ marginBottom: 8, color: "var(--rad-indigo-light)" }}>
-                      ▶ Current execution: <strong>{live.current_task.text}</strong> (status:{" "}
-                      {live.current_task.status}, attempt {live.current_task.attempts || 1})
-                    </div>
-                  ) : null}
-
-                  {tasks.length > 0 ? (
-                    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                      <div style={{ fontSize: 11, color: "var(--text-dim)", fontWeight: 600 }}>
-                        TASK DECOMPOSITION & EXECUTION GRAPH:
-                      </div>
-                      {tasks.map((t: any, idx: number) => (
-                        <div
-                          key={t.id || idx}
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 8,
-                            fontSize: 12,
-                            padding: "2px 0",
-                          }}
-                        >
-                          <span
-                            style={{
-                              color:
-                                t.status === "completed"
-                                  ? "var(--emerald-verif)"
-                                  : t.status === "failed"
-                                  ? "var(--rose-danger)"
-                                  : "var(--rad-amber)",
-                            }}
-                          >
-                            {t.status === "completed" ? "✓" : t.status === "failed" ? "✕" : "○"}
-                          </span>
-                          <span style={{ fontFamily: "monospace", color: "var(--text-dim)" }}>
-                            [{t.id.slice(0, 8)}]
-                          </span>
-                          <span
-                            style={{
-                              color:
-                                t.status === "completed"
-                                  ? "var(--text-secondary)"
-                                  : "var(--text-primary)",
-                            }}
-                          >
-                            {t.text}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div>Agent initialized. Decomposing objective into deterministic tasks…</div>
-                  )}
                 </div>
-              </details>
 
-              {/* 2. ToolTrail inline cards */}
-              {observations.map((obs, idx) => {
-                const isExpanded = !!expandedTools[obs.id || idx];
-                const isOk = obs.status === "ok" || obs.status === "completed";
-                const isErr = obs.status === "failed" || obs.status === "error";
-
-                return (
-                  <div key={obs.id || idx} className="tool-call-card">
-                    <div
-                      className="tool-card-header"
-                      onClick={() => toggleToolExpanded(obs.id || idx)}
-                      style={{ cursor: "pointer" }}
-                    >
-                      <div className="tool-title-group">
-                        <span
-                          style={{
-                            color: isOk
-                              ? "var(--emerald-verif)"
-                              : isErr
-                              ? "var(--rose-danger)"
-                              : "var(--hermes-amber)",
-                            fontSize: 13,
-                          }}
-                        >
-                          {isOk ? "✓" : isErr ? "✕" : "●"}
-                        </span>
-                        <span className="tool-name-badge">tool:{obs.tool}</span>
-                        {obs.args && typeof obs.args === "object" && (
-                          <span
-                            style={{
-                              color: "var(--text-dim)",
-                              fontFamily: "monospace",
-                              fontSize: 11,
-                              maxWidth: 340,
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              whiteSpace: "nowrap",
-                            }}
-                          >
-                            {JSON.stringify(obs.args)}
-                          </span>
-                        )}
-                      </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <span style={{ color: "var(--text-dim)", fontSize: 11 }}>
-                          {obs.duration_ms ? `${obs.duration_ms}ms` : "done"}
-                        </span>
-                        <span style={{ fontSize: 10, color: "var(--text-dim)" }}>
-                          {isExpanded ? "▲ Hide" : "▼ Output"}
-                        </span>
-                      </div>
-                    </div>
-                    {isExpanded && (
-                      <div className="tool-card-body">
-                        {obs.output
-                          ? redactText(obs.output)
-                          : "[Tool execution completed with 0 errors]"}
+                {isReasoningOpen && (
+                  <div className="thinking-content">
+                    {live?.current_task && (
+                      <div style={{ marginBottom: 10, color: "var(--rad-indigo-light)" }}>
+                        ▶ Active Task: <strong>{live.current_task.text}</strong> ({live.current_task.status}, attempt {live.current_task.attempts || 1})
                       </div>
                     )}
-                  </div>
-                );
-              })}
 
-              {/* 3. Generated Artifact Cards */}
+                    {tasks.length > 0 ? (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                        <div style={{ fontSize: 11, color: "var(--text-dim)", fontWeight: 600 }}>
+                          TASK GRAPH BREAKDOWN:
+                        </div>
+                        {tasks.map((t, idx) => (
+                          <div
+                            key={t.id || idx}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 8,
+                              fontSize: 12,
+                              padding: "2px 0",
+                            }}
+                          >
+                            <span
+                              style={{
+                                color:
+                                  t.status === "COMPLETED"
+                                    ? "var(--emerald-verif)"
+                                    : t.status === "FAILED"
+                                      ? "var(--rose-danger)"
+                                      : "var(--rad-amber)",
+                              }}
+                            >
+                              {t.status === "COMPLETED" ? "✓" : t.status === "FAILED" ? "✕" : "○"}
+                            </span>
+                            <span className="font-mono" style={{ color: "var(--text-dim)" }}>
+                              [{t.id.slice(0, 8)}]
+                            </span>
+                            <span
+                              style={{
+                                color:
+                                  t.status === "COMPLETED"
+                                    ? "var(--text-secondary)"
+                                    : "var(--text-primary)",
+                              }}
+                            >
+                              {t.text || t.title}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div>Initializing tasks and analyzing objective constraints…</div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Level 1: Tool Observations (Progressive Disclosure via ToolCallPill) */}
+              {observations.length > 0 && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  <div style={{ fontSize: 11, color: "var(--text-dim)", fontWeight: 600, marginTop: 4 }}>
+                    TOOL OBSERVATIONS ({observations.length})
+                  </div>
+                  {observations.map((obs, idx) => (
+                    <ToolCallPill key={obs.id || idx} obs={obs} />
+                  ))}
+                </div>
+              )}
+
+              {/* Level 1: Generated Artifact Cards */}
               {artifacts.length > 0 && (
-                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 4 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 6 }}>
                   <div style={{ fontSize: 11, color: "var(--text-dim)", fontWeight: 600 }}>
                     GENERATED ARTIFACTS ({artifacts.length})
                   </div>
                   {artifacts.map((a) => {
                     const parts = a.location.split(/[\\/]/);
                     const fname = parts[parts.length - 1];
-                    const ext = fname.split(".").pop()?.toUpperCase() || "TXT";
 
                     return (
                       <div key={a.id} className="artifact-announcement-card">
                         <div className="artifact-info">
-                          <div className="artifact-icon">{ext}</div>
+                          <div className="artifact-icon">
+                            <IconArtifacts size={18} />
+                          </div>
                           <div>
-                            <div className="artifact-name">{fname}</div>
-                            <div className="artifact-sub">
+                            <div className="artifact-name font-mono">{fname}</div>
+                            <div className="artifact-sub font-mono tabular-nums">
                               <span>{fmtBytes(a.size)}</span>
                               <span>•</span>
-                              <span style={{ fontFamily: "monospace" }}>
-                                SHA-256: {shortHash(a.sha256, 12)}
-                              </span>
+                              <span>SHA: {shortHash(a.sha256, 10)}</span>
                               <span>•</span>
-                              <span style={{ color: "var(--emerald-verif)" }}>Level 1-5 OK</span>
+                              <span style={{ color: "var(--emerald-verif)" }}>v{a.version} verified</span>
                             </div>
                           </div>
                         </div>
-                        <button
-                          className="btn ghost mini"
+                        <Button
+                          variant="ghost"
+                          size="mini"
                           onClick={() => {
                             if (!isInspectorOpen) onToggleInspector();
                             onSelectArtifact(a.id);
                           }}
                         >
                           Inspect Code →
-                        </button>
+                        </Button>
                       </div>
                     );
                   })}
                 </div>
               )}
 
-              {/* 4. Verification & Checkpoint Verdict */}
+              {/* Ground-Truth Verification Verdict Card */}
               {objective.status === "completed" && (
                 <div className="verification-verdict-card">
                   <div className="verdict-left">
@@ -527,9 +377,10 @@ export default function ChatView({
                   </div>
                   <div style={{ textAlign: "right" }}>
                     <div style={{ fontSize: 11, color: "var(--emerald-verif)", fontWeight: 600 }}>
-                      Level 1-5 Assurance
+                      <IconCheck size={12} style={{ marginRight: 4 }} />
+                      Level 1-5 Machine Proof
                     </div>
-                    <div style={{ fontSize: 10, color: "var(--text-dim)", fontFamily: "monospace" }}>
+                    <div className="font-mono tabular-nums" style={{ fontSize: 10, color: "var(--text-dim)" }}>
                       Digest: {shortHash(trace?.checkpoint?.digest || "e931dcc03ceac399", 14)}
                     </div>
                   </div>
@@ -540,7 +391,7 @@ export default function ChatView({
         )}
       </div>
 
-      {/* Bottom Composer Area */}
+      {/* 3. Bottom Composer Area */}
       <footer className="chat-composer-area">
         <div className="slash-hints-bar">
           <button
@@ -571,14 +422,14 @@ export default function ChatView({
               if (!isInspectorOpen) onToggleInspector();
             }}
           >
-            /checkpoint Drawer
+            /inspector Contextual Drawer
           </button>
         </div>
 
         <div className="composer-box">
           <textarea
             className="composer-textarea"
-            placeholder="Instruct RAD autonomous agent (e.g. Audit workspace, run verification, build project)..."
+            placeholder="Instruct RAD autonomous agent (e.g. Audit workspace, replicate paper, run verification)..."
             value={inputPrompt}
             onChange={(e) => setInputPrompt(e.target.value)}
             onKeyDown={(e) => {
@@ -591,22 +442,10 @@ export default function ChatView({
 
           <div className="composer-controls">
             <div className="composer-left-controls">
-              <span
-                style={{
-                  fontSize: 11,
-                  color: "var(--text-dim)",
-                  background: "var(--bg-surface)",
-                  padding: "2px 8px",
-                  borderRadius: "var(--radius-pill)",
-                  border: "1px solid var(--border-subtle)",
-                }}
-              >
+              <span className="font-mono" style={{ fontSize: 11, color: "var(--text-dim)" }}>
                 Model: {modelName}
               </span>
-              <span
-                className={`pill ${auth?.profile || "STANDARD"}`}
-                style={{ fontSize: 10 }}
-              >
+              <span className={`pill ${auth?.profile || "STANDARD"}`} style={{ fontSize: 10 }}>
                 {auth?.profile || "STANDARD"}
               </span>
               <span
@@ -619,17 +458,19 @@ export default function ChatView({
                 }}
               >
                 <i className="dot ok" style={{ width: 5, height: 5 }} />
-                Auto-Checkpoint ON
+                Checkpoint Journal ON
               </span>
             </div>
 
-            <button
-              className="btn-send"
+            <Button
+              variant="primary"
+              size="md"
               disabled={submitting || !inputPrompt.trim()}
               onClick={() => void handleSubmit()}
+              loading={submitting}
             >
-              {submitting ? "Launching…" : "Run Objective ↵"}
-            </button>
+              Run Objective ↵
+            </Button>
           </div>
         </div>
       </footer>

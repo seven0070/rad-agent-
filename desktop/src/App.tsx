@@ -43,19 +43,24 @@ type Page =
   | "vitals"
   | "settings";
 
-const PAGES: { id: Page; label: string; icon: ReactNode }[] = [
-  { id: "active", label: "Agent Session", icon: <IconSession size={14} /> },
-  { id: "objectives", label: "Objectives", icon: <IconObjectives size={14} /> },
-  { id: "tasks", label: "Tasks", icon: <IconTasks size={14} /> },
-  { id: "trace", label: "Telemetry Trace", icon: <IconTrace size={14} /> },
-  { id: "verification", label: "Verification", icon: <IconVerification size={14} /> },
+const PRIMARY_PAGES: { id: Page; label: string; icon: ReactNode }[] = [
+  { id: "active", label: "Workbench", icon: <IconSession size={14} /> },
+  { id: "objectives", label: "Runs & Tasks", icon: <IconObjectives size={14} /> },
+  { id: "ledger", label: "Replication Ledger", icon: <IconLedger size={14} /> },
+  { id: "vitals", label: "Organ Vitals", icon: <IconVitals size={14} /> },
+];
+
+const INSPECT_PAGES: { id: Page; label: string; icon: ReactNode }[] = [
   { id: "artifacts", label: "Artifacts", icon: <IconArtifacts size={14} /> },
+  { id: "verification", label: "Verification", icon: <IconVerification size={14} /> },
+  { id: "trace", label: "Trace", icon: <IconTrace size={14} /> },
+  { id: "tasks", label: "Tasks DAG", icon: <IconTasks size={14} /> },
   { id: "authority", label: "Authority", icon: <IconAuthority size={14} /> },
   { id: "memory", label: "Memory", icon: <IconMemory size={14} /> },
-  { id: "ledger", label: "Replication Ledger", icon: <IconLedger size={14} /> },
-  { id: "vitals", label: "Vitals", icon: <IconVitals size={14} /> },
   { id: "settings", label: "Settings", icon: <IconSettings size={14} /> },
 ];
+
+const ALL_PAGES = [...PRIMARY_PAGES, ...INSPECT_PAGES];
 
 export default function App() {
   const [page, setPage] = useState<Page>("active");
@@ -235,9 +240,9 @@ export default function App() {
           <span>New Objective</span>
         </button>
 
-        <div className="nav-section-title">Views</div>
-        <nav className="nav-menu" aria-label="Application views">
-          {PAGES.map((p) => {
+        <div className="nav-section-title">Workspaces</div>
+        <nav className="nav-menu" aria-label="Primary workspaces">
+          {PRIMARY_PAGES.map((p) => {
             const isActive = page === p.id;
             return (
               <button
@@ -254,7 +259,7 @@ export default function App() {
                       justifyContent: "center",
                       width: 16,
                       height: 16,
-                      opacity: isActive ? 1 : 0.65,
+                      opacity: isActive ? 1 : 0.7,
                       color: isActive ? "var(--hermes-indigo-light)" : "inherit",
                       transition: "opacity 0.15s ease, color 0.15s ease",
                     }}
@@ -269,6 +274,41 @@ export default function App() {
                 {p.id === "active" && isRunning(selected) && (
                   <span className="live-pulse-dot" />
                 )}
+              </button>
+            );
+          })}
+        </nav>
+
+        <div className="nav-section-title" style={{ marginTop: 8 }}>
+          Deep Inspection
+        </div>
+        <nav className="nav-menu" aria-label="Deep inspection views">
+          {INSPECT_PAGES.map((p) => {
+            const isActive = page === p.id;
+            return (
+              <button
+                key={p.id}
+                className={`nav-item ${isActive ? "active" : ""}`}
+                onClick={() => setPage(p.id)}
+                aria-current={isActive ? "page" : undefined}
+                style={{ fontSize: 12 }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+                  <span
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: 16,
+                      height: 16,
+                      opacity: isActive ? 1 : 0.55,
+                      color: isActive ? "var(--hermes-indigo-light)" : "inherit",
+                    }}
+                  >
+                    {p.icon}
+                  </span>
+                  <span>{p.label}</span>
+                </div>
               </button>
             );
           })}
@@ -330,7 +370,7 @@ export default function App() {
           <Ctx.Provider value={ctxValue}>
             <ErrorBoundary
               key={page}
-              fallbackTitle={`Error Rendering ${PAGES.find((p) => p.id === page)?.label || "Surface"}`}
+              fallbackTitle={`Error Rendering ${ALL_PAGES.find((p) => p.id === page)?.label || "Surface"}`}
             >
               {page === "active" && (
                 <ChatView
