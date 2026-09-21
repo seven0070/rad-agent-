@@ -48,6 +48,13 @@ def record_battle_outcome(battle_id: str) -> dict:
 
 def record_amendment(battle_id: str, field: str, was: str, now: str, reason: str) -> dict:
     """Append-only ledger amendment. Never rewrites history; links corrections."""
+    current_entries = {e["battle_id"]: e for e in read_ledger(apply_amendments=True)}
+    if battle_id not in current_entries:
+        raise ValueError(f"Battle {battle_id!r} not found in ledger")
+    current_val = current_entries[battle_id].get(field)
+    if current_val != was:
+        raise ValueError(f"Amendment baseline mismatch for {battle_id} field {field!r}: "
+                         f"expected was={current_val!r}, got was={was!r}")
     amendment = {
         "amendment_of": battle_id,
         "field": field,

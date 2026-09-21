@@ -17,6 +17,12 @@ docs/RFC-001..006 · docs/JERRY-SPEC.md · docs/INTEGRATION-B.md — canonical c
 ## State vocabulary
 PROPOSED → ATTACHED → VERIFIED → INTEGRATED → SHIPPED
 
+## Replication Ledger & Amendment Protocol
+The replication ledger (`rad/papers/ledger.py`) enforces an append-only audit trail:
+- Historical entries are immutable; trial corrections append explicit amendment records (`amendment_of`, `field`, `was`, `now`, `reason`, `amended_at`).
+- `record_amendment` validates that `was` matches the current folded baseline before appending.
+- Epistemic note: the ledger is strictly append-only from `b6e7a43` forward. Line 1 in the active ledger is a faithful reconstruction of the original Battle #1 trial outcome preceding the formalization of the amendment protocol.
+
 ## Integration hooks & Facades (VERIFIED → INTEGRATED)
 
 To maintain 100% backward compatibility with existing callers while conforming to adapter contracts:
