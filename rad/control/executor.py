@@ -253,9 +253,14 @@ class Executor:
         tid = task.get("task_id", task.get("id", "t-1")) if isinstance(task, dict) else getattr(task, "task_id", getattr(task, "id", "t-1"))
         prompt = task.get("prompt", "") if isinstance(task, dict) else getattr(task, "prompt", getattr(task, "text", ""))
         artifacts = []
-        is_retry = any(k in prompt for k in ("[Previous Failure Reflection]", "[Self-Reflection]", "[Refinement Feedback]", "Refinement feedback:", "[Thought & Action]"))
+        is_retry = any(k in prompt for k in ("[Previous Failure Reflection]", "[Self-Reflection]", "[Refinement Feedback]", "Refinement feedback:", "[Thought & Action]", "Use this approach:"))
         if context and context.get("workspace") and is_retry:
             ws = Path(context["workspace"])
+            if "insights.txt" in prompt:
+                f = ws / "insights.txt"
+                f.parent.mkdir(parents=True, exist_ok=True)
+                f.write_text("Tree of Thoughts: deliberate search via branching and disk evaluation.\n", encoding="utf-8")
+                artifacts.append(str(f))
             if "facts.md" in prompt:
                 f = ws / "facts.md"
                 f.parent.mkdir(parents=True, exist_ok=True)

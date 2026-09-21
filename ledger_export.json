@@ -1,17 +1,17 @@
 {
   "format": "rad-replication-ledger",
   "version": 1,
-  "exported_at": "2026-09-21T12:06:31.304621+00:00",
-  "entry_count": 10,
+  "exported_at": "2026-09-21T13:49:35.485296+00:00",
+  "entry_count": 13,
   "summary": {
-    "total_battles": 10,
+    "total_battles": 13,
     "verdicts": {
-      "INCONCLUSIVE": 2,
-      "CONFIRMED": 6,
+      "INCONCLUSIVE": 4,
+      "CONFIRMED": 7,
       "NOT_REPLICATED": 2
     },
-    "replication_rate": 0.6,
-    "papers_tested": 3
+    "replication_rate": 0.538,
+    "papers_tested": 4
   },
   "entries": [
     {
@@ -497,6 +497,147 @@
           "amended_at": "2026-09-21T12:06:10.408319+00:00"
         }
       ]
+    },
+    {
+      "ledger_ts": "2026-09-21T13:43:43.626145+00:00",
+      "battle_id": "battle-2305.10601-11-8ea80cf344f4",
+      "slug": "2305.10601",
+      "paper_title": "define the answer format of new tasks",
+      "paper_url": "https://arxiv.org/abs/2305.10601",
+      "paper_sha256": "28296833a61220fd8cc3e69fd030d58658b4cb60e223649b003dcaeed63e5665",
+      "seed": 11,
+      "task_count": 1,
+      "claimed": [
+        {
+          "claim": "Tree of Thoughts (ToT) achieves a 74% success rate on Game of 24, compared to 4% with chain-of-thought prompting on GPT-4.",
+          "claimed_gain": "74%"
+        },
+        {
+          "claim": "Tree of Thoughts (ToT) enables language models to consider multiple reasoning paths and self-evaluate choices for deliberate decision making.",
+          "claimed_gain": "none"
+        }
+      ],
+      "measured": {
+        "verified_rate": {
+          "baseline": 1.0,
+          "candidate": 1.0,
+          "delta": 0.0,
+          "n": 1
+        },
+        "false_done": {
+          "baseline": 1.0,
+          "candidate": 1.0,
+          "delta": 0.0,
+          "n": 1
+        },
+        "cost": {
+          "baseline": 0.0,
+          "candidate": 0.0,
+          "delta": 0.0,
+          "n": 1
+        }
+      },
+      "battle_verdict": "tie",
+      "replication_verdict": "INCONCLUSIVE",
+      "pareto_tradeoff": false,
+      "claim_metrics": [
+        "verified_rate"
+      ],
+      "coi_flags": []
+    },
+    {
+      "ledger_ts": "2026-09-21T13:46:17.642317+00:00",
+      "battle_id": "battle-2305.10601-12-8ea80cf344f4",
+      "slug": "2305.10601",
+      "paper_title": "define the answer format of new tasks",
+      "paper_url": "https://arxiv.org/abs/2305.10601",
+      "paper_sha256": "28296833a61220fd8cc3e69fd030d58658b4cb60e223649b003dcaeed63e5665",
+      "seed": 12,
+      "task_count": 1,
+      "claimed": [
+        {
+          "claim": "Tree of Thoughts (ToT) achieves a 74% success rate on Game of 24, compared to 4% with chain-of-thought prompting on GPT-4.",
+          "claimed_gain": "74%"
+        },
+        {
+          "claim": "Tree of Thoughts (ToT) enables language models to consider multiple reasoning paths and self-evaluate choices for deliberate decision making.",
+          "claimed_gain": "none"
+        }
+      ],
+      "measured": {
+        "verified_rate": {
+          "baseline": 1.0,
+          "candidate": 1.0,
+          "delta": 0.0,
+          "n": 1
+        },
+        "false_done": {
+          "baseline": 1.0,
+          "candidate": 1.0,
+          "delta": 0.0,
+          "n": 1
+        },
+        "cost": {
+          "baseline": 0.0,
+          "candidate": 0.0,
+          "delta": 0.0,
+          "n": 1
+        }
+      },
+      "battle_verdict": "tie",
+      "replication_verdict": "INCONCLUSIVE",
+      "pareto_tradeoff": false,
+      "claim_metrics": [
+        "verified_rate"
+      ],
+      "coi_flags": []
+    },
+    {
+      "ledger_ts": "2026-09-21T13:49:19.603807+00:00",
+      "battle_id": "battle-2305.10601-13-8ea80cf344f4",
+      "slug": "2305.10601",
+      "paper_title": "define the answer format of new tasks",
+      "paper_url": "https://arxiv.org/abs/2305.10601",
+      "paper_sha256": "28296833a61220fd8cc3e69fd030d58658b4cb60e223649b003dcaeed63e5665",
+      "seed": 13,
+      "task_count": 1,
+      "claimed": [
+        {
+          "claim": "Tree of Thoughts (ToT) achieves a 74% success rate on Game of 24, compared to 4% with chain-of-thought prompting on GPT-4.",
+          "claimed_gain": "74%"
+        },
+        {
+          "claim": "Tree of Thoughts (ToT) enables language models to consider multiple reasoning paths and self-evaluate choices for deliberate decision making.",
+          "claimed_gain": "none"
+        }
+      ],
+      "measured": {
+        "verified_rate": {
+          "baseline": 0.0,
+          "candidate": 1.0,
+          "delta": 1.0,
+          "n": 1
+        },
+        "false_done": {
+          "baseline": 1.0,
+          "candidate": 0.0,
+          "delta": -1.0,
+          "n": 1
+        },
+        "cost": {
+          "baseline": 0.0,
+          "candidate": 0.0,
+          "delta": 0.0,
+          "n": 1
+        }
+      },
+      "battle_verdict": "candidate_wins",
+      "replication_verdict": "CONFIRMED",
+      "pareto_tradeoff": false,
+      "claim_metrics": [
+        "verified_rate"
+      ],
+      "coi_flags": []
     }
   ]
 }

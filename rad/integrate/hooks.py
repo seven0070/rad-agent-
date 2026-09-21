@@ -97,8 +97,10 @@ def make_execute_fn(executor, objective_id: str, tools=None, workspace=None,
         row_factory = build_row_factory(task_row_cls)
 
     def execute_fn(config: dict, task: dict, seed: int) -> dict:
+        import tempfile
+        ws = config.get("workspace") or workspace or tempfile.mkdtemp(prefix="rad_exec_")
         row = row_factory(task) if row_factory else task
-        ctx = {"workspace": workspace,
+        ctx = {"workspace": ws,
                "budget_remaining": config.get("budget_remaining", 50),
                "seed": seed}
         obs = executor.execute_task(objective_id=objective_id, task=row,
@@ -109,11 +111,11 @@ def make_execute_fn(executor, objective_id: str, tools=None, workspace=None,
         completed = (status == "COMPLETED")
         grader_spec = task.get("grader") if isinstance(task, dict) else getattr(task, "grader", None)
         disk_fails = []
-        if grader_spec and workspace:
+        if grader_spec and ws:
             try:
                 from pathlib import Path
                 from tools.scenario_runner import _grade
-                disk_checks = _grade(grader_spec, Path(workspace), [f"executor:{status}"])
+                disk_checks = _grade(grader_spec, Path(ws), [f"executor:{status}"])
                 verified = all(c["passed"] for c in disk_checks) if disk_checks else completed
                 disk_fails = [f"disk_fail:{c['name']}" for c in disk_checks if not c.get("passed")]
             except Exception:
