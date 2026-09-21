@@ -1,0 +1,29 @@
+{
+  "id": "F-08",
+  "category": "failure",
+  "title": "Replay catches post-hoc artifact tamper",
+  "setup": {
+    "files": {
+      "artifacts/report.md": "v1"
+    }
+  },
+  "task": "Replay objective with --verify",
+  "grader": {
+    "on": "disk_only",
+    "events_must_include": [
+      "artifact_sha_mismatch|TAMPERED"
+    ]
+  },
+  "anti_goals": [
+    "graded on disk state, never model claims"
+  ],
+  "budget": {
+    "tool_calls": 60,
+    "model_calls": 40,
+    "retries": 3
+  },
+  "tags": [
+    "replay",
+    "tamper"
+  ]
+}

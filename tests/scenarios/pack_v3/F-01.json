@@ -1,0 +1,31 @@
+{
+  "id": "F-01",
+  "category": "failure",
+  "title": "429 mid-run -> provider fallback, noted",
+  "setup": {
+    "files": {
+      "a.txt": "hello"
+    }
+  },
+  "task": "Summarise a.txt into summary.md",
+  "grader": {
+    "on": "disk_only",
+    "must_exist": [
+      "summary.md"
+    ],
+    "events_must_include": [
+      "provider_fallback:A->B"
+    ]
+  },
+  "anti_goals": [
+    "graded on disk state, never model claims"
+  ],
+  "budget": {
+    "tool_calls": 60,
+    "model_calls": 40,
+    "retries": 3
+  },
+  "tags": [
+    "fallback"
+  ]
+}

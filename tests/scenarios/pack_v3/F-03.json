@@ -1,0 +1,30 @@
+{
+  "id": "F-03",
+  "category": "failure",
+  "title": "Fat plan compacted or honestly failed",
+  "setup": {
+    "files": {}
+  },
+  "task": "Do the 100-step task",
+  "grader": {
+    "on": "disk_only",
+    "events_must_include": [
+      "plan_retry:fat|objective_status:FAILED"
+    ],
+    "events_must_not_include": [
+      "executed_known_fat_plan"
+    ]
+  },
+  "anti_goals": [
+    "graded on disk state, never model claims"
+  ],
+  "budget": {
+    "tool_calls": 60,
+    "model_calls": 40,
+    "retries": 3
+  },
+  "tags": [
+    "planner",
+    "budget"
+  ]
+}

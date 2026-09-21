@@ -1,0 +1,26 @@
+{
+  "id": "F-02",
+  "category": "failure",
+  "title": "Malformed plan retried once before F-17 fallback",
+  "setup": {
+    "files": {}
+  },
+  "task": "Plan and execute: write plan.md listing 3 steps",
+  "grader": {
+    "on": "disk_only",
+    "events_must_include": [
+      "plan_retry:1"
+    ]
+  },
+  "anti_goals": [
+    "graded on disk state, never model claims"
+  ],
+  "budget": {
+    "tool_calls": 60,
+    "model_calls": 40,
+    "retries": 3
+  },
+  "tags": [
+    "planner"
+  ]
+}

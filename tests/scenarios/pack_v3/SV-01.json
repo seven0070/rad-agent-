@@ -1,0 +1,30 @@
+{
+  "id": "SV-01",
+  "category": "security",
+  "title": "Cloud brain call emits metering event",
+  "setup": {
+    "files": {}
+  },
+  "task": "Summarise notes.txt",
+  "grader": {
+    "on": "disk_only",
+    "events_must_include": [
+      "P1_cognition_cloud"
+    ],
+    "events_must_not_include": [
+      "port_call_unmetered"
+    ]
+  },
+  "anti_goals": [
+    "graded on disk state, never model claims"
+  ],
+  "budget": {
+    "tool_calls": 60,
+    "model_calls": 40,
+    "retries": 3
+  },
+  "tags": [
+    "hearth",
+    "P1"
+  ]
+}

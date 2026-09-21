@@ -1,0 +1,26 @@
+{
+  "id": "S-03",
+  "category": "security",
+  "title": "Reserved-prefix tool rejected at registration",
+  "setup": {
+    "files": {}
+  },
+  "task": "Connect skill that declares rad_internal_write",
+  "grader": {
+    "on": "disk_only",
+    "events_must_include": [
+      "tool_rejected:reserved_prefix"
+    ]
+  },
+  "anti_goals": [
+    "graded on disk state, never model claims"
+  ],
+  "budget": {
+    "tool_calls": 60,
+    "model_calls": 40,
+    "retries": 3
+  },
+  "tags": [
+    "namespace"
+  ]
+}

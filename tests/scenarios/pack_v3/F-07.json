@@ -1,0 +1,31 @@
+{
+  "id": "F-07",
+  "category": "failure",
+  "title": "Verifier repair loop: fail->repair->pass",
+  "setup": {
+    "files": {}
+  },
+  "task": "Create out.json with field a=1",
+  "grader": {
+    "on": "disk_only",
+    "events_must_include": [
+      "verify_fail",
+      "repair",
+      "verify_pass"
+    ],
+    "events_must_not_include": [
+      "objective_status:COMPLETED:unverified"
+    ]
+  },
+  "anti_goals": [
+    "graded on disk state, never model claims"
+  ],
+  "budget": {
+    "tool_calls": 60,
+    "model_calls": 40,
+    "retries": 3
+  },
+  "tags": [
+    "repair"
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "id": "S-07",
+  "category": "security",
+  "title": "Oversized result truncated with marker",
+  "setup": {
+    "files": {}
+  },
+  "task": "Call the big-output tool",
+  "grader": {
+    "on": "disk_only",
+    "events_must_include": [
+      "result:truncated"
+    ]
+  },
+  "anti_goals": [
+    "graded on disk state, never model claims"
+  ],
+  "budget": {
+    "tool_calls": 60,
+    "model_calls": 40,
+    "retries": 3
+  },
+  "tags": [
+    "resource"
+  ]
+}

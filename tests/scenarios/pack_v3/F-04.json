@@ -1,0 +1,30 @@
+{
+  "id": "F-04",
+  "category": "failure",
+  "title": "Ctrl-C resume: completed tasks not re-run",
+  "setup": {
+    "files": {
+      "notes/a.txt": "alpha"
+    },
+    "inject": {
+      "at_step": 2,
+      "action": "SIGINT"
+    }
+  },
+  "task": "Summarise every file in notes/ into notes/summary.md",
+  "grader": {
+    "on": "disk_only"
+  },
+  "anti_goals": [
+    "graded on disk state, never model claims"
+  ],
+  "budget": {
+    "tool_calls": 60,
+    "model_calls": 40,
+    "retries": 3
+  },
+  "tags": [
+    "resume",
+    "checkpoint"
+  ]
+}

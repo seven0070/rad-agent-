@@ -1,0 +1,26 @@
+{
+  "id": "F-06",
+  "category": "failure",
+  "title": "Missing dependency -> install attempt, then ask_user",
+  "setup": {
+    "files": {}
+  },
+  "task": "Run the pdf skill",
+  "grader": {
+    "on": "disk_only",
+    "events_must_include": [
+      "dep_missing|install_attempt"
+    ]
+  },
+  "anti_goals": [
+    "graded on disk state, never model claims"
+  ],
+  "budget": {
+    "tool_calls": 60,
+    "model_calls": 40,
+    "retries": 3
+  },
+  "tags": [
+    "deps"
+  ]
+}
