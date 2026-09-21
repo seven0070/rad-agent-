@@ -139,7 +139,13 @@ class Gate:
         return self.cached(key, lambda: Lab(self.home).run_scenario(sc))
 
     def code(self, rel: str) -> str:
-        return (Path(__file__).resolve().parent / rel).read_text(encoding="utf-8")
+        p = Path(__file__).resolve().parent / rel
+        if p.exists():
+            return p.read_text(encoding="utf-8")
+        pkg = Path(__file__).resolve().parent / rel.replace(".py", "") / "__init__.py"
+        if pkg.exists():
+            return pkg.read_text(encoding="utf-8")
+        return p.read_text(encoding="utf-8")
 
     # ================================================================== runtime
 
