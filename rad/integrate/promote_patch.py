@@ -105,6 +105,9 @@ def load_bearing_probe(search_root: Path) -> dict:
     """Scan the promote path source for gate usage. Honest three-state."""
     hits = []
     for f in Path(search_root).rglob("*.py"):
+        f_res = f.resolve()
+        if "/integrate/" in str(f_res).replace("\\", "/"):
+            continue  # exclude the gate's own modules from self-matching
         try:
             src = f.read_text(encoding="utf-8", errors="replace")
         except Exception:
