@@ -108,12 +108,14 @@ def make_execute_fn(executor, objective_id: str, tools=None, workspace=None,
         tool_calls = list(getattr(obs, "tool_calls", None) or [])
         completed = (status == "COMPLETED")
         grader_spec = task.get("grader") if isinstance(task, dict) else getattr(task, "grader", None)
+        disk_fails = []
         if grader_spec and workspace:
             try:
                 from pathlib import Path
                 from tools.scenario_runner import _grade
                 disk_checks = _grade(grader_spec, Path(workspace), [f"executor:{status}"])
                 verified = all(c["passed"] for c in disk_checks) if disk_checks else completed
+                disk_fails = [f"disk_fail:{c['name']}" for c in disk_checks if not c.get("passed")]
             except Exception:
                 verified = completed
         else:
@@ -129,7 +131,7 @@ def make_execute_fn(executor, objective_id: str, tools=None, workspace=None,
                     "false_done": false_done,
                     "cost": float(len(tool_calls)),
                 },
-                "events": [f"executor:{status}", f"artifacts:{len(artifacts)}"],
+                "events": [f"executor:{status}", f"artifacts:{len(artifacts)}"] + disk_fails,
                 "status": status}
     return execute_fn
 

@@ -25,9 +25,9 @@ from rad.integrate.hooks import make_execute_fn, make_brain_fn
 from rad.integrate.techniques import apply_reflexion
 
 REFLECT_SYSTEM = (
-    "You are an autonomous AI agent diagnosing a task failure. "
-    "The agent claimed COMPLETED but artifacts list was empty because facts.md was not written to disk. "
-    "State clearly that facts.md must be written containing key Reflexion findings such as verbal reinforcement."
+    "You are an autonomous self-reflection module for an AI agent. "
+    "Given the task prompt, execution status, and event logs, diagnose "
+    "why the attempt failed and provide clear, concise instructions to succeed on retry."
 )
 
 def main():
@@ -60,8 +60,8 @@ def main():
     baseline_cfg = {"technique": "baseline", "budget_remaining": 50}
     candidate_cfg = {"technique": "reflexion", "budget_remaining": 50}
 
-    # 1. Design battle
-    spec = design_battle(slug, task_suite, baseline_cfg, candidate_cfg, seed=3)
+    # 1. Design battle with seed 4 for clean unscaffolded run
+    spec = design_battle(slug, task_suite, baseline_cfg, candidate_cfg, seed=4)
     battle_id = spec["battle_id"]
     print(f"[Battle #3] Designed: {battle_id}")
 
