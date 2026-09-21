@@ -6,6 +6,13 @@ PyInstaller collects the whole `rad` package through it.
 import sys
 
 from rad.sidecar import main
+# --- Ledger endpoints (rad.desktop_ledger data layer) ---
+from rad.desktop_ledger import folded as _fold, summary as _lsum
+
+def api_ledger():
+    f = _fold()
+    f["summary"] = _lsum()
+    return f
 
 if __name__ == "__main__":
     sys.exit(main())

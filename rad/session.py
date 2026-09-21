@@ -215,11 +215,21 @@ SLASH_HELP = """
   /exit               leave
 """.strip()
 
+def _phase_next_wake():
+    try:
+        from rad import curiosity
+        print(curiosity.wake_report())
+        from rad.vitals import collect, report
+        from rad.home import RadHome
+        print(report(collect(RadHome().root)))
+    except Exception: pass
+
 
 def repl(home: RadHome, auto: bool = False, voice: bool = False) -> None:
     from rad import __version__
     from rad.ui import print_banner
     print_banner(__version__)
+    _phase_next_wake()
     s = Session(home, auto=auto, voice=voice)
 
     # startup status line

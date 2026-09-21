@@ -52,10 +52,9 @@ def folded() -> dict:
 
             if t and e.get("field") in t:
 
-                t.setdefault("_amendments", []).append(
-
-                    {k: e[k] for k in ("field", "was", "now", "reason", "amended_at")})
-
+                item = {k: e[k] for k in ("field", "was", "now", "reason", "amended_at")}
+                t.setdefault("_amendments", []).append(item)
+                t.setdefault("amendments", []).append(item)
                 t[e["field"]] = e["now"]
 
         elif "battle_id" in e:

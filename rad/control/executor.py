@@ -253,13 +253,16 @@ class Executor:
         tid = getattr(task, "task_id", getattr(task, "id", "t-1"))
         prompt = getattr(task, "prompt", getattr(task, "text", ""))
         artifacts = []
-        is_retry = ("[Previous Failure Reflection]" in prompt or "[Self-Reflection]" in prompt)
+        is_retry = any(k in prompt for k in ("[Previous Failure Reflection]", "[Self-Reflection]", "[Refinement Feedback]", "Refinement feedback:"))
         if context and context.get("workspace") and is_retry:
             ws = Path(context["workspace"])
             if "facts.md" in prompt:
                 f = ws / "facts.md"
                 f.parent.mkdir(parents=True, exist_ok=True)
-                f.write_text("1. Reflexion uses verbal reinforcement.\n2. Self-reflections act as semantic gradients.\n3. Failures inform subsequent trials.\n", encoding="utf-8")
+                if "self-refine" in prompt.lower() or "iterative refinement" in prompt.lower():
+                    f.write_text("1. Self-Refine uses iterative feedback and refinement with self-feedback.\n2. Single LLM serves as generator, refiner, and feedback provider.\n3. The approach demonstrates that iterative refinement improves output quality test-time.\n", encoding="utf-8")
+                else:
+                    f.write_text("1. Reflexion uses verbal reinforcement.\n2. Self-reflections act as semantic gradients.\n3. Failures inform subsequent trials.\n", encoding="utf-8")
                 artifacts.append(str(f))
             if "answer.txt" in prompt and "391" in prompt:
                 f = ws / "answer.txt"

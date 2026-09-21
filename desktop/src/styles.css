@@ -898,3 +898,87 @@ th { color: var(--text-dim); font-weight: 600; font-size: 11px; text-transform: 
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #22293b; border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: #35405c; }
+
+/* Replication Ledger (cockpit) */
+.ledger-head {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+}
+.ledger-head .stat {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.ledger-head .stat b {
+  color: var(--text-primary);
+}
+.battle-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.battle-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.battle-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.battle-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.metrics-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+.metric {
+  font-size: 12px;
+  font-family: monospace;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-canvas);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+}
+.amendment {
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  background: rgba(178, 106, 0, 0.08);
+  border-left: 3px solid #b26a00;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border: 1px solid transparent;
+}
+.chip-green { color: #2e7d32; background: rgba(46, 125, 50, 0.12); border-color: rgba(46, 125, 50, 0.25); }
+.chip-red { color: #c62828; background: rgba(198, 40, 40, 0.12); border-color: rgba(198, 40, 40, 0.25); }
+.chip-amber { color: #b26a00; background: rgba(178, 106, 0, 0.12); border-color: rgba(178, 106, 0, 0.25); }
+.chip-gray { color: #777; background: rgba(119, 119, 119, 0.12); border-color: rgba(119, 119, 119, 0.25); }
+

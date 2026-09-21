@@ -59,4 +59,18 @@ def run_sleep(home: RadHome, router: Optional[RouterState] = None,
                 info(f"  drive sync: {note}")
         except Exception as e:
             info(f"  (drive sync skipped: {str(e)[:120]})")
+    _phase_next_sleep(home.root)
     return report
+
+def _phase_next_sleep(home):
+    try:
+        from rad.federation.cadence import sleep_checkup
+        sleep_checkup()                                   # canary on 24h cadence
+    except Exception: pass
+    try:
+        from rad import curiosity
+        from pathlib import Path
+        curiosity.explore_once(home=Path(home), papers_dir=Path(home) / "papers",
+                               rng=__import__("random").Random())
+    except Exception: pass
+

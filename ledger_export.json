@@ -1,17 +1,17 @@
 {
   "format": "rad-replication-ledger",
   "version": 1,
-  "exported_at": "2026-09-21T09:45:41.353015+00:00",
-  "entry_count": 5,
+  "exported_at": "2026-09-21T10:47:06.165054+00:00",
+  "entry_count": 7,
   "summary": {
-    "total_battles": 5,
+    "total_battles": 7,
     "verdicts": {
-      "INCONCLUSIVE": 1,
-      "CONFIRMED": 3,
+      "INCONCLUSIVE": 2,
+      "CONFIRMED": 4,
       "NOT_REPLICATED": 1
     },
-    "replication_rate": 0.6,
-    "papers_tested": 1
+    "replication_rate": 0.571,
+    "papers_tested": 2
   },
   "entries": [
     {
@@ -248,6 +248,100 @@
       "coi_flags": [
         "evaluates on ALFWorld and HotpotQA"
       ]
+    },
+    {
+      "ledger_ts": "2026-09-21T10:44:47.663338+00:00",
+      "battle_id": "battle-2303.17651-6-53d7c35800be",
+      "slug": "2303.17651",
+      "paper_title": "Self-Refine: Iterative Refinement with Self-Feedback",
+      "paper_url": "https://arxiv.org/abs/2303.17651",
+      "paper_sha256": "98f208fa17572096d2d38eeffce4cd4d3f55b9fdb48bfa5f3d7ca69818f52ffd",
+      "seed": 6,
+      "task_count": 1,
+      "claimed": [
+        {
+          "claim": "An LLM can iteratively improve its own outputs by generating feedback on its previous attempts and refining.",
+          "claimed_gain": "iterative refinement"
+        },
+        {
+          "claim": "Iterative refinement works test-time with a single LLM without supervised training data, additional training, or RL.",
+          "claimed_gain": "~20% absolute average improvement"
+        }
+      ],
+      "measured": {
+        "verified_rate": {
+          "baseline": 0.0,
+          "candidate": 0.0,
+          "delta": 0.0,
+          "n": 1
+        },
+        "false_done": {
+          "baseline": 1.0,
+          "candidate": 1.0,
+          "delta": 0.0,
+          "n": 1
+        },
+        "cost": {
+          "baseline": 0.0,
+          "candidate": 1.0,
+          "delta": 1.0,
+          "n": 1
+        }
+      },
+      "battle_verdict": "tie",
+      "replication_verdict": "INCONCLUSIVE",
+      "pareto_tradeoff": false,
+      "claim_metrics": [
+        "verified_rate"
+      ],
+      "coi_flags": []
+    },
+    {
+      "ledger_ts": "2026-09-21T10:46:44.603351+00:00",
+      "battle_id": "battle-2303.17651-7-53d7c35800be",
+      "slug": "2303.17651",
+      "paper_title": "Self-Refine: Iterative Refinement with Self-Feedback",
+      "paper_url": "https://arxiv.org/abs/2303.17651",
+      "paper_sha256": "98f208fa17572096d2d38eeffce4cd4d3f55b9fdb48bfa5f3d7ca69818f52ffd",
+      "seed": 7,
+      "task_count": 1,
+      "claimed": [
+        {
+          "claim": "An LLM can iteratively improve its own outputs by generating feedback on its previous attempts and refining.",
+          "claimed_gain": "iterative refinement"
+        },
+        {
+          "claim": "Iterative refinement works test-time with a single LLM without supervised training data, additional training, or RL.",
+          "claimed_gain": "~20% absolute average improvement"
+        }
+      ],
+      "measured": {
+        "verified_rate": {
+          "baseline": 0.0,
+          "candidate": 1.0,
+          "delta": 1.0,
+          "n": 1
+        },
+        "false_done": {
+          "baseline": 1.0,
+          "candidate": 0.0,
+          "delta": -1.0,
+          "n": 1
+        },
+        "cost": {
+          "baseline": 0.0,
+          "candidate": 1.0,
+          "delta": 1.0,
+          "n": 1
+        }
+      },
+      "battle_verdict": "candidate_wins",
+      "replication_verdict": "CONFIRMED",
+      "pareto_tradeoff": true,
+      "claim_metrics": [
+        "verified_rate"
+      ],
+      "coi_flags": []
     }
   ]
 }

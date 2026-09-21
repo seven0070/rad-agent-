@@ -103,14 +103,15 @@ class Api:
         if self._ctl_factory:
             return self._ctl_factory(self.home)
         from rad.control.controller import Controller
-        return Controller(self.home, quiet=True)
-
     # ---- dispatch -------------------------------------------------------------------------
     def handle(self, method: str, path: str, query: Dict[str, str], body: Dict[str, Any]) -> Tuple[int, Any]:
         parts = [p for p in path.split("/") if p]
-        if not parts or parts[0] != "v1":
-            raise ApiError(404, "unknown path (use /v1/...)")
-        parts = parts[1:]
+        if not parts:
+            raise ApiError(404, "unknown path")
+        if parts[0] in ("v1", "api"):
+            parts = parts[1:]
+        else:
+            raise ApiError(404, "unknown path (use /v1/... or /api/...)")
         try:
             return self._route(method, parts, query, body)
         except ApiError:
@@ -120,6 +121,12 @@ class Api:
 
     def _route(self, m: str, p: list, q: Dict[str, str], b: Dict[str, Any]) -> Tuple[int, Any]:
         from rad.control.objectives import ObjectiveStatus
+        if p == ["ledger"] and m == "GET":
+            from rad.desktop_ledger import folded as _fold, summary as _lsum, set_paths
+            set_paths(self.home.root)
+            f = _fold()
+            f["summary"] = _lsum()
+            return 200, f
         if p == ["health"] and m == "GET":
             from rad.storage import Storage
             st = Storage(self.home); st.pending()

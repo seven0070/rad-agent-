@@ -114,6 +114,33 @@ register("reflexion", "2303.11366",
                "improved retry behavior (procedural failures)")(
     lambda execute_fn, **kw: apply_reflexion(execute_fn, **kw))
 
+# -- self-refine: iterative refinement with self-feedback --
+def apply_self_refine(execute_fn, brain_fn=None, max_reflections: int = 2):
+    def wrapped(config, task, seed):
+        result = execute_fn(config, task, seed)
+        if config.get("technique") not in ("self-refine", "self_refine"):
+            return result
+        attempts = 0
+        while (result["grader_result"].get("verified_rate") != 1.0
+               and attempts < max_reflections and brain_fn):
+            feedback = brain_fn(
+                f"TASK: {task.get('prompt', '')}\n"
+                f"Execution status: {result.get('status', '')}\n"
+                "Review the attempt and output refined instructions to fulfill all task criteria.")
+            task2 = dict(task, prompt=(task.get("prompt", "") +
+                         f"\n\n[Refinement Feedback]: {feedback}"))
+            result = execute_fn(config, task2, seed)
+            attempts += 1
+        if attempts:
+            result["events"] = list(result.get("events", [])) + [f"self_refine:attempts={attempts}"]
+            result["grader_result"]["cost"] = float(result["grader_result"].get("cost", 0.0)) + float(attempts)
+        return result
+    return wrapped
+
+register("self-refine", "2303.17651",
+         claim="iterative self-feedback and refinement improves task output quality without external training data")(
+    lambda execute_fn, **kw: apply_self_refine(execute_fn, **kw))
+
 def make_arm(execute_fn, technique: str, brain_fn=None, **params):
     """Battle arms resolve through the registry — provenance preserved."""
     t = get(technique)
