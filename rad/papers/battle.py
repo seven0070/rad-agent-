@@ -25,12 +25,21 @@ def design_battle(slug, task_suite, baseline_config, candidate_config, seed=0) -
     if not card: raise ValueError(f"No card for {slug!r}")
     if card["status"] not in ("candidate", "battling"):
         raise ValueError(f"Card status must be 'candidate' or 'battling' to battle, got {card['status']!r}")
+    battle_plan = card.get("battle_plan", {})
+    claim_metrics = battle_plan.get("claim_metrics")
+    observe_metrics = battle_plan.get("observe_metrics")
+    metrics = list(battle_plan.get("metrics", ["verified_rate", "false_done", "cost"]))
+    if observe_metrics:
+        for om in observe_metrics:
+            if om not in metrics:
+                metrics.append(om)
     spec = {"battle_id": f"battle-{slug}-{seed}-{_sha(json.dumps(baseline_config)+json.dumps(candidate_config))[:12]}",
             "slug": slug, "card_id": card["card_id"], "seed": seed,
             "task_count": len(task_suite),
             "task_hashes": [_sha(json.dumps(t, sort_keys=True)) for t in task_suite],
             "baseline_config": baseline_config, "candidate_config": candidate_config,
-            "metrics": card["battle_plan"].get("metrics", ["verified_rate", "false_done", "cost"]),
+            "metrics": metrics,
+            "claim_metrics": claim_metrics,
             "designed_at": _now(), "status": "designed"}
     bdir = BATTLE_DIR / spec["battle_id"]
     bdir.mkdir(parents=True, exist_ok=True)
@@ -62,11 +71,16 @@ def run_battle(battle_id, execute_fn, dry_run=True) -> dict:
         cand.append({"task_id": task["task_id"], "grader_result": c.get("grader_result", {}),
                      "duration_s": round(cd, 3), "events_count": len(c.get("events", []))})
 
+    claim_metrics = spec.get("claim_metrics")
     scores = _score(spec["metrics"], base, cand)
-    verdict = _verdict(scores, spec["metrics"])
+    verdict = _verdict(scores, spec["metrics"], claim_metrics=claim_metrics)
+    unscoped_verdict = _verdict(scores, spec["metrics"])
+    pareto_tradeoff = (verdict == "candidate_wins" and unscoped_verdict == "mixed")
     result = {"battle_id": battle_id, "slug": spec["slug"], "seed": spec["seed"],
               "ran_at": _now(), "baseline_results": base, "candidate_results": cand,
-              "scores": scores, "verdict": verdict, "status": "complete"}
+              "scores": scores, "verdict": verdict,
+              "claim_metrics": claim_metrics, "pareto_tradeoff": pareto_tradeoff,
+              "status": "complete"}
     (bdir / "result.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
     spec["status"] = "complete"
     (bdir / "spec.json").write_text(json.dumps(spec, indent=2), encoding="utf-8")
@@ -89,9 +103,10 @@ def _score(metrics, base, cand) -> dict:
 
 LOWER_IS_BETTER = {"false_done", "cost"}
 
-def _verdict(scores, metrics) -> str:
+def _verdict(scores, metrics, claim_metrics=None) -> str:
+    eval_metrics = claim_metrics if claim_metrics else metrics
     wins = losses = ties = 0
-    for m in metrics:
+    for m in eval_metrics:
         if m not in scores: continue
         d = scores[m]["delta"]
         if m in LOWER_IS_BETTER:

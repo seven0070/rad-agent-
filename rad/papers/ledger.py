@@ -40,6 +40,8 @@ def record_battle_outcome(battle_id: str) -> dict:
              "claimed": claimed, "measured": measured,
              "battle_verdict": result.get("verdict", ""),
              "replication_verdict": verdict,
+             "pareto_tradeoff": result.get("pareto_tradeoff", False),
+             "claim_metrics": result.get("claim_metrics"),
              "coi_flags": card.get("coi_flags", [])}
     LEDGER_FILE.parent.mkdir(parents=True, exist_ok=True)
     with open(LEDGER_FILE, "a", encoding="utf-8") as f:
