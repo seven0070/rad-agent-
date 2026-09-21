@@ -23,8 +23,8 @@ def design_battle(slug, task_suite, baseline_config, candidate_config, seed=0) -
                          "execute_fn honors (e.g. technique, temperature, retries).")
     card = get_card(slug)
     if not card: raise ValueError(f"No card for {slug!r}")
-    if card["status"] != "candidate":
-        raise ValueError(f"Card status must be 'candidate' to battle, got {card['status']!r}")
+    if card["status"] not in ("candidate", "battling"):
+        raise ValueError(f"Card status must be 'candidate' or 'battling' to battle, got {card['status']!r}")
     spec = {"battle_id": f"battle-{slug}-{seed}-{_sha(json.dumps(baseline_config)+json.dumps(candidate_config))[:12]}",
             "slug": slug, "card_id": card["card_id"], "seed": seed,
             "task_count": len(task_suite),
@@ -71,7 +71,9 @@ def run_battle(battle_id, execute_fn, dry_run=True) -> dict:
     spec["status"] = "complete"
     (bdir / "spec.json").write_text(json.dumps(spec, indent=2), encoding="utf-8")
     if verdict == "candidate_wins":
-        set_card_status(spec["slug"], "battling")  # promotion is separate + confirmed
+        card = get_card(spec["slug"])
+        if card and card.get("status") == "candidate":
+            set_card_status(spec["slug"], "battling")  # promotion is separate + confirmed
     return result
 
 def _score(metrics, base, cand) -> dict:
