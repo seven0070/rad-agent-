@@ -8,7 +8,8 @@ External AI-assisted design contribution, integrated under the project's own law
 | P1 | f69323d | rad/papers/ (ingest, cards, battle, ledger, extract) · memory/strength.py · verify_contrib.py | 5/5 |
 | P2 | db1058c | evolution/ (contamination, canary) · security/toolset_pin · control/verifier_checks · why/lineage · world/temporal · sovereignty/audit | 14/14 |
 | P3 | 770aef5 | routing/relay · federation/challenge · sovereignty/costcurve · tools/scenario_runner · 28-scenario pack · verify_contrib3.py | 13/13 |
-| B  | 8521cc0 | rad/integrate/hooks.py (adapters + promotion_gate) · docs/INTEGRATION-B.md · verify_hooks.py · load-bearing gate in rad/brains.py & rad/cli.py | 9/9 |
+| B  | 8521cc0 / 69ed70b | rad/integrate/hooks.py (adapters + promotion_gate) · docs/INTEGRATION-B.md · verify_hooks.py · load-bearing gate in rad/brains.py & rad/cli.py | 9/9 |
+| C  | (this commit) | rad/cli_ext.py · rad/integrate/promote_patch.py (wire_promote_gate) · scripts/verify_phase_c.py (falsy-config regression pin + WIRED probe) | 10/10 |
 
 ## DOCS
 docs/RFC-001..006 · docs/JERRY-SPEC.md · docs/INTEGRATION-B.md — canonical copies.
