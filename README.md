@@ -40,6 +40,21 @@ RAD is an open, **self-evolving, free-first** personal AI agent that lives in yo
 
 ---
 
+## 🧪 Replication Lab
+
+Rad tests published agent techniques instead of believing them. Papers are
+ingested, claims pinned verbatim via code-enforced quote location, battled
+against baselines on disk-graded metrics, and recorded in an append-only
+replication ledger with public amendment chains.
+
+**Tested so far** (local GPU, $0): Reflexion ✓ · Self-Refine ✓ · ReAct ✓
+**Empirical finding**: verbal self-reflection repairs procedural failures
+(4/4) but not capability or meta-cognitive failures (0/2) — reflection
+amplifies ability, it cannot create it.
+**Dataset**: `ledger_export.json` — open, auditable, every failure included.
+
+---
+
 ## 🏗️ Architecture — The Six Sockets
 
 RAD is built on an **Open Door** architecture — every capability is a swappable socket:

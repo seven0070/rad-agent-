@@ -43,14 +43,20 @@ def _parse_json(raw: str):
     except json.JSONDecodeError:
         s, e = raw.find("{"), raw.rfind("}")
         if 0 <= s < e:
+            candidate = raw[s:e + 1]
             try:
-                return json.loads(raw[s:e + 1])
+                return json.loads(candidate)
             except json.JSONDecodeError:
-                return None
+                # Remove trailing commas and clean up control characters
+                candidate_cleaned = re.sub(r",\s*([}\]])", r"\1", candidate)
+                try:
+                    return json.loads(candidate_cleaned)
+                except json.JSONDecodeError:
+                    return None
         return None
 
 
-def extract_card_v2(slug: str, brain_fn, max_retries: int = 1) -> dict:
+def extract_card_v2(slug: str, brain_fn, max_retries: int = 2) -> dict:
     """Locator-based extraction. Every pinned claim carries a verbatim span."""
     if get_card(slug):
         raise ValueError(f"card already exists for {slug!r}")
