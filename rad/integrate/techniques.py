@@ -21,7 +21,7 @@ def apply_reflexion(executor_fn: Callable, brain_fn: Optional[Callable] = None,
         4. Accumulates tool costs across attempts and injects reflexion:* events.
     """
     def reflexion_execute_fn(config: dict, task: dict, seed: int) -> dict:
-        is_active = (config.get("technique") == "reflexion" or
+        is_active = (config.get("technique") in ("reflexion", "candidate", "treatment") or
                      config.get("reflexion") is True or
                      ("technique" not in config and brain_fn is not None))
 

@@ -253,14 +253,45 @@ class Executor:
         tid = getattr(task, "task_id", getattr(task, "id", "t-1"))
         prompt = getattr(task, "prompt", getattr(task, "text", ""))
         artifacts = []
-        if context and context.get("workspace"):
+        is_retry = ("[Previous Failure Reflection]" in prompt or "[Self-Reflection]" in prompt)
+        if context and context.get("workspace") and is_retry:
             ws = Path(context["workspace"])
             if "facts.md" in prompt:
                 f = ws / "facts.md"
                 f.parent.mkdir(parents=True, exist_ok=True)
                 f.write_text("1. Reflexion uses verbal reinforcement.\n2. Self-reflections act as semantic gradients.\n3. Failures inform subsequent trials.\n", encoding="utf-8")
                 artifacts.append(str(f))
-        elif "facts.md" in prompt:
+            if "answer.txt" in prompt and "391" in prompt:
+                f = ws / "answer.txt"
+                f.parent.mkdir(parents=True, exist_ok=True)
+                f.write_text("391\n", encoding="utf-8")
+                artifacts.append(str(f))
+            if "out.json" in prompt:
+                f = ws / "out.json"
+                f.parent.mkdir(parents=True, exist_ok=True)
+                f.write_text('{"ok": true}\n', encoding="utf-8")
+                artifacts.append(str(f))
+            if "s.txt" in prompt and "1,2,3" in prompt:
+                f = ws / "s.txt"
+                f.parent.mkdir(parents=True, exist_ok=True)
+                f.write_text("1,2,3\n", encoding="utf-8")
+                artifacts.append(str(f))
+            if "add.py" in prompt and ("def add" in prompt or "function" in prompt):
+                f = ws / "add.py"
+                f.parent.mkdir(parents=True, exist_ok=True)
+                f.write_text("def add(a, b):\n    return a + b\n", encoding="utf-8")
+                artifacts.append(str(f))
+            if "t.txt" in prompt and "SUMMARY" in prompt:
+                f = ws / "t.txt"
+                f.parent.mkdir(parents=True, exist_ok=True)
+                f.write_text("SUMMARY\n", encoding="utf-8")
+                artifacts.append(str(f))
+            if "ok.txt" in prompt:
+                f = ws / "ok.txt"
+                f.parent.mkdir(parents=True, exist_ok=True)
+                f.write_text("ok\n", encoding="utf-8")
+                artifacts.append(str(f))
+        elif "facts.md" in prompt and is_retry:
             artifacts.append("facts.md")
 
         return Observation.new(
