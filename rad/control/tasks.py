@@ -140,6 +140,10 @@ class Task:
             self.finished = time.time()
 
     @property
+    def is_resumable(self) -> bool:
+        return self.status in RESUMABLE
+
+    @property
     def can_retry(self) -> bool:
         return self.attempts < self.max_attempts
 
@@ -153,3 +157,17 @@ class Task:
         d = dict(d)
         d["checks"] = [Check.from_dict(c) for c in d.get("checks", [])]
         return cls(**d)
+
+
+@dataclass
+class TaskRow:
+    """Row adapter for tasks in battles and evaluations."""
+    task_id: str = ""
+    prompt: str = ""
+
+    def __init__(self, task_id: str = "", prompt: str = "", **kw: Any) -> None:
+        self.task_id = task_id or kw.get("id", "")
+        self.prompt = prompt or kw.get("text", kw.get("description", ""))
+        self.id = self.task_id
+        self.text = self.prompt
+
