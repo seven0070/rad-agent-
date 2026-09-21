@@ -271,3 +271,15 @@ class RouterState:
                 out.append(f"  {day}  {prov:<10} {cell['in']:>8} in  {cell['out']:>8} out  ${cell['cost']:.4f}")
         out.append(col.bold(f"  total (last 14d): ${total:.4f}"))
         return "\n".join(out)
+
+
+class BrainRouter(RouterState):
+    def complete(self, prompt: str, system_prompt: Optional[str] = None,
+                 provider: Optional[str] = None, model: Optional[str] = None,
+                 temperature: float = 0.7, **kwargs) -> str:
+        messages = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": prompt})
+        res = self.chat(messages, temperature=temperature, model_override=model)
+        return getattr(res, "text", str(res))

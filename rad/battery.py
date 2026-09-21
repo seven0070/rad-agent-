@@ -276,3 +276,14 @@ def build_caller(home: RadHome, provider: Optional[str] = None, model: Optional[
             home.cfg["model"] = old_model
 
     return caller
+
+
+class CapabilityBattery(Benchmark):
+    def run(self, provider: str = "?", model: str = "?", categories: Optional[List[str]] = None,
+            caller: Optional[Callable[[str, str], str]] = None, label: str = "run",
+            temperature: float = 0.2, **kwargs) -> Dict[str, Any]:
+        if caller is None:
+            caller = build_caller(self.home, provider=None if provider == "?" else provider,
+                                  model=None if model == "?" else model,
+                                  temperature=temperature)
+        return super().run(caller=caller, label=label, provider=provider, model=model, categories=categories)
