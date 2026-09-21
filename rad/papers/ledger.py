@@ -23,8 +23,10 @@ def record_battle_outcome(battle_id: str) -> dict:
     measured = {m: {"baseline": d["baseline_mean"], "candidate": d["candidate_mean"],
                     "delta": d["delta"], "n": d["n"]}
                 for m, d in result.get("scores", {}).items()}
-    claimed_positive = any(("+" in g["claimed_gain"]) or
-                           ("improve" in g["claimed_gain"].lower()) for g in claimed)
+    claimed_positive = any(("+" in g["claimed_gain"]) or ("%" in g["claimed_gain"]) or
+                           ("improve" in g["claimed_gain"].lower()) or
+                           any(char.isdigit() for char in g["claimed_gain"])
+                           for g in claimed if g["claimed_gain"].lower() != "none")
     measured_positive = result.get("verdict") == "candidate_wins"
     if result.get("verdict") == "tie":
         verdict = "INCONCLUSIVE"

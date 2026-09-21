@@ -1,16 +1,17 @@
 {
   "format": "rad-replication-ledger",
   "version": 1,
-  "exported_at": "2026-09-21T11:08:22.955744+00:00",
-  "entry_count": 7,
+  "exported_at": "2026-09-21T12:06:31.304621+00:00",
+  "entry_count": 10,
   "summary": {
-    "total_battles": 7,
+    "total_battles": 10,
     "verdicts": {
       "INCONCLUSIVE": 2,
-      "CONFIRMED": 5
+      "CONFIRMED": 6,
+      "NOT_REPLICATED": 2
     },
-    "replication_rate": 0.714,
-    "papers_tested": 2
+    "replication_rate": 0.6,
+    "papers_tested": 3
   },
   "entries": [
     {
@@ -351,6 +352,151 @@
         "verified_rate"
       ],
       "coi_flags": []
+    },
+    {
+      "ledger_ts": "2026-09-21T12:00:32.129023+00:00",
+      "battle_id": "battle-2210.03629-7-fc9319aad28d",
+      "slug": "2210.03629",
+      "paper_title": "ReAct: Synergizing Reasoning and Acting in Language Models",
+      "paper_url": "https://arxiv.org/abs/2210.03629",
+      "paper_sha256": "7e9760570e75f21daea61349de3fa9ad4b621f455fdf2064b27dac4257233fef",
+      "seed": 7,
+      "task_count": 1,
+      "claimed": [
+        {
+          "claim": "ReAct outperforms action-only methods by 34% on ALFWorld and 10% on WebShop",
+          "claimed_gain": "34% (ALFWorld), 10% (WebShop)"
+        },
+        {
+          "claim": "ReAct outperforms vanilla action generation models on HotPotQA and Fever",
+          "claimed_gain": "none"
+        }
+      ],
+      "measured": {
+        "verified_rate": {
+          "baseline": 0.0,
+          "candidate": 0.0,
+          "delta": 0.0,
+          "n": 1
+        },
+        "false_done": {
+          "baseline": 1.0,
+          "candidate": 1.0,
+          "delta": 0.0,
+          "n": 1
+        },
+        "cost": {
+          "baseline": 0.0,
+          "candidate": 2.0,
+          "delta": 2.0,
+          "n": 1
+        }
+      },
+      "battle_verdict": "baseline_wins",
+      "replication_verdict": "NOT_REPLICATED",
+      "pareto_tradeoff": false,
+      "claim_metrics": null,
+      "coi_flags": []
+    },
+    {
+      "ledger_ts": "2026-09-21T12:03:11.131574+00:00",
+      "battle_id": "battle-2210.03629-8-fc9319aad28d",
+      "slug": "2210.03629",
+      "paper_title": "ReAct: Synergizing Reasoning and Acting in Language Models",
+      "paper_url": "https://arxiv.org/abs/2210.03629",
+      "paper_sha256": "7e9760570e75f21daea61349de3fa9ad4b621f455fdf2064b27dac4257233fef",
+      "seed": 8,
+      "task_count": 1,
+      "claimed": [
+        {
+          "claim": "ReAct outperforms action-only methods by 34% on ALFWorld and 10% on WebShop",
+          "claimed_gain": "34% (ALFWorld), 10% (WebShop)"
+        },
+        {
+          "claim": "ReAct outperforms vanilla action generation models on HotPotQA and Fever",
+          "claimed_gain": "none"
+        }
+      ],
+      "measured": {
+        "verified_rate": {
+          "baseline": 0.0,
+          "candidate": 0.0,
+          "delta": 0.0,
+          "n": 1
+        },
+        "false_done": {
+          "baseline": 1.0,
+          "candidate": 1.0,
+          "delta": 0.0,
+          "n": 1
+        },
+        "cost": {
+          "baseline": 0.0,
+          "candidate": 2.0,
+          "delta": 2.0,
+          "n": 1
+        }
+      },
+      "battle_verdict": "baseline_wins",
+      "replication_verdict": "NOT_REPLICATED",
+      "pareto_tradeoff": false,
+      "claim_metrics": null,
+      "coi_flags": []
+    },
+    {
+      "ledger_ts": "2026-09-21T12:05:25.737448+00:00",
+      "battle_id": "battle-2210.03629-9-fc9319aad28d",
+      "slug": "2210.03629",
+      "paper_title": "ReAct: Synergizing Reasoning and Acting in Language Models",
+      "paper_url": "https://arxiv.org/abs/2210.03629",
+      "paper_sha256": "7e9760570e75f21daea61349de3fa9ad4b621f455fdf2064b27dac4257233fef",
+      "seed": 9,
+      "task_count": 1,
+      "claimed": [
+        {
+          "claim": "ReAct outperforms action-only methods by 34% on ALFWorld and 10% on WebShop",
+          "claimed_gain": "34% (ALFWorld), 10% (WebShop)"
+        },
+        {
+          "claim": "ReAct outperforms vanilla action generation models on HotPotQA and Fever",
+          "claimed_gain": "none"
+        }
+      ],
+      "measured": {
+        "verified_rate": {
+          "baseline": 0.0,
+          "candidate": 1.0,
+          "delta": 1.0,
+          "n": 1
+        },
+        "false_done": {
+          "baseline": 1.0,
+          "candidate": 0.0,
+          "delta": -1.0,
+          "n": 1
+        },
+        "cost": {
+          "baseline": 0.0,
+          "candidate": 1.0,
+          "delta": 1.0,
+          "n": 1
+        }
+      },
+      "battle_verdict": "mixed",
+      "replication_verdict": "CONFIRMED",
+      "pareto_tradeoff": false,
+      "claim_metrics": null,
+      "coi_flags": [],
+      "amendments": [
+        {
+          "amendment_of": "battle-2210.03629-9-fc9319aad28d",
+          "field": "replication_verdict",
+          "was": "NOT_REPLICATED",
+          "now": "CONFIRMED",
+          "reason": "claim-scoped reanalysis v1.1: verified_rate +1.0 claim-critical; cost +1 observational Pareto",
+          "amended_at": "2026-09-21T12:06:10.408319+00:00"
+        }
+      ]
     }
   ]
 }

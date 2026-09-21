@@ -141,10 +141,42 @@ register("self-refine", "2303.17651",
          claim="iterative self-feedback and refinement improves task output quality without external training data")(
     lambda execute_fn, **kw: apply_self_refine(execute_fn, **kw))
 
+# -- react: synergizing reasoning and acting --
+def apply_react(execute_fn, brain_fn=None, max_reflections: int = 2):
+    def wrapped(config, task, seed):
+        result = execute_fn(config, task, seed)
+        if config.get("technique") not in ("react", "react-interleaved"):
+            return result
+        attempts = 0
+        while (result["grader_result"].get("verified_rate") != 1.0
+               and attempts < max_reflections and brain_fn):
+            events = result.get("events", [])
+            fails = [e for e in events if str(e).startswith("disk_fail:")]
+            thought_action = brain_fn(
+                f"TASK: {task.get('prompt', '')}\n"
+                f"Current Status: {result.get('status', '')}\n"
+                f"Failed checks: {fails}\n"
+                "Think step-by-step (Thought) and specify concrete file modifications (Action) to solve the task."
+            )
+            task2 = dict(task, prompt=(task.get("prompt", "") +
+                         f"\n\n[Thought & Action]: {thought_action}"))
+            result = execute_fn(config, task2, seed)
+            attempts += 1
+        if attempts:
+            result["events"] = list(result.get("events", [])) + [f"react:attempts={attempts}"]
+            result["grader_result"]["cost"] = float(result["grader_result"].get("cost", 0.0)) + float(attempts)
+        return result
+    return wrapped
+
+register("react", "2210.03629",
+         claim="synergizing reasoning traces and task-specific actions leads to higher task execution success")(
+    lambda execute_fn, **kw: apply_react(execute_fn, **kw))
+
 def make_arm(execute_fn, technique: str, brain_fn=None, **params):
     """Battle arms resolve through the registry — provenance preserved."""
+    if technique == "baseline":
+        return execute_fn
     t = get(technique)
-    return (t.wrap(execute_fn, brain_fn=brain_fn, **params) if t.name != "baseline"
-            else execute_fn)
+    return t.wrap(execute_fn, brain_fn=brain_fn, **params)
 
 
