@@ -47,10 +47,10 @@ ingested, claims pinned verbatim via code-enforced quote location, battled
 against baselines on disk-graded metrics, and recorded in an append-only
 replication ledger with public amendment chains.
 
-**Tested so far** (local GPU, $0): Reflexion ✓ · Self-Refine ✓ · ReAct ✓
-**Empirical finding**: verbal self-reflection repairs procedural failures
-(4/4) but not capability or meta-cognitive failures (0/2) — reflection
-amplifies ability, it cannot create it.
+**Tested so far** (local GPU, $0): Reflexion ✓ · Self-Refine ✓ · ReAct ✓ · Tree of Thoughts ✓
+**Universal adapter**: three distinct mechanism classes (feedback-retry, feedback-refine,
+branch-search) plugged into one 10-line registry pattern — every one trialed, every trial
+on the ledger, failures included.
 **Dataset**: `ledger_export.json` — open, auditable, every failure included.
 
 ---
