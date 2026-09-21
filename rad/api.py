@@ -127,6 +127,26 @@ class Api:
             f = _fold()
             f["summary"] = _lsum()
             return 200, f
+        if p == ["vitals"] and m == "GET":
+            import json as _json
+            from pathlib import Path as _P
+            from rad.vitals import collect as _collect, report as _report
+            from rad import curiosity as _cu
+
+            root = getattr(self.home, "root", _P.home() / ".rad")
+            v = _collect(root)
+            canary_f = _P(root) / "cadence" / "last_canary.json"
+            canary = (_json.loads(canary_f.read_text(encoding="utf-8"))
+                      if canary_f.exists() else None)
+            cur_f = _P(root) / "curiosity" / "last_exploration.json"
+            cur_last = (_json.loads(cur_f.read_text(encoding="utf-8"))
+                        if cur_f.exists() else None)
+            return 200, {
+                "vitals": v,
+                "human": _report(v),
+                "curiosity": {"report": _cu.wake_report(), "last": cur_last},
+                "cadence": canary,
+            }
         if p == ["health"] and m == "GET":
             from rad.storage import Storage
             st = Storage(self.home); st.pending()

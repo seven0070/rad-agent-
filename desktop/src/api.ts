@@ -259,6 +259,9 @@ export class RadClient {
   ledger<T = any>() {
     return this.req<T>("GET", "/api/ledger");
   }
+  vitals<T = any>() {
+    return this.req<T>("GET", "/api/vitals");
+  }
   setAuthority(body: {
     profile: Profile;
     confirm_unrestricted?: boolean;

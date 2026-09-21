@@ -302,22 +302,29 @@ def doc_coverage():
 
 
 @check("imports: all phase-NEXT modules importable")
-
 def imports():
-
     import importlib
-
     errs = []
-
     for m in ["rad.papers.techniques_lib", "rad.vitals", "rad.curiosity",
-
               "rad.federation.cadence", "rad.desktop_ledger"]:
-
         try: importlib.import_module(m)
-
         except Exception as e: errs.append(f"{m}: {e}")
-
     assert not errs, errs
+
+@check("api.vitals: endpoint shape — organs honest, law line present, no ontological claims")
+def api_vitals():
+    from rad.api import Api
+    from rad.home import RadHome
+    api = Api(RadHome())
+    code, body = api.handle("GET", "/api/vitals", {}, {})
+    assert code == 200 and "vitals" in body and "human" in body
+    v = body["vitals"]
+    assert v["memory_organ"]["present"] in (True, False)
+    line = body["human"]
+    assert "configured-to" in line
+    assert "I want" not in line and "alive" not in line.lower()
+    assert body["curiosity"]["report"] or body["curiosity"]["last"] is None
+    assert body["cadence"] is None or "verdict" in body["cadence"]
 
 def main():
     print(f"\n=== PHASE NEXT VERIFICATION ({len(CHECKS)} checks) ===")

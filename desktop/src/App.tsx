@@ -8,6 +8,7 @@ import Artifacts from "./pages/Artifacts";
 import AuthorityPage from "./pages/Authority";
 import Memory from "./pages/Memory";
 import Ledger from "./pages/Ledger";
+import Vitals from "./pages/Vitals";
 import Objectives from "./pages/Objectives";
 import SettingsPage from "./pages/Settings";
 import Tasks from "./pages/Tasks";
@@ -25,6 +26,7 @@ type Page =
   | "authority"
   | "memory"
   | "ledger"
+  | "vitals"
   | "settings";
 
 const PAGES: { id: Page; label: string; icon: string }[] = [
@@ -37,6 +39,7 @@ const PAGES: { id: Page; label: string; icon: string }[] = [
   { id: "authority", label: "Authority", icon: "⚖" },
   { id: "memory", label: "Memory", icon: "◉" },
   { id: "ledger", label: "Replication Ledger", icon: "📜" },
+  { id: "vitals", label: "Vitals", icon: "💓" },
   { id: "settings", label: "Settings", icon: "⚙" },
 ];
 
@@ -317,6 +320,7 @@ export default function App() {
             {page === "authority" && <AuthorityPage />}
             {page === "memory" && <Memory />}
             {page === "ledger" && <Ledger />}
+            {page === "vitals" && <Vitals />}
             {page === "settings" && <SettingsPage onShutdown={shutdown} />}
           </Ctx.Provider>
         )}

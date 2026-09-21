@@ -982,3 +982,7 @@ th { color: var(--text-dim); font-weight: 600; font-size: 11px; text-transform: 
 .chip-amber { color: #b26a00; background: rgba(178, 106, 0, 0.12); border-color: rgba(178, 106, 0, 0.25); }
 .chip-gray { color: #777; background: rgba(119, 119, 119, 0.12); border-color: rgba(119, 119, 119, 0.25); }
 
+.vitals-zone { margin: 1.25rem 0; padding: 0.75rem 1rem; border-left: 2px solid var(--accent, #4a90d9); }
+.vitals-zone h3 { margin: 0 0 0.5rem 0; font-size: 0.95em; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.75; }
+
+
