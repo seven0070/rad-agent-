@@ -26,8 +26,11 @@ def record_battle_outcome(battle_id: str) -> dict:
     claimed_positive = any(("+" in g["claimed_gain"]) or
                            ("improve" in g["claimed_gain"].lower()) for g in claimed)
     measured_positive = result.get("verdict") == "candidate_wins"
-    verdict = ("CONFIRMED" if claimed_positive and measured_positive else
-               "NOT_REPLICATED" if claimed_positive else "NO_CLAIM_TO_TEST")
+    if result.get("verdict") == "tie":
+        verdict = "INCONCLUSIVE"
+    else:
+        verdict = ("CONFIRMED" if claimed_positive and measured_positive else
+                   "NOT_REPLICATED" if claimed_positive else "NO_CLAIM_TO_TEST")
     entry = {"ledger_ts": datetime.now(timezone.utc).isoformat(),
              "battle_id": battle_id, "slug": spec["slug"],
              "paper_title": card.get("source", {}).get("title", ""),

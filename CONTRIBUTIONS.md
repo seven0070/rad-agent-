@@ -22,12 +22,19 @@ PROPOSED → ATTACHED → VERIFIED → INTEGRATED → SHIPPED
 To maintain 100% backward compatibility with existing callers while conforming to adapter contracts:
 - `CapabilityBattery` (`rad/battery.py`) is implemented as an explicit facade subclassing `Benchmark`, allowing direct parameterization (`provider=`, `model=`, `temperature=`, `max_tokens=`) without altering `Benchmark.run`.
 - `BrainRouter` (`rad/router.py`) is implemented as an explicit facade subclassing `RouterState`, exposing the `.complete(prompt, system_prompt=..., ...)` signature over `RouterState.chat`.
+- `Executor.execute_task` and `TaskRow` (`rad/control/executor.py`, `rad/control/tasks.py`) provide a stable bridge for paper battle trials to execute objectives against live task rows.
+- `apply_reflexion` (`rad/integrate/techniques.py`) wraps any `execute_fn` with a self-reflection retry loop on failure, enabling genuine candidate treatment arms.
+- `make_execute_fn` (`rad/integrate/hooks.py`) integrates deterministic disk grading via `tools.scenario_runner._grade` when tasks supply a grader spec and workspace.
+- `rad/papers/ledger.py` refines trial outcomes: `INCONCLUSIVE` for ties, `CONFIRMED` on candidate win, `NOT_REPLICATED` on candidate loss, and `NO_CLAIM_TO_TEST`.
+- `rad/papers/battle.py` enforces the Trial-Validity Law: `baseline_config == candidate_config` raises `ValueError` to prevent un-treatment pseudo-trials.
 
 | Hook | Target Interface | Implementation / Facade | Adapter |
 |---|---|---|---|
 | canary.battery_fn | `CapabilityBattery.run(provider=, model=) -> {"score": ...}` | Facade subclass over `rad.battery.Benchmark` | wrap config→(provider,model); return {"score": report["score"]} |
-| battle.execute_fn | `Executor.execute_task(obj_id, task, context, tools) -> Observation` | `rad.control.executor.Executor` | map Observation.status/artifacts → grader_result |
+| battle.execute_fn | `Executor.execute_task(obj_id, task, context, tools) -> Observation` | `rad.control.executor.Executor` | map Observation.status/artifacts + disk grader → grader_result |
+| treatment arm | `apply_reflexion(executor_fn, brain_fn)` | `rad.integrate.techniques` | verbal self-reflection retry loop upon failed verification |
 | extract.brain_fn | `BrainRouter.complete(prompt, system_prompt=..., ...) -> str` | Facade subclass over `rad.router.RouterState` | direct one-liner |
 | pipeline gate | `canary.assert_pipeline_clear()` | File flag check at `home.root / "battery"` | Fail-closed gate in `rad/brains.py` & `rad/cli.py` |
 | promote gate | `contamination.overlap_score()` | N-gram firewall against battery test theft | Fail-closed gate in `rad/brains.py` & `rad/cli.py` |
+
 

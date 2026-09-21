@@ -17,6 +17,10 @@ def _sha(s) -> str:
 
 def design_battle(slug, task_suite, baseline_config, candidate_config, seed=0) -> dict:
     """task_suite: [{"task_id","prompt","grader"}] — grader schema same as scenario pack."""
+    if baseline_config == candidate_config:
+        raise ValueError("baseline_config == candidate_config — this is not a "
+                         "paired trial. The candidate arm must differ in a way "
+                         "execute_fn honors (e.g. technique, temperature, retries).")
     card = get_card(slug)
     if not card: raise ValueError(f"No card for {slug!r}")
     if card["status"] != "candidate":
@@ -81,11 +85,15 @@ def _score(metrics, base, cand) -> dict:
                      "delta": round(cm - bm, 4), "n": min(len(bv), len(cv))}
     return scores
 
+LOWER_IS_BETTER = {"false_done", "cost"}
+
 def _verdict(scores, metrics) -> str:
     wins = losses = ties = 0
     for m in metrics:
         if m not in scores: continue
         d = scores[m]["delta"]
+        if m in LOWER_IS_BETTER:
+            d = -d
         if d > 0.01: wins += 1
         elif d < -0.01: losses += 1
         else: ties += 1
