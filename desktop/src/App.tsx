@@ -92,12 +92,10 @@ export default function App() {
     setStatus(st);
     setAuth(a);
     setObjectives(objs.objectives || []);
-    if (objs.objectives?.length && !selectedId) {
-      setSelectedId(objs.objectives[0].id);
-    }
+    setSelectedId((prev) => prev || (objs.objectives?.length ? objs.objectives[0].id : null));
     setBackend("connected");
     setError("");
-  }, [selectedId]);
+  }, []);
 
   const boot = useCallback(async () => {
     setBackend("connecting");
