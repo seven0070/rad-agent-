@@ -226,8 +226,10 @@ export default function App() {
           <div
             className="rad-logo-mark"
             style={{
-              background: "linear-gradient(135deg, var(--brand-coral), #de594c)",
-              boxShadow: "0 2px 10px rgba(235, 102, 88, 0.35)",
+              background: "var(--bg-elevated)",
+              border: "1px solid var(--border-active)",
+              color: "var(--text-primary)",
+              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.4)",
             }}
           >
             RAD
@@ -238,9 +240,9 @@ export default function App() {
               <span
                 className="badge-platform"
                 style={{
-                  background: "rgba(235, 102, 88, 0.15)",
-                  color: "var(--brand-coral)",
-                  borderColor: "rgba(235, 102, 88, 0.35)",
+                  background: "rgba(255, 255, 255, 0.06)",
+                  color: "var(--text-secondary)",
+                  borderColor: "var(--border-subtle)",
                 }}
               >
                 v2

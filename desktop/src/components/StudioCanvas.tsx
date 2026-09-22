@@ -250,12 +250,12 @@ export function StudioCanvas({
         <svg className="studio-edges-layer">
           <defs>
             <linearGradient id="edge-gradient-running" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#eb6658" />
-              <stop offset="100%" stopColor="#f59e0b" />
+              <stop offset="0%" stopColor="#f4f4f5" />
+              <stop offset="100%" stopColor="#71717a" />
             </linearGradient>
             <linearGradient id="edge-gradient-done" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#10b981" />
-              <stop offset="100%" stopColor="#059669" />
+              <stop offset="0%" stopColor="#a1a1aa" />
+              <stop offset="100%" stopColor="#52525b" />
             </linearGradient>
           </defs>
           {edges.map((edge, idx) => {
@@ -336,7 +336,7 @@ export function StudioCanvas({
                   </span>
                 )}
                 {node.type === "objective" && (
-                  <span className="node-meta-item" style={{ color: "var(--brand-coral)" }}>
+                  <span className="node-meta-item" style={{ color: "var(--text-primary)" }}>
                     ● Active Root
                   </span>
                 )}

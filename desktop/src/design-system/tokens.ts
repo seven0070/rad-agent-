@@ -1,46 +1,46 @@
-// tokens.ts — Design System Tokens for RAD Studio v2 (CrewAI Studio v2 aesthetic).
-// High-contrast dark theme, signature coral accent (#eb6658), visual node graph tokens,
+// tokens.ts — Design System Tokens for RAD Studio (Light Grey & Black Minimalist Aesthetic).
+// High-contrast monochromatic theme, neutral dark charcoal surfaces, crisp light grey accents,
 // monospace metrics, dot-grid canvas, 8-point spatial discipline.
 
 export const TOKENS = {
   colors: {
-    // Canvas & Surface Hierarchy (CrewAI Studio v2 Dark Theme)
-    bgCanvas: "var(--bg-canvas, #0a0c10)",
-    bgSurface: "var(--bg-surface, #12151d)",
-    bgCard: "var(--bg-card, #181c26)",
-    bgCardHover: "var(--bg-card-hover, #1f2533)",
-    bgElevated: "var(--bg-elevated, #252c3d)",
+    // Canvas & Surface Hierarchy (Light Grey & Black Minimalist Theme)
+    bgCanvas: "var(--bg-canvas, #09090b)",
+    bgSurface: "var(--bg-surface, #111114)",
+    bgCard: "var(--bg-card, #17171a)",
+    bgCardHover: "var(--bg-card-hover, #1f1f23)",
+    bgElevated: "var(--bg-elevated, #26262b)",
 
-    // Borders & Liquid-Glass Strokes
-    borderSubtle: "var(--border-subtle, #1d222e)",
-    borderCard: "var(--border-card, #272e3f)",
-    borderActive: "var(--border-active, #3a455c)",
+    // Borders & Hairline Strokes
+    borderSubtle: "var(--border-subtle, #222226)",
+    borderCard: "var(--border-card, #2d2d33)",
+    borderActive: "var(--border-active, #45454f)",
     strokeLiquidGlass: "rgba(255, 255, 255, 0.08)",
 
-    // Typography
-    textPrimary: "var(--text-primary, #fcfcfc)",
-    textSecondary: "var(--text-secondary, #cbd5e1)",
-    textMuted: "var(--text-muted, #94a3b8)",
-    textDim: "var(--text-dim, #64748b)",
+    // Typography (High-contrast Light Grey & White)
+    textPrimary: "var(--text-primary, #f4f4f5)",
+    textSecondary: "var(--text-secondary, #a1a1aa)",
+    textMuted: "var(--text-muted, #71717a)",
+    textDim: "var(--text-dim, #52525b)",
 
-    // CrewAI Studio v2 Signature Brand Accents (Coral / Vermilion)
-    brandCoral: "var(--brand-coral, #eb6658)",
-    brandCoralHover: "var(--brand-coral-hover, #de594c)",
-    brandCoralActive: "var(--brand-coral-active, #d04b3f)",
-    brandCoralGlow: "rgba(235, 102, 88, 0.25)",
+    // Signature Light Grey & Monochrome Brand Accents
+    brandCoral: "var(--brand-coral, #f4f4f5)",
+    brandCoralHover: "var(--brand-coral-hover, #ffffff)",
+    brandCoralActive: "var(--brand-coral-active, #e4e4e7)",
+    brandCoralGlow: "rgba(255, 255, 255, 0.12)",
 
-    // Visual Node Accents
-    nodeTask: "#1c2130",
-    nodeAgent: "#192338",
-    nodeRouter: "#2b2219",
-    nodeVerification: "#142922",
+    // Visual Node Accents (Sleek Dark Greys)
+    nodeTask: "#17171a",
+    nodeAgent: "#1a1a1e",
+    nodeRouter: "#1c1c20",
+    nodeVerification: "#161619",
 
-    // Semantic Status
+    // Semantic Status (Subtle & Refined)
     emerald: "var(--emerald-verif, #10b981)",
-    amber: "var(--rad-amber, #f59e0b)",
-    rose: "var(--rose-danger, #f43f5e)",
-    sky: "var(--sky-info, #38bdf8)",
-    indigo: "var(--rad-indigo, #818cf8)",
+    amber: "var(--rad-amber, #d4d4d8)",
+    rose: "var(--rose-danger, #f87171)",
+    sky: "var(--sky-info, #cbd5e1)",
+    indigo: "var(--rad-indigo, #f4f4f5)",
   },
 
   radii: {
@@ -52,10 +52,10 @@ export const TOKENS = {
   },
 
   shadows: {
-    liquidGlass: "inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 4px 24px -2px rgba(0, 0, 0, 0.5)",
-    glowCoral: "0 0 20px rgba(235, 102, 88, 0.3)",
-    glowEmerald: "0 0 20px rgba(16, 185, 129, 0.25)",
-    nodeShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5)",
+    liquidGlass: "inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 4px 24px -2px rgba(0, 0, 0, 0.6)",
+    glowCoral: "0 0 20px rgba(255, 255, 255, 0.15)",
+    glowEmerald: "0 0 20px rgba(16, 185, 129, 0.2)",
+    nodeShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 8px 10px -6px rgba(0, 0, 0, 0.6)",
   },
 
   transitions: {

@@ -266,7 +266,7 @@ verification:
               onClick={() => setIsBottomDrawerOpen((prev) => !prev)}
             >
               <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12 }}>
-                <span style={{ color: "var(--brand-coral)", fontSize: 13 }}>⚡</span>
+                <span style={{ color: "var(--text-primary)", fontSize: 13 }}>⚡</span>
                 <span style={{ fontWeight: 600 }}>Execution Stream & Reasoning</span>
                 {currentTaskTitle && (
                   <span className="font-mono" style={{ fontSize: 11, color: "var(--text-dim)" }}>
