@@ -1,13 +1,12 @@
-// ChatView.tsx — Main execution workbench with progressive disclosure.
-// Level 0: Default clean stream (goal, progress, clear conversational feed).
-// Level 1: Expandable reasoning trace and compact tool call pills.
-// Level 2: Contextual inspector linking to deep operational views.
+// ChatView.tsx — Main execution workbench with CrewAI Studio v2 visual canvas & progressive disclosure.
+// Dual Mode: Visual Node Canvas (Objective -> Tasks DAG -> Verification Gate) & Execution Feed.
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Artifact, ObjectiveRow, TaskRow } from "../api";
 import { useRad } from "../ctx";
 import { fmtBytes, fmtTime, shortHash } from "../util";
-import { RunProgressHeader } from "./RunProgressHeader";
+import { StudioHeader } from "./StudioHeader";
+import { StudioCanvas } from "./StudioCanvas";
 import { ToolCallPill } from "./ToolCallPill";
 import { IconCheck, IconArtifacts } from "./Icons";
 import { Button } from "../design-system/primitives/Button";
@@ -18,6 +17,8 @@ interface ChatViewProps {
   isInspectorOpen: boolean;
   onToggleInspector: () => void;
   onSelectArtifact: (artifactId: string) => void;
+  selectedNodeId?: string | null;
+  onSelectNode?: (nodeId: string, nodeType: "objective" | "task" | "verification") => void;
 }
 
 export default function ChatView({
@@ -26,6 +27,8 @@ export default function ChatView({
   isInspectorOpen,
   onToggleInspector,
   onSelectArtifact,
+  selectedNodeId,
+  onSelectNode,
 }: ChatViewProps) {
   const { client, status, auth, refresh } = useRad();
 
@@ -36,6 +39,9 @@ export default function ChatView({
   const [artifacts, setArtifacts] = useState<Artifact[]>([]);
   const [trace, setTrace] = useState<any>(null);
   const [isReasoningOpen, setIsReasoningOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<"canvas" | "feed">("canvas");
+  const [internalSelectedNode, setInternalSelectedNode] = useState<string | null>(null);
+  const [isBottomDrawerOpen, setIsBottomDrawerOpen] = useState(false);
 
   const feedRef = useRef<HTMLDivElement>(null);
   const id = objective?.id;
@@ -123,21 +129,183 @@ export default function ChatView({
   const verResults = verification?.results || [];
   const isVerified = (objective?.verification || "").toUpperCase() === "VERIFIED";
 
+  const effectiveSelectedNode = selectedNodeId ?? internalSelectedNode;
+  const handleSelectNode = (nodeId: string, nodeType: "objective" | "task" | "verification") => {
+    setInternalSelectedNode(nodeId);
+    onSelectNode?.(nodeId, nodeType);
+  };
+
+  // Export code pipeline in CrewAI / Python / YAML / JSON format
+  const handleExportCode = (format: "python" | "yaml" | "json") => {
+    if (!objective) return;
+    let content = "";
+    let filename = "";
+    let mimeType = "text/plain";
+
+    if (format === "python") {
+      filename = `crew_${objective.id.slice(0, 8)}.py`;
+      content = `# RAD Studio v2 — Autonomous Multi-Agent Pipeline
+# Objective: ${objective.goal}
+from rad import Crew, Agent, Task, VerificationGate
+
+crew = Crew(
+    name="rad-autonomous-crew",
+    goal=${JSON.stringify(objective.goal)},
+    model="${modelName}",
+    invariants=["filesystem_existence", "schema_validation", "hash_proof"],
+)
+
+${tasks
+  .map(
+    (t, i) => `task_${i + 1} = Task(
+    id=${JSON.stringify(t.id)},
+    description=${JSON.stringify(t.title || t.text || `Task ${i + 1}`)},
+    status=${JSON.stringify(t.status)},
+    depends_on=${JSON.stringify(t.depends_on || [])},
+)`
+  )
+  .join("\n\n")}
+
+verification = VerificationGate(
+    level=5,
+    ground_truth=True,
+    strict_checkpoints=True,
+)
+
+if __name__ == "__main__":
+    crew.kickoff()
+`;
+    } else if (format === "yaml") {
+      filename = `tasks_${objective.id.slice(0, 8)}.yaml`;
+      content = `# RAD Studio v2 Task Pipeline Definitions
+objective:
+  id: "${objective.id}"
+  goal: "${objective.goal.replace(/"/g, '\\"')}"
+  status: "${objective.status}"
+  plan_version: ${objective.plan_version || 1}
+
+tasks:
+${tasks
+  .map(
+    (t, i) => `  - id: "${t.id}"
+    title: "${(t.title || t.text || `Task ${i + 1}`).replace(/"/g, '\\"')}"
+    status: "${t.status}"
+    attempts: ${t.attempts || 1}
+    depends_on: ${JSON.stringify(t.depends_on || [])}`
+  )
+  .join("\n")}
+
+verification:
+  level: 5
+  status: "${objective.status === "completed" ? "VERIFIED" : "PENDING"}"
+`;
+    } else {
+      filename = `dag_${objective.id.slice(0, 8)}.json`;
+      mimeType = "application/json";
+      content = JSON.stringify(
+        {
+          objective,
+          tasks,
+          verification,
+          model: modelName,
+          exported_at: new Date().toISOString(),
+        },
+        null,
+        2
+      );
+    }
+
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="chat-view-container">
-      {/* 1. Top Active Run Bar with Stepped Progress */}
-      <RunProgressHeader
+      {/* 1. CrewAI Studio v2 Style Floating Header */}
+      <StudioHeader
         objective={objective}
-        tasksCount={tasks.length}
-        completedTasksCount={completedTasks}
-        currentTaskTitle={currentTaskTitle}
-        isInspectorOpen={isInspectorOpen}
-        onToggleInspector={onToggleInspector}
-        onAction={handleAction}
+        totalTasks={tasks.length}
+        completedTasks={completedTasks}
+        viewMode={viewMode}
+        onChangeViewMode={(m) => setViewMode(m)}
+        onPause={() => void handleAction("pause")}
+        onResume={() => void handleAction("resume")}
+        onStop={() => void handleAction("cancel")}
+        onExportCode={handleExportCode}
       />
 
-      {/* 2. Main Execution Feed */}
-      <div className="chat-feed" ref={feedRef}>
+
+      {/* 2. Main Execution Surface: Canvas vs Stream Feed */}
+      {viewMode === "canvas" && objective ? (
+        <div style={{ flex: 1, position: "relative", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          <StudioCanvas
+            objective={objective}
+            tasks={tasks}
+            currentTaskId={live?.current_task?.id}
+            selectedNodeId={effectiveSelectedNode}
+            onSelectNode={handleSelectNode}
+            isExecuting={isRunning}
+          />
+
+          {/* Collapsible Bottom AI Execution Logs & Thoughts Drawer */}
+          <div
+            className="studio-bottom-drawer"
+            style={{
+              height: isBottomDrawerOpen ? 260 : 36,
+            }}
+          >
+            <div
+              className="studio-bottom-handle"
+              onClick={() => setIsBottomDrawerOpen((prev) => !prev)}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12 }}>
+                <span style={{ color: "var(--brand-coral)", fontSize: 13 }}>⚡</span>
+                <span style={{ fontWeight: 600 }}>Execution Stream & Reasoning</span>
+                {currentTaskTitle && (
+                  <span className="font-mono" style={{ fontSize: 11, color: "var(--text-dim)" }}>
+                    • Active: {currentTaskTitle}
+                  </span>
+                )}
+                {observations.length > 0 && (
+                  <span className="thinking-meta-pill font-mono">{observations.length} tool calls</span>
+                )}
+                {artifacts.length > 0 && (
+                  <span className="thinking-meta-pill font-mono">{artifacts.length} artifacts</span>
+                )}
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span className="font-mono tabular-nums" style={{ fontSize: 11, color: "var(--text-dim)" }}>
+                  {isBottomDrawerOpen ? "Collapse ▼" : "Expand Logs ▲"}
+                </span>
+              </div>
+            </div>
+
+            {isBottomDrawerOpen && (
+              <div className="studio-bottom-content">
+                {observations.length > 0 ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    {observations.slice(-6).map((obs, idx) => (
+                      <ToolCallPill key={obs.id || idx} obs={obs} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="hint" style={{ padding: 12, textAlign: "center" }}>
+                    Node graph active. Live tool execution logs will stream here during run.
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="chat-feed" ref={feedRef}>
         {!objective ? (
           /* Welcome Screen */
           <div className="workbench-welcome-card">
@@ -390,6 +558,7 @@ export default function ChatView({
           </>
         )}
       </div>
+      )}
 
       {/* 3. Bottom Composer Area */}
       <footer className="chat-composer-area">

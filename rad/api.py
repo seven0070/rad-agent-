@@ -103,6 +103,8 @@ class Api:
         if self._ctl_factory:
             return self._ctl_factory(self.home)
         from rad.control.controller import Controller
+        return Controller(self.home, quiet=True)
+
     # ---- dispatch -------------------------------------------------------------------------
     def handle(self, method: str, path: str, query: Dict[str, str], body: Dict[str, Any]) -> Tuple[int, Any]:
         parts = [p for p in path.split("/") if p]

@@ -16,6 +16,8 @@ interface InspectorDrawerProps {
   objective: ObjectiveRow | null;
   selectedArtifactId?: string | null;
   onSelectArtifact?: (id: string) => void;
+  selectedNodeId?: string | null;
+  selectedNodeType?: "objective" | "task" | "verification" | null;
   onClose?: () => void;
 }
 
@@ -25,6 +27,8 @@ export default function InspectorDrawer({
   objective,
   selectedArtifactId,
   onSelectArtifact,
+  selectedNodeId,
+  selectedNodeType,
   onClose,
 }: InspectorDrawerProps) {
   const { client, auth } = useRad();
@@ -38,6 +42,15 @@ export default function InspectorDrawer({
 
   const id = objective?.id;
 
+  // Sync node selection from canvas
+  useEffect(() => {
+    if (selectedNodeType === "verification") {
+      setTab("verification");
+    } else if (selectedNodeType === "task") {
+      setTab("tasks");
+    }
+  }, [selectedNodeId, selectedNodeType]);
+
   // Sync external selectedArtifactId
   useEffect(() => {
     if (selectedArtifactId) {
@@ -45,6 +58,7 @@ export default function InspectorDrawer({
       setTab("artifacts");
     }
   }, [selectedArtifactId]);
+
 
   // Load artifacts, trace, and observations
   const load = useCallback(async () => {
@@ -127,6 +141,53 @@ export default function InspectorDrawer({
           </button>
         )}
       </div>
+
+      {selectedNodeId && (
+        <div
+          style={{
+            margin: "8px 12px 0",
+            padding: "8px 10px",
+            borderRadius: "var(--radius-sm)",
+            border: "1px solid rgba(235, 102, 88, 0.35)",
+            background: "rgba(235, 102, 88, 0.08)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 4,
+            }}
+          >
+            <span className="chip chip-coral font-mono" style={{ fontSize: 9 }}>
+              {selectedNodeType?.toUpperCase() || "NODE"} FOCUS
+            </span>
+            <span
+              className="font-mono tabular-nums"
+              style={{ fontSize: 10, color: "var(--text-dim)" }}
+            >
+              {selectedNodeId.slice(0, 12)}
+            </span>
+          </div>
+          <div
+            style={{
+              fontSize: 12,
+              fontWeight: 600,
+              color: "var(--text-primary)",
+              lineHeight: 1.3,
+            }}
+          >
+            {selectedNodeType === "objective"
+              ? objective?.goal
+              : selectedNodeType === "verification"
+                ? "Ground-Truth Verification Engine"
+                : tasks.find((t) => t.id === selectedNodeId)?.title ||
+                  tasks.find((t) => t.id === selectedNodeId)?.text ||
+                  selectedNodeId}
+          </div>
+        </div>
+      )}
 
       <div className="inspector-content">
         {/* Tab 1: Task State Matrix */}

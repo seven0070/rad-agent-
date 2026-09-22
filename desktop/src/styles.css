@@ -4,48 +4,54 @@
    ========================================================================== */
 
 :root {
-  /* Surface colors (Obsidian palette) */
-  --bg-canvas: #090a0f;
+  /* Surface colors (CrewAI Studio v2 Dark Theme) */
+  --bg-canvas: #0a0c10;
   --bg-surface: #11141c;
-  --bg-card: #181c26;
-  --bg-card-hover: #1f2533;
-  --bg-elevated: #242b3b;
-  --border-subtle: #1e2433;
-  --border-card: #283042;
-  --border-active: #3b465e;
+  --bg-card: #161a24;
+  --bg-card-hover: #1d2230;
+  --bg-elevated: #232938;
+  --border-subtle: #1d222e;
+  --border-card: #272e3f;
+  --border-active: #3a455c;
 
   /* Typography colors */
-  --text-primary: #f8fafc;
+  --text-primary: #fcfcfc;
   --text-secondary: #cbd5e1;
   --text-muted: #94a3b8;
   --text-dim: #64748b;
 
-  /* Stroke & Color tokens from RAD Desktop Design System */
+  /* Stroke & Color tokens */
   --shadow-rad: 0 16px 36px -8px rgba(0, 0, 0, 0.7), 0 4px 12px rgba(0, 0, 0, 0.5);
   --stroke-rad: rgba(255, 255, 255, 0.08);
   --ui-stroke-primary: rgba(255, 255, 255, 0.16);
   --ui-stroke-secondary: rgba(255, 255, 255, 0.10);
   --ui-stroke-tertiary: #1e2433;
   --ui-stroke-quaternary: rgba(255, 255, 255, 0.04);
-  --ui-text-primary: #f8fafc;
+  --ui-text-primary: #fcfcfc;
   --ui-text-secondary: #cbd5e1;
   --ui-text-tertiary: #94a3b8;
   --ui-bg-quaternary: rgba(255, 255, 255, 0.04);
   --ui-widget-surface-background: #141822;
   --chrome-action-hover: rgba(255, 255, 255, 0.06);
-  --theme-primary: #6366f1;
-  --ui-accent: #6366f1;
 
-  /* RAD Brand Accents */
-  --rad-indigo: #6366f1;
-  --rad-indigo-light: #818cf8;
-  --rad-indigo-glow: rgba(99, 102, 241, 0.22);
+  /* CrewAI Studio v2 Signature Brand Accents (Coral & Vermilion) */
+  --brand-coral: #eb6658;
+  --brand-coral-hover: #de594c;
+  --brand-coral-active: #d04b3f;
+  --brand-coral-glow: rgba(235, 102, 88, 0.28);
+  --theme-primary: var(--brand-coral);
+  --ui-accent: var(--brand-coral);
+
+  /* Functional Accents */
+  --rad-indigo: #eb6658;
+  --rad-indigo-light: #f87171;
+  --rad-indigo-glow: var(--brand-coral-glow);
   --rad-amber: #f59e0b;
   --rad-amber-glow: rgba(245, 158, 11, 0.20);
   --emerald-verif: #10b981;
   --emerald-glow: rgba(16, 185, 129, 0.22);
   --rose-danger: #f43f5e;
-  --sky-info: #0ea5e9;
+  --sky-info: #38bdf8;
 
   /* Backward-compatible aliases */
   --hermes-indigo: var(--rad-indigo);
@@ -1285,6 +1291,13 @@ th { color: var(--text-dim); font-weight: 600; font-size: 11px; text-transform: 
   background: rgba(148, 163, 184, 0.12);
   border-color: rgba(148, 163, 184, 0.25);
 }
+.chip-coral {
+  color: var(--brand-coral);
+  background: rgba(235, 102, 88, 0.12);
+  border-color: rgba(235, 102, 88, 0.3);
+}
+
+
 
 /* --------------------------------------------------------------------------
    Error Boundary Card
@@ -1833,10 +1846,436 @@ th { color: var(--text-dim); font-weight: 600; font-size: 11px; text-transform: 
   letter-spacing: 0.05em;
   padding: 2px 6px;
   border-radius: 4px;
-  background: rgba(99, 102, 241, 0.15);
-  color: #a5b4fc;
-  border: 1px solid rgba(99, 102, 241, 0.3);
+  background: rgba(235, 102, 88, 0.15);
+  color: #fca5a5;
+  border: 1px solid rgba(235, 102, 88, 0.3);
   margin-left: 6px;
+}
+
+/* --------------------------------------------------------------------------
+   CrewAI Studio v2 Canvas & Workflow Layout
+   -------------------------------------------------------------------------- */
+.studio-header {
+  height: 52px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-card);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  z-index: 20;
+  gap: 16px;
+}
+
+.studio-header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+
+.studio-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.crumb-root {
+  color: var(--brand-coral);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.crumb-sep {
+  color: var(--border-active);
+}
+
+.crumb-version {
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.crumb-title {
+  color: var(--text-primary);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 280px;
+}
+
+.studio-view-toggle {
+  display: flex;
+  background: var(--bg-canvas);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+  gap: 2px;
+}
+
+.view-toggle-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.view-toggle-btn:hover {
+  color: var(--text-primary);
+}
+
+.view-toggle-btn.active {
+  background: var(--bg-card);
+  color: var(--brand-coral);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.studio-header-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.studio-progress-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.studio-actions-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.studio-export-menu {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  margin-top: 6px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-active);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+  padding: 4px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  min-width: 190px;
+}
+
+.export-item {
+  background: transparent;
+  border: none;
+  text-align: left;
+  padding: 7px 10px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.export-item:hover {
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+/* --------------------------------------------------------------------------
+   Visual Workflow Canvas
+   -------------------------------------------------------------------------- */
+.studio-canvas-container {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background-color: var(--bg-canvas);
+  background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1.2px, transparent 1.2px);
+  background-size: 24px 24px;
+}
+
+.studio-canvas-plane {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 5000px;
+  height: 5000px;
+}
+
+.studio-edges-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.studio-edge-curve {
+  transition: stroke 0.2s ease, stroke-width 0.2s ease;
+}
+
+.studio-edge-curve.edge-pending {
+  stroke: rgba(255, 255, 255, 0.12);
+  stroke-dasharray: 4 4;
+}
+
+.studio-edge-curve.edge-running {
+  stroke: url(#edge-gradient-running);
+  stroke-dasharray: 6 3;
+  animation: edgeFlow 1s linear infinite;
+}
+
+.studio-edge-curve.edge-done {
+  stroke: url(#edge-gradient-done);
+}
+
+@keyframes edgeFlow {
+  from {
+    stroke-dashoffset: 18;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.studio-controls-bar {
+  position: absolute;
+  bottom: 24px;
+  left: 24px;
+  background: rgba(18, 21, 29, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  padding: 4px 8px;
+  gap: 4px;
+  z-index: 15;
+}
+
+.studio-tool-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.studio-tool-btn:hover {
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+.studio-zoom-indicator {
+  font-size: 11px;
+  color: var(--text-dim);
+  padding: 0 4px;
+  min-width: 36px;
+  text-align: center;
+}
+
+.studio-tool-divider {
+  width: 1px;
+  height: 16px;
+  background: var(--border-subtle);
+  margin: 0 4px;
+}
+
+/* --------------------------------------------------------------------------
+   Studio Node Cards (CrewAI Studio v2 style)
+   -------------------------------------------------------------------------- */
+.studio-node {
+  position: absolute;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.studio-node:hover {
+  border-color: var(--border-active);
+  transform: translateY(-2px);
+}
+
+.studio-node.node-selected {
+  border-color: var(--brand-coral);
+  box-shadow: 0 0 0 2px rgba(235, 102, 88, 0.3), 0 12px 30px rgba(0, 0, 0, 0.7);
+}
+
+.studio-node.node-running {
+  border-color: var(--brand-coral);
+  box-shadow: 0 0 16px rgba(235, 102, 88, 0.35);
+  animation: pulseNode 2s infinite ease-in-out;
+}
+
+@keyframes pulseNode {
+  0% {
+    box-shadow: 0 0 12px rgba(235, 102, 88, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 22px rgba(235, 102, 88, 0.45);
+  }
+  100% {
+    box-shadow: 0 0 12px rgba(235, 102, 88, 0.25);
+  }
+}
+
+.studio-node.node-completed {
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+.node-port {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--bg-surface);
+  border: 2px solid var(--border-active);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.node-port-in {
+  left: -6px;
+}
+
+.node-port-out {
+  right: -6px;
+}
+
+.studio-node:hover .node-port {
+  background: var(--brand-coral);
+  border-color: #fff;
+}
+
+.node-header {
+  padding: 10px 12px 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.node-type-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--text-dim);
+}
+
+.node-body {
+  padding: 10px 12px;
+  flex: 1;
+}
+
+.node-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.node-subtitle {
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+
+.node-footer {
+  padding: 6px 12px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--text-dim);
+  border-top: 1px solid rgba(255, 255, 255, 0.03);
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+}
+
+.node-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* --------------------------------------------------------------------------
+   Collapsible Bottom AI Thoughts & Execution Logs Drawer
+   -------------------------------------------------------------------------- */
+.studio-bottom-drawer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(18, 21, 29, 0.95);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-top: 1px solid var(--border-card);
+  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.5);
+  z-index: 25;
+  display: flex;
+  flex-direction: column;
+  transition: height 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.studio-bottom-handle {
+  height: 34px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  background: rgba(22, 26, 36, 0.7);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.studio-bottom-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 

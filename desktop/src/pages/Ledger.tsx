@@ -4,6 +4,7 @@
 // Amendments render inline under their battle (provenance visible, never hidden).
 
 import { useCallback, useEffect, useState } from "react";
+import { RadClient } from "../api";
 import { useRad } from "../ctx";
 import {
   IconLedger,
@@ -69,14 +70,8 @@ export default function Ledger() {
     async (showRefreshing = false) => {
       if (showRefreshing) setRefreshing(true);
       try {
-        let d: LedgerData;
-        if (client) {
-          d = await client.ledger();
-        } else {
-          const res = await fetch("/api/ledger");
-          if (!res.ok) throw new Error(`sidecar ${res.status}`);
-          d = (await res.json()) as LedgerData;
-        }
+        const c = client || new RadClient("", "");
+        const d: LedgerData = await c.ledger();
         setData(d);
         setErr(null);
       } catch (e) {

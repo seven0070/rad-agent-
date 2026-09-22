@@ -1,80 +1,224 @@
-<p align="center">
-  <img src="IMG_8021.ico" width="96" alt="RAD Agent" />
-</p>
+# Rad Agent
 
-<h1 align="center">RAD Agent</h1>
+> **Rad is the door, not the room.** Brain, engine, tools, memory, voice, face — all swappable at runtime.
 
-<p align="center">
-  <strong>Open · Self-Evolving · Free-First · Personal AI Agent</strong><br/>
-  <sub>v1.0.1 — MIT License</sub>
-</p>
+Rad is an open, **self-evolving, free-first** personal AI agent that lives in your terminal.
+It auto-detects the AI providers available on your machine, routes to the best **free** brain first,
+falls back automatically, remembers like a human, talks, sees, browses the public web,
+runs commands with your confirmation, and **teaches itself new skills from a single link**.
 
-<p align="center">
-  <a href="https://github.com/seven0070/rad-agent-/releases"><img alt="Release" src="https://img.shields.io/github/v/release/seven0070/rad-agent-?style=flat-square&color=6366f1" /></a>
-  <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-10b981?style=flat-square" /></a>
-  <a href="#install"><img alt="Python" src="https://img.shields.io/badge/python-3.9%2B-f59e0b?style=flat-square" /></a>
-</p>
-
----
-
-RAD is an open, **self-evolving, free-first** personal AI agent that lives in your terminal — and now has a desktop app. It auto-detects the AI providers on your machine, routes to the best **free** brain first, falls back automatically, remembers like a human, talks, sees, browses the web, runs commands with your confirmation, and **teaches itself new skills from a single link**.
-
-> **RAD is the door, not the room.** Brain, engine, tools, memory, voice, face — all swappable at runtime.
+```
+      _    ____  _        _
+  __ / \  |  _ \/ |      / \
+ / _` __ \| |_) | | /\/\ / _ \
+ \__,_||_|____/|_|/__/__\_/ \_\
+   v1.0.1 — open door, free first, self-evolving
+```
 
 ---
 
-## ✨ Highlights
-
-- 🧠 **Any LLM** — OpenAI, Anthropic, Gemini, Groq, Cerebras, Mistral, Grok, NVIDIA NIM, or local (Ollama / LM Studio / Edge0)
-- 💸 **Free-first routing** — local engines → free cloud tiers (round-robin) → paid (optional)
-- 🧬 **Human-inspired memory** — sensory → working → short-term → long-term (episodic · semantic · procedural)
-- 🎯 **Autonomous objectives** — plan → execute → verify → recover, with checkpoints and budgets
-- 🧩 **MCP skill system** — connect any MCP server from a URL, repo, npm package, or Docker image
-- 🔬 **Self-evolution** — DNA identity system + verified weight/model evolution with benchmark battles
-- 🖥️ **Desktop app** — Tauri-based 3-panel interface with bundled backend sidecar
-- 🗣️ **Voice** — speak + listen with local Piper TTS + Whisper STT (free, offline)
-- 👁️ **Vision** — image understanding via the best available vision model
-- 🌐 **Web** — browse pages + keyless DuckDuckGo search with prompt-injection defense
-- ☁️ **Cloud mind** — Google Drive sync for cross-machine memory continuity
-- 🔒 **Security** — encrypted vault, permission gates, hard blocklist, untrusted-data marking
-
----
-
-## 🧪 Replication Lab
-
-Rad tests published agent techniques instead of believing them. Papers are
-ingested, claims pinned verbatim via code-enforced quote location, battled
-against baselines on disk-graded metrics, and recorded in an append-only
-replication ledger with public amendment chains.
-
-**Tested so far** (local GPU, $0): Reflexion ✓ · Self-Refine ✓ · ReAct ✓ · Tree of Thoughts ✓
-**Universal adapter**: three distinct mechanism classes (feedback-retry, feedback-refine,
-branch-search) plugged into one 10-line registry pattern — every one trialed, every trial
-on the ledger, failures included.
-**Dataset**: `ledger_export.json` — open, auditable, every failure included.
-
----
-
-## 🏗️ Architecture — The Six Sockets
-
-RAD is built on an **Open Door** architecture — every capability is a swappable socket:
+## The six sockets (Open Door architecture)
 
 | Socket | What plugs in | Default |
 |---|---|---|
-| 🧠 **Brain** | Any LLM — OpenAI-compatible, Anthropic, Gemini | Auto-detected keys |
-| ⚙️ **Engine** | Local runtime — Edge0 (MLX), Ollama, LM Studio, vLLM | Best available |
-| 🧩 **Tools** | Any MCP server + custom skills | Built-in + `rad connect` |
-| 🧬 **Memory** | Portable markdown/JSON — local disk, Google Drive | Disk + Drive |
+| 🧠 **Brain** | Any LLM — every OpenAI-compatible endpoint, Anthropic, Gemini | auto-detected keys |
+| ⚙️ **Engine** | Any local runtime — **Edge0** (MLX), Ollama, LM Studio, vLLM | best available |
+| 🧩 **Tools** | Any MCP server + custom skills, even ones Rad writes itself | hands + `rad connect` |
+| 🧬 **Memory** | Portable markdown/JSON — local disk, Google Drive, … | disk + Drive |
 | 🗣️ **Voice** | Any TTS/STT engine | Piper + Whisper (free, offline) |
-| 👤 **Face** | CLI or RAD Desktop (Tauri + bundled sidecar) | Terminal + Desktop |
+| 👤 **Face** | CLI; **RAD Desktop 0.2** (Tauri + bundled `rad-backend` sidecar) — install, launch, no Python/Node needed | terminal + desktop/ |
 
----
+Nothing is a closed list. `rad provider add` accepts **any** OpenAI-compatible endpoint and it
+behaves like a first-class provider.
 
-## 📦 Install
+## Built-in brain: Edge0
 
-**Requires:** Python 3.9+ (3.11 or 3.12 recommended). Zero mandatory dependencies (stdlib-only core).
+Rad's never-fails fallback is [Edge0](https://github.com/Edge0-AI/Edge0) — a 35B/10B MoE that
+streams from your SSD on Apple Silicon. 0 cost, offline, no key.
 
-### From Release
+```bash
+rad install edge0        # Mac only — clones + guides setup
+# Rad auto-detects it at 127.0.0.1:8000 (config: edge0_url / edge0_tier)
+```
+
+On other machines the engine socket takes Ollama / LM Studio / vLLM instead — same interface.
+
+**NVIDIA NIM** (build.nvidia.com) is a first-class free-tier brain:
+`rad keys add nvidia <nvapi-…>` — default model `meta/llama-3.2-11b-vision-instruct`
+(NIM free-credit; `meta/llama-3.3-70b-instruct` reached end-of-life on 2026-08-26).
+
+## Routing (free-first, auto-fallback)
+
+```
+local engines → free cloud tiers (round-robin) → paid (unless free-lock)
+  Edge0 → Ollama → Groq free → Cerebras free → Gemini free → OpenRouter free
+      → NVIDIA NIM free-credit → OpenAI / Claude / Mistral / Grok / …
+```
+
+* Keys are **auto-fetched**: Rad vault → environment → `.env` (project & home).
+* Any provider failing (rate limit, quota, network) → Rad **auto-falls-back** and tells you.
+* Free tiers **rotate** so one rate limit never walls you off.
+* `rad use <provider>` pins one; **free-lock mode** makes paid spend impossible;
+  `rad cost` shows paid 14-day spend and a rollup of persisted
+  per-objective Usage (tools / model / money / tokens).
+* Everything is reported: `rad [groq] …`
+* Optional experimental tool router: `RAD_TOOL_ROUTER=needle` lets [Needle](https://github.com/cactus-compute/needle)
+  *propose* tool names/args. Default remains `existing`. Needle never executes tools, never
+  bypasses permission/sandbox/budget/verification, and stays **off** in v1.0.0
+  (`RAD_TOOL_ROUTER=existing`). `rad needle-eval` is the measurement path; it is not a default.
+
+## Human-inspired memory
+
+> v0.2: every memory carries origin (user / observed / inferred / model-generated), confidence and
+> verification state; contradictions are linked not merged; a structured **user model** (`rad user`) and a
+> **temporal world model** (`rad world`) sit beside raw memories. Details: `docs/MEMORY.md`.
+
+```
+sensory (RAM, this turn) → working (RAM, this task)
+→ short-term (disk, days, decays)
+→ long-term:  episodic (events) · semantic (facts) · procedural (skills)
+```
+
+* Every long-term memory has a **strength**: used = stronger, unused = fades → **archived** (never deleted).
+* **`rad sleep`** (and auto-sleep) consolidates short-term → long-term, prunes, and syncs to Drive.
+* Relevant memories are **auto-recalled** into context each turn; `rad recall` / `rad remember` for manual.
+
+## Evolution 2.0 — verified weight/model evolution
+
+The DNA loop evolves *who Rad is*. This loop evolves *how smart the brain is* —
+with the law that **nothing goes live without winning a benchmark battle**.
+
+```
+rad corpus                    # mine sessions + 👍/👎/corrections → training pairs (JSONL)
+rad corpus export             # the raw material for any trainer
+rad train --plan              # backends here (MLX-LM/Unsloth/PEFT) + Route B:
+                              # train anywhere (your Mac / rented GPU), bring the adapter back
+rad brain add trained-1 --provider edge0 --model <m> --adapter ./rad-adapter/adapter.pt
+rad brain promote trained-1   # A/B benchmark battle vs current brain — promote only if it WINS
+rad brain list | current | rollback
+rad benchmark                 # the Capability Battery: math·logic·code·tool·json·summarize·style
+                              # → 0-100, per-category, saved history + trend (▲/▼)
+rad plan <goal>               # goal decomposition (LLM-backed, deterministic fallback)
+rad plan status | done <n> | clear
+```
+
+**The promotion protocol** (the safety core of self-improvement):
+1. Candidate = provider+model, tuned settings, or a staged **weight adapter**
+2. Both candidate and current brain run the identical Capability Battery
+3. Candidate promoted only if `score ≥ current + margin` — then it's pinned as the live brain
+4. Every promotion is a **generation** with parent pointer — `rad brain rollback` always
+
+The battery is built-in, deterministic, and dependency-free — it scores *any* brain through
+the provider socket (local engine, free tier, paid, or a trained adapter). It is also a plug
+socket: a heavier external harness (lm-evaluation-harness, etc.) can be added later without
+touching the promotion loop.
+
+## Evolution 3.0 — parallel minds, a world model, hands that act
+
+Evolution 2.0 gave Rad a *smarter* brain. Evolution 3.0 gives it **teammates**, a
+**picture of the world**, and the ability to **run its own plans** with its hands.
+
+```
+rad team run "pick a db for my api" [--mode solo|debate] [--roles a,b] [--n 3]
+    A team of specialists (coder·reviewer·planner·researcher·writer — each an
+    instance of the SAME brain with a role grown from the DNA) tackles the problem,
+    then a writer synthesizes one final answer.  --mode debate adds a reviewer
+    cross-critique round.  --backend autogen runs a real AutoGen agent graph when
+    autogen-agentchat is installed; builtin is always available.
+rad team roles | history
+
+rad world show | query <term> | add <sentence> | learn [--path file]
+    The world model: an entity/relation graph ("X works at Y", "Z is my server",
+    "A depends on B") mined from chat, memory and manual facts.  Extraction is
+    brain-assisted when online, heuristic when offline.  Relevant facts are
+    auto-injected into context when the topic comes up — prediction, not recall.
+rad world sync | cypher <query>
+    Mirrors the graph into an embedded Kuzu graph DB (the engine Graphiti runs on) —
+    query it in Cypher, serverless, no key needed.
+
+rad plan run [--auto] [--max N]
+    Rad EXECUTES the current plan with its hands — full brain loop + tools,
+    confirm-gated unless --auto.  Each step ends in DONE: <note> or BLOCKED: <why>;
+    a BLOCKED step stops execution and hands control back to a human.
+```
+
+Mid-chat, the brain can also **delegate**: the `spawn_agents` tool lets Rad itself
+convene a team when a problem benefits from multiple perspectives.
+
+The OSS consumed here (behind Rad's sockets, so they stay swappable):
+* **AutoGen** (`autogen-agentchat`) — real multi-agent orchestration backend.
+* **Graphiti / Kuzu** — the knowledge-graph layer; Rad drives Kuzu (embedded) directly
+  and its extraction is brain-backed, so no separate LLM server is required.
+
+## The Evolver (who Rad is)
+
+DNA (identity: persona, style, lessons) is separate from memory (knowledge).
+
+* **Auto**: every session distills lessons into the DNA.
+* **Directed**: `rad evolve reply shorter and more casual` rewrites the self (LLM-backed, or
+  deterministic when offline).
+* Every change is a **generation**: `rad dna show | rollback | reset`.
+* Safety law: the evolver only rewrites behavior files — **never code**.
+
+## Hands, eyes, internet, voice
+
+* **Hands** — shell + file tools. Confirm-first by default (`y` per command), `rad --auto` for
+  autonomy, and a **hard blocklist** (sudo, `rm -rf /`, pipes to sh, …) that even auto mode can't cross.
+* **Eyes** — `rad see <image> [question]` routes through the best available vision brain.
+* **Internet** — `rad browse <url>` (any public page), `rad search <query>` (keyless DuckDuckGo
+  scraping). Mid-chat, Rad fetches on its own when it needs fresh info. Scraped content is always
+  wrapped as **UNTRUSTED data** — prompt-injection defense.
+* **Voice** — `rad chat --voice`: speak + listen. Local Piper TTS + Whisper STT (free, offline);
+  provider TTS/STT when keys exist. `rad say`, `rad listen` standalone.
+
+## Skills: connect ANY MCP server from one link
+
+```bash
+rad connect https://github.com/someone/mcp-foo      # repo → clone + detect + install
+rad connect @modelcontextprotocol/server-filesystem # npm → npx
+rad connect ./my-local-skill                        # local folder
+rad connect some-pypi-mcp-package                   # PyPI
+rad connect docker.io/ghcr.io/some/mcp-server:1     # docker
+rad connect https://remote.example.com/mcp          # remote MCP endpoint
+rad skills          # what's connected + its tools
+rad drop <name>     # disconnect
+```
+
+Rad detects the server type, installs what's missing (venvs for Python, npx for JS, docker build),
+performs the MCP handshake, and **asks you to approve the tool list** before anything runs.
+Connected tools appear to the brain as first-class tools (`mcp__foo__bar`) with the same confirm gate.
+
+## Cloud mind: Google Drive (5 TB)
+
+Drive is the **mind in the cloud** — not the inference disk (Drive's latency can't do expert
+streaming). It holds long-term memory, DNA generations, model bundles, and the faded archive.
+One Rad on many machines: pull the mind, boot, work, sync back on sleep.
+
+```bash
+rad install cloud
+rad drive connect --client-id <id> --client-secret <secret>
+rad drive push | pull | status
+```
+
+## Scheduler
+
+```bash
+rad remind in 5m "take out the trash"
+rad remind tomorrow 9am "standup notes"
+rad watch https://example.com/changelog --every 30
+rad jobs | rad jobs cancel <id>
+```
+
+Watchers are detached processes; notifications land in `~/.rad/notifications.md`.
+
+## Install
+
+Requires Python 3.9+ (3.11 or 3.12 recommended). No mandatory dependencies (stdlib-only core).
+Package **1.0.1**. `rad version` on this tree prints **1.0.1**. Needle **OFF**. Caps **16/60**.
+False DONE **0**. Live text_analyzer@12 is **not** claimed PASS.
+
+**Public 1.0** (GitHub Release **Version 1** / tag **v1.0.0** wheel — already
+packed; this 1.0.1 PR does **not** cut a release):
 
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
@@ -82,310 +226,251 @@ pip install https://github.com/seven0070/rad-agent-/releases/download/v1.0.0/rad
 rad version
 ```
 
-### From Source
+Contributor / pre-pack checkout:
 
 ```bash
 git clone https://github.com/seven0070/rad-agent- && cd rad-agent-
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e .
+
+# optional layers:
+pip install -e ".[vault]"    # Fernet-encrypted key vault
+pip install -e ".[cloud]"    # Google Drive cloud mind
+pip install -e ".[voice]"    # faster-whisper + sounddevice + piper
+pip install -e ".[agi]"      # multi-agent backends (AutoGen) + world graph (Kuzu)
+rad install edge0            # Mac: the built-in MoE brain
+rad install voice|cloud|vault|dev   # same, via rad
 ```
 
-### Optional Layers
+First run:
 
 ```bash
-pip install -e ".[vault]"     # Fernet-encrypted key vault
-pip install -e ".[cloud]"     # Google Drive cloud mind
-pip install -e ".[voice]"     # faster-whisper + sounddevice + piper
-pip install -e ".[agi]"       # Multi-agent (AutoGen) + world graph (Kuzu)
-pip install -e ".[dev]"       # pytest
+rad                          # just talk
+rad keys add groq gsk_…      # or: export GROQ_API_KEY=…  (auto-detected)
+rad chat --voice             # talk to it out loud
 ```
 
-### First Run
+## Objectives — the control plane (v0.3)
 
-```bash
-rad                           # just talk
-rad keys add groq gsk_…       # or: export GROQ_API_KEY=… (auto-detected)
-rad chat --voice              # talk to it out loud
-```
-
----
-
-## 🔀 Routing — Free-First, Auto-Fallback
+`rad objective run <goal>` is the autonomous path. Unlike chat or `rad plan run`, RAD
+itself owns the state; the model only proposes.
 
 ```
-local engines → free cloud tiers (round-robin) → paid (unless free-lock)
-
-Edge0 → Ollama → Groq → Cerebras → Gemini → OpenRouter
-     → NVIDIA NIM → OpenAI / Claude / Mistral / Grok / …
-```
-
-- Keys auto-fetched from vault → environment → `.env`
-- Provider failures → automatic fallback with notification
-- Free tiers rotate so one rate limit never walls you off
-- `rad use <provider>` pins one · `rad cost` shows spend · free-lock makes paid impossible
-
----
-
-## 🧬 Memory
-
-```
-sensory (RAM, this turn) → working (RAM, this task)
-  → short-term (disk, days, decays)
-  → long-term:  episodic (events) · semantic (facts) · procedural (skills)
-```
-
-- Every memory has a **strength** — used = stronger, unused = fades → archived (never deleted)
-- **`rad sleep`** consolidates short-term → long-term, prunes, and syncs to Drive
-- Memories carry origin, confidence, and verification state
-- Auto-recalled into context each turn · `rad recall` / `rad remember` for manual
-
----
-
-## 🎯 Autonomous Objectives
-
-`rad objective run <goal>` is the autonomous control plane:
-
-```
-Objective → Planner → Task Graph (DAG)
-         → Executor (brain loop, every tool call observed + budgeted)
+Objective → Planner → Task graph (DAG, machine-checkable checks per task)
+         → Executor (the normal brain loop, every tool call observed + budgeted)
          → Verifier (files / shell / regex — never the model's own word)
-         → Recovery (retry · repair · replan · ask user · abort)
-         → COMPLETED | NEEDS_USER | FAILED
+         → Recovery (retry with feedback · repair step · replan · ask user · abort)
+         → Objective verification → COMPLETED | NEEDS_USER | FAILED
 ```
 
-```bash
-rad objective run "Write facts to facts.md, summarise into summary.txt" \
+Coding/verification goals drive **write → independent disk checks → repair** until
+`json_valid` / tests pass (or the budget forces `needs_user` / fail honestly). A model
+`DONE:` line is never completion. A planner timeout / empty / malformed JSON is retried
+once for a structured JSON plan before the F-17 goal-only fallback. A fat plan that
+would burn more than the remaining tool budget is retried; the cheaper graph that
+fits is selected (fallback graphs that are still fat are compacted). Needle stays off.
+Default `max_plan_tasks` remains 16; default `Budget.tool_calls` remains 60.
+
+```
+rad objective run "Write three facts about X to facts.md, then summarise into summary.txt" \
     --criteria "facts.md has 3 facts" --criteria "summary.txt exists" --auto
-
 rad objective list | inspect [id] | resume [id] | pause | cancel
-rad trace [id]          # full event trail
-rad replay [id] --verify  # re-check a past run against today's disk
-rad why report.md       # provenance: creator → evidence → source → tool → agent → time
+rad trace [id] [--kind TOOL_RESULT] [--json]     # full event trail
+rad replay [id] --verify                          # prompts → tools → results; re-check the world now
+rad why report.md | rad why "<claim>"             # provenance: creator, lineage, evidence (or none)
+rad events                                        # recent events across objectives
 ```
 
-**What you get:**
-- A model that says "DONE" without actually writing a file is **caught** and retried
-- Crash or Ctrl-C mid-run → `rad objective resume` continues from checkpoint
-- Budgets (tool calls, model calls, retries, time) stop runaway loops
-- Every file produced is a versioned artifact with SHA-256
+What you get that the chat loop cannot give you:
 
----
+* A model that says "DONE: wrote report.md" without writing it is **caught**, told exactly which
+  check failed, and retried. After bounded retries it replans; after that it asks you.
+* Tasks with no plannable checks complete as `UNVERIFIED`, and the final report says so.
+* Crash or Ctrl-C mid-run → `rad objective resume` continues from the checkpoint; completed
+  tasks are not re-run.
+* Budgets (tool calls, model calls, retries, time) stop runaway loops.
+* Every file written or produced by a shell command is a versioned artifact with a sha256.
 
-## 🧩 Skills — Connect Any MCP Server
+State lives in `~/.rad/objectives/<id>/` (objective.json, tasks.json, events.jsonl,
+observations/, artifacts.json) — plain files, like everything else.
 
-```bash
-rad connect https://github.com/someone/mcp-foo        # repo → clone + detect + install
-rad connect @modelcontextprotocol/server-filesystem    # npm → npx
-rad connect ./my-local-skill                           # local folder
-rad connect some-pypi-mcp-package                      # PyPI
-rad connect docker.io/ghcr.io/some/mcp-server:1        # Docker
-rad connect https://remote.example.com/mcp             # remote endpoint
+## Every command
 
-rad skills              # list connected tools
-rad drop <name>         # disconnect
+```
+rad                          # chat (default)
+rad objective run <goal>     # autonomous: plan → execute → verify → recover (see above)
+rad objective list|inspect|resume|pause|cancel
+rad trace [id] · rad inspect [id] · rad replay [id] --verify · rad why <x> · rad events
+rad chat --voice --auto --use <p> --free-lock --model <m> --workspace <dir>
+
+rad keys add <provider> <key> | list | rm <provider>
+rad providers                # detected brains + chain
+rad use <provider>           # pin
+rad cost                     # paid spend + objective usage rollup
+
+rad see <image> [question]   # vision
+rad browse <url>             # scrape public page
+rad search <query>           # keyless web search
+
+rad remember <text> [--layer episodic|semantic|procedural]
+rad recall <query>
+rad memory show | prune
+rad sleep                    # consolidate memory (+ drive sync)
+
+rad evolve <direction>       # directed self-evolution
+rad dna show | rollback | reset
+
+rad connect <link> [--yes]   # self-build + connect any MCP skill
+rad skills | rad drop <name>
+
+rad drive connect|push|pull|status
+rad remind <in 5m|2h|tomorrow 9am|14:30> <task>
+rad watch <url> [--every N]
+rad jobs | rad jobs cancel <id>
+
+rad say <text> | rad listen [--seconds N]
+rad models                   # local engine models
+
+rad corpus show | export [--out file]     # experience → training data
+rad benchmark [--provider P] [--model M] [--cats …]   # capability battery, 0-100
+rad brain add|list|current|promote|rollback           # verified-evolution protocol
+rad train [--plan] [--run --model M --out D]          # weight training backends
+rad plan <goal> | status | done <n> | run [--auto] | clear   # plan + self-execution
+rad team run <problem> [--mode solo|debate] [--roles …] [--backend builtin|autogen]
+rad team roles | history                              # multi-agent specialists
+rad world show|query|add|learn|sync|cypher            # world model (entity/relation graph)
+rad provider add <name> <url> [--key K] [--tier local|free|paid] [--model M]
+rad workspace [path]
+rad install vault|cloud|voice|dev|edge0
+rad version
 ```
 
-RAD detects the server type, installs dependencies, performs the MCP handshake, and asks you to **approve the tool list** before anything runs.
+Inside chat: `/help /good /bad /remember /recall /evolve /use /free /auto /cost /sleep /dna /skills /exit`
 
----
+## Security model
 
-## 🧪 Self-Evolution
+* **Key vault**: Fernet-encrypted (`pip install cryptography`); falls back to 0600 files with a loud warning.
+* **UNTRUSTED data**: all scraped web content is marked as data, never instructions.
+* **Permission gate**: writes, shell, and MCP tools confirm first; `--auto` skips confirmation but
+  the hard blocklist (sudo, destructive rm, pipes-to-shell, dd, …) still blocks.
+* **Supply chain**: every MCP skill must pass a handshake **and** your tool-list approval.
+* **Free-lock + cost**: paid spend is optional, visible, and can be made impossible.
+* **Privacy**: memory/DNA are local files you own; Drive sync is opt-in and private-folder only.
 
-### DNA (Identity)
-
-DNA (persona, style, lessons) is separate from memory (knowledge).
-
-- **Auto:** every session distills lessons into the DNA
-- **Directed:** `rad evolve reply shorter and more casual`
-- Every change is a **generation** with rollback: `rad dna show | rollback | reset`
-- The evolver only rewrites behavior files — **never code**
-
-### Verified Model Evolution
-
-```bash
-rad corpus                       # mine sessions → training pairs (JSONL)
-rad train --plan                 # configure training backend
-rad brain add trained-1 …       # register candidate
-rad brain promote trained-1     # A/B benchmark battle — promote only if it WINS
-rad benchmark                   # Capability Battery: math · logic · code · tool · json · summarize
-```
-
----
-
-## 🤝 Multi-Agent Teams
-
-```bash
-rad team run "pick a db for my api" --mode debate --roles coder,reviewer,planner
-rad world show | query <term>    # entity/relation knowledge graph
-rad world sync | cypher <query>  # embedded Kuzu graph DB
-```
-
----
-
-## 🖥️ RAD Desktop
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/seven0070/rad-agent-/main/desktop/screenshot.png" width="800" alt="RAD Desktop" />
-</p>
-
-A **3-panel desktop interface** built with React + TypeScript + Tauri, following the Hermes Agent Desktop design system (rebranded to RAD):
-
-| Panel | Purpose |
-|---|---|
-| **Left Sidebar** | Brand mark, `+ New Objective`, 9 navigation views, session history |
-| **Center Panel** | Chat-first agent surface — objectives, thinking, tool cards, artifact cards, verification banners, composer with slash commands |
-| **Right Inspector** | 5-tab drawer (Files · Code · Verif · Checkpoints · Stats) with artifact preview + SHA-256 |
-| **Bottom Bar** | Connection status, authority profile, model, budgets, focused objective |
-
-The desktop bundles the Python core as a `rad-backend` sidecar (loopback-only, Bearer token) — **no Python, no Node, no `rad serve` required** for end users.
-
-```bash
-cd desktop && npm install && npm run dev     # development
-npm run build                                 # production build
-```
-
-Installers: [.github/workflows/desktop.yml](.github/workflows/desktop.yml) · Details: [docs/DESKTOP.md](docs/DESKTOP.md)
-
----
-
-## 🛡️ Security
-
-| Layer | How |
-|---|---|
-| **Key vault** | Fernet-encrypted (`pip install cryptography`); fallback to `0600` files |
-| **Untrusted data** | All scraped web content marked as data, never instructions |
-| **Permission gate** | Writes, shell, MCP tools confirm first; `--auto` skips but hard blocklist remains |
-| **Hard blocklist** | `sudo`, `rm -rf /`, pipes-to-shell, `dd`, … — even auto mode can't cross |
-| **Supply chain** | Every MCP skill requires handshake + your tool-list approval |
-| **Privacy** | All state is local files you own; Drive sync is opt-in |
-
----
-
-## 📂 State — All Human-Readable, All Yours
+## State (all human-readable, all yours)
 
 ```
 ~/.rad/
-├── rad.json                       # config
-├── api.token                      # sidecar auth token
-├── keys/vault.enc                 # encrypted key vault
-├── memory/
-│   ├── short/                     # short-term (decays)
-│   └── long/
-│       ├── episodic/              # events
-│       ├── semantic/              # facts
-│       └── procedural/            # skills
-├── dna/gen*.json                  # identity generations
-├── objectives/<id>/               # objective state
-│   ├── objective.json
-│   ├── tasks.json
-│   ├── events.jsonl
-│   ├── observations/
-│   └── artifacts.json
+├── rad.json            # config
+├── keys/vault.enc      # encrypted key vault
+├── memory/{short,long/{episodic,semantic,procedural},archive}/
+├── dna/gen*.json       # identity generations + current
 ├── skills/registry.json
-├── cost.json · jobs.json
+├── cost.json · jobs.json · notifications.md
 └── logs/ · downloads/ · models/
 ```
 
----
+## Windows
 
-## 🖥️ Windows
+Rad runs on Windows (10/11) out of the box — public 1.0: `pip install` the
+`v1.0.0` wheel from GitHub Release **Version 1** (after Sanath packs).
+Contributor checkout: `python -m venv .venv`, `pip install -e .`, done.
 
-RAD runs on Windows 10/11 out of the box:
+* **Local engine**: `winget install Ollama.Ollama` — Ollama on Windows uses your **NVIDIA GPU**
+  automatically. `ollama pull llama3.2:3b` and Rad picks it up at boot. LM Studio works too.
+  (Edge0 itself stays Mac/MLX-only; on Windows your built-in brain is Ollama or a free cloud tier.)
+* **Free brains without a local GPU**: NVIDIA NIM (`rad keys add nvidia …`), Groq, Cerebras,
+  Gemini, OpenRouter — all key-in, auto-routed.
+* **Voice**: `rad install voice` gives faster-whisper + sounddevice; TTS needs Piper
+  (Linux) — on Windows provider TTS (OpenAI key) or text-only mode.
+* **MCP skills**: Python skills get a per-skill venv (`~/.rad/venvs/…/Scripts/`), npm skills use
+  `npx`, everything else falls through the same detection as on any OS.
 
-- **Local engine:** `winget install Ollama.Ollama` — uses NVIDIA GPU automatically
-- **Free brains without GPU:** NVIDIA NIM, Groq, Cerebras, Gemini, OpenRouter
-- **Voice:** `rad install voice` (TTS needs provider key on Windows)
-- **MCP skills:** Python skills get per-skill venvs, npm skills use `npx`
-
----
-
-## 📋 Every Command
-
-```
-rad                                              # chat (default)
-rad chat --voice --auto --use <p> --free-lock     # options
-
-rad objective run <goal> [--criteria …] [--auto]  # autonomous
-rad objective list | inspect | resume | pause | cancel
-rad trace [id] · rad inspect [id] · rad replay [id] --verify
-rad why <claim|file> · rad events
-
-rad keys add <provider> <key> | list | rm         # providers
-rad providers · rad use <p> · rad cost
-
-rad see <image> [question]                        # vision
-rad browse <url> · rad search <query>             # web
-
-rad remember <text> · rad recall <query>          # memory
-rad memory show | prune · rad sleep
-
-rad evolve <direction>                            # evolution
-rad dna show | rollback | reset
-rad corpus · rad benchmark · rad brain …
-rad train · rad plan <goal> | run
-
-rad connect <link> · rad skills · rad drop <name> # skills
-rad team run <problem> · rad world show           # agents
-
-rad drive connect | push | pull | status          # cloud
-rad remind <when> <task> · rad watch <url>        # scheduler
-rad say <text> · rad listen · rad models          # voice
-
-rad provider add <name> <url>                     # custom provider
-rad workspace [path] · rad install … · rad version
-```
-
-**In-chat:** `/help /good /bad /remember /recall /evolve /use /free /auto /cost /sleep /dna /skills /exit`
-
----
-
-## 🧪 Testing & Measurement
+## Development
 
 ```bash
 pip install -e ".[dev]"
-python -m pytest -q                  # offline unit tests
-rad regression --quick               # security + agent groups + benchmark sample
-rad acceptance                       # 50-item acceptance gate with per-item evidence
-rad benchmark                        # capability battery: 0–100 per category
-rad lab run --suite bank --sample 20 # graded scenario bank
+python -m pytest -q         # offline tests
+rad regression --quick      # security + agent groups + a live benchmark sample
+rad acceptance              # the 50-item acceptance gate, with per-item evidence
 ```
 
-900 graded scenarios across 9 categories, plus long-horizon, real-world, and regression tests — all graded on **disk state**, never on what a model claims.
+See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for the layout, the rules the codebase follows
+(the model proposes / the executor decides; verification is independent; failures are observations)
+and how to add a tool, a scenario or a migration.
 
-Details: [docs/BENCHMARKS.md](docs/BENCHMARKS.md) · [docs/ACCEPTANCE.md](docs/ACCEPTANCE.md)
+## Roadmap
 
----
+Operating spine (Gen1–Gen5, the build → test → validate → release → use → discover gaps loop): [docs/ROADMAP.md](docs/ROADMAP.md). Gen1 complete on 0.2.3; Gen2 complete on 0.3.0–0.3.2; Gen3 **complete (scripted)** on 0.4.0–0.4.9; Gen4 **complete (scripted)** on 0.5.0–0.5.5 — **G4-1** implemented as v0.5.0 (scripted RW-089); **G4-2** live-gate resume / provider health observability **implemented as v0.5.1** (scripted RW-090 / RW-091); **G4-3** live-use campaign / operator workflow **implemented as v0.5.2** (scripted RW-092 / RW-093). **G4-5** fallback / LLM plan quality **implemented as v0.5.3** (scripted RW-094 / RW-095). **G4-7** coding artifact completeness / named package-file contracts **implemented as v0.5.4** (scripted RW-096 / RW-097). **G4-6** cost/budget reporting **implemented as v0.5.5** (scripted RW-098 / RW-099). **G4-4 parked** (no measured hole). **Version 5 pack** is GitHub Release **Version 5** / tag **v0.5.5** (0.5.0–0.5.5). Gen5 **in progress**. First theme **G5-1** (public / product-grade 1.0 baseline) is **accepted and implemented as v1.0.0** (scripted RW-100 / RW-101). Proven Class A on the 1.0 line is **implemented as v1.0.1** (scripted RW-102 / RW-103) and **used** live (**RW-104 PASS** / **VERIFIED** on NIM `z-ai/glm-5.3`). Package **1.0.1**. **Version 1 pack SHIPPED** (GitHub Release **Version 1** / tag **v1.0.0**, wheel + sdist). **No G5-2.** **No GitHub Release / tag in this change.** Honesty bar: false DONE **0**; Needle **OFF**; caps **16/60**; F-17 / F-26 closed; Class C is not a product patch; remaining-quota not invented. Live E1–E3 confirmation **deferred**; live text_analyzer@12 **not** claimed PASS; NIM glm-5.3 live **RW-104 PASS**; historical NIM 11B Class C paused (RW-084); OpenRouter free paused (RW-086 429). The list below is a product-idea backlog, not a generation commitment.
 
-## 📚 Documentation
+LoRA fine-tune of Rad's personality into Edge0 weights · expert pruning/distillation for lighter
+35b · web/phone face · remote-MCP tool execution hardening · multi-user sessions ·
+full Graphiti temporal pipeline (LLM extraction over episodes) when a graph server is present ·
+SWE-bench / AgentBench bootstrap data wired to the corpus miner.
 
-| Doc | Topic |
-|---|---|
-| [QUICKSTART](docs/QUICKSTART.md) | First-run guide |
-| [INSTALLATION](docs/INSTALLATION.md) | Full install instructions |
-| [CONFIGURATION](docs/CONFIGURATION.md) | Config reference |
-| [CLI](docs/CLI.md) | Command reference |
-| [ARCHITECTURE](docs/ARCHITECTURE.md) | System design |
-| [CONTROL-PLANE](docs/CONTROL-PLANE.md) | Objectives, tasks, verification |
-| [MEMORY](docs/MEMORY.md) | Memory system |
-| [WORLD-MODEL](docs/WORLD-MODEL.md) | Entity/relation graph |
-| [AGENTS](docs/AGENTS.md) | Multi-agent teams |
-| [SECURITY](docs/SECURITY.md) | Security model |
-| [TOOLS](docs/TOOLS.md) | Built-in tools |
-| [SKILLS](docs/SKILLS.md) | MCP skill system |
-| [EVOLUTION](docs/EVOLUTION.md) | DNA + model evolution |
-| [API](docs/API.md) | Local API reference |
-| [DESKTOP](docs/DESKTOP.md) | Desktop app |
-| [DEVELOPMENT](docs/DEVELOPMENT.md) | Contributing guide |
-| [ROADMAP](docs/ROADMAP.md) | Future plans |
+## License
 
----
+See [LICENSE](LICENSE).
 
-## 📄 License
+## Measuring the agent
+900 graded scenarios (9 categories × 100) plus long-horizon, model-evaluation, regression and
+real-world tests (research, coding, filesystem, multi-step, failure, honesty, optional live NIM) —
+all graded on disk state, never on what a model claims. `rad lab run --suite bank --sample 20`,
+`rad benchmark long --sample 6`, `rad realworld`, `rad needle-eval`, `rad regression`, `rad acceptance`.
+Success, honesty (no over-claiming), safety (no canary touched), verified-rate, recovery rate,
+retries, cost and false-completion rate are all reported.
+See [docs/BENCHMARKS.md](docs/BENCHMARKS.md) and [docs/ACCEPTANCE.md](docs/ACCEPTANCE.md).
 
-[MIT](LICENSE) — Copyright © 2026 Sanath S Patil
+## Autonomy: the control plane (v2)
 
----
+`rad objective run "<goal>"` is the whole loop, and every part of it is inspectable:
 
-<p align="center">
-  <sub>Built with 🤖 by <a href="https://github.com/seven0070">seven0070</a></sub>
-</p>
+```
+understand → success criteria → plan → task graph → execute → observe → verify → done
+      ▲                                                              │
+      └──────────── diagnose → recover → replan  ◄──── fail ──────────┘
+```
+
+* **Objectives own the work.** id, goal, success criteria, constraints, priority, deadline, budget,
+  status, timestamps and the plan generation (`plan_version`). `rad objective list|run|pause|resume|
+  cancel|retry|expire|verify`.
+* **Tasks never vanish.** 11 explicit statuses with legal transitions and full history; every task
+  belongs to an objective; a superseded task is recorded as CANCELLED, never deleted.
+* **The executor is the only way to act.** capability → sandbox → permission → budget → tool →
+  observation → events; the model (or a sub-agent, or a plugin) cannot bypass it.
+* **Verification is independent.** `rad/control/verifier.py` checks files, JSON fields and shell
+  commands; a model's sentence is never the completion criterion. Advisors (`agent_review`,
+  `llm_judge`) are advisory only.
+* **Recovery is a taxonomy, not a hope.** 10 failure classes → 10 strategies (retry, switch tool,
+  switch model, rollback, repair, replan, spawn specialist, ask) with bounded attempts and budgets;
+  checkpoints survive crashes, restarts and provider failures (`rad realworld --only failure`).
+* **Everything is answerable.** `rad trace | inspect | replay | events`, artifacts with hashes,
+  versions, lineage and rollback, and `rad why <claim|file>` for CLAIM→EVIDENCE→SOURCE→TOOL→AGENT→TIME.
+* **Budgets and events are enforced** (token/money/time/tool-call/retry/agent) and persisted as a
+  typed stream per objective; `rad replay <id> --verify` re-checks a past run against today's disk.
+
+## Documentation map
+[QUICKSTART](docs/QUICKSTART.md) · [INSTALLATION](docs/INSTALLATION.md) · [CONFIGURATION](docs/CONFIGURATION.md) · [CLI](docs/CLI.md) ·
+[ARCHITECTURE](docs/ARCHITECTURE.md) · [CONTROL-PLANE](docs/CONTROL-PLANE.md) · [MEMORY](docs/MEMORY.md) ·
+[WORLD-MODEL](docs/WORLD-MODEL.md) · [AGENTS](docs/AGENTS.md) · [SECURITY](docs/SECURITY.md) ·
+[TOOLS](docs/TOOLS.md) · [SKILLS](docs/SKILLS.md) · [MCP](docs/MCP.md) · [LAB](docs/LAB.md) ·
+[BENCHMARKS](docs/BENCHMARKS.md) · [EVOLUTION](docs/EVOLUTION.md) · [API](docs/API.md) ·
+[OPERATIONS](docs/OPERATIONS.md) · [TROUBLESHOOTING](docs/TROUBLESHOOTING.md) ·
+[MIGRATION](docs/MIGRATION.md) · [DEVELOPMENT](docs/DEVELOPMENT.md) · [ACCEPTANCE](docs/ACCEPTANCE.md) ·
+[ROADMAP](docs/ROADMAP.md) · [DESKTOP](docs/DESKTOP.md) · [AUDIT-2026-09](docs/AUDIT-2026-09.md) · [ADR-001 Needle tool-router](docs/ADR-001-NEEDLE-TOOL-ROUTER.md).
+
+Every document describes shipped behaviour: `docs/CLI.md` is generated from the argument parser and
+the acceptance gate fails if the docs mention a command that does not exist.
+
+Quick health check: `rad doctor` · first run: [quickstart](docs/QUICKSTART.md) · local API: `rad serve` · is it finished? `rad acceptance`.
+
+## RAD Desktop (0.2)
+
+The desktop is a **face over the same control plane** — never a second one. It bundles the
+Python core as a `rad-backend` sidecar (loopback-only, Bearer token `0600`, fixed argv —
+no shell surface in Tauri), so a non-developer installs it, launches it, talks to Jerry,
+picks an authority profile, gives an objective, and watches plan → task graph → execution
+→ tool trace → authority → verification → artifacts → provenance — with no Python, no
+Node and no `rad serve` of their own. Installers (Windows first, then macOS, Linux) are
+built by CI: [.github/workflows/desktop.yml](.github/workflows/desktop.yml). Details,
+the exact tested/not-tested boundary, and the release checklist: [docs/DESKTOP.md](docs/DESKTOP.md).

@@ -1,7 +1,8 @@
 // WebConnectionModal.tsx — Connection configuration dialog for RAD Web UI.
-// Allows browser users to configure API endpoint and Bearer Token with localStorage persistence.
+// Allows browser users to configure API endpoint and Bearer Token.
 
 import { useState } from "react";
+import { RadClient } from "../api";
 import { getStoredConnection, saveStoredConnection } from "../backend";
 import { Button } from "../design-system/primitives/Button";
 import { Card } from "../design-system/primitives/Card";
@@ -40,11 +41,9 @@ export function WebConnectionModal({
     setTestResult(null);
     try {
       const cleanBase = base.replace(/\/$/, "");
-      const res = await fetch(`${cleanBase}/v1/health`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok && data.ok) {
+      const testClient = new RadClient(cleanBase, token.trim());
+      const data = await testClient.health();
+      if (data.ok) {
         setTestResult({
           ok: true,
           message: `Connected successfully! RAD Agent v${data.version || "0.2.0"} is online.`,
@@ -52,7 +51,7 @@ export function WebConnectionModal({
       } else {
         setTestResult({
           ok: false,
-          message: data.error || `HTTP ${res.status}: ${res.statusText}`,
+          message: "Health check returned false status",
         });
       }
     } catch (e) {

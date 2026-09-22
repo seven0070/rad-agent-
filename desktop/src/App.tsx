@@ -45,8 +45,8 @@ type Page =
   | "settings";
 
 const PRIMARY_PAGES: { id: Page; label: string; icon: ReactNode }[] = [
-  { id: "active", label: "Workbench", icon: <IconSession size={14} /> },
-  { id: "objectives", label: "Runs & Tasks", icon: <IconObjectives size={14} /> },
+  { id: "active", label: "Studio Canvas", icon: <IconSession size={14} /> },
+  { id: "objectives", label: "Runs & DAGs", icon: <IconObjectives size={14} /> },
   { id: "ledger", label: "Replication Ledger", icon: <IconLedger size={14} /> },
   { id: "vitals", label: "Organ Vitals", icon: <IconVitals size={14} /> },
 ];
@@ -74,6 +74,8 @@ export default function App() {
   const [objectives, setObjectives] = useState<ObjectiveRow[]>([]);
   const [isInspectorOpen, setIsInspectorOpen] = useState(true);
   const [selectedArtifactId, setSelectedArtifactId] = useState<string | null>(null);
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [selectedNodeType, setSelectedNodeType] = useState<"objective" | "task" | "verification" | null>(null);
   const [isWebModalOpen, setIsWebModalOpen] = useState(false);
   const manualRef = useRef(false);
 
@@ -218,18 +220,35 @@ export default function App() {
 
   return (
     <div className={`app ${isInspectorOpen ? "" : "inspector-collapsed"}`}>
-      {/* 1. Left Sidebar (RAD Agent Navigation & Recent Sessions) */}
+      {/* 1. Left Sidebar (RAD Studio v2 Navigation & Recent Sessions) */}
       <aside className="sidebar">
         <div className="sidebar-header">
-          <div className="rad-logo-mark">RAD</div>
+          <div
+            className="rad-logo-mark"
+            style={{
+              background: "linear-gradient(135deg, var(--brand-coral), #de594c)",
+              boxShadow: "0 2px 10px rgba(235, 102, 88, 0.35)",
+            }}
+          >
+            RAD
+          </div>
           <div className="brand-text">
-            <div style={{ display: "flex", alignItems: "center" }}>
-              <span className="brand-title">{isTauri() ? "RAD Desktop" : "RAD Web UI"}</span>
-              <span className="badge-platform">{isTauri() ? "TAURI" : "RUST + JS"}</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span className="brand-title">RAD Studio</span>
+              <span
+                className="badge-platform"
+                style={{
+                  background: "rgba(235, 102, 88, 0.15)",
+                  color: "var(--brand-coral)",
+                  borderColor: "rgba(235, 102, 88, 0.35)",
+                }}
+              >
+                v2
+              </span>
             </div>
             <span className="brand-subtitle">
               <span className="live-pulse-dot" />
-              {status?.version ? `v${status.version} · Engine Online` : "Connecting..."}
+              {status?.version ? `v${status.version} · Studio Online` : "Connecting..."}
             </span>
           </div>
         </div>
@@ -382,11 +401,18 @@ export default function App() {
                   objective={selected}
                   onSelectObjective={(newId) => {
                     setSelectedId(newId);
+                    setSelectedNodeId(null);
+                    setSelectedNodeType(null);
                     setPage("active");
                   }}
                   isInspectorOpen={isInspectorOpen}
                   onToggleInspector={() => setIsInspectorOpen((prev) => !prev)}
                   onSelectArtifact={(artId) => setSelectedArtifactId(artId)}
+                  selectedNodeId={selectedNodeId}
+                  onSelectNode={(nodeId, nodeType) => {
+                    setSelectedNodeId(nodeId);
+                    setSelectedNodeType(nodeType);
+                  }}
                 />
               )}
               {page === "objectives" && <Objectives />}
@@ -411,6 +437,8 @@ export default function App() {
             objective={selected}
             selectedArtifactId={selectedArtifactId}
             onSelectArtifact={setSelectedArtifactId}
+            selectedNodeId={selectedNodeId}
+            selectedNodeType={selectedNodeType}
             onClose={() => setIsInspectorOpen(false)}
           />
         </Ctx.Provider>

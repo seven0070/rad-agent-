@@ -3,6 +3,7 @@
 // Law: behavior only; every empty state honest; "configured-to", never "alive".
 
 import { useCallback, useEffect, useState } from "react";
+import { RadClient } from "../api";
 import { useRad } from "../ctx";
 import {
   IconVitals,
@@ -39,14 +40,8 @@ export default function Vitals() {
   const load = useCallback(async (showRefreshing = false) => {
     if (showRefreshing) setRefreshing(true);
     try {
-      let resData: VitalsData;
-      if (client) {
-        resData = await client.vitals<VitalsData>();
-      } else {
-        const res = await fetch("/api/vitals");
-        if (!res.ok) throw new Error(`sidecar ${res.status}`);
-        resData = await res.json();
-      }
+      const c = client || new RadClient("", "");
+      const resData: VitalsData = await c.vitals<VitalsData>();
       setD(resData);
       setErr(null);
     } catch (e) {

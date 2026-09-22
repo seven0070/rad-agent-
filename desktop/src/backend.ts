@@ -76,25 +76,35 @@ export function apiBase(port = 7331): string {
   return import.meta.env.VITE_RAD_API || `http://127.0.0.1:${port}`;
 }
 
-const STORAGE_KEY_API_BASE = "rad_web_api_base";
-const STORAGE_KEY_TOKEN = "rad_web_token";
+import { RadClient } from "./api";
+
+let memoryConnection: { base: string; token: string } = { base: "", token: "" };
 
 export function getStoredConnection(): { base: string; token: string } {
-  const base = (typeof window !== "undefined" && localStorage.getItem(STORAGE_KEY_API_BASE)) || "";
-  const token = (typeof window !== "undefined" && localStorage.getItem(STORAGE_KEY_TOKEN)) || "";
-  return { base, token };
+  if (typeof window !== "undefined") {
+    try {
+      const sp = new URLSearchParams(window.location.search);
+      const urlBase = sp.get("api");
+      const urlToken = sp.get("token");
+      if (urlBase || urlToken) {
+        return {
+          base: urlBase || memoryConnection.base,
+          token: urlToken || memoryConnection.token,
+        };
+      }
+    } catch {
+      // ignore
+    }
+  }
+  return memoryConnection;
 }
 
 export function saveStoredConnection(base: string, token: string): void {
-  if (typeof window === "undefined") return;
-  if (base) localStorage.setItem(STORAGE_KEY_API_BASE, base);
-  if (token) localStorage.setItem(STORAGE_KEY_TOKEN, token);
+  memoryConnection = { base, token };
 }
 
 export function clearStoredConnection(): void {
-  if (typeof window === "undefined") return;
-  localStorage.removeItem(STORAGE_KEY_API_BASE);
-  localStorage.removeItem(STORAGE_KEY_TOKEN);
+  memoryConnection = { base: "", token: "" };
 }
 
 /**
@@ -110,9 +120,8 @@ export async function launchAndConnect(
     // 1. If served via Rust web server, check if loopback proxy is available at origin
     if (typeof window !== "undefined" && window.location.origin && window.location.protocol.startsWith("http")) {
       try {
-        const originCheck = await fetch(`${window.location.origin}/v1/health`)
-          .then((r) => r.json())
-          .catch(() => null);
+        const c = new RadClient(window.location.origin, "");
+        const originCheck = await c.health().catch(() => null);
         if (originCheck && originCheck.ok) {
           await connect(window.location.origin, "");
           return;
@@ -122,7 +131,7 @@ export async function launchAndConnect(
       }
     }
 
-    // 2. Check localStorage or env variables
+    // 2. Check connection config or env variables
     const stored = getStoredConnection();
     const targetBase = stored.base || import.meta.env.VITE_RAD_API || apiBase(port);
     const targetToken = stored.token || import.meta.env.VITE_RAD_TOKEN || "";
