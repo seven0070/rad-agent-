@@ -726,6 +726,9 @@ def make_server(home: RadHome, host: str = "127.0.0.1", port: int = 7331, api: O
             self.send_header("Content-Length", str(len(data)))
             self.send_header("Cache-Control", "no-store")
             self.send_header("X-Content-Type-Options", "nosniff")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+            self.send_header("Access-Control-Allow-Headers", "Authorization, Content-Type, Accept, X-Requested-With")
             self.end_headers()
             self.wfile.write(data)
 
@@ -744,7 +747,7 @@ def make_server(home: RadHome, host: str = "127.0.0.1", port: int = 7331, api: O
                 u = urlparse(self.path)
                 q = {k: v[-1] for k, v in parse_qs(u.query).items()}
                 body: Dict[str, Any] = {}
-                if method == "POST":
+                if method in ("POST", "PUT"):
                     n = int(self.headers.get("Content-Length", 0) or 0)
                     if n > MAX_BODY:
                         status = 413; self._send(413, {"error": "body too large"}); return
@@ -770,10 +773,21 @@ def make_server(home: RadHome, host: str = "127.0.0.1", port: int = 7331, api: O
                 except OSError:
                     pass
 
+        def do_OPTIONS(self):
+            self.send_response(204)
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+            self.send_header("Access-Control-Allow-Headers", "Authorization, Content-Type, Accept, X-Requested-With")
+            self.send_header("Access-Control-Max-Age", "86400")
+            self.end_headers()
+
         def do_GET(self):
             self._do("GET")
 
         def do_POST(self):
             self._do("POST")
+
+        def do_PUT(self):
+            self._do("PUT")
 
     return ThreadingHTTPServer((host, port), H)

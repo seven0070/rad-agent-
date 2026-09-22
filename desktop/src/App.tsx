@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { AuthoritySnapshot, DEFAULT_AUTH_BUDGETS, ObjectiveRow, RadClient, Status } from "./api";
-import { apiBase, backendStop, isTauri, launchAndConnect, ConnState } from "./backend";
+import { apiBase, backendStop, isTauri, launchAndConnect, ConnState, getStoredConnection, saveStoredConnection } from "./backend";
 import ChatView from "./components/ChatView";
 import InspectorDrawer from "./components/InspectorDrawer";
+import { WebConnectionModal } from "./components/WebConnectionModal";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import {
   IconSession,
@@ -73,6 +74,7 @@ export default function App() {
   const [objectives, setObjectives] = useState<ObjectiveRow[]>([]);
   const [isInspectorOpen, setIsInspectorOpen] = useState(true);
   const [selectedArtifactId, setSelectedArtifactId] = useState<string | null>(null);
+  const [isWebModalOpen, setIsWebModalOpen] = useState(false);
   const manualRef = useRef(false);
 
   const connect = useCallback(async (base: string, token: string) => {
@@ -221,7 +223,10 @@ export default function App() {
         <div className="sidebar-header">
           <div className="rad-logo-mark">RAD</div>
           <div className="brand-text">
-            <span className="brand-title">RAD Desktop</span>
+            <div style={{ display: "flex", alignItems: "center" }}>
+              <span className="brand-title">{isTauri() ? "RAD Desktop" : "RAD Web UI"}</span>
+              <span className="badge-platform">{isTauri() ? "TAURI" : "RUST + JS"}</span>
+            </div>
             <span className="brand-subtitle">
               <span className="live-pulse-dot" />
               {status?.version ? `v${status.version} · Engine Online` : "Connecting..."}
@@ -438,6 +443,14 @@ export default function App() {
 
         <div className="status-right">
           <button
+            className="btn ghost mini font-mono"
+            onClick={() => setIsWebModalOpen(true)}
+            style={{ fontSize: 11, padding: "2px 8px" }}
+            title="Configure connection"
+          >
+            🌐 {isTauri() ? "Tauri" : "Web UI"}
+          </button>
+          <button
             className="btn ghost mini"
             onClick={() => setIsInspectorOpen((prev) => !prev)}
             style={{ fontSize: 11, padding: "2px 8px" }}
@@ -455,6 +468,17 @@ export default function App() {
           )}
         </div>
       </footer>
+
+      <WebConnectionModal
+        isOpen={isWebModalOpen}
+        onClose={() => setIsWebModalOpen(false)}
+        onConnect={async (b, t) => {
+          await connect(b, t);
+          setError("");
+        }}
+        currentBase={client?.base}
+        currentToken={client?.token}
+      />
     </div>
   );
 }
@@ -474,48 +498,66 @@ function ConnectScreen({
   onRetry: () => void;
   onManual: (base: string, token: string) => void;
 }) {
-  const [manualBase, setManualBase] = useState(apiBase());
-  const [manualToken, setManualToken] = useState("");
+  const stored = getStoredConnection();
+  const [manualBase, setManualBase] = useState(stored.base || apiBase());
+  const [manualToken, setManualToken] = useState(stored.token || "");
   const [busy, setBusy] = useState(false);
 
   const manualConnect = () => {
     setBusy(true);
+    saveStoredConnection(manualBase, manualToken);
     onManual(manualBase, manualToken);
     setTimeout(() => setBusy(false), 1500);
   };
 
   return (
     <div className="connect" style={{ maxWidth: 500, margin: "auto", padding: 32 }}>
-      <h1 style={{ fontSize: 22, fontWeight: 700, margin: "0 0 8px" }}>Connect to RAD</h1>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+        <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>
+          {isTauri() ? "Connect to RAD Desktop" : "RAD Web UI Connection"}
+        </h1>
+        <span className="badge-platform">{isTauri() ? "TAURI" : "RUST + JS"}</span>
+      </div>
       <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 20 }}>
-        Desktop is a surface over the existing Python API. It cannot run tools, raise budgets,
-        or bypass Policy.decide.
+        {isTauri()
+          ? "Desktop is a surface over the existing Python API."
+          : "Web browser frontend communicating with the RAD Agent control plane via Rust proxy or loopback API."}
       </p>
       {backend === "reconnecting" && <p style={{ color: "var(--hermes-amber)" }}>reconnecting…</p>}
       {error && <p style={{ color: "var(--rose-danger)", fontSize: 12 }}>{error}</p>}
       <div className="card">
         <button className="btn" onClick={onRetry} disabled={busy} style={{ width: "100%" }}>
-          {backend === "connecting" ? "Connecting…" : "Launch / reconnect"}
+          {backend === "connecting" ? "Connecting…" : "Launch / Reconnect"}
         </button>
       </div>
       <div className="card">
-        <label>Manual connect (existing rad serve)</label>
-        <label>API base</label>
-        <input value={manualBase} onChange={(e) => setManualBase(e.target.value)} />
+        <label>Manual connection (running `rad serve` or Rust daemon)</label>
+        <label style={{ marginTop: 8 }}>API base URL</label>
+        <input
+          className="field-input font-mono"
+          value={manualBase}
+          onChange={(e) => setManualBase(e.target.value)}
+          placeholder="http://127.0.0.1:7331"
+        />
         <label style={{ marginTop: 10 }}>Bearer token</label>
         <input
+          type="password"
+          className="field-input font-mono"
           value={manualToken}
           onChange={(e) => setManualToken(e.target.value)}
-          placeholder="from <rad home>/api.token"
+          placeholder="from ~/.rad/api.token"
         />
-        <div className="row" style={{ marginTop: 12 }}>
+        <div className="field-hint">
+          Token is generated at <code>~/.rad/api.token</code> or logged by <code>rad serve</code>.
+        </div>
+        <div className="row" style={{ marginTop: 14 }}>
           <button
             className="btn ghost"
             onClick={manualConnect}
             disabled={busy || !manualToken}
             style={{ width: "100%" }}
           >
-            Connect with token
+            Save & Connect
           </button>
         </div>
       </div>

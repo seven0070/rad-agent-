@@ -550,6 +550,81 @@ def cmd_desktop(args) -> int:
     return 0
 
 
+def cmd_web(args) -> int:
+    """Launch the RAD Web UI (Rust web server + JavaScript/TypeScript frontend)."""
+    import webbrowser
+    root = Path(__file__).resolve().parent.parent
+    web_dir = root / "desktop"
+    dist_dir = web_dir / "dist"
+    port = args.port or 3000
+    api_port = args.api_port or 7331
+    url = f"http://127.0.0.1:{port}"
+
+    info("RAD Web UI — Rust + JavaScript/TypeScript Interface")
+    info(f"  frontend url:  {url}")
+    info(f"  agent backend: http://127.0.0.1:{api_port}/v1")
+
+    # 1. Search for built Rust web server binary
+    rust_bin = None
+    for p in [
+        root / "crates" / "rad-web" / "target" / "release" / "rad-web",
+        root / "crates" / "rad-web" / "target" / "debug" / "rad-web",
+    ]:
+        if sys.platform == "win32" and p.with_suffix(".exe").exists():
+            p = p.with_suffix(".exe")
+        if p.exists():
+            rust_bin = p
+            break
+
+    # Build web dist if needed
+    if not dist_dir.exists() or not (dist_dir / "index.html").exists():
+        info("  building frontend web assets (npm run build)...")
+        subprocess.run(["npm", "run", "build"], cwd=str(web_dir), shell=sys.platform == "win32")
+
+    if not getattr(args, "no_open", False):
+        try:
+            webbrowser.open(url)
+        except Exception:
+            pass
+
+    if rust_bin:
+        ok(f"launching Rust web daemon ({rust_bin.name})")
+        return subprocess.call([
+            str(rust_bin),
+            "--port", str(port),
+            "--api-port", str(api_port),
+            "--dist", str(dist_dir),
+        ])
+
+    # Fallback to Python simple HTTP server if Rust binary is missing
+    from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+
+    class WebHandler(SimpleHTTPRequestHandler):
+        def __init__(self, *a, **kw):
+            super().__init__(*a, directory=str(dist_dir), **kw)
+
+        def end_headers(self):
+            self.send_header("Access-Control-Allow-Origin", "*")
+            super().end_headers()
+
+        def do_GET(self):
+            clean = self.path.split("?")[0].lstrip("/")
+            p = (dist_dir / clean).resolve()
+            if not p.exists() and not self.path.startswith("/assets"):
+                self.path = "/index.html"
+            return super().do_GET()
+
+    ok(f"RAD Web UI listening on {url} (fallback mode)")
+    srv = ThreadingHTTPServer(("127.0.0.1", port), WebHandler)
+    try:
+        srv.serve_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        srv.server_close()
+    return 0
+
+
 def cmd_dna(args) -> int:
     from rad.dna import Evolver
     home = _home(args)
@@ -1500,6 +1575,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     desk = sub.add_parser("desktop", help="RAD Desktop 1.0.1 — launch or print the Tauri surface path")
     desk.set_defaults(fn=cmd_desktop)
+
+    web = sub.add_parser("web", help="RAD Web UI — launch the Rust + JS web browser interface")
+    web.add_argument("--port", type=int, default=3000, help="web interface port (default 3000)")
+    web.add_argument("--api-port", type=int, default=7331, help="RAD backend API port (default 7331)")
+    web.add_argument("--no-open", action="store_true", help="do not automatically open browser")
+    web.set_defaults(fn=cmd_web)
 
     dr = sub.add_parser("doctor", help="health check of RAD; --fix repairs what is safe")
     dr.add_argument("--fix", action="store_true"); dr.add_argument("--offline", action="store_true", help="skip provider probes")

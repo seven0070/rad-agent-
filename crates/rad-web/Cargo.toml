@@ -1,0 +1,8 @@
+[package]
+name = "rad-web"
+version = "0.2.0"
+edition = "2021"
+description = "RAD Web UI Server — high-performance Rust static asset host & agent reverse proxy"
+authors = ["Rad"]
+
+[dependencies]

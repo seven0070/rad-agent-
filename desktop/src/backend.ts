@@ -76,6 +76,27 @@ export function apiBase(port = 7331): string {
   return import.meta.env.VITE_RAD_API || `http://127.0.0.1:${port}`;
 }
 
+const STORAGE_KEY_API_BASE = "rad_web_api_base";
+const STORAGE_KEY_TOKEN = "rad_web_token";
+
+export function getStoredConnection(): { base: string; token: string } {
+  const base = (typeof window !== "undefined" && localStorage.getItem(STORAGE_KEY_API_BASE)) || "";
+  const token = (typeof window !== "undefined" && localStorage.getItem(STORAGE_KEY_TOKEN)) || "";
+  return { base, token };
+}
+
+export function saveStoredConnection(base: string, token: string): void {
+  if (typeof window === "undefined") return;
+  if (base) localStorage.setItem(STORAGE_KEY_API_BASE, base);
+  if (token) localStorage.setItem(STORAGE_KEY_TOKEN, token);
+}
+
+export function clearStoredConnection(): void {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(STORAGE_KEY_API_BASE);
+  localStorage.removeItem(STORAGE_KEY_TOKEN);
+}
+
 /**
  * One full launch-or-reconnect attempt:
  *   locate existing → spawn sidecar if needed → health gate → token → connect.
@@ -86,9 +107,33 @@ export async function launchAndConnect(
   port = 7331,
 ): Promise<void> {
   if (!isTauri()) {
-    const envTok = import.meta.env.VITE_RAD_TOKEN || "";
-    if (!envTok) throw new Error("set VITE_RAD_TOKEN for browser-only mode (no Tauri)");
-    await connect(apiBase(port), envTok);
+    // 1. If served via Rust web server, check if loopback proxy is available at origin
+    if (typeof window !== "undefined" && window.location.origin && window.location.protocol.startsWith("http")) {
+      try {
+        const originCheck = await fetch(`${window.location.origin}/v1/health`)
+          .then((r) => r.json())
+          .catch(() => null);
+        if (originCheck && originCheck.ok) {
+          await connect(window.location.origin, "");
+          return;
+        }
+      } catch {
+        // Fall back to direct target
+      }
+    }
+
+    // 2. Check localStorage or env variables
+    const stored = getStoredConnection();
+    const targetBase = stored.base || import.meta.env.VITE_RAD_API || apiBase(port);
+    const targetToken = stored.token || import.meta.env.VITE_RAD_TOKEN || "";
+
+    if (!targetToken) {
+      throw new Error(
+        "RAD Web Client requires an API token to connect. Please configure your API URL and Bearer Token below.",
+      );
+    }
+
+    await connect(targetBase, targetToken);
     return;
   }
   let info = await backendInfo();

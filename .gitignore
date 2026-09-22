@@ -21,6 +21,8 @@ rad.egg-info/
 desktop/node_modules/
 desktop/dist/
 desktop/src-tauri/target/
+crates/**/target/
+target/
 desktop/.vite/
 .agents/
 *_staging*/
