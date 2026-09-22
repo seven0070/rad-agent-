@@ -26,7 +26,7 @@ runs commands with your confirmation, and **teaches itself new skills from a sin
 | 🧩 **Tools** | Any MCP server + custom skills, even ones Rad writes itself | hands + `rad connect` |
 | 🧬 **Memory** | Portable markdown/JSON — local disk, Google Drive, … | disk + Drive |
 | 🗣️ **Voice** | Any TTS/STT engine | Piper + Whisper (free, offline) |
-| 👤 **Face** | CLI; **RAD Desktop 0.2** (Tauri + bundled `rad-backend` sidecar) — install, launch, no Python/Node needed | terminal + desktop/ |
+| 👤 **Face** | CLI; **RAD Studio v2** (Tauri Desktop + Rust Web Server + CrewAI Studio v2 visual canvas) | terminal + desktop/ + `rad web` |
 
 Nothing is a closed list. `rad provider add` accepts **any** OpenAI-compatible endpoint and it
 behaves like a first-class provider.
@@ -457,7 +457,7 @@ understand → success criteria → plan → task graph → execute → observe 
 [BENCHMARKS](docs/BENCHMARKS.md) · [EVOLUTION](docs/EVOLUTION.md) · [API](docs/API.md) ·
 [OPERATIONS](docs/OPERATIONS.md) · [TROUBLESHOOTING](docs/TROUBLESHOOTING.md) ·
 [MIGRATION](docs/MIGRATION.md) · [DEVELOPMENT](docs/DEVELOPMENT.md) · [ACCEPTANCE](docs/ACCEPTANCE.md) ·
-[ROADMAP](docs/ROADMAP.md) · [DESKTOP](docs/DESKTOP.md) · [AUDIT-2026-09](docs/AUDIT-2026-09.md) · [ADR-001 Needle tool-router](docs/ADR-001-NEEDLE-TOOL-ROUTER.md).
+[ROADMAP](docs/ROADMAP.md) · [DESKTOP](docs/DESKTOP.md) · [WEB-UI](docs/WEB_UI.md) · [AUDIT-2026-09](docs/AUDIT-2026-09.md) · [ADR-001 Needle tool-router](docs/ADR-001-NEEDLE-TOOL-ROUTER.md).
 
 Every document describes shipped behaviour: `docs/CLI.md` is generated from the argument parser and
 the acceptance gate fails if the docs mention a command that does not exist.
@@ -474,3 +474,40 @@ picks an authority profile, gives an objective, and watches plan → task graph 
 Node and no `rad serve` of their own. Installers (Windows first, then macOS, Linux) are
 built by CI: [.github/workflows/desktop.yml](.github/workflows/desktop.yml). Details,
 the exact tested/not-tested boundary, and the release checklist: [docs/DESKTOP.md](docs/DESKTOP.md).
+
+## RAD Studio v2 (Desktop & Web UI)
+
+RAD Studio v2 redesigns the execution surface following the **CrewAI Studio v2** visual node workflow model across both desktop and browser environments:
+
+```
+[ Root Objective Node ] ──(SVG Bezier)──► [ Task Layer 1 ] ──► [ Task Layer 2 ] ──► [ Verification Gate ]
+           │                                                                                 │
+           └─────────► Floating Studio Header (Canvas vs Stream · Run/Pause · Export) ───────┘
+           │
+           └─────────► Collapsible Bottom Execution Stream & Inspector Drawer
+```
+
+### Studio Features
+* **Interactive Visual Workflow Canvas (`StudioCanvas.tsx`)**: Multi-layer DAG graph computed from task dependencies, connected by SVG cubic bezier curves with animated execution flow pulses, pan/zoom navigation controls, and instant node inspection.
+* **Floating Header Toolbar (`StudioHeader.tsx`)**: Breadcrumbs (`RAD Studio / v2 / Objective`), dual-mode switcher (`☊ Canvas` vs `≡ Stream`), real-time stepped progress meter (`4/4 tasks · 100%`), execution controls (`▶ Run`, `⏸ Pause`, `⏹ Stop`), and one-click code exporter:
+  - **Python (`crew.py`)**: Ready-to-run script defining `Crew`, `Agent`, `Task` DAG, and `VerificationGate`.
+  - **YAML (`tasks.yaml`)**: Declarative pipeline definition.
+  - **JSON (`dag.json`)**: Machine-readable objective, task, and verification graph.
+* **Collapsible Stream Drawer (`ChatView.tsx`)**: Bottom drawer displaying streaming LLM reasoning traces, active task progress, tool execution pills, and generated artifacts.
+* **Contextual Inspector Synchronization (`InspectorDrawer.tsx`)**: Automatic tab routing and node focus banner for Tasks, Tools, Artifacts, Verification, and Authority budgets.
+* **Organ Vitals Dashboard (`Vitals.tsx`)**: 3-glance-zone monitor covering **PULSE** (homeostasis), **WONDER** (curiosity drive), and **SHIELD** (canary cadence & battery health) strictly governed by the Life Refusal Law.
+* **Replication Ledger Cockpit (`Ledger.tsx`)**: Consensus ledger tracking paired paper battle runs, empirical verification hashes, and inline amendment provenance.
+
+### Running the Web UI (`rad web`)
+
+RAD includes a compiled standalone Rust web daemon ([`crates/rad-web/`](crates/rad-web/)) that proxies loopback control plane endpoints with auto-authentication and zero dependencies:
+
+```bash
+# 1. Start the agent backend
+rad serve
+
+# 2. Launch the Studio v2 Web UI
+rad web
+# Automatically serves the UI at http://127.0.0.1:3000 and launches your browser!
+```
+
