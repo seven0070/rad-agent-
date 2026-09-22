@@ -67,6 +67,29 @@ def print_banner(version: str) -> None:
     print(col.dim(f"  rad v{version} — open door, free first, self-evolving"))
 
 
+if sys.platform == "win32":
+    try:
+        if hasattr(sys.stdout, "reconfigure"):
+            sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        if hasattr(sys.stderr, "reconfigure"):
+            sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
+
+def _safe_print(text: str, stream=None) -> None:
+    target = stream or sys.stdout
+    try:
+        print(text, file=target)
+    except UnicodeEncodeError:
+        # Fallback if the underlying terminal does not support unicode characters
+        ascii_text = text.replace("✓", "[OK]").replace("✗", "[X]").replace("⚠", "[!]").replace("●", "*").replace("○", "o")
+        try:
+            print(ascii_text, file=target)
+        except Exception:
+            print(text.encode("ascii", "replace").decode("ascii"), file=target)
+
+
 def ask(prompt: str, default: str = "n") -> bool:
     d = "Y/n" if default.lower() == "y" else "y/N"
     try:
@@ -80,16 +103,16 @@ def ask(prompt: str, default: str = "n") -> bool:
 
 
 def fail(msg: str) -> None:
-    print(col.red(f"✗ {msg}"), file=sys.stderr)
+    _safe_print(col.red(f"✗ {msg}"), stream=sys.stderr)
 
 
 def ok(msg: str) -> None:
-    print(col.green(f"✓ {msg}"))
+    _safe_print(col.green(f"✓ {msg}"))
 
 
 def warn(msg: str) -> None:
-    print(col.yellow(f"⚠ {msg}"))
+    _safe_print(col.yellow(f"⚠ {msg}"))
 
 
 def info(msg: str) -> None:
-    print(col.dim(msg))
+    _safe_print(col.dim(msg))

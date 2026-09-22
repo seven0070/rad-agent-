@@ -106,17 +106,22 @@ fn resolve_sidecar() -> Option<PathBuf> {
     let manifest_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("binaries").join(&name);
     candidates.push(manifest_dir);
     candidates.push(std::path::Path::new("binaries").join(&name));
-    candidates.into_iter().find(|p| p.is_file())
+    candidates.into_iter().find(|p| {
+        p.is_file() && p.metadata().map(|m| m.len() > 1024).unwrap_or(false)
+    })
 }
 
 fn python_bin() -> String {
-    std::env::var("RAD_PYTHON").unwrap_or_else(|_| {
-        if cfg!(windows) {
-            "python".into()
-        } else {
-            "python3".into()
-        }
-    })
+    std::env::var("RAD_PYTHON")
+        .ok()
+        .or_else(which_python)
+        .unwrap_or_else(|| {
+            if cfg!(windows) {
+                "python".into()
+            } else {
+                "python3".into()
+            }
+        })
 }
 
 fn which_python() -> Option<String> {
