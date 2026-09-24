@@ -42,6 +42,7 @@ DEFAULTS: Dict[str, Any] = {
     "allow_api_fix": False,         # let GET /v1/doctor?fix=1 apply repairs
     "api_port": 7331,
     "tool_router": "existing",      # existing | needle (optional experimental; never sovereign)
+    "memory.evolve": False         # EvolveMem AutoResearch nightly loop (rad sleep --evolve)
 }
 
 

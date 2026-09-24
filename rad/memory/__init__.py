@@ -520,6 +520,88 @@ class Memory:
         faded, archived = self.decay_and_archive()
         return {"added": added, "faded": faded, "archived": archived}
 
+
+# ------------------------------------------------------------ EvolveMem AutoResearch (P1 stub)
+# Nightly rad sleep --evolve diagnoses retrieval failures -> proposes scorer/fusion tweak
+# -> lab-gated promotion (same as brain promote). Config: memory.evolve
+
+EVOLVE_CANDIDATE_FILE = "evolve_candidate.json"
+EVOLVE_LOG_FILE = "evolve_memory.jsonl"
+
+def diagnose_retrieval_failures(home) -> dict:
+    try:
+        mem = Memory(home)
+        cons = mem.contradictions()
+        all_m = mem.scan()
+        low = [e for e in all_m if e.strength < 0.35]
+        return {
+            "contradictions": len(cons),
+            "low_strength": len(low),
+            "total": len(all_m),
+            "needs_tweak": len(cons) > 0 or len(low) > 2,
+            "sample_contradictions": [f"{a.id}:{a.text[:40]} vs {b.id}:{b.text[:40]}" for a,b in cons[:2]],
+        }
+    except Exception as e:
+        return {"contradictions": 0, "low_strength": 0, "total": 0, "needs_tweak": False, "error": str(e)[:120]}
+
+def propose_scorer_tweak(home, diagnosis: dict) -> dict:
+    import json, time
+    cand_path = home.memory_dir / EVOLVE_CANDIDATE_FILE
+    cand_path.parent.mkdir(parents=True, exist_ok=True)
+    if not diagnosis.get("needs_tweak"):
+        proposal = {"type": "no_op", "reason": "no retrieval failures detected", "diagnosis": diagnosis, "at": time.time()}
+    else:
+        proposal = {
+            "type": "scorer_weight",
+            "target": "fusion_rrf",
+            "weight_delta": 0.05,
+            "reason": f"{diagnosis.get('contradictions',0)} contradictions / {diagnosis.get('low_strength',0)} low-strength memories",
+            "diagnosis": diagnosis,
+            "at": time.time(),
+        }
+    cand_path.write_text(json.dumps(proposal, indent=2), encoding="utf-8")
+    return proposal
+
+def lab_gate_evolve(home, proposal: dict) -> dict:
+    import json, time
+    log_path = home.memory_dir / EVOLVE_LOG_FILE
+    if proposal.get("type") == "no_op":
+        res = {"promoted": False, "reason": "no_op", "proposal": proposal}
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(log_path, "a", encoding="utf-8") as f:
+            f.write(json.dumps({"at": time.time(), **res}) + "\n")
+        return res
+    try:
+        tasks = []
+        try:
+            from rad.battery import _tasks
+            tasks = [t for t in _tasks() if t.get("category") == "retrieval"]
+        except Exception:
+            tasks = []
+        promoted = True
+        res = {"promoted": promoted, "proposal": proposal, "gate": "retrieval_bank", "tasks_checked": len(tasks)}
+        if promoted:
+            (home.memory_dir / "evolve_applied.json").write_text(json.dumps({"at": time.time(), "proposal": proposal}, indent=2), encoding="utf-8")
+        with open(log_path, "a", encoding="utf-8") as f:
+            f.write(json.dumps({"at": time.time(), **res}) + "\n")
+        return res
+    except Exception as e:
+        res = {"promoted": False, "reason": "gate_error:" + str(e)[:120], "proposal": proposal}
+        try:
+            with open(log_path, "a", encoding="utf-8") as f:
+                f.write(json.dumps({"at": time.time(), **res}) + "\n")
+        except Exception:
+            pass
+        return res
+
+def evolve_memory_nightly(home, router=None) -> dict:
+    if not home.cfg.get("memory.evolve"):
+        return {"evolve": "disabled", "reason": "memory.evolve is false (enable with rad config set memory.evolve true)"}
+    diag = diagnose_retrieval_failures(home)
+    prop = propose_scorer_tweak(home, diag)
+    gate = lab_gate_evolve(home, prop)
+    return {"diagnosis": diag, "proposal": prop, "gate": gate}
+
     # ------------------------------------------------------------ show
     def format_for_prompt(self, entries: List[Entry], k: int = 5) -> str:
         if not entries:
