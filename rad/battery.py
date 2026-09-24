@@ -4,7 +4,7 @@ A built-in, deterministic, zero-dependency task bank with exact graders.
 Works offline, on any machine, against ANY brain through the provider socket
 (local engine, free tier, paid, or a staged weight adapter).
 
-Categories: math · logic · code-reasoning · tool-use · json · summarize · style
+Categories: math · logic · code-reasoning · tool-use · json · summarize · style · retrieval · router
 Scores: 0-100, saved to history, compared run over run.
 """
 from __future__ import annotations
@@ -182,6 +182,18 @@ def _tasks() -> List[Dict[str, Any]]:
     # style
     add("y1", "style", "Introduce yourself in exactly 5 words.", g_words_exact(5),
         system="Be extremely concise.")
+
+    # retrieval (P0 bank 1 — hybrid retriever contract: FTS5 + vector stub observability)
+    add("r1", "retrieval", "Given the memory 'Alice works at Acme' and query 'Where does Alice work?', answer with Acme.",
+        g_contains("acme"), system="Answer with only the final answer. No explanations.")
+    add("r2", "retrieval", "Given FTS5 lexical match on 'lives in Berlin' vs 'Berlin', confirm the location is Berlin.",
+        g_contains("berlin"), system="Answer with only the final answer. No explanations.")
+
+    # router (P0 bank 2 — Router Gateway observability: health + cost + latency)
+    add("p1", "router", 'Reply with ONLY JSON {"health":"healthy","latency_ms":12,"cost_per_1k":0.0003} (choose plausible healthy values).',
+        g_json_keys("health", "latency_ms", "cost_per_1k"), system="Output raw JSON only.")
+    add("p2", "router", "Which provider tier is cheapest: local, free, or paid? Answer in one word.",
+        g_contains("local"), system="Answer with only the final answer. No explanations.")
 
     return T
 
