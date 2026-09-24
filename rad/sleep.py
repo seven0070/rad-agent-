@@ -49,6 +49,18 @@ def run_sleep(home: RadHome, router: Optional[RouterState] = None,
         info(f"  (LLM consolidation unavailable: {e} — used heuristics)")
         report = mem.sleep(consolidator=None)
     # decay & archive already inside sleep()
+    # RadConnectome sleep replay (fruit fly consolidation): decay all synapses,
+    # prune weak ones to archive. Observed from real events — never invented.
+    try:
+        from rad.connectome import Connectome, ingest_objective_events
+        ingest_objective_events(home)
+        cx = Connectome(home)
+        rp = cx.sleep_replay()
+        report["connectome"] = rp
+        info(f"  connectome replay: {rp['decayed']} decayed, {rp['pruned']} pruned "
+             f"({rp['synapses']} live synapses)")
+    except Exception as e:
+        info(f"  (connectome replay skipped: {str(e)[:120]})")
     if sync_drive:
         try:
             from rad.drive import Drive

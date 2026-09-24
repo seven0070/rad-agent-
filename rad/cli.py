@@ -915,6 +915,85 @@ def cmd_install(args) -> int:
     return 0
 
 
+def cmd_connectome(args) -> int:
+    """RadConnectome — fruit fly brain wiring for Rad (neuPrint for agents)."""
+    from rad.connectome import Connectome, ingest_objective_events
+    home = _home(args)
+    cx = Connectome(home)
+    act = args.connectome_action
+    if act == "show":
+        st = cx.stats()
+        print(col.bold(f"  RadConnectome — {st['neurons']} neurons, "
+                       f"{st['synapses']} synapses ({st['verified_edges']} verified)"))
+        if st["rich_club"]:
+            print(f"  rich club: {col.cyan(', '.join(st['rich_club'][:8]))}")
+        if st["regions"]:
+            print(f"  regions: {', '.join(st['regions'])}")
+        print(col.dim("  agents=neurons · tools=synapses · verified-only plasticity"))
+        return 0
+    if act == "ingest":
+        res = ingest_objective_events(home)
+        ok(f"ingested {res['tasks']} task(s) → {res['edges']} edge(s) "
+           f"({res['stats']['neurons']} neurons, {res['stats']['synapses']} synapses)")
+        return 0
+    if act == "query":
+        term = " ".join(args.connectome_term)
+        if not term:
+            fail("usage: rad connectome query <neuron>")
+            return 1
+        outs = cx.neighbors(term, "out")
+        ins = cx.neighbors(term, "in")
+        if not outs and not ins:
+            info(f"  no synapses for {term!r} — run `rad connectome ingest` first")
+            return 0
+        print(col.bold(f"  {term}"))
+        for s in outs:
+            tag = col.cyan("VERIFIED") if s.verified else col.dim("unverified")
+            print(f"    → {s.post:<22} w={s.weight:.2f} {tag}  ({s.successes}✓/{s.failures}✗)")
+        for s in ins:
+            tag = col.cyan("VERIFIED") if s.verified else col.dim("unverified")
+            print(f"    ← {s.pre:<22} w={s.weight:.2f} {tag}")
+        return 0
+    if act == "path":
+        if len(args.connectome_term) < 2:
+            fail("usage: rad connectome path <from> <to>")
+            return 1
+        p = cx.path(args.connectome_term[0], args.connectome_term[1])
+        if not p:
+            info("  no path (max 4 hops) — hubs: " + ", ".join(cx.rich_club()[:5]))
+            return 0
+        print("  " + col.cyan(" → ".join(p)))
+        return 0
+    if act == "hubs":
+        hubs = cx.rich_club()
+        print(col.bold(f"  rich club ({len(hubs)} hubs):"))
+        for h in hubs:
+            print(f"    • {h}")
+        return 0
+    if act == "projectome":
+        proj = cx.projectome()
+        print(col.bold("  projectome (region → region):"))
+        for ra, targets in sorted(proj.items()):
+            for rb, n in sorted(targets.items(), key=lambda x: -x[1]):
+                print(f"    {ra:<20} → {rb:<20} {n}")
+        return 0
+    if act == "suggest":
+        if not args.connectome_term:
+            fail("usage: rad connectome suggest <neuron>")
+            return 1
+        for nxt in cx.suggest_next(args.connectome_term[0]):
+            print(f"    • {nxt}")
+        print(col.dim("    advisory only — the control plane still decides"))
+        return 0
+    if act == "replay":
+        res = cx.sleep_replay()
+        ok(f"sleep replay: {res['decayed']} decayed, {res['pruned']} pruned "
+           f"({res['synapses']} live)")
+        return 0
+    fail(f"unknown connectome action: {act}")
+    return 1
+
+
 def cmd_version(args) -> int:
     print(f"rad v{__version__}")
     return 0
@@ -1858,6 +1937,13 @@ def build_parser() -> argparse.ArgumentParser:
     wo.add_argument("--assume", action="store_true",
                     help="add: record a working assumption (origin ASSUMPTION), not a fact")
     wo.set_defaults(fn=cmd_world)
+
+    co = sub.add_parser("connectome", help="RadConnectome — fruit fly brain wiring (neuPrint for agents)")
+    co.add_argument("connectome_action", nargs="?", default="show",
+                    choices=["show", "ingest", "query", "path", "hubs",
+                             "projectome", "suggest", "replay"])
+    co.add_argument("connectome_term", nargs="*")
+    co.set_defaults(fn=cmd_connectome)
 
     v = sub.add_parser("version", help="version"); v.set_defaults(fn=cmd_version)
     return p
