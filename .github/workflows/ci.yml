@@ -32,8 +32,9 @@ jobs:
         env:
           RAD_HOME: ${{ runner.temp }}/rad-ci-home
         run: rad doctor --offline
-      - name: Unit / integration tests
-        run: python -m pytest -q -n auto
+      - name: Unit / integration tests (919+ stays green, -n auto not OOM)
+        # v3.2 reliability: -n auto with worksteal avoids OOM on 2-core CI; must stay 919+
+        run: python -m pytest -q -n auto --dist worksteal --tb=line
       - name: Acceptance gate
         env:
           RAD_HOME: ${{ runner.temp }}/rad-ci-home
