@@ -20,8 +20,10 @@ backend on that port). Never raises out of ``main``.
 from __future__ import annotations
 
 import argparse
+import atexit
 import json
 import os
+import signal
 import sys
 import time
 import traceback
@@ -31,6 +33,79 @@ from typing import List, Optional
 LOOPBACK = ("127.0.0.1", "localhost", "::1")
 DEFAULT_PORT = 7331
 EXIT_PORT_IN_USE = 3
+
+# --- Process-group orphan reaping (T4 hardening) ---
+# Ensure no orphaned rad-backend children survive desktop quit.
+_ORPHAN_PIDS: List[int] = []
+
+
+def ensure_process_group() -> None:
+    """Put this process in its own process group (Unix setsid, Windows new group)."""
+    try:
+        if os.name == "nt":
+            # On Windows the group is created at spawn via CREATE_NEW_PROCESS_GROUP.
+            # Here we just ensure we can handle CTRL_BREAK.
+            import ctypes  # noqa
+            pass
+        else:
+            try:
+                os.setsid()
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+
+def register_orphan(pid: int) -> None:
+    if pid not in _ORPHAN_PIDS:
+        _ORPHAN_PIDS.append(pid)
+
+
+def reap_process_group(pid: Optional[int] = None) -> None:
+    """Reap process group: kill child pids and, on Unix, the whole pgid."""
+    import subprocess
+    targets = [pid] if pid else list(_ORPHAN_PIDS)
+    for p in targets:
+        if not p:
+            continue
+        try:
+            if os.name == "nt":
+                subprocess.run(["taskkill", "/PID", str(p), "/T", "/F"],
+                               capture_output=True, timeout=5)
+            else:
+                try:
+                    os.killpg(os.getpgid(p), signal.SIGTERM)
+                except Exception:
+                    try:
+                        os.kill(p, signal.SIGTERM)
+                    except Exception:
+                        pass
+                time.sleep(0.2)
+                try:
+                    os.killpg(os.getpgid(p), signal.SIGKILL)
+                except Exception:
+                    pass
+        except Exception:
+            pass
+    if pid is None:
+        _ORPHAN_PIDS.clear()
+    else:
+        try:
+            _ORPHAN_PIDS.remove(pid)
+        except ValueError:
+            pass
+
+
+def _install_reap_handlers() -> None:
+    def _h(signum, frame):  # type: ignore
+        reap_process_group()
+        sys.exit(0)
+    for sig in (signal.SIGTERM, signal.SIGINT):
+        try:
+            signal.signal(sig, _h)
+        except Exception:
+            pass
+    atexit.register(reap_process_group)
 
 
 def _set_home(home: Optional[str]) -> str:
@@ -60,6 +135,8 @@ def _port_in_use(host: str, port: int) -> bool:
 
 
 def serve(args: argparse.Namespace) -> int:
+    _install_reap_handlers()
+    ensure_process_group()
     home_root = _set_home(args.home)
     host = "127.0.0.1" if args.host in LOOPBACK else args.host
     if host not in LOOPBACK:
@@ -78,13 +155,14 @@ def serve(args: argparse.Namespace) -> int:
     server = make_server(home, host=host, port=port, token=tok)
     from rad import __version__
     print(json.dumps({"event": "listening", "host": host, "port": port,
-                      "version": __version__, "home": home_root}), flush=True)
+                      "version": __version__, "home": home_root, "pgid": os.getpid()}), flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
         pass
     finally:
         server.server_close()
+        reap_process_group()
     return 0
 
 

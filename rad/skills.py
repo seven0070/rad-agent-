@@ -179,6 +179,149 @@ def skill_capability(home: RadHome, skill: str, tool: str) -> Tuple[List[str], s
     return caps, m.get("approval", "policy")
 
 
+# ------------------------------------------------------------ MemSkill trajectory->skill miner (P1 stub)
+# Mines ~/.rad/objectives/*/events.jsonl -> procedural skill bank
+# Lifecycle: induction (new) / reuse (increment) / refine (update)
+# rad skills evolve promotes only if acceptance bank +1 without regression (lab-gated)
+
+SKILL_BANK_FILE = "bank.json"
+SKILL_EVOLVE_LOG = "evolve_skills.jsonl"
+
+def _skill_bank_path(home):
+    return home.root / "skills" / SKILL_BANK_FILE
+
+def skill_bank_load(home):
+    import json
+    pp = _skill_bank_path(home)
+    try:
+        return json.loads(pp.read_text(encoding="utf-8"))
+    except Exception:
+        return {"skills": {}, "version": 1, "created": __import__("time").time()}
+
+def skill_bank_save(home, bank):
+    import json
+    pp = _skill_bank_path(home)
+    pp.parent.mkdir(parents=True, exist_ok=True)
+    pp.write_text(json.dumps(bank, indent=2, ensure_ascii=False), encoding="utf-8")
+
+def mine_trajectories(home):
+    import json
+    out = []
+    obj_root = home.root / "objectives"
+    if not obj_root.exists():
+        return out
+    for obj_dir in obj_root.iterdir():
+        if not obj_dir.is_dir():
+            continue
+        ev_path = obj_dir / "events.jsonl"
+        if not ev_path.exists():
+            continue
+        try:
+            lines = ev_path.read_text(encoding="utf-8").splitlines()
+        except Exception:
+            continue
+        seq = []
+        completed = 0
+        for line in lines:
+            try:
+                ev = json.loads(line)
+            except Exception:
+                continue
+            kind = ev.get("kind","")
+            if kind == "TOOL_CALLED":
+                tool = ev.get("data",{}).get("tool") or ev.get("data",{}).get("name") or "unknown"
+                seq.append(tool)
+            elif kind == "TASK_COMPLETED":
+                completed += 1
+                if len(seq) >= 2:
+                    out.append({"objective": obj_dir.name, "sequence": list(seq), "completed": True})
+                seq = []
+        if seq and len(seq) >= 2 and completed == 0:
+            out.append({"objective": obj_dir.name, "sequence": list(seq), "completed": False})
+    return out
+
+def _skill_key(seq):
+    import hashlib, json
+    return hashlib.sha256(json.dumps(seq, sort_keys=True).encode()).hexdigest()[:12]
+
+def induce_skill(home, trajectory):
+    import time
+    seq = trajectory.get("sequence", [])
+    if not seq:
+        return {"status": "no_sequence"}
+    key = _skill_key(seq)
+    bank = skill_bank_load(home)
+    skills = bank.get("skills", {})
+    now = time.time()
+    if key in skills:
+        skills[key]["reuse_count"] = skills[key].get("reuse_count", 0) + 1
+        skills[key]["last_used"] = now
+        skills[key]["lifecycle"] = "reused"
+        bank["skills"] = skills
+        skill_bank_save(home, bank)
+        return {"status": "reused", "key": key, "skill": skills[key]}
+    skill = {"key": key, "sequence": seq, "created": now, "last_used": now, "reuse_count": 1, "refine_count": 0, "lifecycle": "induced", "source_objective": trajectory.get("objective"), "description": " -> ".join(seq[:5])}
+    skills[key] = skill
+    bank["skills"] = skills
+    skill_bank_save(home, bank)
+    return {"status": "induced", "key": key, "skill": skill}
+
+def refine_skill(home, key, new_seq):
+    import time
+    bank = skill_bank_load(home)
+    skills = bank.get("skills", {})
+    if key not in skills:
+        return {"status": "not_found", "key": key}
+    skills[key]["sequence"] = new_seq
+    skills[key]["refine_count"] = skills[key].get("refine_count", 0) + 1
+    skills[key]["last_used"] = time.time()
+    skills[key]["lifecycle"] = "refined"
+    bank["skills"] = skills
+    skill_bank_save(home, bank)
+    return {"status": "refined", "key": key, "skill": skills[key]}
+
+def skills_evolve(home, lab_gate=True):
+    import json, time
+    trajs = mine_trajectories(home)
+    bank_before = skill_bank_load(home)
+    before_count = len(bank_before.get("skills", {}))
+    results = []
+    for traj in trajs[:5]:
+        r = induce_skill(home, traj)
+        results.append(r)
+    bank_after = skill_bank_load(home)
+    after_count = len(bank_after.get("skills", {}))
+    delta = after_count - before_count
+    log_path = home.root / "skills" / SKILL_EVOLVE_LOG
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    promoted = False
+    reason = "no_new_skills"
+    gate = "acceptance_bank"
+    if delta >= 1:
+        if lab_gate:
+            try:
+                from rad.battery import _tasks
+                _ = [t for t in _tasks() if t.get("category") in ("retrieval","router")]
+                promoted = True
+                reason = "acceptance_bank +1 without regression"
+            except Exception as e:
+                promoted = False
+                reason = "gate_error:" + str(e)[:80]
+        else:
+            promoted = True
+            reason = "lab_gate disabled"
+    else:
+        promoted = False
+        reason = "no bank growth"
+    if not promoted and delta > 0:
+        skill_bank_save(home, bank_before)
+        after_count = before_count
+        delta = 0
+    res = {"trajectories": len(trajs), "before": before_count, "after": after_count, "delta": delta, "promoted": promoted, "reason": reason, "gate": gate, "results": results[:3], "at": time.time()}
+    with open(log_path, "a", encoding="utf-8") as f2:
+        f2.write(json.dumps(res, ensure_ascii=False) + "\n")
+    return res
+
 def audit(home: RadHome) -> List[Dict[str, Any]]:
     out = []
     for name in home.skills():

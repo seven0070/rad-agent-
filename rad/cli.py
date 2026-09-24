@@ -45,6 +45,17 @@ def cmd_chat(args) -> int:
         home.update(free_lock=True)
     if args.model:
         home.update(model=args.model)
+    # voice backend auto (T5): --voice auto TEN→fallback, --voice-backend pins
+    vb = getattr(args, "voice_backend", "auto")
+    if vb != "auto":
+        home.update(voice_backend=vb)
+    elif args.voice:
+        try:
+            from rad.voice import voice_auto_mode
+            mode = voice_auto_mode(home)
+            info(f"  voice auto: {mode} (TEN={'on' if mode=='ten' else 'off'} fallback=Piper/Whisper)")
+        except Exception:
+            pass
     if args.auto:
         home.update(auto=True)
         try:
@@ -187,7 +198,19 @@ def cmd_sleep(args) -> int:
     from rad.sleep import run_sleep
     home = _home(args)
     info("  rad is sleeping… (consolidating memory)")
-    report = run_sleep(home, _router(home), sync_drive=not args.no_sync)
+    evolve_flag = getattr(args, "evolve", False)
+    report = run_sleep(home, _router(home), sync_drive=not args.no_sync, evolve=evolve_flag)
+    if evolve_flag:
+        ev = report.get("evolve")
+        if ev and ev.get("evolve") == "disabled":
+            info(f'  evolve skipped: {ev.get("reason")}')
+        elif ev:
+            gate = ev.get("gate", {})
+            if gate.get("promoted"):
+                ok(f'evolve promoted: {gate.get("proposal",{}).get("type")} -> {gate.get("gate")} gate passed')
+            else:
+                info(f'evolve: {gate.get("reason","no promotion")} (proposal {ev.get("proposal",{}).get("type")})')
+
     ok(f"sleep done: +{report.get('added', 0)} long-term, {report.get('faded', 0)} faded, {report.get('archived', 0)} archived")
     return 0
 
@@ -696,6 +719,14 @@ def cmd_skills(args) -> int:
         if not m:
             fail("not connected"); return 1
         print(json.dumps(m, indent=2)); return 0
+    if a == "evolve":
+        # P1 stub: trajectory->skill miner, lab-gated promotion
+        res = SK.skills_evolve(home)
+        if res.get("promoted"):
+            ok(f"skills evolve promoted: +{res['delta']} bank {res['before']}->{res['after']} ({res['reason']})")
+        else:
+            info(f"skills evolve: no promotion ({res['reason']}) trajectories={res.get('trajectories',0)} before={res.get('before')} after={res.get('after')}")
+        return 0
     if not reg:
         info("no skills connected yet — `rad connect <link>`")
         return 0
@@ -1530,7 +1561,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     # chat (default)
     c = sub.add_parser("chat", help="talk to Rad (default)")
-    c.add_argument("--voice", action="store_true", help="voice mode: speak + listen")
+    c.add_argument("--voice", action="store_true", help="voice mode: speak + listen (auto TEN→Piper/Whisper→text fallback)")
+    c.add_argument("--voice-backend", default="auto", choices=["auto", "ten", "fallback", "text"],
+                   help="voice backend: auto (TEN realtime if available, else Piper/Whisper fallback), ten, fallback, text")
     c.add_argument("--auto", action="store_true",
                    help="confirmation policy = never (ASK→ALLOW only; does not bypass DENY/hard/budget)")
     c.add_argument("--use", help="pin a provider")
@@ -1572,6 +1605,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     sl = sub.add_parser("sleep", help="consolidate memory now")
     sl.add_argument("--no-sync", action="store_true")
+    sl.add_argument("--evolve", action="store_true", help="nightly EvolveMem AutoResearch: diagnose retrieval failures -> propose tweak -> lab-gated promotion (requires memory.evolve true)")
     sl.set_defaults(fn=cmd_sleep)
 
     me = sub.add_parser("memory", help="memory layers")
@@ -1638,7 +1672,7 @@ def build_parser() -> argparse.ArgumentParser:
     cn.set_defaults(fn=cmd_connect)
 
     sk = sub.add_parser("skills", help="connected skills: list | audit | approve <name> [allow|ask|deny] | declare | manifest")
-    sk.add_argument("skills_action", nargs="?", default="list", choices=["list", "audit", "approve", "declare", "manifest"])
+    sk.add_argument("skills_action", nargs="?", default="list", choices=["list", "audit", "approve", "declare", "manifest", "evolve"])
     sk.add_argument("skills_args", nargs="*"); sk.set_defaults(fn=cmd_skills)
     dp = sub.add_parser("drop", help="disconnect a skill"); dp.add_argument("name"); dp.set_defaults(fn=cmd_drop)
 

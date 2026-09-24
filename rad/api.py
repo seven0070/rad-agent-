@@ -180,6 +180,24 @@ def make_server(home: RadHome, host: str = "127.0.0.1", port: int = 7331, api: O
             h = self.headers.get("Authorization", "")
             return h.startswith("Bearer ") and secrets.compare_digest(h[7:].strip(), token)
 
+        def _sse(self, payload: Any) -> None:
+            # SSE observability: send event-stream for /v1/events/stream when client asks
+            data = json.dumps(payload, ensure_ascii=False, default=str)
+            body = f"data: {data}\n\n".encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "text/event-stream; charset=utf-8")
+            self.send_header("Cache-Control", "no-cache")
+            self.send_header("Connection", "close")
+            self.send_header("Content-Length", str(len(body)))
+            self.send_header("X-Content-Type-Options", "nosniff")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            self.wfile.write(body)
+            try:
+                self.close_connection = True
+            except Exception:
+                pass
+
         def _do(self, method: str) -> None:
             t0 = time.time()
             status = 500
@@ -189,6 +207,20 @@ def make_server(home: RadHome, host: str = "127.0.0.1", port: int = 7331, api: O
                     self._send(401, {"error": "missing or invalid bearer token"})
                     return
                 u = urlparse(self.path)
+                # SSE observability (T4 hardening): real event-stream when Accept asks
+                is_sse = u.path.rstrip("/").endswith("/events/stream") or u.path.rstrip("/").endswith("/observability/stream")
+                wants_sse = "text/event-stream" in self.headers.get("Accept", "")
+                if is_sse and wants_sse and method == "GET":
+                    # Stream one event then close (client can reconnect for live tail)
+                    try:
+                        from rad.control.events import read_global
+                        evs = read_global(api.home, n=20)
+                        payload = {"events": [e.__dict__ for e in evs[-5:]], "sse": True, "mode": "observability_only"}
+                    except Exception:
+                        payload = {"sse": True, "mode": "observability_only", "note": "no events yet"}
+                    status = 200
+                    self._sse(payload)
+                    return
                 q = {k: v[-1] for k, v in parse_qs(u.query).items()}
                 body: Dict[str, Any] = {}
                 if method in ("POST", "PUT"):

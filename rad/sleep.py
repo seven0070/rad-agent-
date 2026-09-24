@@ -39,7 +39,7 @@ def _make_consolidator(home: RadHome, router: RouterState):
 
 
 def run_sleep(home: RadHome, router: Optional[RouterState] = None,
-              sync_drive: bool = True) -> Dict[str, int]:
+              sync_drive: bool = True, evolve: bool = False) -> Dict[str, int]:
     mem = Memory(home)
     router = router or RouterState(home)
     report: Dict[str, int] = {}
@@ -59,6 +59,21 @@ def run_sleep(home: RadHome, router: Optional[RouterState] = None,
                 info(f"  drive sync: {note}")
         except Exception as e:
             info(f"  (drive sync skipped: {str(e)[:120]})")
+    # EvolveMem nightly loop (P1): gated behind --evolve and memory.evolve config
+    if evolve:
+        try:
+            from rad.memory import evolve_memory_nightly
+            ev = evolve_memory_nightly(home, router)
+            report["evolve"] = ev
+        except Exception as e:
+            report["evolve"] = {"error": str(e)[:200]}
+        # also mirror to world graph
+        try:
+            from rad.world import evolve_world_nightly
+            w_ev = evolve_world_nightly(home, router)
+            report["world_evolve"] = w_ev
+        except Exception:
+            pass
     _phase_next_sleep(home.root)
     return report
 

@@ -264,6 +264,43 @@ class WorldModel:
         out.sort(key=lambda x: -x.get("count", x.get("at", 0)))
         return out[:15]
 
+    # ------------------------------------------------------------ hybrid retriever contract (P0)
+    def _fts5_search(self, term: str, k: int = 15, include_history: bool = False) -> List[Dict[str, Any]]:
+        """FTS5 candidate pool (lexical). P0 stub: token overlap filtered as FTS5 semantics.
+        Future: sqlite FTS5 on entities/relations (BM25). No scorer change."""
+        t = term.lower().strip()
+        if not t:
+            return []
+        toks = set(re.findall(r"[a-z0-9_]{3,}", t))
+        if not toks:
+            toks = {t}
+        d = self.data()
+        out = []
+        for e in d["entities"].values():
+            if toks & set(e["name"].lower().split()):
+                out.append({"type": "entity", **e, "_fts_match": True})
+        rels = self.current_relations(d) if not include_history else d["relations"]
+        for r in rels:
+            blob = (r["from"] + " " + r["to"] + " " + r["rel"]).lower()
+            if toks & set(re.findall(r"[a-z0-9_]{3,}", blob)):
+                out.append({"type": "relation", **r, "_fts_match": True})
+        return out[:k]
+
+    def _vector_search(self, term: str, k: int = 15, include_history: bool = False) -> List[Dict[str, Any]]:
+        """Vector candidate pool (semantic). P0 stub: returns [] until embedding index lands."""
+        return []
+
+    def search(self, term: str, k: int = 15, include_history: bool = False) -> List[Dict[str, Any]]:
+        """Hybrid retriever contract: FTS5 + vector + lexical, observability-only in P0.
+        Ranking still uses lexical scorer from query() (no scorer change per P0 spec).
+        FTS5 + vector stubs populate candidate pools for future BM25/cosine fusion.
+        Parity: search() must match query() when vector stub empty.
+        """
+        _ = self._fts5_search(term, k=k*2, include_history=include_history)
+        _ = self._vector_search(term, k=k*2, include_history=include_history)
+        # P0: final ranking unchanged
+        return self.query(term, include_history=include_history)[:k]
+
     def context_block(self, text: str, max_items: int = 6) -> str:
         """Facts relevant to the current conversation, for system-prompt injection."""
         from rad.memory import tokenize
@@ -393,6 +430,64 @@ def kuzu_sync(home: RadHome, world: WorldModel) -> Optional[str]:
     except Exception as e:
         return f"kuzu sync failed: {str(e)[:160]}"
 
+
+
+# ------------------------------------------------------------ EvolveMem World mirror (P1 stub)
+# Mirrors memory evolve loop for world graph: diagnose -> propose -> lab-gated promotion
+
+def world_diagnose(home) -> dict:
+    try:
+        from rad.world import WorldModel
+        w = WorldModel(home)
+        d = w.data()
+        disputes = [r for r in d.get("relations",[]) if r.get("status")=="disputed"]
+        total_rels = len(d.get("relations",[]))
+        total_ents = len(d.get("entities",{}))
+        return {
+            "disputed": len(disputes),
+            "total_relations": total_rels,
+            "total_entities": total_ents,
+            "needs_tweak": len(disputes) > 0,
+            "sample_disputes": disputes[:2],
+        }
+    except Exception as e:
+        return {"disputed": 0, "total_relations": 0, "total_entities": 0, "needs_tweak": False, "error": str(e)[:120]}
+
+def world_propose(home, diagnosis: dict) -> dict:
+    import json, time
+    cand_path = home.root / "world" / "evolve_candidate.json"
+    cand_path.parent.mkdir(parents=True, exist_ok=True)
+    if not diagnosis.get("needs_tweak"):
+        prop = {"type": "no_op", "reason": "no world graph failures", "diagnosis": diagnosis, "at": time.time()}
+    else:
+        prop = {"type": "world_weight", "target": "relation_confidence", "delta": 0.05, "reason": f"{diagnosis.get('disputed',0)} disputed relations", "diagnosis": diagnosis, "at": time.time()}
+    cand_path.write_text(json.dumps(prop, indent=2), encoding="utf-8")
+    return prop
+
+def world_lab_gate(home, proposal: dict) -> dict:
+    import json, time
+    log_path = home.root / "world" / "evolve_world.jsonl"
+    if proposal.get("type") == "no_op":
+        res = {"promoted": False, "reason": "no_op", "proposal": proposal}
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(log_path, "a", encoding="utf-8") as f:
+            f.write(json.dumps({"at": time.time(), **res}) + "\n")
+        return res
+    promoted = True
+    res = {"promoted": promoted, "proposal": proposal, "gate": "world_retrieval"}
+    if promoted:
+        (home.root / "world" / "evolve_applied.json").write_text(json.dumps({"at": time.time(), "proposal": proposal}, indent=2), encoding="utf-8")
+    with open(log_path, "a", encoding="utf-8") as f:
+        f.write(json.dumps({"at": time.time(), **res}) + "\n")
+    return res
+
+def evolve_world_nightly(home, router=None) -> dict:
+    if not home.cfg.get("memory.evolve"):
+        return {"evolve": "disabled", "reason": "memory.evolve false"}
+    diag = world_diagnose(home)
+    prop = world_propose(home, diag)
+    gate = world_lab_gate(home, prop)
+    return {"diagnosis": diag, "proposal": prop, "gate": gate}
 
 def kuzu_query(home: RadHome, cypher: str) -> str:
     """Run raw Cypher against the world graph (read the docs: Cypher dialect)."""

@@ -58,6 +58,46 @@ class OpsMixin:
                               "policy": pol.default_for(cap),
                               "description": (fn.get("description") or "")[:160]})
             return 200, {"tools": tools}
+        if p == ["providers", "health"] and m == "GET":
+            from rad.providers import provider_health_snapshot
+            return 200, {"providers": provider_health_snapshot(self.home), "mode": "observability_only", "routing": "free-first unchanged"}
+        # ---- Observability SSE (T4 hardening) ----
+        # GET /v1/events/stream  -> Server-Sent Events stub (observability-only, loopback, bearer-gated)
+        # Real SSE is served by make_server._do when Accept: text/event-stream; this Api stub is for
+        # direct handler tests (no streaming transport) and keeps P0 observability unchanged.
+        if p == ["events", "stream"] and m == "GET":
+            # SSE observability: stream of global events as event: lines. Stub returns metadata.
+            return 200, {
+                "sse": True,
+                "endpoint": "/v1/events/stream",
+                "mode": "observability_only",
+                "content_type": "text/event-stream",
+                "note": "SSE observability stub — real stream is HTTP event-stream when Accept: text/event-stream",
+                "events_stream": "~/.rad/events.jsonl",
+                "observability": "provider_health + ledger + events",
+            }
+        if p == ["observability", "stream"] and m == "GET":
+            return 200, {
+                "sse": True,
+                "endpoint": "/v1/observability/stream",
+                "mode": "observability_only",
+                "content_type": "text/event-stream",
+                "sources": ["events", "provider_health", "ledger"],
+            }
+        if p == ["skills", "search"] and m == "GET":
+            # P0 marketplace search read-only (observability): filter connected skills by q, no install
+            query = (q.get("q") or q.get("query") or "").lower().strip()
+            from rad.skills import audit as skills_audit
+            # read-only: audit returns already-connected skills; treat as marketplace catalog stub
+            catalog = skills_audit(self.home)
+            # stub catalog when empty (observability demo)
+            if not catalog:
+                catalog = [{"name": "demo-skill", "approval": "ask", "trust": "local", "capabilities": ["fs.read"], "tools": 1, "flags": []}]
+            if query:
+                filtered = [c for c in catalog if query in c.get("name","").lower() or query in " ".join(c.get("capabilities",[])).lower()]
+            else:
+                filtered = catalog
+            return 200, {"query": query, "results": filtered[:20], "total": len(filtered), "mode": "read_only", "install": "disabled_in_P0"}
         if p == ["benchmarks"] and m == "GET":
             from rad import lab_banks
             from rad.battery import Benchmark

@@ -467,6 +467,20 @@ fn backend_start(
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
+    // --- Process-group orphan reaping (T4 hardening) ---
+    // Ensures no orphan rad-backend children survive desktop quit: new pgid on spawn,
+    // backend_stop kills the whole group (taskkill /T on Windows, killpg on Unix).
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NEW_PROCESS_GROUP: u32 = 0x00000200;
+        cmd.creation_flags(CREATE_NEW_PROCESS_GROUP);
+    }
+    #[cfg(unix)]
+    {
+        use std::os::unix::process::CommandExt;
+        cmd.process_group(0);
+    }
     let mut child = cmd
         .spawn()
         .map_err(|e| format!("failed to start backend ({bin}): {e}"))?;
@@ -526,12 +540,43 @@ fn backend_start(
     Ok(info)
 }
 
+/// Reap process-group orphans: kill the whole group, not just the parent.
+fn reap_orphans(pid: u32) {
+    #[cfg(windows)]
+    {
+        let _ = std::process::Command::new("taskkill")
+            .args(["/PID", &pid.to_string(), "/T", "/F"])
+            .stdin(std::process::Stdio::null())
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .status();
+    }
+    #[cfg(unix)]
+    {
+        // group kill via killpg — best-effort, ignore errors if already dead
+        unsafe {
+            // libc::killpg without new dep — raw syscall via libc crate if present,
+            // fallback to just killing pid
+            let pid_i32 = pid as i32;
+            // use nix-style: kill(-pgid, SIGTERM) where pgid == pid
+            extern "C" { fn kill(pid: i32, sig: i32) -> i32; }
+            const SIGTERM: i32 = 15;
+            const SIGKILL: i32 = 9;
+            let _ = kill(-pid_i32, SIGTERM);
+            std::thread::sleep(std::time::Duration::from_millis(200));
+            let _ = kill(-pid_i32, SIGKILL);
+        }
+    }
+}
+
 #[tauri::command]
 fn backend_stop(state: tauri::State<State>) -> Result<(), String> {
     let mut guard = state.backend.lock().map_err(|e| e.to_string())?;
     if let Some(mut b) = guard.take() {
+        let pid = b.child.id();
         let _ = b.child.kill();
         let _ = b.child.wait();
+        reap_orphans(pid);
         Ok(())
     } else {
         Ok(())

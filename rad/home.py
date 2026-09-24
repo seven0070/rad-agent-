@@ -25,6 +25,7 @@ DEFAULTS: Dict[str, Any] = {
     "vision_order": None,         # override vision provider order
     "tts": "auto",                # auto|piper|openai|off
     "stt": "auto",                # auto|whisper|openai|off
+    "voice_backend": "auto",     # auto|ten|fallback|text — T5 realtime TEN→fallback
     "max_tool_rounds": 8,
     "max_context_chars": 24000,
     "memory_k": 5,                # memories injected per turn
@@ -42,6 +43,7 @@ DEFAULTS: Dict[str, Any] = {
     "allow_api_fix": False,         # let GET /v1/doctor?fix=1 apply repairs
     "api_port": 7331,
     "tool_router": "existing",      # existing | needle (optional experimental; never sovereign)
+    "memory.evolve": False         # EvolveMem AutoResearch nightly loop (rad sleep --evolve)
 }
 
 
