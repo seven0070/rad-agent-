@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { RadEvent, TaskRow } from "../api";
 import { useRad } from "../ctx";
 import { fmtTime, redactText, taskStateClass } from "../util";
+import { FlowCanvas } from "../components/FlowCanvas";
 
 interface ToolRow {
   at: number;
@@ -80,6 +81,17 @@ export default function Trace() {
     );
   }
 
+  // FlowCanvas nodes/edges derived from tasks (N2 Langflow/ComfyUI style, observability)
+  const flowNodes = useMemo(() => tasks.map((t, i) => ({
+    id: t.id,
+    type: "taskNode",
+    position: { x: (i % 4) * 220, y: Math.floor(i / 4) * 140 },
+    data: { label: t.text || t.title || t.id, status: t.status, checks: (t.checks || []).length, depends_on: t.depends_on || [] },
+  })), [tasks]);
+  const flowEdges = useMemo(() => tasks.flatMap((t) => (t.depends_on || []).map((d) => ({
+    id: `${d}->${t.id}`, source: d, target: t.id, type: "dagEdge",
+  }))), [tasks]);
+
   return (
     <div>
       <h1>Tool Trace</h1>
@@ -88,6 +100,11 @@ export default function Trace() {
         <span className={`pill ${auth.profile}`}>{auth.profile}</span>. No API keys, credentials
         or secrets are exposed.
       </p>
+      {tasks.length > 0 && (
+        <div style={{ marginBottom: 16, border: "1px solid var(--border)", borderRadius: 8, overflow: "hidden" }}>
+          <FlowCanvas nodes={flowNodes} edges={flowEdges} />
+        </div>
+      )}
       {err && <p className="err">{err}</p>}
       {traces.length === 0 && !err && <p className="lead">no tasks recorded yet</p>}
 

@@ -8,6 +8,7 @@ import { StudioHeader } from "./StudioHeader";
 import { CanvasPane } from "./chat/CanvasPane";
 import { ChatFeed } from "./chat/ChatFeed";
 import { Composer } from "./chat/Composer";
+import { McpMallPane } from "./chat/McpMallPane";
 import { exportCode, type ExportFormat } from "./chat/exportCode";
 
 interface ChatViewProps {
@@ -179,6 +180,7 @@ export default function ChatView({
         />
       )}
 
+      <McpMallPane objectiveGoal={objective?.goal} objectiveId={objective?.id} auto={true} />
       <Composer
         inputPrompt={inputPrompt}
         onInputChange={setInputPrompt}
