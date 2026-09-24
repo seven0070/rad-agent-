@@ -19,7 +19,10 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; connect-src 'self' http://127.0.0.1:* http://localhost:*; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:"
+      "csp": "default-src 'self'; script-src 'self'; connect-src 'self' http://127.0.0.1:* http://localhost:*; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; worker-src 'self' blob:; media-src 'self' blob: data:",
+      "dangerousDisableAssetCspModification": false,
+      "freezePrototype": true,
+      "pattern": { "use": "brownfield" }
     }
   },
   "bundle": {

@@ -61,6 +61,29 @@ class OpsMixin:
         if p == ["providers", "health"] and m == "GET":
             from rad.providers import provider_health_snapshot
             return 200, {"providers": provider_health_snapshot(self.home), "mode": "observability_only", "routing": "free-first unchanged"}
+        # ---- Observability SSE (T4 hardening) ----
+        # GET /v1/events/stream  -> Server-Sent Events stub (observability-only, loopback, bearer-gated)
+        # Real SSE is served by make_server._do when Accept: text/event-stream; this Api stub is for
+        # direct handler tests (no streaming transport) and keeps P0 observability unchanged.
+        if p == ["events", "stream"] and m == "GET":
+            # SSE observability: stream of global events as event: lines. Stub returns metadata.
+            return 200, {
+                "sse": True,
+                "endpoint": "/v1/events/stream",
+                "mode": "observability_only",
+                "content_type": "text/event-stream",
+                "note": "SSE observability stub — real stream is HTTP event-stream when Accept: text/event-stream",
+                "events_stream": "~/.rad/events.jsonl",
+                "observability": "provider_health + ledger + events",
+            }
+        if p == ["observability", "stream"] and m == "GET":
+            return 200, {
+                "sse": True,
+                "endpoint": "/v1/observability/stream",
+                "mode": "observability_only",
+                "content_type": "text/event-stream",
+                "sources": ["events", "provider_health", "ledger"],
+            }
         if p == ["skills", "search"] and m == "GET":
             # P0 marketplace search read-only (observability): filter connected skills by q, no install
             query = (q.get("q") or q.get("query") or "").lower().strip()

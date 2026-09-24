@@ -1,0 +1,22 @@
+{
+  "stub": true,
+  "comment": "Desktop Installers signing stub — T4 hardening. CI signs with real cert; dev stub verifies pipeline without secret.",
+  "tauri_signing": {
+    "enabled": false,
+    "privateKey": null,
+    "publicKey": null,
+    "note": "Run `tauri signer generate -w ~/.tauri/myapp.key` and set TAURI_SIGNING_PRIVATE_KEY in CI to enable."
+  },
+  "windows": {
+    "signing_identity": null,
+    "digestAlgorithm": "sha256",
+    "timestampUrl": "http://timestamp.digicert.com",
+    "note": "Windows MSI/NSIS signing: set APPLE/WINDOWS_CERT env in CI (see desktop.yml). Stub passes without cert."
+  },
+  "macos": {
+    "signing_identity": null,
+    "providerShortName": null,
+    "note": "macOS signing: Apple Developer ID. Stub passes without cert."
+  },
+  "verify": "Signing stub is VERIFIED-only: installer build without cert still produces unsigned artifact; CI gate checks stub exists and does not claim signed."
+}
