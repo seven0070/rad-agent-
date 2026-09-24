@@ -233,6 +233,7 @@ def test_executor_truncates_output_and_stops_at_tool_budget(home, ws, scripted):
 # ---------------------------------------------------------------- checkpoints & crash recovery
 
 def test_checkpoint_written_and_intact(home, ws, scripted):
+    home.update(accept_unverified_done=True)  # v3 default False; this checkpoint test needs UNVERIFIED completion
     plan = {"tasks": [{"id": "t1", "text": "a", "depends_on": [], "checks": []}]}
     scripted.script = [([], "DONE")]
     ctl = _ctl(home, scripted, plan)
