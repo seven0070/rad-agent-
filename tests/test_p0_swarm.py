@@ -124,3 +124,10 @@ def test_skills_search_live(tmp_path):
     assert isinstance(out, list)
     # search parity: listing via home.skills() also live
     assert isinstance(home.skills(), dict)
+    # P0 marketplace search read-only endpoint
+    from rad.api import Api
+    api = Api(home)
+    status, payload = api.handle("GET", "/v1/skills/search", {"q": "demo"}, {})
+    assert status == 200
+    assert payload["mode"] == "read_only"
+    assert "results" in payload

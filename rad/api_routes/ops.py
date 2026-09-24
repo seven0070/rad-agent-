@@ -61,6 +61,20 @@ class OpsMixin:
         if p == ["providers", "health"] and m == "GET":
             from rad.providers import provider_health_snapshot
             return 200, {"providers": provider_health_snapshot(self.home), "mode": "observability_only", "routing": "free-first unchanged"}
+        if p == ["skills", "search"] and m == "GET":
+            # P0 marketplace search read-only (observability): filter connected skills by q, no install
+            query = (q.get("q") or q.get("query") or "").lower().strip()
+            from rad.skills import audit as skills_audit
+            # read-only: audit returns already-connected skills; treat as marketplace catalog stub
+            catalog = skills_audit(self.home)
+            # stub catalog when empty (observability demo)
+            if not catalog:
+                catalog = [{"name": "demo-skill", "approval": "ask", "trust": "local", "capabilities": ["fs.read"], "tools": 1, "flags": []}]
+            if query:
+                filtered = [c for c in catalog if query in c.get("name","").lower() or query in " ".join(c.get("capabilities",[])).lower()]
+            else:
+                filtered = catalog
+            return 200, {"query": query, "results": filtered[:20], "total": len(filtered), "mode": "read_only", "install": "disabled_in_P0"}
         if p == ["benchmarks"] and m == "GET":
             from rad import lab_banks
             from rad.battery import Benchmark
