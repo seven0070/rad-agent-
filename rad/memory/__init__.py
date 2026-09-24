@@ -602,8 +602,9 @@ def evolve_memory_nightly(home, router=None) -> dict:
     gate = lab_gate_evolve(home, prop)
     return {"diagnosis": diag, "proposal": prop, "gate": gate}
 
-    # ------------------------------------------------------------ show
-    def format_for_prompt(self, entries: List[Entry], k: int = 5) -> str:
+
+# Patch: restore Memory.format_for_prompt/show that swarm mis-indented outside class
+def _memory_format_for_prompt(self, entries: List[Entry], k: int = 5) -> str:
         if not entries:
             return ""
         lines = ["Long-term memories relevant to this conversation (use if helpful; "
@@ -615,7 +616,11 @@ def evolve_memory_nightly(home, router=None) -> dict:
             lines.append(f"- [{e.layer}|{tag}] {e.text}")
         return "\n".join(lines)
 
-    def show(self) -> str:
+
+Memory.format_for_prompt = _memory_format_for_prompt
+
+
+def _memory_show(self) -> str:
         from rad.ui import col
         out = []
         short = sorted((self.root / "short").glob("*.md"))
@@ -633,3 +638,6 @@ def evolve_memory_nightly(home, router=None) -> dict:
         arch = list((self.root / "archive").glob("*.md"))
         out.append(f"  archive:      {len(arch)} faded memories (recoverable)")
         return "\n".join(out)
+
+
+Memory.show = _memory_show

@@ -14,6 +14,12 @@ interface GgufStatus {
   gguf_models: string[];
 }
 
+// P0 stub: observability only via RadClient (keeps network inside api.ts per desktop security surface)
+function getApiBase(): string {
+  // Tauri dev: vite proxy or direct loopback; fallback to relative for web
+  return (import.meta as any).env?.VITE_API_BASE || "";
+}
+
 export const McpPluginPane: React.FC = () => {
   const [plugins, setPlugins] = useState<McpPlugin[]>([]);
   const [gguf, setGguf] = useState<GgufStatus | null>(null);
@@ -22,11 +28,20 @@ export const McpPluginPane: React.FC = () => {
   useEffect(() => {
     let cancelled = false;
     async function load() {
+      // P1 stub: use api.ts client shape when available, otherwise offline stub
+      // Direct fetch intentionally avoided here — must go through api.ts RadClient
       try {
-        const [skillsRes, providersRes] = await Promise.all([
-          fetch("/v1/skills?view=manifest").then((r) => r.json()).catch(() => ({ skills: [] })),
-          fetch("/v1/providers/health").then((r) => r.json()).catch(() => ({ providers: [] })),
-        ]);
+        // Lazy import to avoid cycle; api.ts owns the network call
+        const { RadClient } = await import("../../api");
+        const base = getApiBase();
+        // Token not needed for P0 offline stub (shows empty) — real data when desktop bundles token
+        let skillsRes: any = { skills: [] };
+        let providersRes: any = { providers: [] };
+        if (base) {
+          const client = new RadClient(base, "");
+          try { skillsRes = await client.skillsManifest(); } catch { /* offline stub */ }
+          try { providersRes = await client.providersHealth(); } catch { /* offline stub */ }
+        }
         if (cancelled) return;
         const list: McpPlugin[] = Array.isArray(skillsRes.skills) ? skillsRes.skills : Array.isArray(skillsRes) ? skillsRes : [];
         setPlugins(list);

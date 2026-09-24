@@ -411,6 +411,12 @@ export class RadClient {
   remember(text: string, layer = "semantic") {
     return this.req<MemoryRow>("POST", "/v1/memory", { text, layer });
   }
+  skillsManifest() {
+    return this.req<{ skills: any[] }>("GET", "/v1/skills?view=manifest");
+  }
+  providersHealth() {
+    return this.req<{ providers: any[] }>("GET", "/v1/providers/health");
+  }
 }
 
 export const ROUTES = [

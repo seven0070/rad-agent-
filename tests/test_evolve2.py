@@ -15,7 +15,7 @@ def _fake_home(tmp_path, monkeypatch):
 
 def test_task_bank_complete(home):
     cats = {t["category"] for t in _tasks()}
-    assert cats == {"math", "logic", "code", "tool", "json", "summarize", "style"}
+    assert cats == {"math", "logic", "code", "tool", "json", "summarize", "style", "retrieval", "router"}
     assert len(_tasks()) >= 15
 
 

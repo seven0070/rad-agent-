@@ -39,12 +39,12 @@ class ConfigIssue:
 CONFIG_TYPES: Dict[str, Tuple[type, ...]] = {
     "workspace": (str, type(None)), "free_lock": (bool,), "auto": (bool,), "force_provider": (str, type(None)),
     "model": (str, type(None)), "edge0_url": (str,), "edge0_tier": (str,), "ollama_url": (str,), "lmstudio_url": (str,),
-    "vision_order": (list, type(None)), "tts": (str,), "stt": (str,), "max_tool_rounds": (int,),
+    "vision_order": (list, type(None)), "tts": (str,), "stt": (str,), "voice_backend": (str,), "max_tool_rounds": (int,),
     "max_context_chars": (int,), "memory_k": (int,), "sleep_threshold_hours": (int, float), "drive_folder": (str,),
     "watch_every_min": (int, float), "custom_providers": (list,), "allow_outside_workspace": (bool,),
     "plan_infer_done": (bool,), "objective_parallel": (int,), "accept_unverified_done": (bool,),
     "evolution_require_approval": (bool,), "evolution_suite": (str,), "allow_api_fix": (bool,), "api_port": (int,),
-    "allow_localhost_web": (bool,), "tool_router": (str,),
+    "allow_localhost_web": (bool,), "tool_router": (str,), "memory.evolve": (bool,),
 }
 CONFIG_RANGES: Dict[str, Tuple[Any, Any]] = {
     "max_tool_rounds": (1, 50), "max_context_chars": (2000, 400000), "memory_k": (0, 50),
@@ -54,6 +54,7 @@ CONFIG_ENUMS: Dict[str, set] = {
     "edge0_tier": {"10b", "35b"}, "tts": {"auto", "piper", "openai", "off"}, "stt": {"auto", "whisper", "openai", "off"},
     "evolution_suite": {"smoke", "long", "adversarial", "all"},
     "tool_router": {"existing", "needle"},
+    "voice_backend": {"auto", "ten", "fallback", "text"},
 }
 
 
