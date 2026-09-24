@@ -1,8 +1,15 @@
 # Rad Omarchy Manual — opinionated defaults (N5)
 
-Rad v3.2 — **v3.1 polish carried forward** (4243386, 919 tests, 11 cats, Desktop CSP, SSE) — this manual is the single source of truth for the 11-repo fusion. All 11 repos below are fetched as inspiration (not vendored); every borrow has an integration point and a lab-gated test.
+Rad v3.3 — **v3.2 carried forward + v3.3 swarm polish** (c88428c → feature/3.3, 940+ tests, 11 cats, Docker+x402, recall <200ms) — this manual is the single source of truth for the 11-repo fusion. All 11 repos below are fetched as inspiration (not vendored); every borrow has an integration point and a lab-gated test.
 
-Rad v3.2 is **opinionated** (omarchy style). These defaults ship out-of-the-box, lab-gated, VERIFIED-only. v3.2 polish: Voice TEN e2e hardening (VAD→STT→LLM→TTS + fallback), manual completeness, Desktop CI reliability.
+Rad v3.3 is **opinionated** (omarchy style). These defaults ship out-of-the-box, lab-gated, VERIFIED-only. v3.3 polish: Docker Swarm isolation + x402 USDC for MCP marketplace, sqlite-vss HNSW recall tuning (<200ms P95), docs completeness + release notes, `rad acceptance` 50-item green.
+
+## v3.3 Polish (carries v3.2: TEN + Manual + CI)
+
+- **Docker Swarm (Agent M)**: `rad/agent_swarm.py` hardens `agent-swarm` — `DOCKER_ISOLATION` pinned (read_only_root, no_new_privileges, cap_drop ALL, network none, pids 128, mem 512m, secrets never injected), lab-gated, VERIFIED-only, no shell bypass (Executor→Sandbox→Policy). `DockerSwarm.spawn_isolated` checks `check_no_secrets_leak` via `policy.redact` and workspace jail; `spawn_many` parallel capped at 8.
+- **x402 USDC (Agent M)**: `rad/x402.py` — USDC micropay for MCP marketplace (McpMallPane, now with x402_price). `create_payment` / `verify_payment` / `micropay_for_mcp` (USDC on Base, 0.02 default, 0.001–10 range), `mall_publish` keeps `x402` flow `invent->MCP->publish->x402`; `McpMallPane.tsx` shows x402 note and per-skill price. Lab-gated; no chain required (stub verified).
+- **Performance recall (Agent N)**: `rad/memory/vss.py` + `rad/memory/__init__.py` HNSW tuning — `M=16 ef_construction=200 ef_search=64 cosine dim384` (`CREATE VIRTUAL TABLE … USING vss0(... M=16)`), token-set cache per entry → ~10× faster recall, `benchmark_recall` harness reports p50/p95/p99 and gates P95 <200ms even with 500 memories.
+- **Docs + Release (Agent O)**: this manual updated to v3.3, `docs/RELEASE_v3.3.md` full notes, `README.md` v3.3 line, `tests/test_v3_3_docs_release.py` pins 50-item gate + manual completeness; `rad acceptance` 50-item stays green.
 
 ## v3.2 Polish (carries v3.1: Battery 3.0 + Desktop + Observability)
 
@@ -14,7 +21,7 @@ Rad v3.2 is **opinionated** (omarchy style). These defaults ship out-of-the-box,
 
 Rad v3 is **opinionated** (omarchy style). These defaults ship out-of-the-box, lab-gated, VERIFIED-only.
 
-## Defaults (v3.0 — carried into v3.2)
+## Defaults (v3.0 — carried into v3.3)
 
 - `objective_parallel = 8`  — 1h -> 2m swarm (was 2). Only with `--auto`; no unbounded fork.
 - `accept_unverified_done = false` — **VERIFIED-only**. A `DONE:` without machine checks is `FAILED`, never `COMPLETED`. 16/60 VERIFIED gate.
@@ -23,13 +30,13 @@ Rad v3 is **opinionated** (omarchy style). These defaults ship out-of-the-box, l
 - `budget = 60 tool_calls / 16 tasks` — hard caps, not suggestions.
 - `lab_gated` — every evolution/promotion/harness needs lab suite pass.
 
-## 11-Repo Fusion — Full Table (v3.2 completeness)
+## 11-Repo Fusion — Full Table (v3.3 completeness)
 
 > All 11 repos are fetched as inspiration, not vendored. Each row shows source, what Rad borrows, and where it lands.
 
 | # | repo | source | what Rad borrows | where it lands in Rad |
 |---|------|--------|------------------|-----------------------|
-| 1 | **appsmith** | appsmithorg/appsmith | auto-panel UX (dynamic property panes, widget auto-layout) | `desktop/src/components/chat/McpMallPane.tsx` — McpMallPane auto panel for MCP tools |
+| 1 | **appsmith** | appsmithorg/appsmith | auto-panel UX (dynamic property panes, widget auto-layout) | `desktop/src/components/chat/McpMallPane.tsx` — McpMallPane auto panel for MCP tools + x402 |
 | 2 | **magnitude** | open-webui/magnitude (hardware profiler) | hardware profiler → Qwen3 GGUF per RAM bucket (3B/4B/8B/14B) | `rad/hardware.py` + `rad/battery.py` magnitude tier; `rad web` model picker |
 | 3 | **buzz** | chris-titus/buzz / nostr relay gossip | nostr relay gossip abstraction (relay → blackboard bus) | `rad/agents/blackboard/` + `rad/control/blackboard.py` — gossip over Nostr-like relay |
 | 4 | **roboflow** | roboflow/roboflow vision | few-shot detector (10 shots) + inference API | `rad/tools.py: see_image` + `rad/vision/` — Roboflow Vision few-shot via ComfyUI nodes |
@@ -41,40 +48,44 @@ Rad v3 is **opinionated** (omarchy style). These defaults ship out-of-the-box, l
 | 10 | **langflow** | langflow-ai/langflow | flow UX for DAG (node palette, edge routing) | `desktop/src/pages/Trace.tsx` + `FlowCanvas` — Langflow flow UX |
 | 11 | **omarchy** | basecamp/omarchy | opinionated defaults + OS fork stub (arch+hyprland+waybar) | `manual/README.md` (this file) + `rad/omarchy_os.py` — rad-omarchy OS manifest |
 
-Additional borrow context: `roboflow vision` shares the ComfyUI node path (`rad/vision` → ComfyUI nodes), `buzz` + `openmausbot` + `agent-zero` together form the Hive blackboard, `magnitude` + `flue` inform the hardware-aware harness sizing.
+Additional: v3.3 adds `rad/agent_swarm.py` (Docker swarm, hardened) + `rad/x402.py` (USDC x402 for McpMallPane) + `rad/memory/vss.py` (sqlite-vss HNSW). `roboflow vision` shares ComfyUI node path (`rad/vision` → ComfyUI nodes), `buzz` + `openmausbot` + `agent-zero` together form the Hive blackboard, `magnitude` + `flue` inform hardware-aware harness sizing. `agent-swarm` Docker isolation uses `rad/sandbox.py` + `rad/policy.py` (no shell bypass).
 
 ### Fusion verification
 
-- Each repo has a `tests/test_v3_*.py` assertion (11-cat battery, desktop CSP, SSE, TEN, manual completeness).
+- Each repo has a `tests/test_v3_*.py` assertion (11-cat battery, desktop CSP, SSE, TEN, manual completeness, Docker+x402, recall HNSW).
 - `rad/omarchy_os.py` manifest = `rad-omarchy` fork stub (not a real ISO — overlay `arch+hyprland+waybar` with Rad as the command loop). Lab-gated: `rad acceptance` must pass before any promotion.
+- v3.3: `rad/agent_swarm.py` Docker isolation + `rad/x402.py` x402 + `rad/memory/vss.py` HNSW all lab-gated and VERIFIED-only.
 
 ## Tracks
 
-- **Normal**: N1 Magnitude, N2 FlowCanvas, N3 Harness, N4 McMallPane, N5 Omarchy defaults.
-- **Non-normal**: X1 Hive, X2 Vision, X3 Self-Writing Mall (x402 kept), X4 Omarchy OS stub.
+- **Normal**: N1 Magnitude, N2 FlowCanvas, N3 Harness, N4 McMallPane (now +x402), N5 Omarchy defaults.
+- **Non-normal**: X1 Hive, X2 Vision, X3 Self-Writing Mall (x402 kept, now USDC), X4 Omarchy OS stub.
 - **Weird**: Dream Gym, Genetic PSO, Time-Travel replay, Red Cell, DAO swarm, Embodied edge.
+- **v3.3 additions**: Docker Swarm isolation (M), sqlite-vss HNSW recall (N), Docs/Release (O).
 
 ## Verification
 
 - Every track has `tests/test_v3_*.py` with lab-gated, VERIFIED-only assertions.
 - `lab_gate` in evolution/memory: no promotion without `battery` suite.
 - Blackboard at `~/.rad/agents/blackboard/` is the shared relay — inspect with `rad agents bus`.
+- v3.3: `rad/memory/vss.py` benchmark gates P95 <200ms; `rad/agent_swarm.py` isolation + no-leak gated; `docs/RELEASE_v3.3.md` is the v3.3 source of truth alongside this manual.
 
 ## OS Fork (X4)
 
 `rad/omarchy_os.py` is a manifest stub — no ISO built. Real fork would overlay arch+hyprland+waybar with rad as the loop.
 
-## Install — Full 11-Repo Fusion (v3.2)
+## Install — Full 11-Repo Fusion (v3.3)
 
 > One-line base + per-capability extras. All 11 repos are inspiration only; nothing is vendored.
 
 ```bash
-# 0. Base (required) — 919 tests, VERIFIED-only lab gate
+# 0. Base (required) — 940+ stays green, VERIFIED-only lab gate
 git clone https://github.com/seven0070/rad-agent-.git && cd rad-agent-
+git checkout v3.3
 python -m pip install -U pip
 pip install -e ".[dev]"          # dev = pytest + pytest-xdist (for `pytest -q -n auto`)
 rad doctor --offline             # no keys needed
-pytest -q -n auto                # must stay 919+ (no -n auto OOM)
+pytest -q -n auto --dist worksteal  # must stay 940+ (no OOM, worksteal)
 ```
 
 ```bash
@@ -87,7 +98,7 @@ rad chat --voice --voice-backend fallback        # force Piper/Whisper
 ```
 
 ```bash
-# 2. Desktop (Tauri + Rust) — McpMallPane (Appsmith) + FlowCanvas (Langflow/ComfyUI)
+# 2. Desktop (Tauri + Rust) — McpMallPane (Appsmith) + FlowCanvas (Langflow/ComfyUI) + x402
 cd desktop
 npm ci && npm run build         # frontendDist for tauri.conf
 npx tsc --noEmit
@@ -95,24 +106,39 @@ npx tsc --noEmit
 cargo check --manifest-path src-tauri/Cargo.toml
 cargo clippy -- -D warnings
 cargo build
-cd .. && pytest -q tests/test_desktop*.py
+cd .. && pytest -q tests/test_desktop*.py tests/test_v3_3_agent_m*.py
 ```
 
 ```bash
-# 3. Vision (Roboflow 10-shot via ComfyUI nodes)
+# 3. Docker Swarm + x402 (Agent M) — hardened isolation, USDC marketplace
+RAD_DOCKER=1 pytest -q tests/test_v3_3_agent_m_docker_x402.py -v
+python -c "from rad.agent_swarm import swarm_health; from rad.home import RadHome; print(swarm_health(RadHome('/tmp/.rad')))"
+python -c "from rad.x402 import x402_health; print(x402_health())"
+# McpMallPane x402: desktop/src/components/chat/McpMallPane.tsx (x402_price)
+```
+
+```bash
+# 4. Recall performance (Agent N) — sqlite-vss HNSW <200ms P95
+pytest -q tests/test_v3_3_perf_recall.py -v
+python -c "from rad.memory.vss import hnsw_config, explain_hnsw; print(explain_hnsw())"
+```
+
+```bash
+# 5. Vision (Roboflow 10-shot via ComfyUI nodes)
 # No extra pip — uses rad/tools.py:see_image (provider chain handles vision model)
 # Pin vision model: meta/llama-3.2-11b-vision-instruct (Nvidia NIM)
 rad see ./photo.jpg "what do you see?"
 ```
 
 ```bash
-# 4. Omarchy OS fork stub (arch+hyprland+waybar + rad as loop)
+# 6. Omarchy OS fork stub (arch+hyprland+waybar + rad as loop)
 python -c "from rad.omarchy_os import omarchy_manifest; print(omarchy_manifest())"
 cat manual/README.md             # this file = single source of truth
+cat docs/RELEASE_v3.3.md         # v3.3 release notes
 ```
 
 ```bash
-# 5. Observability + Replay
+# 7. Observability + Replay
 rad serve --port 7331 &          # loopback-only, bearer token
 curl -H "Authorization: Bearer $(cat ~/.rad/api.token)" http://127.0.0.1:7331/v1/events/stream -H "Accept: text/event-stream"
 rad trace <objective-id>         # FlowCanvas DAG
@@ -123,14 +149,18 @@ rad why "claim or artifact path"
 Verify after install:
 
 ```bash
-rad acceptance                   # 50-item gate, VERIFIED-only
+rad acceptance                   # 50-item gate, VERIFIED-only (see docs/RELEASE_v3.3.md)
 rad benchmark bank --sample 4    # lab banks, 11 cats
 ```
 
 ## Quick start
 
 ```bash
-rad objective create "build a CLI that counts words" --auto  # parallel 8, VERIFIED-only
-rad web  # Studio v3 + FlowCanvas
+rad objective create "build a CLI that counts words" --auto  # parallel 8, VERIFIED-only, Docker swarm optional
+rad web  # Studio v3 + FlowCanvas + McpMallPane (x402)
 rad --help  # see manual/
 ```
+
+## Release — v3.3
+
+Source: `main@c88428c` (v3.2) → `feature/3.3` (M/N/O) → `main` + tag `v3.3` + `rad-desktop-3.3`. Details: `docs/RELEASE_v3.3.md`.
