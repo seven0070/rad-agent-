@@ -149,6 +149,33 @@ class TaskGraph:
     def to_list(self) -> List[Dict]:
         return [self.tasks[i].to_dict() for i in self.order]
 
+    # ------------------------------------------------------------ FlowCanvas (N2: Langflow/ComfyUI style)
+    def to_flow(self) -> Dict[str, List[Dict]]:
+        """Export TaskGraph as Langflow/ComfyUI-style flow for FlowCanvas.tsx.
+
+        Nodes carry task status/position; edges derived from depends_on.
+        Positions are deterministic grid layout (no LLM).
+        """
+        nodes: List[Dict] = []
+        edges: List[Dict] = []
+        topo = self.topological()
+        cols = max(1, int(len(topo) ** 0.5) + 1)
+        for idx, tid in enumerate(topo):
+            t = self.tasks[tid]
+            x = (idx % cols) * 220
+            y = (idx // cols) * 140
+            nodes.append({
+                "id": t.id,
+                "type": "taskNode",
+                "position": {"x": x, "y": y},
+                "data": {"label": t.text[:60], "status": t.status, "checks": len(t.checks or []),
+                         "depends_on": list(t.depends_on)},
+                "style": {"status": t.status},
+            })
+            for dep in t.depends_on:
+                edges.append({"id": f"{dep}->{tid}", "source": dep, "target": tid, "type": "dagEdge"})
+        return {"nodes": nodes, "edges": edges}
+
     @classmethod
     def from_list(cls, items: List[Dict]) -> "TaskGraph":
         return cls(Task.from_dict(d) for d in items)
