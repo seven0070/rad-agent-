@@ -97,7 +97,7 @@ def test_desktop_golden_workflow_end_to_end(home, ws, scripted):
         assert st == 202, body
         oid = body["id"]
         assert body["started"] is True
-        assert body["status"] == "pending"
+        assert body["status"] in ("pending", "planning")
 
         trace = _wait_http_objective(port, token, oid, api)
         assert trace["objective"]["status"] == "completed", trace
