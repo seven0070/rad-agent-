@@ -915,6 +915,42 @@ def cmd_install(args) -> int:
     return 0
 
 
+def cmd_tribe(args) -> int:
+    """RadTribe — Meta TRIBE v2 mapped into Rad (in-silico routing prior)."""
+    from rad.tribe import MultimodalEvent, TribeEncoder
+    import time as _time
+    home = _home(args)
+    enc = TribeEncoder(home)
+    act = args.tribe_action
+    if act == "show":
+        st = enc.stats()
+        print(col.bold("  RadTribe — multimodal encoder (text/vision/audio → regions)"))
+        for m, w in sorted(st["weights"].items(), key=lambda x: -x[1]):
+            print(f"    {m:<8} w={w:.3f}")
+        print(f"  lag window: {st['lag_seconds']:.0f}s · observations: {st['observations']}")
+        print(col.dim("  advisory prior only — the control plane still decides"))
+        return 0
+    if act == "predict":
+        text = " ".join(args.tribe_term)
+        if not text and not getattr(args, "image", False) and not getattr(args, "audio", False):
+            fail("usage: rad tribe predict <text...> [--image] [--audio]")
+            return 1
+        ev = MultimodalEvent(text=text, has_image=bool(getattr(args, "image", False)),
+                             has_audio=bool(getattr(args, "audio", False)), at=_time.time())
+        energy = enc.activation_energy(ev)
+        print(col.bold(f"  predicted activation: {energy:.2f}"))
+        for r in enc.suggest_regions(ev):
+            print(f"    • {r}  {enc.roi_map(ev)[r]:.2f}")
+        return 0
+    if act == "calibrate":
+        res = enc.calibrate_from_connectome()
+        ok(f"calibrated from {res['source']}: " +
+           ", ".join(f"{m}={w:.3f}" for m, w in sorted(res["weights"].items())))
+        return 0
+    fail(f"unknown tribe action: {act}")
+    return 1
+
+
 def cmd_connectome(args) -> int:
     """RadConnectome — fruit fly brain wiring for Rad (neuPrint for agents)."""
     from rad.connectome import Connectome, ingest_objective_events
@@ -1944,6 +1980,14 @@ def build_parser() -> argparse.ArgumentParser:
                              "projectome", "suggest", "replay"])
     co.add_argument("connectome_term", nargs="*")
     co.set_defaults(fn=cmd_connectome)
+
+    tr = sub.add_parser("tribe", help="RadTribe — multimodal encoding prior (TRIBE v2 mapped in)")
+    tr.add_argument("tribe_action", nargs="?", default="show",
+                    choices=["show", "predict", "calibrate"])
+    tr.add_argument("tribe_term", nargs="*")
+    tr.add_argument("--image", action="store_true", help="predict: stimulus includes an image")
+    tr.add_argument("--audio", action="store_true", help="predict: stimulus includes audio")
+    tr.set_defaults(fn=cmd_tribe)
 
     v = sub.add_parser("version", help="version"); v.set_defaults(fn=cmd_version)
     return p
