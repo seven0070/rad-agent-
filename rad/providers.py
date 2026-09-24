@@ -368,15 +368,51 @@ def find_key(home: RadHome, spec: ProviderSpec) -> Optional[str]:
 
 # ---------------------------------------------------------------- local probing
 
+def detect_gguf_import(spec: ProviderSpec) -> dict:
+    """P1 stub: GGUF import detection for Ollama (rad/providers probe_local extension).
+    Returns {supported: bool, reason: str, gguf_models: []}. Offline-safe."""
+    if spec.name != "ollama":
+        return {"supported": False, "reason": "only ollama supports GGUF import", "gguf_models": []}
+    # stub: check if ollama reachable then GGUF import is supported (ollama create from GGUF)
+    # future: inspect OLLAMA_MODELS dir for *.gguf, call ollama show --modelfile
+    try:
+        base = spec.base_url.rsplit("/v1", 1)[0]
+        status, _, body = _http(base + "/api/tags", None, {}, 1.2)
+        gguf_models = []
+        if status == 200:
+            try:
+                names = [m.get("name","") for m in json.loads(body.decode()).get("models", [])]
+                gguf_models = [n for n in names if "gguf" in n.lower() or n.lower().endswith(".gguf")]
+            except Exception:
+                gguf_models = []
+            return {"supported": True, "reason": "ollama reachable: GGUF import via ollama create", "gguf_models": gguf_models}
+        return {"supported": True, "reason": "ollama GGUF import stub (offline: ollama create from GGUF when reachable)", "gguf_models": []}
+    except Exception as e:
+        return {"supported": True, "reason": "ollama GGUF import stub (offline: " + str(e)[:60] + ")", "gguf_models": []}
+
 def probe_local(spec: ProviderSpec) -> Tuple[bool, List[str]]:
-    """Return (reachable, model_names)."""
+    """Return (reachable, model_names). P1: also populates GGUF detection for ollama."""
     try:
         if spec.name == "ollama":
             base = spec.base_url.rsplit("/v1", 1)[0]
             status, _, body = _http(base + "/api/tags", None, {}, 1.2)
             if status == 200:
                 names = [m.get("name") for m in json.loads(body.decode()).get("models", []) if m.get("name")]
+                # P1 GGUF detection: annotate spec with GGUF support (observability)
+                try:
+                    gguf = [n for n in names if "gguf" in n.lower() or n.lower().endswith(".gguf")]
+                    # store on spec for health snapshot (non-breaking)
+                    spec._gguf_models = gguf  # type: ignore
+                    spec._gguf_supported = True  # type: ignore
+                except Exception:
+                    pass
                 return True, names
+            # offline stub: still report GGUF import as supported (ollama create)
+            try:
+                spec._gguf_supported = True  # type: ignore
+                spec._gguf_models = []  # type: ignore
+            except Exception:
+                pass
             return False, []
         status, _, body = _http(spec.base_url + "/models", None, {}, 1.2)
         if status == 200:
