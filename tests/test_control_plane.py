@@ -209,6 +209,7 @@ def test_persistent_false_done_exhausts_retries_then_needs_user(home, ws, script
 # ---------------------------------------------------------------- unverifiable tasks are labelled, not laundered
 
 def test_task_without_checks_is_recorded_unverified(home, ws, scripted):
+    home.update(accept_unverified_done=True)  # v3 VERIFIED-only default False; this test explicitly allows UNVERIFIED
     plan = {"tasks": [{"id": "t1", "text": "think about it", "depends_on": [], "checks": []}]}
     scripted.script = [([], "DONE: thought")]
     ctl = _ctl(home, scripted, plan)

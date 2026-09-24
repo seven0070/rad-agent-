@@ -232,7 +232,7 @@ def test_long_horizon_objective_with_mixed_failures(home, ws):
                 self.tool_runner(tool, args, self.ctx)
             return reply
 
-    home.update(objective_parallel=3)
+    home.update(objective_parallel=3, accept_unverified_done=True)  # v3 VERIFIED-only would block review task without checks
     ctl = Controller(home, session_factory=LH, llm=_plan_llm(plan), quiet=True)
     obj = ctl.run(ctl.create("long horizon", auto=True))
     assert obj.status == ObjectiveStatus.NEEDS_USER

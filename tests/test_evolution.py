@@ -50,10 +50,11 @@ def test_validate_rejects_everything_outside_behaviour_surface():
 
 def test_apply_changes_creates_generation_and_touches_only_whitelisted(home):
     before = home.cfg.copy()
-    gen = apply_changes(home, {"dna": {"style": ["be brief"]}, "config": {"accept_unverified_done": False}}, "t")
+    target = not before["accept_unverified_done"]
+    gen = apply_changes(home, {"dna": {"style": ["be brief"]}, "config": {"accept_unverified_done": target}}, "t")
     dna = Evolver(home).load()
     assert dna["generation"] == gen == 1 and dna["style"] == ["be brief"]
-    assert home.cfg["accept_unverified_done"] is False
+    assert home.cfg["accept_unverified_done"] is target
     assert {k for k in before if before[k] != home.cfg[k]} == {"accept_unverified_done"}
     with pytest.raises(InvalidCandidate):
         apply_changes(home, {"config": {"free_lock": True}}, "t")
@@ -116,13 +117,15 @@ def test_approval_required_flow(home):
 
 
 def test_rollback_restores_dna_and_config(home):
+    before_val = home.cfg["accept_unverified_done"]
+    target = not before_val
     evo = Evolution(home, lab_runner=fake_lab({"base": GOOD, "cand": GOOD}))
-    c = evo.run("x", {"dna": {"style": ["new"]}, "config": {"accept_unverified_done": False}}, "user")
-    assert c.status == "promoted" and home.cfg["accept_unverified_done"] is False
+    c = evo.run("x", {"dna": {"style": ["new"]}, "config": {"accept_unverified_done": target}}, "user")
+    assert c.status == "promoted" and home.cfg["accept_unverified_done"] is target
     assert evo.rollback(c)
     dna = Evolver(home).load()
     assert dna["style"] != ["new"] and dna["generation"] == 0
-    assert home.cfg["accept_unverified_done"] is True
+    assert home.cfg["accept_unverified_done"] is before_val
     assert evo.get(c.id).status == "rolled_back"
     assert not evo.rollback(c)                                    # idempotent
 
@@ -156,6 +159,7 @@ def test_propose_from_direction_does_not_touch_real_dna(home):
 
 
 def test_propose_from_evidence(home):
+    home.update(accept_unverified_done=True)  # v3 default is False; need True to trigger machine-verified proposal
     rep = {"results": [R("a", success=False, honesty=0), R("b", safety=0), R("c", verified="UNVERIFIED")]}
     props = propose_from_evidence(home, rep)
     whys = " | ".join(p["why"] for p in props)
