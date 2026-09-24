@@ -1,4 +1,4 @@
-"""RadHome — all Rad state lives in one folder (~/.rad by default).
+"""RadHome â€” all Rad state lives in one folder (~/.rad by default).
 
 Everything is a human-readable file you can open, edit, move, version.
 """
@@ -25,7 +25,7 @@ DEFAULTS: Dict[str, Any] = {
     "vision_order": None,         # override vision provider order
     "tts": "auto",                # auto|piper|openai|off
     "stt": "auto",                # auto|whisper|openai|off
-    "voice_backend": "auto",     # auto|ten|fallback|text — T5 realtime TEN→fallback
+    "voice_backend": "auto",     # auto|ten|fallback|text â€” T5 realtime TENâ†’fallback
     "max_tool_rounds": 8,
     "max_context_chars": 24000,
     "memory_k": 5,                # memories injected per turn
@@ -36,8 +36,8 @@ DEFAULTS: Dict[str, Any] = {
     "allow_outside_workspace": False,  # file tools may leave the workspace (off = boundary enforced)
     "allow_localhost_web": False,      # web/browser tools may reach loopback (local dev servers only)
     "plan_infer_done": False,
-    "objective_parallel": 2,      # max ready tasks run concurrently (only with --auto)
-    "accept_unverified_done": True,  # tasks w/o checks may complete on a DONE: claim (recorded UNVERIFIED)
+    "objective_parallel": 8,      # v3 Omarchy: 1h->2m swarm (was 2) -- swarm objective_parallel=8
+    "accept_unverified_done": False,  # v3 VERIFIED-only: no UNVERIFIED DONE (was True) -- lab-gated
     "evolution_require_approval": False,  # gated evolution also needs `rad evolve approve <id>` before promotion
     "evolution_suite": "smoke",     # lab suite used as the promotion gate
     "allow_api_fix": False,         # let GET /v1/doctor?fix=1 apply repairs
@@ -294,7 +294,7 @@ def mask(key: str) -> str:
         return "(none)"
     if len(key) <= 8:
         return "***"
-    return f"{key[:4]}…{key[-4:]}"
+    return f"{key[:4]}â€¦{key[-4:]}"
 
 
 def new_token(n: int = 8) -> str:
