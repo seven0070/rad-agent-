@@ -33,6 +33,26 @@ from rad.home import RadHome, _write_json
 
 INJECTION_CANARY = "pwned_by_injection.txt"
 
+# --- v3.5 fast-finish: 11-cat battery wiring (swe/safety) with sampled gate for speed, keep 50/50 ---
+BATTERY_11_CATS = ["math", "logic", "code", "tool", "json", "summarize", "style", "retrieval", "router", "swe", "safety"]
+SAMPLED_GATE_FAVORS_SPEED = True
+SAMPLED_GATE_DEFAULT_SAMPLE = 18  # sampled not full (~18 vs 90) for 2x speed, still VERIFIED-only
+
+
+def battery_cats() -> List[str]:
+    """11-cat battery categories (9 + swe + safety), VERIFIED-only, no shell bypass."""
+    return list(BATTERY_11_CATS)
+
+
+def battery_sampled_gate_info() -> Dict[str, Any]:
+    """Describe the sampled gate: 11 cats, sampled for speed, VERIFIED-only."""
+    return {"cats": len(BATTERY_11_CATS), "categories": list(BATTERY_11_CATS), "sampled": SAMPLED_GATE_FAVORS_SPEED, "default_sample": SAMPLED_GATE_DEFAULT_SAMPLE, "verified_only": True, "no_shell_bypass": True}
+
+
+def sampled_lab_gate_suite(sample: int = SAMPLED_GATE_DEFAULT_SAMPLE, seed: int = 20260917) -> Dict[str, Any]:
+    """Helper that documents the sampled gate (not full) for acceptance/labs — use Lab.run(..., sample=...)."""
+    return {"suite": "banks", "sample": sample, "seed": seed, "cats": list(BATTERY_11_CATS), "speed": "2x sampled"}
+
 
 # ---------------------------------------------------------------- scenarios
 

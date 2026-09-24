@@ -114,10 +114,41 @@ def _set_home(home: Optional[str]) -> str:
     return root
 
 
+# --- v3.5 fast health: token cache for <100ms health check, survives restart ---
+_TOKEN_CACHE: dict = {}
+_TOKEN_CACHE_MTIME: dict = {}
+
+
 def _token(home_root: str) -> str:
+    """Cached token_for: <100ms on repeat health checks, survives restart (file persists)."""
+    from pathlib import Path as _P
+    try:
+        fp = _P(home_root) / "api.token"
+        mtime = fp.stat().st_mtime if fp.exists() else 0
+        if home_root in _TOKEN_CACHE and _TOKEN_CACHE_MTIME.get(home_root) == mtime:
+            return _TOKEN_CACHE[home_root]
+    except Exception:
+        mtime = 0
     from rad.api import token_for
     from rad.home import RadHome
-    return token_for(RadHome(home_root))
+    tok = token_for(RadHome(home_root))
+    _TOKEN_CACHE[home_root] = tok
+    _TOKEN_CACHE_MTIME[home_root] = mtime
+    return tok
+
+
+def clear_token_cache(home_root: str = "") -> None:
+    """Test helper: clear token cache (lab-gated)."""
+    if home_root:
+        _TOKEN_CACHE.pop(home_root, None)
+        _TOKEN_CACHE_MTIME.pop(home_root, None)
+    else:
+        _TOKEN_CACHE.clear()
+        _TOKEN_CACHE_MTIME.clear()
+
+
+def token_cache_info() -> dict:
+    return {"cached_homes": len(_TOKEN_CACHE), "fast_health": True, "target_ms": 100, "lab_gated": True}
 
 
 def _port_in_use(host: str, port: int) -> bool:

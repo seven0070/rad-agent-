@@ -21,13 +21,13 @@ on:
 
 jobs:
   frontend:
-    name: Frontend (node 20)
+    name: Frontend (node 22)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
           cache-dependency-path: desktop/package-lock.json
       - name: Install dependencies
@@ -47,7 +47,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
           cache-dependency-path: desktop/package-lock.json
       - name: Install frontend dependencies
@@ -74,15 +74,15 @@ jobs:
           touch desktop/src-tauri/binaries/rad-x86_64-unknown-linux-gnu
       - name: Cargo check (retry 3× on flake)
         working-directory: desktop/src-tauri
-        # v3.2 reliability: cargo check flakes on webkit sys-deps; retry 3× with 5s backoff
+        # v3.5 fast-finish: retry 3× with 1s backoff (2x faster than 5s)
         run: |
           for i in 1 2 3; do
             echo "cargo check attempt $i/3"
             cargo check && break || {
               ec=$?
               if [ $i -eq 3 ]; then echo "cargo check failed after 3 attempts"; exit $ec; fi
-              echo "cargo check flake — retrying in 5s..."
-              sleep 5
+              echo "cargo check flake — retrying in 1s..."
+              sleep 1
             }
           done
       - name: Cargo clippy (deny warnings)
