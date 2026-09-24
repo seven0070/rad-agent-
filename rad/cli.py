@@ -45,6 +45,17 @@ def cmd_chat(args) -> int:
         home.update(free_lock=True)
     if args.model:
         home.update(model=args.model)
+    # voice backend auto (T5): --voice auto TEN→fallback, --voice-backend pins
+    vb = getattr(args, "voice_backend", "auto")
+    if vb != "auto":
+        home.update(voice_backend=vb)
+    elif args.voice:
+        try:
+            from rad.voice import voice_auto_mode
+            mode = voice_auto_mode(home)
+            info(f"  voice auto: {mode} (TEN={'on' if mode=='ten' else 'off'} fallback=Piper/Whisper)")
+        except Exception:
+            pass
     if args.auto:
         home.update(auto=True)
         try:
@@ -1550,7 +1561,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     # chat (default)
     c = sub.add_parser("chat", help="talk to Rad (default)")
-    c.add_argument("--voice", action="store_true", help="voice mode: speak + listen")
+    c.add_argument("--voice", action="store_true", help="voice mode: speak + listen (auto TEN→Piper/Whisper→text fallback)")
+    c.add_argument("--voice-backend", default="auto", choices=["auto", "ten", "fallback", "text"],
+                   help="voice backend: auto (TEN realtime if available, else Piper/Whisper fallback), ten, fallback, text")
     c.add_argument("--auto", action="store_true",
                    help="confirmation policy = never (ASK→ALLOW only; does not bypass DENY/hard/budget)")
     c.add_argument("--use", help="pin a provider")
