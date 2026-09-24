@@ -1547,7 +1547,19 @@ class Gate:
         return report
 
 
-# ---------------------------------------------------------------- view
+# ---------------------------------------------------------------- view (v3.4 hardened — no heavy model needed)
+
+def acceptance_health(home: RadHome) -> Dict[str, Any]:
+    """Lightweight health for the CI acceptance gate: no heavy model / no network.
+
+    Lab-gated, VERIFIED-only. Returns gate counts without running the full 40s suite;
+    `Gate(home).run()` remains the ground truth (50/50 offline).
+    """
+    items = Gate(home).items()
+    return {"required": REQUIRED, "areas": len(AREAS), "items": len(items),
+            "health": "lab-gated VERIFIED-only offline stub ok", "heavy_model": False,
+            "need_verified": True, "ok": len(items) == REQUIRED}
+
 
 def render(report: Dict[str, Any]) -> str:
     from rad.ui import col

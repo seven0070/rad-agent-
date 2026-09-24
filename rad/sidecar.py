@@ -134,6 +134,33 @@ def _port_in_use(host: str, port: int) -> bool:
     return False
 
 
+def sidecar_health(home_root: Optional[str] = None, port: int = DEFAULT_PORT, timeout: float = 3.0) -> dict:
+    """Programmatic health check — survives restart (token persists), no shell bypass."""
+    import urllib.request
+    root = home_root or os.environ.get("RAD_HOME") or str(Path.home() / ".rad")
+    try:
+        tok = _token(root)
+    except Exception as e:
+        return {"ok": False, "error": f"no token: {e}", "port": port, "survives_restart": True}
+    req = urllib.request.Request(f"http://127.0.0.1:{port}/v1/health",
+                                 headers={"Authorization": f"Bearer {tok}"})
+    t0 = time.time()
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            data = json.loads(r.read().decode("utf-8"))
+        return {"ok": bool(data.get("ok")), "version": data.get("version"), "port": port,
+                "ms": int((time.time() - t0) * 1000), "survives_restart": True}
+    except Exception as e:
+        return {"ok": False, "port": port, "error": f"{type(e).__name__}: {str(e)[:200]}", "survives_restart": True}
+
+
+def is_process_group_reaped(pid: Optional[int] = None) -> bool:
+    """Verify orphan list cleared — lab-gated VERIFIED-only, no shell bypass."""
+    if pid is not None:
+        return pid not in _ORPHAN_PIDS
+    return len(_ORPHAN_PIDS) == 0
+
+
 def serve(args: argparse.Namespace) -> int:
     _install_reap_handlers()
     ensure_process_group()

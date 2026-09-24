@@ -1,8 +1,9 @@
 // FlowCanvas.tsx — N2 DAG: Langflow/ComfyUI style for rad/control/graph.py
 // Renders TaskGraph.to_flow() nodes/edges with draggable nodes, bezier edges,
-// zoom/pan, and ComfyUI-like sockets. Inspired by langflow + comfyui node canvas.
+// zoom/pan, minimap, and McpMallPane integration. Inspired by langflow + comfyui node canvas.
 
 import { useMemo, useState, useCallback } from "react";
+import { McpMallPane } from "./chat/McpMallPane";
 
 export interface FlowNode {
   id: string;
@@ -25,6 +26,10 @@ interface FlowCanvasProps {
   selectedId?: string | null;
   onSelect?: (id: string) => void;
   onMoveNode?: (id: string, pos: { x: number; y: number }) => void;
+  // v3.4 studio polish: optional McpMallPane integration (Appsmith auto-panel)
+  mallGoal?: string;
+  mallId?: string;
+  showMall?: boolean;
 }
 
 const STATUS_COLOR: Record<string, string> = {
@@ -37,7 +42,7 @@ const STATUS_COLOR: Record<string, string> = {
   NEEDS_USER: "#f97316",
 };
 
-export function FlowCanvas({ nodes: initialNodes, edges, selectedId, onSelect, onMoveNode }: FlowCanvasProps) {
+export function FlowCanvas({ nodes: initialNodes, edges, selectedId, onSelect, onMoveNode, mallGoal, mallId, showMall }: FlowCanvasProps) {
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 20, y: 20 });
   const [drag, setDrag] = useState<{ id: string; dx: number; dy: number } | null>(null);
@@ -170,15 +175,24 @@ export function FlowCanvas({ nodes: initialNodes, edges, selectedId, onSelect, o
         })}
       </div>
 
-      {/* Langflow-style minimap */}
-      <div style={{ position: "absolute", bottom: 8, left: 8, width: 120, height: 80, background: "#18181b", border: "1px solid #27272a", borderRadius: 6, opacity: 0.7 }}>
+      {/* Langflow-style minimap — zoom/pan viewport inset, doubles as minimap */}
+      <div data-testid="flow-minimap" style={{ position: "absolute", bottom: 8, left: 8, width: 120, height: 80, background: "#18181b", border: "1px solid #27272a", borderRadius: 6, opacity: 0.7 }}>
         <div style={{ padding: 6, fontSize: 8, color: "#52525b", fontFamily: "monospace" }}>MINIMAP</div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 2, padding: "0 6px" }}>
           {nodes.slice(0, 12).map((n) => (
-            <div key={n.id} style={{ width: 18, height: 10, background: STATUS_COLOR[n.data.status?.toUpperCase() ?? "PENDING"] ?? "#27272a", borderRadius: 2 }} />
+            <div key={n.id} data-testid={`minimap-node-${n.id}`} style={{ width: 18, height: 10, background: STATUS_COLOR[n.data.status?.toUpperCase() ?? "PENDING"] ?? "#27272a", borderRadius: 2, cursor: "pointer" }} onClick={() => onSelect?.(n.id)} />
           ))}
         </div>
+        {/* zoom/pan readout = visual proof canvas is to_flow aware */}
+        <div style={{ padding: "4px 6px", fontSize: 8, color: "#71717a", fontFamily: "monospace" }}>{nodes.length} nodes · {edges.length} edges · {Math.round(zoom * 100)}%</div>
       </div>
+
+      {/* McpMallPane integration — Studio Flow polish: auto panel beside canvas */}
+      {showMall && (
+        <div style={{ position: "absolute", top: 8, left: 8, width: 260, maxHeight: 380, overflow: "auto", background: "rgba(10,10,10,0.96)", border: "1px solid #27272a", borderRadius: 8, zIndex: 9 }}>
+          <McpMallPane objectiveGoal={mallGoal ?? nodes.map((n) => n.data.label).join(" ")} objectiveId={mallId} />
+        </div>
+      )}
     </div>
   );
 }
