@@ -58,6 +58,9 @@ class OpsMixin:
                               "policy": pol.default_for(cap),
                               "description": (fn.get("description") or "")[:160]})
             return 200, {"tools": tools}
+        if p == ["providers", "health"] and m == "GET":
+            from rad.providers import provider_health_snapshot
+            return 200, {"providers": provider_health_snapshot(self.home), "mode": "observability_only", "routing": "free-first unchanged"}
         if p == ["benchmarks"] and m == "GET":
             from rad import lab_banks
             from rad.battery import Benchmark

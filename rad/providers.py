@@ -138,6 +138,11 @@ class ProviderSpec:
     supports_vision: bool = False
     max_tokens: int = 4096
     desc: str = ""
+    # --- P0 Router Gateway observability (no routing yet) ---
+    latency_ms: Optional[float] = None   # last observed latency (ms), None = not yet probed
+    cost_per_1k: Optional[float] = None  # USD per 1k tokens (None = free/local or unknown)
+    health: str = "unknown"              # unknown | healthy | degraded | down
+    health_checked_at: Optional[float] = None  # epoch seconds of last health probe
 
 
 @dataclass
@@ -281,6 +286,39 @@ spec_by_name = {
     "cerebras": (0.0, 0.0),
     "openrouter": (0.0005, 0.0015),
 }
+
+
+# ---------------------------------------------------------------- health snapshot (P0 observability stub)
+
+def provider_health_snapshot(home) -> list:
+    """GET /v1/providers/health backing store (observability only).
+    P0: no routing decisions; returns latency_ms/cost_per_1k/health for each spec.
+    Values are stubbed from static tier/cost table + probe history when available.
+    """
+    specs = all_specs(home)
+    _COST = {
+        "edge0": None, "ollama": None, "lmstudio": None,
+        "groq": 0.0, "cerebras": 0.0, "gemini": 0.0, "openrouter": 0.0005,
+        "nvidia": 0.0, "openai": 0.0003, "anthropic": 0.006, "mistral": 0.0002, "grok": 0.006,
+    }
+    out = []
+    for s in specs:
+        cost = _COST.get(s.name, s.cost_per_1k)
+        c = s.cost_per_1k if s.cost_per_1k is not None else cost
+        out.append({
+            "name": s.name,
+            "kind": s.kind,
+            "tier": s.tier,
+            "base_url": s.base_url,
+            "latency_ms": s.latency_ms,
+            "cost_per_1k": c,
+            "health": s.health,
+            "health_checked_at": s.health_checked_at,
+            "supports_tools": s.supports_tools,
+            "supports_vision": s.supports_vision,
+            "desc": s.desc,
+        })
+    return out
 
 
 # ---------------------------------------------------------------- key fetching
