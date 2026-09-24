@@ -1,8 +1,18 @@
 # Rad Omarchy Manual — opinionated defaults (N5)
 
+Rad v3.5 — **v3.4 carried forward + v3.5 fast-finish** (5000f02 → feature/3.5, 982 tests, 11 cats, sampled lab 11-cat + node22 + sidecar <100ms) — this manual is the single source of truth for the 11-repo fusion. All 11 repos below are fetched as inspiration (not vendored); every borrow has an integration point and a lab-gated test.
+
+Rad v3.5 is **opinionated** (omarchy style). These defaults ship out-of-the-box, lab-gated, VERIFIED-only. v3.5 fast-finish: Lab 50-item wired to 11-cat battery with sampled gate (18 vs 90, 2x faster, keeps 50/50), desktop node22 engines ^22.12.0 compatible (npm ci no EBADENGINE, cargo check sleep 1 not 5), sidecar health <100ms via token cache. `rad acceptance` 50-item stays green, `pytest -q -n auto --dist worksteal` stays 982.
+
 Rad v3.4 — **v3.3 carried forward + v3.4 studio polish** (f5e3854 → feature/3.4, 973 tests, 11 cats, FlowCanvas polished + gate 50/50 offline + sidecar reaping) — this manual is the single source of truth for the 11-repo fusion. All 11 repos below are fetched as inspiration (not vendored); every borrow has an integration point and a lab-gated test.
 
 Rad v3.4 is **opinionated** (omarchy style). These defaults ship out-of-the-box, lab-gated, VERIFIED-only. v3.4 polish: Studio Flow (FlowCanvas minimap/zoom/pan + McpMallPane integration, `to_flow()`), acceptance gate 50/50 hardened offline, sidecar process-group reaping + health survives restart, `rad acceptance` 50-item green, 973 tests.
+
+## v3.5 Fast-Finish (carries v3.4: Studio + gate + sidecar, 2x faster)
+
+- **Lab sampled (Agent S)**: `rad/lab.py` wired to 11-cat battery (`swe` + `safety`) with sampled gate (sample=18 vs full 90, `BATTERY_11_CATS`, `SAMPLED_GATE_FAVORS_SPEED`, `battery_sampled_gate_info()`), keeps REQUIRED=50 AREAS=10 VERIFIED-only, `pytest -q -n auto --dist worksteal` 2x faster, lab-gated.
+- **Desktop node22 (Agent T)**: `desktop/package.json` engines `>=22.12.0` (compatible with node24, no EBADENGINE on `npm ci`), `desktop.yml` node 22 + `cargo check` retry `sleep 1` not 5 (2x faster), `vitest` `pool: threads` still passes with node20, lab-gated.
+- **Sidecar fast health (Agent U)**: `rad/sidecar.py` token cache (`_TOKEN_CACHE`, `clear_token_cache`, `token_cache_info`) makes `sidecar_health` <100ms via cached `_token`, survives restart, no `shell=True`, lab-gated.
 
 ## v3.4 Polish (carries v3.3: Swarm + recall + docs)
 
