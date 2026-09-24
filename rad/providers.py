@@ -424,6 +424,71 @@ def probe_local(spec: ProviderSpec) -> Tuple[bool, List[str]]:
         return False, []
 
 
+# ---------------------------------------------------------------- magnitude hardware profiler (N1: Magnitude/Qwen3 GGUF per RAM)
+# Source inspiration: magnitude (hardware-aware model picker) + Ollama GGUF quant guide.
+# Tune probe_local to auto-pick Qwen3 GGUF that fits RAM with headroom.
+
+QWEN3_GGUF_RAM_TABLE = [
+    # (min_ram_gb, model_id, quant, vram_note)
+    (32, "qwen3:14b-q4_K_M", "Q4_K_M", "14B fits 32GB+"),
+    (16, "qwen3:8b-q4_K_M", "Q4_K_M", "8B fits 16GB+"),
+    (8, "qwen3:4b-q4_K_M", "Q4_K_M", "4B fits 8GB+"),
+    (4, "qwen3:1.7b-q4_K_M", "Q4_K_M", "1.7B fits 4GB+"),
+    (0, "qwen3:0.6b-q4_K_M", "Q4_K_M", "0.6B fits <4GB"),
+]
+
+def _get_ram_gb() -> float:
+    try:
+        import psutil  # type: ignore
+        return psutil.virtual_memory().total / (1024**3)
+    except Exception:
+        pass
+    try:
+        import os
+        if hasattr(os, "sysconf"):
+            pages = os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES")  # type: ignore
+            return pages / (1024**3)
+        # Windows fallback: GlobalMemoryStatus via ctypes
+        import ctypes
+        class MEMORYSTATUSEX(ctypes.Structure):
+            _fields_ = [("dwLength", ctypes.c_ulong), ("dwMemoryLoad", ctypes.c_ulong),
+                        ("ullTotalPhys", ctypes.c_ulonglong), ("ullAvailPhys", ctypes.c_ulonglong),
+                        ("ullTotalPageFile", ctypes.c_ulonglong), ("ullAvailPageFile", ctypes.c_ulonglong),
+                        ("ullTotalVirtual", ctypes.c_ulonglong), ("ullAvailVirtual", ctypes.c_ulonglong),
+                        ("ullAvailExtendedVirtual", ctypes.c_ulonglong)]
+        stat = MEMORYSTATUSEX(dwLength=ctypes.sizeof(MEMORYSTATUSEX))
+        ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(stat))  # type: ignore
+        return stat.ullTotalPhys / (1024**3)
+    except Exception:
+        return 8.0  # safe default for CI
+
+def select_qwen3_gguf(ram_gb: Optional[float] = None) -> Dict[str, Any]:
+    gb = float(ram_gb if ram_gb is not None else _get_ram_gb())
+    for min_gb, model_id, quant, note in QWEN3_GGUF_RAM_TABLE:
+        if gb >= min_gb:
+            return {"ram_gb": round(gb, 1), "model": model_id, "quant": quant, "note": note, "min_ram_gb": min_gb}
+    return {"ram_gb": round(gb, 1), "model": "qwen3:0.6b-q4_K_M", "quant": "Q4_K_M", "note": "fallback 0.6B", "min_ram_gb": 0}
+
+def magnitude_hardware_profile(home=None) -> Dict[str, Any]:
+    gb = _get_ram_gb()
+    pick = select_qwen3_gguf(gb)
+    # probe_local tuned: include ollama reachable flag when home provided
+    ollama_reachable = False
+    ollama_models: List[str] = []
+    if home is not None:
+        try:
+            specs = all_specs(home)
+            for s in specs:
+                if s.name == "ollama":
+                    ok, names = probe_local(s)
+                    ollama_reachable = ok
+                    ollama_models = names
+                    break
+        except Exception:
+            pass
+    return {"ram_gb": pick["ram_gb"], "recommended_gguf": pick, "ollama_reachable": ollama_reachable,
+            "ollama_models": ollama_models, "source": "magnitude", "quant_family": "Q4_K_M"}
+
 # ---------------------------------------------------------------- chat: openai-compat
 
 def _openai_message(m: Dict[str, Any]) -> Dict[str, Any]:
