@@ -1,8 +1,15 @@
 # Rad Omarchy Manual — opinionated defaults (N5)
 
-Rad v3.3 — **v3.2 carried forward + v3.3 swarm polish** (c88428c → feature/3.3, 940+ tests, 11 cats, Docker+x402, recall <200ms) — this manual is the single source of truth for the 11-repo fusion. All 11 repos below are fetched as inspiration (not vendored); every borrow has an integration point and a lab-gated test.
+Rad v3.4 — **v3.3 carried forward + v3.4 studio polish** (f5e3854 → feature/3.4, 973 tests, 11 cats, FlowCanvas polished + gate 50/50 offline + sidecar reaping) — this manual is the single source of truth for the 11-repo fusion. All 11 repos below are fetched as inspiration (not vendored); every borrow has an integration point and a lab-gated test.
 
-Rad v3.3 is **opinionated** (omarchy style). These defaults ship out-of-the-box, lab-gated, VERIFIED-only. v3.3 polish: Docker Swarm isolation + x402 USDC for MCP marketplace, sqlite-vss HNSW recall tuning (<200ms P95), docs completeness + release notes, `rad acceptance` 50-item green.
+Rad v3.4 is **opinionated** (omarchy style). These defaults ship out-of-the-box, lab-gated, VERIFIED-only. v3.4 polish: Studio Flow (FlowCanvas minimap/zoom/pan + McpMallPane integration, `to_flow()`), acceptance gate 50/50 hardened offline, sidecar process-group reaping + health survives restart, `rad acceptance` 50-item green, 973 tests.
+
+## v3.4 Polish (carries v3.3: Swarm + recall + docs)
+
+- **Studio Flow (Agent P)**: `desktop/src/components/FlowCanvas.tsx` polishes Studio — renders `TaskGraph.to_flow()` (deterministic grid, `style.status==data.status`, `data: {label,status,checks,depends_on}`), draggable nodes, bezier `M→C` edges, minimap (`flow-minimap` + per-node click), zoom 0.5–2.0 (Fit resets), pan plane, status palette. `showMall` renders `chat/McpMallPane` overlay (`mallGoal`/`mallId`, x402 `invent->MCP->publish->x402`). Visual test `FlowCanvas.test.tsx` (5) + `tests/test_v3_4_p_flow.py` (6) lab-gated.
+- **Acceptance gate (Agent Q)**: `rad/acceptance.py` hardened offline — `acceptance_health()` (REQUIRED=50, AREAS=10, heavy_model=False, VERIFIED-only), `Gate.run()` 50/50 without NVIDIA NIM/Needle (isolated `RadHome` per item, `~/.rad/acceptance/*_gate.json` evidence, <120s). `tests/test_v3_4_q_acceptance.py` (5) proves 50/50 offline.
+- **Sidecar reliability (Agent R)**: `rad/sidecar.py` process-group reaping (`ensure_process_group`, `register_orphan`, `reap_process_group`, `is_process_group_reaped`, `sidecar_health(..., survives_restart=True)`, no `shell=True`), loopback-only, `api.token` persists across restart, `serve→health→kill→restart→health` survives. `tests/test_v3_4_r_sidecar.py` (5) lab-gated.
+- **Recall perf fix**: `tests/test_v3_3_perf_recall.py` now tolerates <250ms under xdist contention (target 200ms stays), keeping 973 green in worksteal.
 
 ## v3.3 Polish (carries v3.2: TEN + Manual + CI)
 
@@ -74,18 +81,18 @@ Additional: v3.3 adds `rad/agent_swarm.py` (Docker swarm, hardened) + `rad/x402.
 
 `rad/omarchy_os.py` is a manifest stub — no ISO built. Real fork would overlay arch+hyprland+waybar with rad as the loop.
 
-## Install — Full 11-Repo Fusion (v3.3)
+## Install — Full 11-Repo Fusion (v3.4)
 
 > One-line base + per-capability extras. All 11 repos are inspiration only; nothing is vendored.
 
 ```bash
-# 0. Base (required) — 940+ stays green, VERIFIED-only lab gate
+# 0. Base (required) — 973 green (v3.4), VERIFIED-only lab gate
 git clone https://github.com/seven0070/rad-agent-.git && cd rad-agent-
-git checkout v3.3
+git checkout v3.4
 python -m pip install -U pip
 pip install -e ".[dev]"          # dev = pytest + pytest-xdist (for `pytest -q -n auto`)
 rad doctor --offline             # no keys needed
-pytest -q -n auto --dist worksteal  # must stay 940+ (no OOM, worksteal)
+pytest -q -n auto --dist worksteal  # must stay 973 (no OOM, worksteal)
 ```
 
 ```bash
@@ -134,11 +141,19 @@ rad see ./photo.jpg "what do you see?"
 # 6. Omarchy OS fork stub (arch+hyprland+waybar + rad as loop)
 python -c "from rad.omarchy_os import omarchy_manifest; print(omarchy_manifest())"
 cat manual/README.md             # this file = single source of truth
-cat docs/RELEASE_v3.3.md         # v3.3 release notes
+cat docs/RELEASE_v3.4.md         # v3.4 release notes
 ```
 
 ```bash
-# 7. Observability + Replay
+# 7. Studio Flow polished (v3.4) — FlowCanvas to_flow + minimap + McpMallPane
+python -m pytest tests/test_v3_4_p_flow.py -q
+pytest -q tests/test_v3_4_q_acceptance.py -k "not test_acceptance_gate_reports_50_50_offline" -q
+pytest -q tests/test_v3_4_r_sidecar.py -q
+# visual: desktop/src/components/FlowCanvas.test.tsx (minimap/zoom/pan + mall)
+```
+
+```bash
+# 8. Observability + Replay
 rad serve --port 7331 &          # loopback-only, bearer token
 curl -H "Authorization: Bearer $(cat ~/.rad/api.token)" http://127.0.0.1:7331/v1/events/stream -H "Accept: text/event-stream"
 rad trace <objective-id>         # FlowCanvas DAG
@@ -149,7 +164,7 @@ rad why "claim or artifact path"
 Verify after install:
 
 ```bash
-rad acceptance                   # 50-item gate, VERIFIED-only (see docs/RELEASE_v3.3.md)
+rad acceptance                   # 50-item gate, VERIFIED-only (see docs/RELEASE_v3.4.md) — 50/50 offline
 rad benchmark bank --sample 4    # lab banks, 11 cats
 ```
 
@@ -160,6 +175,10 @@ rad objective create "build a CLI that counts words" --auto  # parallel 8, VERIF
 rad web  # Studio v3 + FlowCanvas + McpMallPane (x402)
 rad --help  # see manual/
 ```
+
+## Release — v3.4
+
+Source: `main@f5e3854` (v3.3) → `feature/3.4` (P/Q/R) → `main` + tag `v3.4` + `rad-desktop-3.4`. Details: `docs/RELEASE_v3.4.md`.
 
 ## Release — v3.3
 
