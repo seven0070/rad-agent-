@@ -663,3 +663,63 @@ class AgentMemory:
     def recall(self, query: str, k: int = 5) -> List[Any]:
         from rad.memory import Memory
         return Memory(self.home).recall(query, k=k, scope=self.agent)
+
+# ---------------------------------------------------------------- harness: N3 OpenHands+Flue SDK wiring (sidecar)
+# Inspirations: OpenHands (codeact execution) + Flue (lightweight agent harness).
+# Lab-gated, VERIFIED-only, no shell bypass — all tool calls via Executor.
+
+class OpenHandsHarness:
+    """OpenHands SDK stub: wraps agent execution as CodeAct loop via Rad's Executor.
+
+    Lab-gated: requires home.cfg flag harness.openhands_enabled, else returns disabled.
+    No shell bypass — runs through AgentRuntime.
+    """
+    def __init__(self, home: RadHome) -> None:
+        self.home = home
+        self.enabled = bool(home.cfg.get("harness.openhands_enabled", False))
+        self.version = "openhands-0.9-stub"
+
+    def is_enabled(self) -> bool:
+        return self.enabled
+
+    def run(self, task: str, objective_id: str = "", agent_id: str = "coder") -> Dict[str, Any]:
+        if not self.enabled:
+            return {"harness": "openhands", "enabled": False, "reason": "harness.openhands_enabled is false — lab-gated", "status": "disabled"}
+        try:
+            runtime = AgentRuntime(self.home)
+            run = runtime.run_agent(agent_id, task, objective_id=objective_id)
+            return {"harness": "openhands", "enabled": True, "version": self.version, "run_id": run.id, "status": run.status, "tool_calls": run.tool_calls}
+        except Exception as e:
+            return {"harness": "openhands", "enabled": True, "status": "failed", "error": str(e)[:300]}
+
+    def health(self) -> Dict[str, Any]:
+        return {"harness": "openhands", "enabled": self.enabled, "version": self.version, "lab_gated": True}
+
+class FlueHarness:
+    """Flue SDK stub: minimal harness for structured tool-calling loops.
+
+    Lab-gated via harness.flue_enabled. Mirrors OpenHands contract for sidecar.
+    """
+    def __init__(self, home: RadHome) -> None:
+        self.home = home
+        self.enabled = bool(home.cfg.get("harness.flue_enabled", False))
+        self.version = "flue-0.2-stub"
+
+    def is_enabled(self) -> bool:
+        return self.enabled
+
+    def run(self, task: str, objective_id: str = "", agent_id: str = "coder") -> Dict[str, Any]:
+        if not self.enabled:
+            return {"harness": "flue", "enabled": False, "reason": "harness.flue_enabled is false — lab-gated", "status": "disabled"}
+        try:
+            runtime = AgentRuntime(self.home)
+            run = runtime.run_agent(agent_id, task, objective_id=objective_id)
+            return {"harness": "flue", "enabled": True, "version": self.version, "run_id": run.id, "status": run.status, "tool_calls": run.tool_calls}
+        except Exception as e:
+            return {"harness": "flue", "enabled": True, "status": "failed", "error": str(e)[:300]}
+
+    def health(self) -> Dict[str, Any]:
+        return {"harness": "flue", "enabled": self.enabled, "version": self.version, "lab_gated": True}
+
+def harness_health(home: RadHome) -> Dict[str, Any]:
+    return {"openhands": OpenHandsHarness(home).health(), "flue": FlueHarness(home).health(), "sidecar": "rad/sidecar.py — harness health via GET /v1/harness/health"}

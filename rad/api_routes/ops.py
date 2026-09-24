@@ -61,6 +61,9 @@ class OpsMixin:
         if p == ["providers", "health"] and m == "GET":
             from rad.providers import provider_health_snapshot
             return 200, {"providers": provider_health_snapshot(self.home), "mode": "observability_only", "routing": "free-first unchanged"}
+        if p == ["harness", "health"] and m == "GET":
+            from rad.agents import harness_health
+            return 200, harness_health(self.home)
         # ---- Observability SSE (T4 hardening) ----
         # GET /v1/events/stream  -> Server-Sent Events stub (observability-only, loopback, bearer-gated)
         # Real SSE is served by make_server._do when Accept: text/event-stream; this Api stub is for
