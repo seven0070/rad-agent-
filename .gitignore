@@ -29,4 +29,5 @@ desktop/.vite/
 .appblink/
 .claude/
 .vscode/
+hf-cache/
 

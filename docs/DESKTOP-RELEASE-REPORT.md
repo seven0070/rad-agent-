@@ -7,6 +7,92 @@ claimed) with what would prove them.
 Workspace: `arena/01a0bafc-rad-agent` @ branch from `bbfa991` (baseline 4c0c1020 line).
 Interpreter: `.venv-dev` (Python 3.11.16, `pip install -e ".[dev,sidecar]"`).
 
+## 0. Windows release build + install smoke (2026-09-23) — PASS (build machine)
+
+Fresh local build and a real NSIS install on this machine; every line below is
+backed by output captured during that run:
+
+- **Windows MSVC sidecars frozen + smoke-green**: `rad-x86_64-pc-windows-msvc.exe`
+  **14,143,697** B (SHA256 `C318D038…EFA5E1440`), `rad-backend-x86_64-pc-windows-msvc.exe`
+  **11,348,875** B (SHA256 `D24FB1E6…D9630BF67`); shell `rad-desktop.exe` **3,251,200** B.
+  The backend answered `/v1/health` 200 during the install smoke; the runtime binary is
+  SHA256-identical to the embedded copy (resolver note below).
+- **MSI/NSIS built fresh 2026-09-23** (not stale): NSIS `RAD Desktop_0.2.0_x64-setup.exe`
+  26,454,443 B @ 18:20:30; MSI `RAD Desktop_0.2.0_x64_en-US.msi` 27,009,024 B @ 18:20:12.
+  Embedded sidecars proven:
+  - MSI — WindowsInstaller COM file table: `rad-desktop.exe` 3,251,200, `rad.exe`
+    14,143,697, `rad-backend.exe` 11,348,875, `rad_desktop_lib.dll` 114,688;
+  - NSIS — direct 7-Zip extraction (Type=Nsis, Method=LZMA:23, “Everything is Ok”,
+    9 files): `rad-desktop.exe` 3,251,200 / `rad.exe` 14,143,697 /
+    `rad-backend.exe` 11,348,875 — all three MZ, SHA256-identical to the source
+    `src-tauri/binaries/` freezes and to the installed copies.
+- **Local release orchestrator + CI written**: `scripts/build-desktop-release.ps1`
+  (sidecar freeze → size asserts → `tauri build` → MSI/NSIS freshness asserts) and
+  `.github/workflows/release-desktop.yml`.
+- **Install smoke (this machine)**: NSIS `/S` exit 0 → install dir
+  `C:\Users\sanath\AppData\Local\RAD Desktop` (all three exes with the sizes above +
+  `uninstall.exe`); launch → window title “RAD Desktop” + WebView2 processes;
+  installed shell spawned `… serve --host 127.0.0.1 --port 7331 --home C:\Users\sanath\.rad`
+  (PID chain parented to the installed `rad-desktop.exe`); `GET /v1/health` with Bearer
+  from `~/.rad/api.token` (43 B, owner-only ACL) → **200**
+  `{"ok": true, "version": "1.0.1", "schema": 3, "running": []}`; `~/.rad/logs/backend.log`
+  fresh `listening` event on 127.0.0.1:7331.
+- **Test suite re-run 2026-09-23**: `python -m pytest -q -n auto` → **839 passed,
+  2 skipped** (includes new resolver regression test), 0 failed.
+- **Resolver gap fixed (2026-09-23 evening)**: installers ship short sidecar names
+  (`rad.exe`, `rad-backend.exe`); `resolve_sidecar()` previously only matched the
+  triple name (`rad-backend-x86_64-pc-windows-msvc.exe`) and fell through to the
+  compile-time `CARGO_MANIFEST_DIR` repo path. `desktop/src-tauri/src/lib.rs` now
+  probes **short name first, then triple**, install-dir layout before the
+  manifest-dir fallback (size gate >1024 B unchanged). Rebuilt via
+  `scripts/build-desktop-release.ps1 -SkipSidecar` (shell 3,250,688 B; NSIS
+  26,455,098 B @ 20:48:32; MSI 27,009,024 B @ 20:48:18). Re-smoke **PASS**:
+  backend process path `C:\Users\sanath\AppData\Local\RAD Desktop\rad-backend.exe`
+  (install dir, not repo) → `/v1/health` 200
+  `{"ok": true, "version": "1.0.1", "schema": 3, "running": []}` → stop shell +
+  backend → NSIS `/S` uninstall → install dir gone, port 7331 free.
+  Clean-machine gap for this failure mode is **closed** on this machine; a true
+  no-repo machine still needs the release-checklist run (REMAINING item 4).
+- **MSI smoke PASS (this machine)**: dual-mode package needs per-user mode when not
+  elevated — `msiexec /i … /qn MSIINSTALLPERUSER=1 ALLUSERS=2` → install → launch →
+  backend from install dir → health 200 → `msiexec /x {87CEE1AD-…} MSIINSTALLPERUSER=1 /qn`
+  → dir/port/registry clean. Default double-click MSI asks for UAC (Error 1925 if declined).
+- **Python-fallback path PASS** (REMAINING 6, partial): no sidecar —
+  `C:\Python314\python.exe -m rad serve --host 127.0.0.1 --port 7331` → health 200
+  `{"ok": true, "version": "1.0.1", …}` → process stopped → port clean.
+- **Live `npm run tauri dev` PASS (REMAINING 6, closed 2026-09-24)**: full stack run
+  from a C:-side source copy (`%TEMP%\rad-desktop-dev`, `node_modules` reinstalled on
+  C: — Drive I/O is too slow for Vite's HMR transform of `/src/main.tsx`, which hung
+  indefinitely when the repo lived on Google Drive). Launcher env:
+  `TAURI_DEV_HOST=127.0.0.1`, `RAD_PYTHON=C:\Python314\python.exe`,
+  `CARGO_TARGET_DIR=%TEMP%\rad-tauri-target`,
+  `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9333`.
+  Evidence captured during the run:
+  - Vite `ready in 687 ms` on `http://127.0.0.1:1420`;
+  - CDP: React mounted in 1 s (`rootLen 7678` → later `22372`),
+    `hasTauri: true`, `src/main.tsx` + `src/App.tsx` resources present, no console errors;
+  - backend spawned as Python fallback (64-byte sidecar stub rejected by the
+    >1024 B size gate): child PID `35584` parented to `rad-desktop` PID `20736`,
+    cmdline `C:\Python314\python.exe -m rad serve --host 127.0.0.1 --port 7331`;
+  - `GET /v1/health` with Bearer from `~/.rad/api.token` → **200**
+    `{"ok": true, "version": "1.0.1", "schema": 3, "running": []}`;
+  - UI showed `v1.0.1 · Studio Online` and rendered real RECENT SESSIONS data.
+  Workaround notes: `TAURI_DEV_HOST=127.0.0.1` forces Vite off IPv6-only `[::1]`;
+  source must be on local disk (C:) not Google Drive for the dev server.
+- **Backend API surface smoke PASS**: 14/14 — GET 200 on `/v1/health`, `/v1/authority`,
+  `/v1/status`, `/v1/tools`, `/v1/events`, `/v1/audit`; 404 on non-existent
+  `/v1/models`, `/v1/providers`, `/v1/cost`, `/v1/config`, `/v1/objective`,
+  `/v1/security` (route absent ≠ failure); no-token → 401, bad-token → 401; CLI
+  `rad-backend health --port 7331` → ok JSON.
+- **Frontend unit tests (vitest)**: jsdom environment hangs on this Google Drive path
+  (RUN banner, no workers). Workaround: `vitest.min.config.ts` (node pool + threads)
+  + `src/test/setup-node.ts` window/localStorage polyfill → **3 files, 13 tests PASS**
+  (`api.test.ts` 4, `backend.test.ts` 5, `backend.tauri.test.ts` 4), exit 0.
+   `Button.test.tsx` (React DOM) **3/3 PASS** on 2026-09-24 via a C:-side jsdom
+   vitest project (`%TEMP%\rad-btn-test`, same `vitest.min.config.ts` +
+   `setup-node.ts` polyfill pattern) — Drive path still hangs full jsdom workers;
+   the C: copy does not.
+
 ## 1. Stale doc version references — PASS
 
 - README banner now `v1.0.1` (was `v1.0.0`); the regression test
@@ -73,10 +159,11 @@ A real bug was found and fixed while testing: `/v1/memory` GET called a non-exis
   - full contract smoke re-run against the **frozen** binary: serve→token(0600)→
     health 200 w/ token → 401 without → `health` subcommand → second serve **exit 3**
     → non-loopback **exit 1**. All green.
-- Windows/macOS freezes remain CI-only (PyInstaller cannot cross-compile; CI builds on
-  native runners — `sidecar` job in `.github/workflows/desktop.yml`).
+- Windows MSVC freeze is built + smoke-green **locally 2026-09-23** (rad 14,143,697 /
+  backend 11,348,875; install smoke in §0). macOS freeze remains CI-only (PyInstaller
+  cannot cross-compile — `sidecar` job in `.github/workflows/desktop.yml`).
 
-## 5. Tauri shell / lifecycle — FAIL-HERED (compile), PASS (design + static)
+## 5. Tauri shell / lifecycle — PASS (compiled + install-smoked 2026-09-23, §0; design + static)
 
 - `desktop/src-tauri/src/lib.rs` rewritten: 7 commands (`default_home`, `api_token`,
   `backend_info`, `backend_start`, `backend_stop`, `backend_restart`,
@@ -87,8 +174,9 @@ A real bug was found and fixed while testing: `/v1/memory` GET called a non-exis
   failure); stdout/stderr pumped to `~/.rad/logs/backend.log`; stale-RAD (401+`bearer`)
   vs foreign-process detection before start; `State{backend: Mutex<Option<Backend>>}`.
   Uses only std + serde + serde_json + tauri — no new crates, `Cargo.lock` untouched.
-- **Not compiled here: no cargo/rustc in the sandbox** (rust-lang/crates hosts blocked).
-  `cargo build`/`cargo test` are CI-owned.
+- **Compiled + shipped locally 2026-09-23** (MSVC release build): shell
+  `rad-desktop.exe` 3,251,200 B in `target/release`, installed via NSIS and smoke-tested
+  end-to-end (§0). CI remains the cross-platform compile owner (`desktop.yml`).
 - Static guarantees pinned by tests: fixed argv, loopback only, no
   `tauri-plugin-shell`/`fs`, no user-interpolated commands, no shell strings
   (`test_frontend_has_no_arbitrary_shell`, `test_sidecar_is_bundled_and_scoped`,
@@ -177,7 +265,7 @@ sidecar loopback-only string in `rad/sidecar.py`.
 - tool error (read of missing file) → observed (`status=error`, path in output),
   fails the task's machine verification, recovery retries → eventually VERIFIED.
 
-## 10. Packaging & CI/CD (missions §18, §22, §24) — PASS (pipeline written), FAIL-HERED (execution)
+## 10. Packaging & CI/CD (missions §18, §22, §24) — PASS (pipeline written; Windows MSI/NSIS built fresh 2026-09-23 with embedded sidecars proven, §0), FAIL-HERED (non-Windows bundles / release-attach)
 
 - `bundle.externalBin`, per-triple binary naming, 7-permission capability scope —
   verified statically (above).
@@ -194,9 +282,12 @@ sidecar loopback-only string in `rad/sidecar.py`.
   build + fetch matching sidecar + `npx tauri build` + installer upload; tag-driven
   `gh release upload`). The same sidecar smoke was executed manually in this workspace
   against the installed console script (section 4).
-- **Not executed here**: cargo compile, PyInstaller freeze, Tauri installer builds,
-  release-attach. Environment-blocked (section 4/5). These are release preconditions,
-  not claimed done.
+- **Executed locally 2026-09-23** (Windows): cargo release compile (§5), PyInstaller
+  MSVC freezes (§4/§0), Tauri MSI + NSIS builds with embedded sidecars proven (MSI file
+  table + NSIS 7-Zip extraction, §0), and a real install smoke (§0). Orchestrator
+  `scripts/build-desktop-release.ps1` + CI `release-desktop.yml` written. Still
+  CI-owned / not done here: non-Windows bundles (.app/.dmg/AppImage) and GitHub
+  release-attach — these remain release preconditions, not claimed done.
 
 ## 11. Documentation (mission §28) — PASS
 
@@ -227,25 +318,34 @@ argv test).
 
 ## REMAINING (honest list — nothing below is claimed done)
 
-1. **`cargo build`/`cargo check` of `desktop/src-tauri`** — no Rust toolchain in this
-   workspace (rust-lang/crates/anaconda hosts all network-blocked; verified again
-   2026-09-19). First compile will happen in CI. Any Rust error there would surface on
-   the first push (lib.rs reviewed statically for the known hazards: double-match
-   unwrap, import scope, dead code; still uncompiled).
-2. **PyInstaller freezes for x86_64-pc-windows-msvc and aarch64-apple-darwin** —
-   Linux (x86_64-unknown-linux-gnu) is frozen and smoke-tested in this workspace
-   (section 4); the other two triples need native runners (CI `sidecar` job).
-3. **Tauri installer builds** (MSI/NSIS, .app/.dmg, AppImage) — depend on 1+2.
+1. **`cargo build`/`cargo check` of `desktop/src-tauri`** — **done locally 2026-09-23**
+   (MSVC release shell 3,251,200 B → rebuilt 3,250,688 B after the resolver fix,
+   install-smoked, §0); CI still owns cross-platform compile on other OSes.
+2. **PyInstaller freeze for aarch64-apple-darwin** — **Windows x86_64-pc-windows-msvc
+   done locally 2026-09-23** (rad 14,143,697 / backend 11,348,875, smoke-green, §0);
+   Linux was already frozen + smoke-tested (section 4). macOS needs a native runner
+   (CI `sidecar` job).
+3. **Tauri installer builds** — **Windows MSI/NSIS built fresh 2026-09-23 with embedded
+   sidecars proven** (MSI file table + NSIS 7-Zip extraction, §0). macOS (.app/.dmg)
+   and Linux AppImage remain CI-owned.
 4. **Clean-machine install pass** per platform (install → launch → no Python/Node →
    objective → VERIFIED → close → reopen → persisted) — release-checklist item in
-   `docs/DESKTOP.md`; the API-level equivalent (same objective flow, same persistence)
-   is the golden E2E test above, and the frozen Linux sidecar's clean-machine binary
-   requirement (self-contained vs glibc) is verified (section 4, `ldd`).
+   `docs/DESKTOP.md`. **Resolver gap fixed + re-smoked 2026-09-23 evening (§0):**
+   installed backend resolves from the install dir short name
+   (`…\RAD Desktop\rad-backend.exe`), health 200, clean uninstall. Still open: the
+   pass above ran on the **build machine**, not a true no-repo machine — a
+   clean-machine (or CI-only) run of the full release checklist is still required
+   before claiming that item. The API-level equivalent (same objective flow,
+   same persistence) is the golden E2E test above, and the frozen Linux sidecar's
+   clean-machine binary requirement (self-contained vs glibc) is verified (section 4,
+   `ldd`).
 5. **AppImage on GitHub ubuntu runners** (FUSE availability) — known CI risk; if
    `tauri build` refuses, the Linux bundle target list needs adjusting in
    `tauri.conf.json` (deliberately not pre-empted without evidence).
 6. **Live `npm run tauri dev` run** (dev fallback spawn path `python -m rad serve`) —
-   requires the Rust side to compile first.
+   **PASS closed 2026-09-24 (§0)**: full `tauri dev` from a C:-side source copy;
+   React mounted via CDP, Python child parented to `rad-desktop`, health 200,
+   UI `Studio Online`. Bare Python fallback was already proven (§0).
 7. macOS **Intel** (x86_64-apple-darwin) triple — pipeline maps it, but no
    x86_64 macOS runner is in the CI matrix (current `macos-latest` is ARM). Add only
    if an Intel artifact is actually wanted.

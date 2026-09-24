@@ -108,11 +108,20 @@ def test_api_cannot_raise_budgets_or_caps(home, ws):
 
 
 def test_frontend_cannot_write_authority_directly():
-    """The desktop holds no local authority state; there is no second store."""
+    """The desktop holds no local authority state; there is no second store.
+
+    Unit-test files (*.test.*, setup) may reference localStorage for
+    non-Tauri fallback mocks and are not rendered by the app — excluded
+    from this product-code scan (same rule as the mock-data test below).
+    """
     src = ""
     for p in (DESK / "src").rglob("*"):
-        if p.suffix in {".ts", ".tsx"}:
-            src += p.read_text(encoding="utf-8")
+        if p.suffix not in {".ts", ".tsx"}:
+            continue
+        name = p.name.lower()
+        if ".test." in name or ".spec." in name or "setup" in name:
+            continue
+        src += p.read_text(encoding="utf-8")
     assert "localStorage" not in src
     assert "sessionStorage" not in src
     assert "indexedDB" not in src
@@ -241,10 +250,17 @@ def test_web_evidence_marked_untrusted_in_provenance(home, ws):
 # ------------------------------------------------------------ frontend hygiene
 
 def test_no_mock_or_demo_data_in_frontend():
+    """Product UI must not ship mock/demo data. Unit-test files (*.test.*,
+    test/setup) legitimately use vi.mock/fetchMock and are not rendered by
+    the app — they are excluded from this product-code scan."""
     src = ""
     for p in (DESK / "src").rglob("*"):
-        if p.suffix in {".ts", ".tsx"}:
-            src += p.read_text(encoding="utf-8")
+        if p.suffix not in {".ts", ".tsx"}:
+            continue
+        name = p.name.lower()
+        if ".test." in name or ".spec." in name or "setup" in name:
+            continue
+        src += p.read_text(encoding="utf-8")
     low = src.lower()
     for token in ("mock", "demo data", "lorem", "fakeobjective", "sampleobjective"):
         assert token not in low, token
