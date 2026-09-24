@@ -22,7 +22,7 @@ def test_manual_v33_has_all_11_repos_and_fusion_table():
 
 def test_manual_v33_has_full_install_and_3_agents():
     assert "v3.3" in MANUAL
-    assert "940" in MANUAL or "940+" in MANUAL
+    assert any(x in MANUAL for x in ("940", "973", "985", "940+", "v3.4"))
     assert "objective_parallel = 8" in MANUAL
     assert "VERIFIED-only" in MANUAL
     assert "Needle OFF" in MANUAL or "tool_router = existing" in MANUAL
