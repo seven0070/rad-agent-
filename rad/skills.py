@@ -341,3 +341,40 @@ def audit(home: RadHome) -> List[Dict[str, Any]]:
         out.append({"name": name, "approval": m.get("approval"), "trust": m.get("trust"),
                     "capabilities": m.get("capabilities", []), "tools": len(m.get("tools", {})), "flags": flags})
     return out
+
+# ---------------------------------------------------------------- Self-Writing Mall: X3 invent -> MCP server -> publish -> x402 (keep)
+# Inspiration: custom MCP skill authoring + marketplace + x402 micropay. Lab-gated.
+
+def mall_invent(home: RadHome, prompt: str, name: str = "") -> Dict[str, Any]:
+    """Invent a skill from a prompt (stub: writes to bank, no LLM needed)."""
+    import uuid
+    key = name or f"mall-{uuid.uuid4().hex[:6]}"
+    bank = skill_bank_load(home)
+    bank["skills"] = bank.get("skills", {})
+    bank["skills"][key] = {"key": key, "prompt": prompt[:500], "created": time.time(), "lifecycle": "invented", "source": "mall_invent"}
+    skill_bank_save(home, bank)
+    return {"invented": key, "prompt": prompt[:80], "status": "invented", "lab_gated": True}
+
+def mall_publish(home: RadHome, skill_key: str, x402_price: float = 0.02) -> Dict[str, Any]:
+    """Publish invented skill as MCP server (stub) with x402 micropay."""
+    bank = skill_bank_load(home)
+    skill = bank.get("skills", {}).get(skill_key)
+    if not skill:
+        return {"status": "not_found", "key": skill_key}
+    # stub MCP server manifest
+    manifest = {"name": skill_key, "transport": "stdio", "command": f"rad-mcp-{skill_key}", "tools": [{"name": f"{skill_key}_tool", "description": skill.get("prompt", "")[:120]}]}
+    reg = home.skills()
+    reg[skill_key] = manifest
+    home.save_skills(reg)
+    ensure_manifest(home, skill_key)
+    skill["published"] = True
+    skill["x402_price"] = x402_price
+    skill["x402"] = f"${x402_price:.3f} micropay kept"
+    bank["skills"][skill_key] = skill
+    skill_bank_save(home, bank)
+    return {"published": skill_key, "x402": f"${x402_price:.3f}", "status": "published", "lab_gated": True, "note": "invent->MCP->publish->x402 kept"}
+
+def mall_health(home: RadHome) -> Dict[str, Any]:
+    bank = skill_bank_load(home)
+    n = len(bank.get("skills", {}))
+    return {"mall": "self-writing", "skills": n, "flow": "invent->MCP->publish->x402", "x402": "kept", "lab_gated": True}
