@@ -83,18 +83,18 @@ export default function Objectives() {
       </div>
 
       <div className="card">
-        <div className="row" style={{ marginBottom: 10 }}>
-          <label style={{ marginBottom: 0 }}>
+        <div className="row mb-10">
+          <label className="mb-0">
             <input
               type="checkbox"
               checked={activeOnly}
               onChange={(e) => setActiveOnly(e.target.checked)}
-              style={{ width: "auto", marginRight: 6 }}
+              className="cb-inline cb-inline-6"
             />
             active only
           </label>
           <span className="hint">{rows.length} shown · authority profile {auth.profile}</span>
-          <button className="btn ghost" style={{ marginLeft: "auto", padding: "3px 10px" }} onClick={() => void load()}>
+          <button className="btn ghost tight ml-auto" onClick={() => void load()}>
             Refresh
           </button>
         </div>
@@ -127,7 +127,7 @@ export default function Objectives() {
                   <tr
                     key={o.id}
                     onClick={() => select(o.id)}
-                    style={{ cursor: "pointer", outline: selected?.id === o.id ? "1px solid var(--accent)" : "none" }}
+                    className={`selectable${selected?.id === o.id ? " is-selected" : ""}`}
                   >
                     <td title={o.id}>{o.id.slice(0, 12)}</td>
                     <td>
@@ -158,7 +158,7 @@ export default function Objectives() {
                       {budget.seconds ? `${Math.round(((usage.seconds ?? 0) / budget.seconds) * 100)}%` : "—"}
                     </td>
                     <td onClick={(e) => e.stopPropagation()}>
-                      <div className="row" style={{ gap: 4 }}>
+                      <div className="row gap-4">
                         {st === "pending" && (
                           <button className="btn mini" disabled={busy} onClick={() => void act(o.id, "run")}>
                             Run

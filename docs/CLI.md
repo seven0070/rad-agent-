@@ -60,6 +60,7 @@ Global: `--home <dir>` (or `RAD_HOME`), `--quiet`, `--json` where noted.
 | `rad world` | world model — Rad's picture of your world |
 | `rad dna` | Rad's identity |
 | `rad corpus` | experience → training data |
+| `rad triage-corpus` | labeled auto/escalate rows from objectives history → training data |
 
 ## Security
 
@@ -113,6 +114,7 @@ Several commands take a sub-action as their first argument:
 | `rad brain` | add, list, current, promote, rollback |
 | `rad config` | show, get, set, unset, path |
 | `rad corpus` | show, export |
+| `rad triage-corpus` | show, export |
 | `rad dna` | show, rollback, reset |
 | `rad drive` | connect, push, pull |
 | `rad evaluate` | run, history, gate, tasks |

@@ -78,7 +78,7 @@ export function StudioHeader({
             <span className="studio-progress-label">
               {completedTasks}/{totalTasks} tasks ({percent}%)
             </span>
-            <div style={{ width: 100 }}>
+            <div className="w-100-fixed">
               <ProgressBar current={completedTasks} total={totalTasks || 1} />
             </div>
           </div>
@@ -101,7 +101,7 @@ export function StudioHeader({
           </Button>
 
           {/* Export Code Dropdown */}
-          <div style={{ position: "relative" }}>
+          <div className="relative">
             <Button
               variant="secondary"
               size="sm"
@@ -149,7 +149,6 @@ export function StudioHeader({
             className="icon-button"
             onClick={onOpenSettings}
             title="Configure Connection & Settings"
-            style={{ width: 32, height: 32 }}
           >
             ⚙
           </button>

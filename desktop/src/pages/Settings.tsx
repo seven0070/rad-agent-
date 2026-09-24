@@ -67,24 +67,24 @@ export default function SettingsPage({ onShutdown }: { onShutdown: () => void })
       <div className="card">
         <label>Workspace (where tools operate)</label>
         <input value={s.workspace} onChange={(e) => setS({ ...s, workspace: e.target.value })} />
-        <div className="row" style={{ marginTop: 10 }}>
-          <label style={{ marginBottom: 0, flex: 1 }}>Pinned model</label>
+        <div className="row mt-10">
+          <label className="mb-0 flex-1">Pinned model</label>
           <input
+            className="mw-280"
             value={s.model || ""}
             onChange={(e) => setS({ ...s, model: e.target.value || null })}
-            style={{ maxWidth: 280 }}
           />
         </div>
-        <label style={{ marginTop: 10 }}>
+        <label className="mt-10">
           <input
             type="checkbox"
             checked={s.free_lock}
             onChange={(e) => setS({ ...s, free_lock: e.target.checked })}
-            style={{ width: "auto", marginRight: 8 }}
+            className="cb-inline"
           />
           free-lock (paid providers impossible)
         </label>
-        <div className="row" style={{ marginTop: 12 }}>
+        <div className="row mt-12">
           <button className="btn" onClick={() => void save()}>
             Save
           </button>
@@ -100,8 +100,8 @@ export default function SettingsPage({ onShutdown }: { onShutdown: () => void })
         <div className="kv"><span>auto (config)</span><b>{String(s.auto)}</b></div>
         <div className="kv"><span>tool router</span><b>{s.tool_router} (off unless set in CLI — never raised here)</b></div>
         <div className="kv"><span>API port</span><b>{s.api_port}</b></div>
-        {lifecycle && <p className="hint" style={{ marginTop: 8 }}>{lifecycle}</p>}
-        <div className="row" style={{ marginTop: 10 }}>
+        {lifecycle && <p className="hint mt-8">{lifecycle}</p>}
+        <div className="row mt-10">
           {isTauri() && (
             <>
               <button className="btn ghost" onClick={() => void restartBackend()}>
@@ -123,9 +123,9 @@ export default function SettingsPage({ onShutdown }: { onShutdown: () => void })
           <div className="kv"><span>model calls</span><b>{usage.model_calls}</b></div>
           <div className="kv"><span>tokens</span><b>{usage.tokens}</b></div>
           <div className="kv"><span>paid spend</span><b>${usage.money_usd.toFixed(4)}</b></div>
-          <div className="hint" style={{ marginTop: 6 }}>{usage.note}</div>
+          <div className="hint mt-6">{usage.note}</div>
           {usage.objectives.length > 0 && (
-            <div className="table-wrap" style={{ marginTop: 10 }}>
+            <div className="table-wrap mt-10">
               <table>
                 <thead>
                   <tr>

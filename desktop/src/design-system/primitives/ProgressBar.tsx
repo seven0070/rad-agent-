@@ -19,25 +19,21 @@ export function ProgressBar({
 }: ProgressBarProps) {
   const pct = total > 0 ? Math.min(100, Math.max(0, Math.round((current / total) * 100))) : 0;
 
-  const variantColors: Record<string, string> = {
-    indigo: "var(--rad-indigo)",
-    emerald: "var(--emerald-verif)",
-    amber: "var(--rad-amber)",
-    rose: "var(--rose-danger)",
+  const variantClass: Record<string, string> = {
+    indigo: "pb-indigo",
+    emerald: "pb-emerald",
+    amber: "pb-amber",
+    rose: "pb-rose",
   };
 
-  const fillColor = variantColors[variant] || variantColors.indigo;
+  const fillClass = variantClass[variant] || variantClass.indigo;
 
   return (
     <div className={`progress-bar-container ${className}`.trim()} {...props}>
       <div className="progress-bar-track">
         <div
-          className="progress-bar-fill"
-          style={{
-            width: `${pct}%`,
-            backgroundColor: fillColor,
-            boxShadow: `0 0 8px ${fillColor}`,
-          }}
+          className={`progress-bar-fill ${fillClass}`}
+          style={{ width: `${pct}%` }} // DYNAMIC-STYLE: computed pct
         />
       </div>
       {showLabel && (

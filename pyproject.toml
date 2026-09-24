@@ -36,7 +36,7 @@ vault = ["cryptography>=41"]
 cloud = ["google-auth>=2", "google-auth-oauthlib>=1", "google-api-python-client>=2"]
 voice = ["faster-whisper>=1.0", "sounddevice>=0.4", "piper-tts>=1.2"]
 agi = ["autogen-agentchat>=0.4", "kuzu>=0.9"]
-dev = ["pytest>=7"]
+dev = ["pytest>=7", "pytest-xdist>=3.6"]
 pack = ["build>=1.2"]
 sidecar = ["pyinstaller>=6.0"]
 

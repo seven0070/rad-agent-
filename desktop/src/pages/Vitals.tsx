@@ -71,17 +71,17 @@ export default function Vitals() {
         <div className="page-header">
           <div className="page-title-group">
             <h2>
-              <IconVitals size={20} style={{ color: "var(--rad-indigo)" }} />
+              <IconVitals size={20} className="icon-indigo" />
               Vitals
             </h2>
             <p className="lead">Sidecar unreachable</p>
           </div>
           <button className="btn ghost" onClick={() => void load(true)}>
-            <IconRefresh size={13} style={{ marginRight: 6 }} />
+            <IconRefresh size={13} className="mr-6" />
             Retry
           </button>
         </div>
-        <div className="card" style={{ borderColor: "rgba(244, 63, 94, 0.3)" }}>
+        <div className="card card-alert">
           <p className="err">{err}</p>
         </div>
       </div>
@@ -104,7 +104,7 @@ export default function Vitals() {
       <div className="page-header">
         <div className="page-title-group">
           <h2>
-            <IconVitals size={20} style={{ color: "var(--rad-indigo)" }} />
+            <IconVitals size={20} className="icon-indigo" />
             Vitals
           </h2>
           <p className="lead">{d.human}</p>
@@ -117,8 +117,7 @@ export default function Vitals() {
         >
           <IconRefresh
             size={12}
-            className={refreshing ? "spin" : ""}
-            style={{ marginRight: 5 }}
+            className={refreshing ? "spin mr-5" : "mr-5"}
           />
           {refreshing ? "Polling…" : "Check Organs"}
         </button>
@@ -129,7 +128,7 @@ export default function Vitals() {
         <section className="vitals-zone zone-pulse" aria-labelledby="zone-pulse-title">
           <div className="vitals-zone-header">
             <div className="vitals-zone-title" id="zone-pulse-title">
-              <IconVitals size={14} style={{ color: "var(--rad-indigo)" }} />
+              <IconVitals size={14} className="icon-indigo" />
               Pulse · Homeostasis
             </div>
             <span className="vitals-zone-pill">Organ Balance</span>
@@ -141,20 +140,17 @@ export default function Vitals() {
               <span className="vitals-metric-label">Memory Organ</span>
               <div className="vitals-metric-value">
                 <span
-                  className={`chip ${
+                  className={`chip pad-1-6 ${
                     v.memory_organ.present ? "chip-green" : "chip-amber"
                   }`}
-                  style={{ padding: "1px 6px" }}
                 >
                   <span
-                    className="dot"
+                    className="dot dot-6"
                     style={{
                       backgroundColor: v.memory_organ.present
                         ? "var(--emerald-verif)"
                         : "var(--rad-amber)",
-                      width: 6,
-                      height: 6,
-                    }}
+                    }} // DYNAMIC-STYLE: present/absent dot color
                   />
                   {v.memory_organ.present ? "Active" : "Absent"}
                 </span>
@@ -185,7 +181,7 @@ export default function Vitals() {
               <span className="vitals-metric-label">Sovereignty</span>
               <div className="vitals-metric-value tabular-nums">
                 {sovPct == null ? (
-                  <span style={{ fontSize: 13, color: "var(--text-muted)", fontWeight: 500 }}>
+                  <span className="fs-13 tc-muted fw-500">
                     no events yet
                   </span>
                 ) : (
@@ -201,7 +197,7 @@ export default function Vitals() {
         <section className="vitals-zone zone-wonder" aria-labelledby="zone-wonder-title">
           <div className="vitals-zone-header">
             <div className="vitals-zone-title" id="zone-wonder-title">
-              <IconCompass size={14} style={{ color: "var(--rad-amber)" }} />
+              <IconCompass size={14} className="icon-amber" />
               Wonder · Curiosity Drive
             </div>
             <span className="vitals-zone-pill">Autonomous Exploration</span>
@@ -209,39 +205,19 @@ export default function Vitals() {
 
           {!d.curiosity.last || !d.curiosity.last.pick ? (
             <div className="vitals-rest-banner">
-              <span className="dot" style={{ backgroundColor: "var(--text-dim)", width: 6, height: 6 }} />
+              <span className="dot dot-6 dot-dim" />
               <span>nothing unexplored — honest rest</span>
             </div>
           ) : (
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: 8,
-                background: "rgba(9, 10, 15, 0.6)",
-                border: "1px solid var(--border-subtle)",
-                borderRadius: "var(--radius-sm)",
-                padding: "12px 14px",
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <div className="panel-block">
+              <div className="flex-mid gap-8 flex-wrap">
                 <span className="hint">Last Exploration:</span>
-                <code
-                  className="font-mono"
-                  style={{
-                    color: "var(--rad-amber)",
-                    background: "rgba(245, 158, 11, 0.1)",
-                    padding: "2px 8px",
-                    borderRadius: 4,
-                    border: "1px solid rgba(245, 158, 11, 0.25)",
-                    fontSize: 12,
-                  }}
-                >
+                <code className="font-mono slug-code">
                   {d.curiosity.last.pick.slug}
                 </code>
               </div>
               {d.curiosity.last.open_question && (
-                <div style={{ fontSize: 13, color: "var(--text-secondary)", fontStyle: "italic", lineHeight: 1.5 }}>
+                <div className="open-question">
                   “{d.curiosity.last.open_question}”
                 </div>
               )}
@@ -260,12 +236,9 @@ export default function Vitals() {
             <div className="vitals-zone-title" id="zone-shield-title">
               <IconShield
                 size={14}
-                style={{
-                  color:
-                    canary?.battery_healthy === false
-                      ? "var(--rose-danger)"
-                      : "var(--emerald-verif)",
-                }}
+                className={
+                  canary?.battery_healthy === false ? "tc-danger" : "icon-verif"
+                }
               />
               Shield · Canary Cadence
             </div>
@@ -274,45 +247,20 @@ export default function Vitals() {
 
           {!canary ? (
             <div className="vitals-rest-banner">
-              <span className="dot" style={{ backgroundColor: "var(--text-dim)", width: 6, height: 6 }} />
+              <span className="dot dot-6 dot-dim" />
               <span>no canary run on record yet — first sleep schedules one</span>
             </div>
           ) : canary.battery_healthy === false ? (
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                padding: "12px 14px",
-                background: "rgba(244, 63, 94, 0.08)",
-                border: "1px solid rgba(244, 63, 94, 0.3)",
-                borderRadius: "var(--radius-sm)",
-                color: "var(--rose-danger)",
-                fontSize: 13,
-              }}
-            >
+            <div className="panel-row-danger">
               <IconAlert size={16} />
               <span>
                 Battery integrity: <b>{canary.verdict}</b> — promotion gates closed
               </span>
             </div>
           ) : (
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                padding: "12px 14px",
-                background: "rgba(9, 10, 15, 0.6)",
-                border: "1px solid var(--border-subtle)",
-                borderRadius: "var(--radius-sm)",
-                fontSize: 13,
-                flexWrap: "wrap",
-                gap: 8,
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <IconCheck size={16} style={{ color: "var(--emerald-verif)" }} />
+            <div className="panel-row">
+              <div className="flex-mid gap-8">
+                <IconCheck size={16} className="icon-verif" />
                 <span>Canary healthy</span>
               </div>
               <span className="hint font-mono tabular-nums">
@@ -335,14 +283,14 @@ function VitalsSkeleton() {
   return (
     <div className="page" aria-busy="true">
       <div className="page-header">
-        <div className="page-title-group" style={{ width: "240px" }}>
-          <Skeleton height={24} width="140px" style={{ marginBottom: 6 }} />
+        <div className="page-title-group w-240">
+          <Skeleton height={24} width="140px" className="mb-6" />
           <Skeleton height={14} width="220px" />
         </div>
       </div>
       <div className="vitals-grid">
         <div className="vitals-zone zone-pulse">
-          <Skeleton height={14} width="160px" style={{ marginBottom: 14 }} />
+          <Skeleton height={14} width="160px" className="mb-14" />
           <div className="vitals-metrics-grid">
             <Skeleton height={68} radius="var(--radius-sm)" />
             <Skeleton height={68} radius="var(--radius-sm)" />
@@ -351,11 +299,11 @@ function VitalsSkeleton() {
           </div>
         </div>
         <div className="vitals-zone zone-wonder">
-          <Skeleton height={14} width="180px" style={{ marginBottom: 14 }} />
+          <Skeleton height={14} width="180px" className="mb-14" />
           <Skeleton height={52} radius="var(--radius-sm)" />
         </div>
         <div className="vitals-zone zone-shield">
-          <Skeleton height={14} width="170px" style={{ marginBottom: 14 }} />
+          <Skeleton height={14} width="170px" className="mb-14" />
           <Skeleton height={52} radius="var(--radius-sm)" />
         </div>
       </div>

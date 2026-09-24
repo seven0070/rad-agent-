@@ -33,7 +33,7 @@ jobs:
           RAD_HOME: ${{ runner.temp }}/rad-ci-home
         run: rad doctor --offline
       - name: Unit / integration tests
-        run: python -m pytest -q
+        run: python -m pytest -q -n auto
       - name: Acceptance gate
         env:
           RAD_HOME: ${{ runner.temp }}/rad-ci-home

@@ -17,6 +17,8 @@ rad/
   usermodel.py, world.py            user model, world model (facts/assumptions)
   agents.py         agent registry, runtime, blackboard, lifecycle, scheduler, bus, evaluator
   router.py, modelselect.py, providers.py, toolrouter.py   routing, optional Needle proposer
+  triage.py        advisory auto/escalate classifier (Phase 0 on the LLM router)
+  triage_data.py   labeled (text, label, weight) corpus mined from objectives history
 
   lab.py, lab_banks.py, longhorizon.py      benchmarks (900 scenarios, long-horizon metrics)
   evaluation.py, regression.py, realworld.py, acceptance.py   measurement and the gate
@@ -29,12 +31,18 @@ docs/               this documentation set
 ## Running the tests
 
 ```bash
-python -m pytest -q                 # everything (~8s, no network, no keys)
+python -m pytest -q                 # everything (offline, no keys; use `-n auto` with dev extra for ~3× faster)
 python -m pytest -q tests/test_policy.py -k hard
 rad regression --quick              # security + agent groups + 4 scenarios
 rad acceptance                      # the 50-item gate, with per-item evidence
 rad realworld                       # research/coding/filesystem/multi-step/failure/honesty
 rad needle-eval                     # optional Needle measurements (BLOCKED if engine missing)
+```
+
+Desktop release (Windows): both sidecar freezes (isolated venvs) → size asserts → tauri build → installer freshness check:
+
+```bash
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-desktop-release.ps1
 ```
 
 The suite is expected to pass **offline**. A test that needs the network, a key or a model is a bug

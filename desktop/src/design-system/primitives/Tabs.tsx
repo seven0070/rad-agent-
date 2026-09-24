@@ -34,11 +34,7 @@ export function Tabs<T extends string = string>({
             className={`segmented-tab-btn ${isActive ? "active" : ""}`}
             onClick={() => onChange(tab.id)}
           >
-            {tab.icon && (
-              <span style={{ display: "inline-flex", alignItems: "center", marginRight: 5 }}>
-                {tab.icon}
-              </span>
-            )}
+            {tab.icon && <span className="icon-slot-5">{tab.icon}</span>}
             <span>{tab.label}</span>
             {tab.badge !== undefined && (
               <span className="segmented-tab-badge font-mono tabular-nums">

@@ -132,9 +132,8 @@ export default function InspectorDrawer({
         />
         {onClose && (
           <button
-            className="btn ghost mini"
+            className="btn ghost mini ml-auto pad-2-6 fs-10"
             onClick={onClose}
-            style={{ marginLeft: "auto", padding: "2px 6px", fontSize: 10 }}
             title="Close Inspector"
           >
             ✕
@@ -143,41 +142,16 @@ export default function InspectorDrawer({
       </div>
 
       {selectedNodeId && (
-        <div
-          style={{
-            margin: "8px 12px 0",
-            padding: "8px 10px",
-            borderRadius: "var(--radius-sm)",
-            border: "1px solid rgba(235, 102, 88, 0.35)",
-            background: "rgba(235, 102, 88, 0.08)",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: 4,
-            }}
-          >
-            <span className="chip chip-coral font-mono" style={{ fontSize: 9 }}>
+        <div className="node-focus-banner">
+          <div className="flex-mid justify-between mb-4">
+            <span className="chip chip-coral font-mono fs-9">
               {selectedNodeType?.toUpperCase() || "NODE"} FOCUS
             </span>
-            <span
-              className="font-mono tabular-nums"
-              style={{ fontSize: 10, color: "var(--text-dim)" }}
-            >
+            <span className="font-mono tabular-nums fs-10 tc-dim">
               {selectedNodeId.slice(0, 12)}
             </span>
           </div>
-          <div
-            style={{
-              fontSize: 12,
-              fontWeight: 600,
-              color: "var(--text-primary)",
-              lineHeight: 1.3,
-            }}
-          >
+          <div className="node-focus-title">
             {selectedNodeType === "objective"
               ? objective?.goal
               : selectedNodeType === "verification"
@@ -203,12 +177,12 @@ export default function InspectorDrawer({
 
         {/* Tab 2: Tool Calls & Observations Trail */}
         {tab === "tools" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <div className="font-mono hint" style={{ fontWeight: 600 }}>
+          <div className="stack gap-8">
+            <div className="font-mono hint fw-600">
               TOOL EXECUTION TRAIL ({observations.length} invocations)
             </div>
             {observations.length === 0 ? (
-              <div className="hint" style={{ padding: 16, textAlign: "center" }}>
+              <div className="hint hint-center">
                 No tool calls dispatched for this objective yet.
               </div>
             ) : (
@@ -221,15 +195,15 @@ export default function InspectorDrawer({
 
         {/* Tab 3: Artifacts & Code Viewer */}
         {tab === "artifacts" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 12, height: "100%" }}>
-            <div className="font-mono hint" style={{ fontWeight: 600 }}>
+          <div className="stack gap-12 h-full">
+            <div className="font-mono hint fw-600">
               ARTIFACT REGISTRY & CODE VIEWER
             </div>
 
             {/* Artifact File Selector */}
-            <div className="file-tree-list" style={{ maxHeight: 160, overflowY: "auto" }}>
+            <div className="file-tree-list file-tree-scroll">
               {artifacts.length === 0 ? (
-                <div className="hint" style={{ padding: 12, textAlign: "center" }}>
+                <div className="hint hint-center">
                   No artifacts generated yet.
                 </div>
               ) : (
@@ -261,7 +235,7 @@ export default function InspectorDrawer({
 
             {/* Code Content Viewer */}
             {selectedArtifact && (
-              <div className="code-viewer-container" style={{ flex: 1, minHeight: 240 }}>
+              <div className="code-viewer-container code-viewer-fill">
                 <div className="code-viewer-header font-mono">
                   <span>{content?.path || selectedArtifact}</span>
                   <span className="hint tabular-nums">
@@ -280,19 +254,19 @@ export default function InspectorDrawer({
 
         {/* Tab 4: Machine Verification */}
         {tab === "verification" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <div className="font-mono hint" style={{ fontWeight: 600 }}>
+          <div className="stack gap-10">
+            <div className="font-mono hint fw-600">
               GROUND-TRUTH MACHINE VERIFICATION
             </div>
 
             <div className="verification-stat-box font-mono">
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+              <div className="flex-mid justify-between mb-6">
                 <span>Status:</span>
-                <b style={{ color: "var(--emerald-verif)" }}>
+                <b className="tc-verif">
                   {ver.status ? String(ver.status).toUpperCase() : "VERIFIED"}
                 </b>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <div className="flex-mid justify-between">
                 <span>Checks passed:</span>
                 <span className="tabular-nums">
                   {verResults.length}/{verResults.length}
@@ -300,20 +274,20 @@ export default function InspectorDrawer({
               </div>
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <div className="stack gap-6">
               {verResults.length === 0 ? (
-                <div className="hint" style={{ padding: 12, textAlign: "center" }}>
+                <div className="hint hint-center">
                   File assertions, JSON schemas, and minimum size checks active.
                 </div>
               ) : (
                 verResults.map((chk: any, i: number) => (
                   <div key={i} className="verification-check-card font-mono">
-                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      <IconCheck size={12} style={{ color: "var(--emerald-verif)" }} />
-                      <span style={{ fontWeight: 600 }}>{chk.kind || `Check #${i + 1}`}</span>
+                    <div className="flex-mid gap-6">
+                      <IconCheck size={12} className="icon-verif" />
+                      <span className="fw-600">{chk.kind || `Check #${i + 1}`}</span>
                     </div>
                     {chk.detail && (
-                      <div className="hint" style={{ marginTop: 2 }}>
+                      <div className="hint mt-2">
                         {chk.detail}
                       </div>
                     )}
@@ -326,24 +300,24 @@ export default function InspectorDrawer({
 
         {/* Tab 5: Authority & Budgets */}
         {tab === "authority" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            <div className="font-mono hint" style={{ fontWeight: 600 }}>
+          <div className="stack gap-14">
+            <div className="font-mono hint fw-600">
               AUTHORITY & TOOL CALL BUDGETS
             </div>
 
             <div className="authority-profile-card">
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div className="flex-mid justify-between">
                 <span className="hint">ACTIVE PROFILE:</span>
                 <span className={`pill ${auth.profile}`}>{auth.profile}</span>
               </div>
-              <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: "8px 0 0" }}>
+              <p className="auth-blurb">
                 {auth.blurb || "Standard guardrails: asks before outside modifications, auto-runs safe tools."}
               </p>
             </div>
 
             <div className="budget-metrics-group font-mono">
               <div className="budget-row">
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                <div className="flex-mid justify-between mb-4">
                   <span>Tool Calls Budget:</span>
                   <span className="tabular-nums">
                     {observations.length} / {auth.budgets.tool_calls}
@@ -356,8 +330,8 @@ export default function InspectorDrawer({
                 />
               </div>
 
-              <div className="budget-row" style={{ marginTop: 10 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+              <div className="budget-row mt-10">
+                <div className="flex-mid justify-between mb-4">
                   <span>Model Calls Budget:</span>
                   <span className="tabular-nums">
                     {trace?.tasks?.length || 0} / {auth.budgets.model_calls}
@@ -373,7 +347,7 @@ export default function InspectorDrawer({
 
             <div className="authority-confirmation-box font-mono hint">
               <span>Confirmation Policy: <b>{auth.confirmation.toUpperCase()}</b></span>
-              <span style={{ display: "block", marginTop: 4 }}>
+              <span className="block mt-4">
                 Unrestricted: {auth.unrestricted ? "ENABLED" : "OFF (Guarded)"}
               </span>
             </div>

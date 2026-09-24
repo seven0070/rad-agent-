@@ -51,7 +51,7 @@ export class ErrorBoundary extends Component<Props, State> {
             )}
             <div className="error-boundary-actions">
               <button className="btn" onClick={this.handleReset}>
-                <IconRefresh size={13} style={{ marginRight: 6 }} />
+                <IconRefresh size={13} className="mr-6" />
                 Try Re-rendering
               </button>
             </div>

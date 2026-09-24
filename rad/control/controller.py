@@ -277,9 +277,12 @@ class Controller:
                 log = self._log(obj.id)
                 log.emit(E.NEEDS_USER, obj.id, note=note, data=gate.to_dict())
                 return obj
-            for t in graph.tasks.values():
-                if t.status in (TaskStatus.NEEDS_USER, TaskStatus.BLOCKED):
-                    t.transition(TaskStatus.READY, "user resumed")
+        # An explicit user resume clears task-level NEEDS_USER/BLOCKED even when the
+        # objective never left RUNNING (a permission ask mid-run does not flip the
+        # objective, so gating this on obj.status left the task stuck forever).
+        for t in graph.tasks.values():
+            if t.status in (TaskStatus.NEEDS_USER, TaskStatus.BLOCKED):
+                t.transition(TaskStatus.READY, "user resumed")
         if obj.status in ObjectiveStatus.ACTIVE or obj.status == ObjectiveStatus.FAILED:
             obj.set_status(ObjectiveStatus.RUNNING)
         else:
@@ -485,11 +488,15 @@ class Controller:
         # explicit signals from the model (advisory only — verification decides)
         nm = NEEDS_USER_RE.search(reply)
         bm = BLOCKED_RE.search(reply)
-        if nm or bm:
-            note = (nm or bm).group(1).strip()[:300]
-            task.transition(TaskStatus.NEEDS_USER if nm else TaskStatus.FAILED, note)
-            if bm:
-                task.transition(TaskStatus.BLOCKED, note)
+        if nm:
+            note = nm.group(1).strip()[:300]
+            task.transition(TaskStatus.NEEDS_USER, note)
+            log.emit(E.NEEDS_USER, obj.id, task.id, note=note)
+            return
+        if bm:
+            note = bm.group(1).strip()[:300]
+            task.transition(TaskStatus.FAILED, note)
+            task.transition(TaskStatus.BLOCKED, note)
             log.emit(E.NEEDS_USER, obj.id, task.id, note=note)
             return
 

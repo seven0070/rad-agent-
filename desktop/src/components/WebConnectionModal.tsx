@@ -86,11 +86,11 @@ export function WebConnectionModal({
       <Card className="web-modal-card">
         <div className="web-modal-header">
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>Web Client Connection</h3>
+            <div className="inline-mid gap-8">
+              <h3 className="m-0 fs-16 fw-600">Web Client Connection</h3>
               <span className="badge-platform font-mono">RUST + JS</span>
             </div>
-            <div style={{ fontSize: 12, color: "var(--text-dim)", marginTop: 4 }}>
+            <div className="fs-12 tc-dim mt-4">
               Connect your browser frontend to the RAD Agent control plane.
             </div>
           </div>
@@ -99,7 +99,7 @@ export function WebConnectionModal({
           </button>
         </div>
 
-        <form onSubmit={handleSaveAndConnect} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <form onSubmit={handleSaveAndConnect} className="stack gap-14">
           <div>
             <label className="field-label">Agent API Base URL</label>
             <input
@@ -133,15 +133,15 @@ export function WebConnectionModal({
             <div
               className={`test-result-box ${testResult.ok ? "test-result-ok" : "test-result-err"}`}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <div className="inline-mid gap-6">
                 {testResult.ok ? <IconCheck size={14} /> : <IconAlert size={14} />}
-                <span style={{ fontWeight: 600 }}>{testResult.ok ? "Success" : "Connection Error"}</span>
+                <span className="fw-600">{testResult.ok ? "Success" : "Connection Error"}</span>
               </div>
-              <div style={{ marginTop: 4 }}>{testResult.message}</div>
+              <div className="mt-4">{testResult.message}</div>
             </div>
           )}
 
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
+          <div className="row justify-between items-center mt-8">
             <Button
               type="button"
               variant="secondary"
@@ -151,7 +151,7 @@ export function WebConnectionModal({
             >
               Test Connection
             </Button>
-            <div style={{ display: "flex", gap: 8 }}>
+            <div className="inline-mid gap-8">
               <Button type="button" variant="ghost" size="sm" onClick={onClose}>
                 Cancel
               </Button>

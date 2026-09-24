@@ -65,3 +65,28 @@ def test_sidecar_is_bundled_and_scoped():
     # lifecycle commands only — no shell/fs/window-control plugins in capabilities
     joined = json.dumps(caps)
     assert "plugin:shell" not in joined and "plugin:fs" not in joined
+
+
+def test_resolve_sidecar_prefers_installed_short_name():
+    """Installers ship rad-backend[.exe]; the resolver must try that before the
+    triple name and before the compile-time CARGO_MANIFEST_DIR fallback."""
+    rust = (DESK / "src-tauri" / "src" / "lib.rs").read_text(encoding="utf-8")
+    # names are preferred in sidecar_names() order: short first, then triple
+    i_names = rust.find("fn sidecar_names()")
+    i_resolve = rust.find("fn resolve_sidecar()")
+    assert i_names > 0 and i_resolve > i_names, "sidecar_names must exist before resolve_sidecar"
+    names_body = rust[i_names:i_resolve]
+    i_short = names_body.find('"rad-backend.exe"')
+    i_short_unix = names_body.find('"rad-backend"')
+    i_triple = names_body.find("sidecar_name(triple)")
+    assert i_short > 0 or i_short_unix > 0, "resolver must consider the installed short name"
+    assert i_triple > 0, "resolver must still support the triple name (dev tree)"
+    assert min(x for x in (i_short, i_short_unix) if x > 0) < i_triple, (
+        "installed short name must be preferred over the triple name"
+    )
+    # install-dir candidates are pushed before the compile-time manifest path
+    resolve_body = rust[i_resolve:]
+    i_current_exe = resolve_body.find("current_exe()")
+    i_manifest = resolve_body.find('env!("CARGO_MANIFEST_DIR")')
+    assert i_current_exe > 0 and i_manifest > 0
+    assert i_current_exe < i_manifest, "install-dir layout must be probed before CARGO_MANIFEST_DIR"

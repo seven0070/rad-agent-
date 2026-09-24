@@ -233,7 +233,7 @@ def _builtin_specs(home: RadHome) -> List[ProviderSpec]:
                      default_model="gemini-2.0-flash", vision_model="gemini-2.0-flash",
                      tier="free", supports_vision=True, desc="Gemini free tier"),
         ProviderSpec("openrouter", "openai", "https://openrouter.ai/api/v1", ("OPENROUTER_API_KEY",),
-                     default_model="meta-llama/llama-3.3-70b-instruct:free",
+                     default_model="liquid/lfm-2.5-2.6b:free",
                      vision_model="qwen/qwen-2.5-vl-72b-instruct:free",
                      tier="free", supports_vision=True, desc="OpenRouter free models"),
         ProviderSpec("nvidia", "openai", "https://integrate.api.nvidia.com/v1",
@@ -439,6 +439,27 @@ def _unparallel_tool_history(messages: List[Dict[str, Any]]) -> List[Dict[str, A
     return out
 
 
+def _openai_visible_text(msg: Dict[str, Any]) -> str:
+    """Assistant text. Thinking models may leave content empty and put the reply in reasoning."""
+    content = msg.get("content")
+    if isinstance(content, list):
+        bits = []
+        for part in content:
+            if isinstance(part, str):
+                bits.append(part)
+            elif isinstance(part, dict) and part.get("text"):
+                bits.append(str(part["text"]))
+        content = "".join(bits)
+    text = content if isinstance(content, str) else ""
+    if text.strip() or msg.get("tool_calls"):
+        return text
+    for key in ("reasoning", "reasoning_content"):
+        alt = msg.get(key)
+        if isinstance(alt, str) and alt.strip():
+            return alt
+    return text
+
+
 def _chat_openai(spec: ProviderSpec, key: Optional[str], messages: List[Dict[str, Any]],
                  model: str, tools: Optional[List[Dict[str, Any]]], stream_cb: Optional[Callable[[str], None]],
                  temperature: float, timeout: float, max_tokens: int) -> ChatResult:
@@ -459,6 +480,10 @@ def _chat_openai(spec: ProviderSpec, key: Optional[str], messages: List[Dict[str
         if spec.name == "nvidia":
             # llama-3.2-11b-vision-instruct rejects parallel tool_calls (HTTP 400).
             body["parallel_tool_calls"] = False
+    if spec.name == "ollama":
+        # qwen3-class models put the reply in `reasoning` and leave `content` empty
+        # unless thinking is off. Measured 2026-09-22 on /v1/chat/completions.
+        body["reasoning_effort"] = "none"
     status, headers_out, resp = _post_json(spec.base_url + "/chat/completions", body, headers, timeout,
                                  stream=stream_cb is not None)
     if status != 200:
@@ -476,7 +501,7 @@ def _chat_openai(spec: ProviderSpec, key: Optional[str], messages: List[Dict[str
     if stream_cb is None:
         d = json.loads(_body_bytes(resp).decode())
         msg = d["choices"][0]["message"]
-        res.text = msg.get("content") or ""
+        res.text = _openai_visible_text(msg)
         res.usage = {"in": d.get("usage", {}).get("prompt_tokens", 0),
                      "out": d.get("usage", {}).get("completion_tokens", 0)}
         for tc in msg.get("tool_calls") or []:
@@ -497,9 +522,12 @@ def _chat_openai(spec: ProviderSpec, key: Optional[str], messages: List[Dict[str
             continue
         ch = (d.get("choices") or [{}])[0]
         delta = ch.get("delta") or {}
-        if delta.get("content"):
-            text_parts.append(delta["content"])
-            stream_cb(delta["content"])
+        piece = delta.get("content") or ""
+        if not piece and not delta.get("tool_calls"):
+            piece = delta.get("reasoning") or delta.get("reasoning_content") or ""
+        if piece:
+            text_parts.append(piece)
+            stream_cb(piece)
         for tc in delta.get("tool_calls") or []:
             i = tc.get("index", 0)
             slot = acc.setdefault(i, {"id": "", "name": "", "arguments": ""})

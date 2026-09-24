@@ -221,28 +221,13 @@ export default function App() {
       {/* 1. Left Sidebar (RAD Studio v2 Navigation & Recent Sessions) */}
       <aside className="sidebar">
         <div className="sidebar-header">
-          <div
-            className="rad-logo-mark"
-            style={{
-              background: "var(--bg-elevated)",
-              border: "1px solid var(--border-active)",
-              color: "var(--text-primary)",
-              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.4)",
-            }}
-          >
+          <div className="rad-logo-mark raised">
             RAD
           </div>
           <div className="brand-text">
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <div className="flex-mid gap-6">
               <span className="brand-title">RAD Studio</span>
-              <span
-                className="badge-platform"
-                style={{
-                  background: "rgba(255, 255, 255, 0.06)",
-                  color: "var(--text-secondary)",
-                  borderColor: "var(--border-subtle)",
-                }}
-              >
+              <span className="badge-platform muted-plate">
                 v2
               </span>
             </div>
@@ -275,18 +260,9 @@ export default function App() {
                 onClick={() => setPage(p.id)}
                 aria-current={isActive ? "page" : undefined}
               >
-                <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+                <div className="flex-mid gap-9">
                   <span
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      width: 16,
-                      height: 16,
-                      opacity: isActive ? 1 : 0.7,
-                      color: isActive ? "var(--hermes-indigo-light)" : "inherit",
-                      transition: "opacity 0.15s ease, color 0.15s ease",
-                    }}
+                    className={`nav-icon ${isActive ? "is-active" : ""}`}
                   >
                     {p.icon}
                   </span>
@@ -303,7 +279,7 @@ export default function App() {
           })}
         </nav>
 
-        <div className="nav-section-title" style={{ marginTop: 8 }}>
+        <div className="nav-section-title mt-8">
           Deep Inspection
         </div>
         <nav className="nav-menu" aria-label="Deep inspection views">
@@ -312,22 +288,13 @@ export default function App() {
             return (
               <button
                 key={p.id}
-                className={`nav-item ${isActive ? "active" : ""}`}
+                className={`nav-item fs-12 ${isActive ? "active" : ""}`}
                 onClick={() => setPage(p.id)}
                 aria-current={isActive ? "page" : undefined}
-                style={{ fontSize: 12 }}
               >
-                <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+                <div className="flex-mid gap-9">
                   <span
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      width: 16,
-                      height: 16,
-                      opacity: isActive ? 1 : 0.55,
-                      color: isActive ? "var(--hermes-indigo-light)" : "inherit",
-                    }}
+                    className={`nav-icon ${isActive ? "is-active-dim" : ""}`}
                   >
                     {p.icon}
                   </span>
@@ -338,12 +305,12 @@ export default function App() {
           })}
         </nav>
 
-        <div className="nav-section-title" style={{ marginTop: 6 }}>
+        <div className="nav-section-title mt-6">
           Recent Sessions ({objectives.length})
         </div>
         <div className="session-history-list">
           {objectives.length === 0 ? (
-            <div style={{ fontSize: 11, color: "var(--text-dim)", padding: "8px 10px" }}>
+            <div className="session-empty">
               No recorded sessions yet.
             </div>
           ) : (
@@ -363,12 +330,11 @@ export default function App() {
                 >
                   <div className="session-card-goal">{obj.goal}</div>
                   <div className="session-card-meta">
-                    <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                    <span className="inline-mid gap-5">
                       <i
                         className={`dot ${
                           isOk ? "ok" : isFail ? "off" : "warn"
-                        }`}
-                        style={{ width: 6, height: 6 }}
+                        } dot-6`}
                       />
                       <span>{obj.status}</span>
                     </span>
@@ -447,7 +413,7 @@ export default function App() {
       {/* 4. Bottom Telemetry Bar */}
       <footer className="status">
         <div className="status-left">
-          <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span className="inline-mid gap-6">
             <i
               className={`dot ${
                 backend === "connected" ? "ok" : backend === "reconnecting" ? "warn" : "off"
@@ -458,12 +424,12 @@ export default function App() {
           <span className={`pill ${auth?.profile || "STANDARD"}`}>
             {auth?.profile || "STANDARD"}
           </span>
-          <span style={{ color: "var(--text-secondary)" }}>{model}</span>
+          <span className="tc-secondary">{model}</span>
           <span>
             budget {auth?.budgets.tool_calls ?? 60} tools / {auth?.budgets.model_calls ?? 80} model
           </span>
           {selected && (
-            <span style={{ color: "var(--text-dim)", fontFamily: "monospace", fontSize: 11 }}>
+            <span className="status-focus">
               focus: {selected.id.slice(0, 12)} ({selected.status})
             </span>
           )}
@@ -471,24 +437,21 @@ export default function App() {
 
         <div className="status-right">
           <button
-            className="btn ghost mini font-mono"
+            className="btn ghost mini font-mono fs-11 pad-2-8"
             onClick={() => setIsWebModalOpen(true)}
-            style={{ fontSize: 11, padding: "2px 8px" }}
             title="Configure connection"
           >
             🌐 {isTauri() ? "Tauri" : "Web UI"}
           </button>
           <button
-            className="btn ghost mini"
+            className="btn ghost mini fs-11 pad-2-8"
             onClick={() => setIsInspectorOpen((prev) => !prev)}
-            style={{ fontSize: 11, padding: "2px 8px" }}
           >
             {isInspectorOpen ? "Hide Inspector ◨" : "Show Inspector ◧"}
           </button>
           {isTauri() && (
             <button
-              className="btn ghost mini"
-              style={{ padding: "2px 8px", color: "var(--rose-danger)" }}
+              className="btn ghost mini pad-2-8 tc-danger"
               onClick={() => void shutdown()}
             >
               shut down
@@ -539,35 +502,35 @@ function ConnectScreen({
   };
 
   return (
-    <div className="connect" style={{ maxWidth: 500, margin: "auto", padding: 32 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>
+    <div className="connect narrow">
+      <div className="flex-mid gap-10 mb-8">
+        <h1 className="connect-title">
           {isTauri() ? "Connect to RAD Desktop" : "RAD Web UI Connection"}
         </h1>
         <span className="badge-platform">{isTauri() ? "TAURI" : "RUST + JS"}</span>
       </div>
-      <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 20 }}>
+      <p className="connect-lede">
         {isTauri()
           ? "Desktop is a surface over the existing Python API."
           : "Web browser frontend communicating with the RAD Agent control plane via Rust proxy or loopback API."}
       </p>
-      {backend === "reconnecting" && <p style={{ color: "var(--hermes-amber)" }}>reconnecting…</p>}
-      {error && <p style={{ color: "var(--rose-danger)", fontSize: 12 }}>{error}</p>}
+      {backend === "reconnecting" && <p className="tc-amber">reconnecting…</p>}
+      {error && <p className="tc-danger fs-12">{error}</p>}
       <div className="card">
-        <button className="btn" onClick={onRetry} disabled={busy} style={{ width: "100%" }}>
+        <button className="btn w-full" onClick={onRetry} disabled={busy}>
           {backend === "connecting" ? "Connecting…" : "Launch / Reconnect"}
         </button>
       </div>
       <div className="card">
         <label>Manual connection (running `rad serve` or Rust daemon)</label>
-        <label style={{ marginTop: 8 }}>API base URL</label>
+        <label className="mt-8">API base URL</label>
         <input
           className="field-input font-mono"
           value={manualBase}
           onChange={(e) => setManualBase(e.target.value)}
           placeholder="http://127.0.0.1:7331"
         />
-        <label style={{ marginTop: 10 }}>Bearer token</label>
+        <label className="mt-10">Bearer token</label>
         <input
           type="password"
           className="field-input font-mono"
@@ -578,12 +541,11 @@ function ConnectScreen({
         <div className="field-hint">
           Token is generated at <code>~/.rad/api.token</code> or logged by <code>rad serve</code>.
         </div>
-        <div className="row" style={{ marginTop: 14 }}>
+        <div className="row mt-14">
           <button
-            className="btn ghost"
+            className="btn ghost w-full"
             onClick={manualConnect}
             disabled={busy || !manualToken}
-            style={{ width: "100%" }}
           >
             Save & Connect
           </button>

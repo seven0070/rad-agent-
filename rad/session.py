@@ -24,6 +24,20 @@ from rad.ui import ask, col, fail, info, ok, warn
 
 MAX_WORKING = 24          # messages kept in working memory
 TOOL_LINE = re.compile(r'^\s*TOOL:\s*(\{.*\})\s*$', re.S)
+# Harmony/gpt-oss models sometimes emit control tokens inside the tool name
+# (e.g. "read_file<|channel|>commentary"), which fails dispatch as a tool-not-found
+# error and hard-fails the whole attempt. Strip any <|...|> token plus the bare
+# word that follows it so the real tool name survives.
+_SPECIAL_TOKEN = re.compile(r"<\|.*?\|>\w*")
+
+
+def clean_tool_name(name: Any) -> str:
+    """Strip model special-token pollution from a requested tool name."""
+    s = str(name or "")
+    if "<|" not in s:
+        return s
+    cleaned = _SPECIAL_TOKEN.sub("", s).strip()
+    return cleaned or s
 
 
 class Session:
@@ -148,6 +162,9 @@ class Session:
                                       "arguments": d.get("args", {})})
                 except Exception:
                     pass
+
+            for tc in tool_reqs:
+                tc["name"] = clean_tool_name(tc.get("name"))
 
             if tool_reqs:
                 assistant_msg: Dict[str, Any] = {"role": "assistant", "content": text or "",

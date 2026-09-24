@@ -19,7 +19,7 @@ export function TaskStateMatrix({ tasks, currentTaskId, onSelectTask }: TaskStat
   if (tasks.length === 0) {
     return (
       <div className="task-matrix-empty font-mono">
-        <span className="dot off" style={{ width: 6, height: 6 }} />
+        <span className="dot off dot-6" />
         <span>No tasks generated yet (planning phase active)</span>
       </div>
     );
@@ -48,7 +48,7 @@ export function TaskStateMatrix({ tasks, currentTaskId, onSelectTask }: TaskStat
             >
               {/* Left Task Identification */}
               <div className="task-matrix-meta">
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <div className="inline-mid gap-6">
                   <span className="font-mono task-id-tag">
                     #{idx + 1} [{task.id.slice(0, 8)}]
                   </span>

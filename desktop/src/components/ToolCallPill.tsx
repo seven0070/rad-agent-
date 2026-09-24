@@ -55,15 +55,9 @@ export function ToolCallPill({ obs }: { obs: ToolObservation }) {
       >
         <div className="tool-title-group">
           <span
-            style={{
-              color: isOk
-                ? "var(--emerald-verif)"
-                : isErr
-                  ? "var(--rose-danger)"
-                  : "var(--rad-amber)",
-              display: "inline-flex",
-              alignItems: "center",
-            }}
+            className={`inline-mid ${
+              isOk ? "tc-verif" : isErr ? "tc-danger" : "tc-amber"
+            }`}
           >
             {isOk ? <IconCheck size={13} /> : isErr ? <IconAlert size={13} /> : "●"}
           </span>

@@ -407,10 +407,10 @@ class Doctor:
         items = cm.interrupted()
         if not items:
             return Finding("recovery", "ok", "no interrupted objective state")
-        detail = [f"{i['id']}: {i['status']} ({len(i['in_flight'])} task(s) mid-flight) — "
-                  f"rad objective resume {i['id']}" for i in items[:8]]
+        detail = [f"{i.objective_id}: {i.status} ({len(i.tasks)} task(s) mid-flight) — "
+                  f"rad objective resume {i.objective_id}" for i in items[:8]]
         if self.fix:
-            done = [cm.restore(i["id"]) for i in items]
+            done = [cm.restore(i.objective_id) for i in items]
             return Finding("recovery", "ok", f"restored {len(done)} interrupted objective(s) "
                                              f"(resume with `rad objective resume <id>`)",
                            fixed=True, detail=detail)

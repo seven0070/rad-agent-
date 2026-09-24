@@ -116,16 +116,23 @@ class RouterState:
     def build_chain_for(self, requirements: Optional[Any] = None, force: Optional[str] = None,
                         free_lock: Optional[bool] = None, need_vision: bool = False) -> List[ChainEntry]:
         """Availability chain, re-ordered for a task's requirements (free-first preserved)."""
-        chain = self.build_chain(force=force, free_lock=free_lock, need_vision=need_vision)
+        pin = str(force or self.home.cfg.get("force_provider") or "").strip() or None
+        chain = self.build_chain(force=pin, free_lock=free_lock, need_vision=need_vision)
         if not chain:
             return chain
         try:
+            from copy import copy
             from rad.modelselect import ModelRegistry, Requirements
             req = requirements if isinstance(requirements, Requirements) else None
             if req is None and requirements is not None:
                 req = Requirements(kind=str(getattr(requirements, "kind", "chat")))
             if req is None:
                 return chain
+            # `select` ranks local above free. A pin is an explicit prefer, tried
+            # first; Class C still rotates to the rest of the chain.
+            if pin and pin not in list(req.prefer or []):
+                req = copy(req)
+                req.prefer = [pin, *list(req.prefer or [])]
             sel = ModelRegistry(self.home).select(chain, req)
             selected = sel or chain
             self.last_selection = {"kind": req.kind, "requested": [getattr(e.spec, "name", "?") for e in chain],
@@ -175,8 +182,15 @@ class RouterState:
         errors: List[str] = []
         class_c_hits: List[P.ProviderError] = []
         free_lock = bool(self.home.cfg.get("free_lock"))
+        # A `model` pin is scoped to `force_provider` (same rule as health.py's
+        # inference_probe_model): a Class C rotation must not send a NIM model
+        # id to ollama or an OpenRouter id to NVIDIA — that 404s and kills the
+        # fallback chain that is supposed to save the run.
+        pin = str(self.home.cfg.get("force_provider") or "").strip()
+        pinned_model = str(self.home.cfg.get("model") or "").strip()
         for entry in chain:
-            model = model_override or self.home.cfg.get("model") or entry.model
+            base = pinned_model if pinned_model and (not pin or pin == entry.spec.name) else entry.model
+            model = model_override or base
             if not model and entry.spec.local and entry.spec.name == "edge0":
                 model = "edge0-" + (self.home.cfg.get("edge0_tier", "10b"))
             try:

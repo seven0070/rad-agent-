@@ -216,12 +216,11 @@ export function StudioCanvas({
 
   return (
     <div
-      className="studio-canvas-container"
+      className={`studio-canvas-container ${isPanning ? "cursor-grabbing" : "cursor-grab"}`}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
-      style={{ cursor: isPanning ? "grabbing" : "grab" }}
     >
       {/* Floating Canvas Controls Toolbar (CrewAI Studio v2 style) */}
       <div className="studio-controls-bar">
@@ -244,7 +243,7 @@ export function StudioCanvas({
         style={{
           transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
           transformOrigin: "0 0",
-        }}
+        }} // DYNAMIC-STYLE: pan/zoom transform
       >
         {/* SVG Edges Layer */}
         <svg className="studio-edges-layer">
@@ -304,7 +303,7 @@ export function StudioCanvas({
                 left: node.x,
                 top: node.y,
                 width: node.width,
-              }}
+              }} // DYNAMIC-STYLE: node layout position
               onClick={() => onSelectNode(node.id, node.type)}
             >
               {/* Input Port Pin */}
@@ -336,14 +335,13 @@ export function StudioCanvas({
                   </span>
                 )}
                 {node.type === "objective" && (
-                  <span className="node-meta-item" style={{ color: "var(--text-primary)" }}>
+                  <span className="node-meta-item tc-primary">
                     ● Active Root
                   </span>
                 )}
                 {node.type === "verification" && (
                   <span
-                    className="node-meta-item"
-                    style={{ color: isDone ? "var(--emerald-verif)" : "var(--text-dim)" }}
+                    className={`node-meta-item ${isDone ? "tc-verif" : "tc-dim"}`}
                   >
                     {isDone ? "✓ Checks Passed" : "Pending Evaluation"}
                   </span>

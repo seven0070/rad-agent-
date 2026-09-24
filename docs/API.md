@@ -41,6 +41,7 @@ Bodies ≤ 256 KB, JSON objects only. Every request is logged to `~/.rad/logs/ap
 | GET | `/v1/memory/recall?q=&k=` | ranked recall |
 | GET | `/v1/user` · `/v1/policy` · `/v1/audit?n=` · `/v1/lab/history` · `/v1/evolve/candidates` | read-only views |
 | POST | `/v1/chat {text}` | one Jerry turn (`via: jerry`) |
+| POST | `/v1/triage {text, kind?}` | advisory auto/escalate classifier (offline-fallback = `escalate`; never gates execution) |
 | GET | `/v1/authority` | profile, conceptual capabilities, scopes, confirmation, existing budgets |
 | PUT | `/v1/authority` | `{profile, confirm_unrestricted?, capabilities?, scopes?, confirmation?}`. UNRESTRICTED → 409 without `confirm_unrestricted` |
 | GET / PUT | `/v1/settings` | safe config subset. Cannot raise budgets, change Needle, or set `--auto` |

@@ -28,11 +28,11 @@ export function RunProgressHeader({
     return (
       <header className="session-header">
         <div className="session-header-left">
-          <div className="rad-logo-mark" style={{ width: 26, height: 26, fontSize: 13 }}>
+          <div className="rad-logo-mark sm">
             RAD
           </div>
           <span className="session-title">RAD Agent Cockpit</span>
-          <span className="badge" style={{ color: "var(--text-dim)", fontSize: 11 }}>
+          <span className="badge fs-11 tc-dim">
             IDLE
           </span>
         </div>
@@ -46,11 +46,11 @@ export function RunProgressHeader({
   return (
     <header className="session-header run-progress-header">
       <div className="session-header-left">
-        <div className="rad-logo-mark" style={{ width: 26, height: 26, fontSize: 13 }}>
+        <div className="rad-logo-mark sm">
           RAD
         </div>
         <div className="run-header-titles">
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div className="inline-mid gap-8">
             <span className="session-title">{objective.goal}</span>
             <ObjectiveStatusBadge status={objective.status} />
             <span className="font-mono run-id-pill">

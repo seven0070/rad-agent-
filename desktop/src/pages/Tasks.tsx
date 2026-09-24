@@ -63,7 +63,7 @@ export default function Tasks() {
         Backend task dependencies for {id}. The frontend does not schedule — the controller
         chooses the ready set.
       </p>
-      <div className="row" style={{ marginBottom: 12 }}>
+      <div className="row mb-12">
         {TASK_STATES.filter((s) => counts[s]).map((s) => (
           <span key={s} className={`badge ${taskStateClass(s)}`}>
             {s} {counts[s]}
@@ -102,7 +102,7 @@ export default function Tasks() {
               );
             })}
             {g.nodes.map((n) => (
-              <g key={n.id} onClick={() => setDetail(n.task)} style={{ cursor: "pointer" }}>
+              <g key={n.id} onClick={() => setDetail(n.task)} className="cursor-pointer">
                 <rect
                   x={n.x}
                   y={n.y}
@@ -127,22 +127,22 @@ export default function Tasks() {
         </div>
         {detail && (
           <div className="card detail-card">
-            <div className="row" style={{ justifyContent: "space-between" }}>
+            <div className="row justify-between">
               <b>{detail.id}</b>
               <span className={`badge ${taskStateClass(detail.status)}`}>{detail.status}</span>
             </div>
-            <div style={{ marginTop: 8, fontSize: 13, whiteSpace: "pre-wrap" }}>{redactText(detail.text || "")}</div>
-            <div className="hint" style={{ marginTop: 8 }}>
+            <div className="mt-8 fs-13 pre-wrap">{redactText(detail.text || "")}</div>
+            <div className="hint mt-8">
               attempts {detail.attempts ?? 0}/{detail.max_attempts ?? 3}
               {detail.agent ? ` · agent ${detail.agent}` : ""}
               {detail.started ? ` · started ${fmtTime(detail.started)}` : ""}
               {detail.finished ? ` · finished ${fmtTime(detail.finished)}` : ""}
             </div>
             {detail.depends_on && detail.depends_on.length > 0 && (
-              <div className="hint" style={{ marginTop: 6 }}>depends on: {detail.depends_on.join(", ")}</div>
+              <div className="hint mt-6">depends on: {detail.depends_on.join(", ")}</div>
             )}
             {(detail.checks || []).length > 0 && (
-              <div style={{ marginTop: 8 }}>
+              <div className="mt-8">
                 <label>Machine checks</label>
                 {(detail.checks || []).map((c, i) => (
                   <div key={i} className="hint">
@@ -152,7 +152,7 @@ export default function Tasks() {
               </div>
             )}
             {detail.verification?.status && (
-              <div style={{ marginTop: 8 }}>
+              <div className="mt-8">
                 <label>Verification</label>
                 <span
                   className={`badge ${
@@ -162,20 +162,20 @@ export default function Tasks() {
                   {detail.verification.status}
                 </span>
                 {detail.verification.summary && (
-                  <div className="hint" style={{ marginTop: 4 }}>
+                  <div className="hint mt-4">
                     {redactText(String(detail.verification.summary)).slice(0, 400)}
                   </div>
                 )}
               </div>
             )}
             {detail.note && (
-              <div className="hint" style={{ marginTop: 8 }}>
+              <div className="hint mt-8">
                 note: {redactText(detail.note)}
               </div>
             )}
-            {detail.failure_class && <div className="hint" style={{ marginTop: 4 }}>failure class: {detail.failure_class}</div>}
+            {detail.failure_class && <div className="hint mt-4">failure class: {detail.failure_class}</div>}
             {(detail.reply || "") && (
-              <details style={{ marginTop: 8 }}>
+              <details className="mt-8">
                 <summary className="hint">model reply (redacted)</summary>
                 <pre className="reply-pre">{redactText(detail.reply || "").slice(0, 3000)}</pre>
               </details>

@@ -161,7 +161,7 @@ class RecoveryEngine:
                                  f"the current one fails: {detail[:200]}",
                             data={"path": broken_verified})
         if fc == FailureClass.ENVIRONMENT:
-            if repairs_so_far < self.max_repairs:
+            if repairs_so_far < self.max_repairs and not _is_repair_task(task):
                 return Decision("repair", fc, "missing dependency/file — insert a repair step",
                                 hint="A prerequisite was missing: " + detail[:300])
             if can_retry:

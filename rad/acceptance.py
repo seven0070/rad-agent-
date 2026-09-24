@@ -1042,7 +1042,7 @@ class Gate:
         import threading as _th
         import urllib.error
         import urllib.request
-        from rad.api import make_server, token_for
+        from rad.api import make_server, secret_is_private, token_for
         from rad.control.events import EventLog, global_path
         home = self.item_home()
         EventLog(global_path(home), home=home).emit("TOOL_CALLED", "obj_probe", "t_1", tool="write_file")
@@ -1071,7 +1071,7 @@ class Gate:
             ev_status, ev_body = _get("/v1/events?n=5", token)
             no_token, wrong_token = _get("/v1/health")[0], _get("/v1/health", "nope")[0]
             missing = _get("/v1/does_not_exist", token)[0]
-            mode = oct((home.root / "api.token").stat().st_mode & 0o777)
+            private, mode = secret_is_private(home.root / "api.token")
             import time as _t
             log: List[str] = []
             for _ in range(40):
@@ -1088,13 +1088,13 @@ class Gate:
         bad = [p for p, st in routes.items() if st != 200]
         leaked = [l for l in log if "probe" in l]        # the request log records no bodies/queries
         ok = (not bad and no_token == 401 and wrong_token == 401 and missing == 404
-              and ev_status == 200 and "events" in ev_body and mode == "0o600"
+              and ev_status == 200 and "events" in ev_body and private
               and len(log) >= len(paths) + 3 and not leaked)
         return ok, (
             f"live HTTP server on 127.0.0.1: {len(paths)} routes answered 200 (failing: {bad or 'none'}) "
             f"including /v1/events ({len(ev_body.get('events', []))} event(s) from the global stream); "
             f"without a token → {no_token}, with a wrong one → {wrong_token}, unknown route → {missing}; "
-            f"bearer token stored {mode}; {len(log)} requests logged with method/path/status/ms and no "
+            f"bearer token stored {mode} (private={private}); {len(log)} requests logged with method/path/status/ms and no "
             f"bodies or secrets (query leaks: {len(leaked)}) — the API is a thin layer over the same "
             f"control plane the CLI uses (`rad serve`)")
 

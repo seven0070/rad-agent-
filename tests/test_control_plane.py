@@ -15,6 +15,7 @@ from rad.control.events import EventLog
 from rad.control.graph import CycleError
 from rad.control.objectives import Budget
 from rad.control.recovery import FailureClass, RecoveryEngine, classify
+from rad.control.observer import Observation
 from rad.control.tasks import IllegalTransition, Task
 from rad.tools import ToolCtx, run_tool
 
@@ -296,6 +297,20 @@ def test_needs_user_signal_pauses_objective(home, ws, scripted):
     assert scripted.script == []  # t2 never ran
 
 
+def test_both_blocked_and_needs_user_signals_do_not_crash(home, ws, scripted):
+    """Regression: a reply containing BOTH markers must end NEEDS_USER (which wins),
+    never raise IllegalTransition on NEEDS_USER -> BLOCKED."""
+    message = "NEEDS_USER: which machine to target?\nBLOCKED: cannot proceed otherwise"
+    plan = {"tasks": [{"id": "t1", "text": "decide", "depends_on": [], "checks": []}]}
+    scripted.script = [([], message)]
+    ctl = _ctl(home, scripted, plan)
+    obj = ctl.run(ctl.create("decide"))
+    assert obj.status == ObjectiveStatus.NEEDS_USER
+    g = ctl.load_graph(obj)
+    st = {t.text: t.status for t in g.tasks.values()}
+    assert st["decide"] == TaskStatus.NEEDS_USER
+
+
 # ---------------------------------------------------------------- budgets
 
 def test_tool_call_budget_stops_run(home, ws, scripted):
@@ -418,6 +433,50 @@ def test_checkpoint_and_resume_after_interruption(home, ws, scripted):
     assert g2.tasks[g2.order[0]].attempts == 1         # completed task was NOT re-run
     assert any(h["note"] == "interrupted" for h in g2.tasks[g2.order[1]].history)
     assert len(scripted.prompts) == 3
+
+
+def test_resume_clears_task_needs_user_while_objective_running(home, ws, scripted):
+    """A permission ask mid-run sets task NEEDS_USER without flipping the objective.
+    resume must clear it anyway, or the task is stuck forever (seen in RW073 soak)."""
+    plan = {"tasks": [{"id": "t1", "text": "a", "depends_on": [],
+                       "checks": [{"kind": "file_exists", "args": {"path": "a"}}]}]}
+    ctl = _ctl(home, scripted, plan)
+    obj = ctl.create("x")
+    if not ctl.store.load_tasks(obj.id):
+        ctl.plan(obj)
+    g = ctl.load_graph(obj)
+    g.tasks[g.order[0]].status = TaskStatus.NEEDS_USER
+    obj.status = ObjectiveStatus.RUNNING          # objective never left running
+    ctl.store.save(obj)
+    ctl.store.save_tasks(obj.id, g.to_list())
+    assert obj.status not in (ObjectiveStatus.PAUSED, ObjectiveStatus.NEEDS_USER)
+
+    scripted.script = [([("write_file", {"path": "a", "content": "1"})], "DONE")]
+    obj2 = ctl.resume(obj.id)
+    g2 = ctl.load_graph(obj)
+    assert g2.tasks[g2.order[0]].status == TaskStatus.COMPLETED
+    assert obj2.status == ObjectiveStatus.COMPLETED
+
+
+def test_repair_task_never_spawns_repair_of_repair():
+    """ENVIRONMENT on a repair task must not insert another repair step —
+    retry/ask_user only (the broken-artifact branch already had this guard;
+    the ENVIRONMENT branch was missing it and spawned repair-of-repair chains)."""
+    def env_obs(task_id: str) -> list:
+        return [Observation.new(
+            objective_id="o", task_id=task_id, action_id="a1", tool="run_shell",
+            args={"command": "pytest -q"}, status="error", duration_ms=10,
+            output="[stderr] /usr/bin/bash: line 1: pytest: command not found [exit=127]")]
+
+    repair = Task.new("o", "Repair prerequisite so that this can succeed: run the tests")
+    assert classify(repair, env_obs(repair.id)) == FailureClass.ENVIRONMENT
+    d = RecoveryEngine().decide(repair, env_obs(repair.id), retries_left=5)
+    assert d.strategy != "repair"
+    assert d.strategy in ("retry", "retry_with_hint", "switch_tool")
+
+    normal = Task.new("o", "Run the unit tests using pytest and verify all tests pass.")
+    d2 = RecoveryEngine().decide(normal, env_obs(normal.id), retries_left=5)
+    assert d2.strategy == "repair"
 
 
 def test_resume_by_prefix_and_last(home, ws, scripted):

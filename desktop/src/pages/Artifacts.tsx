@@ -105,7 +105,7 @@ export default function Artifacts() {
                   <tr
                     key={a.id}
                     onClick={() => void open(a)}
-                    style={{ cursor: "pointer", outline: sel === a.id ? "1px solid var(--accent)" : "none" }}
+                    className={`selectable${sel === a.id ? " is-selected" : ""}`}
                   >
                     <td title={a.location}>{a.location.split("/").slice(-2).join("/")}</td>
                     <td className="hint">{a.task_id}</td>
@@ -142,18 +142,18 @@ export default function Artifacts() {
 
         {selRow && (
           <div className="card art-detail">
-            <div className="row" style={{ justifyContent: "space-between" }}>
-              <b style={{ wordBreak: "break-all" }}>{selRow.location}</b>
+            <div className="row justify-between">
+              <b className="break-all">{selRow.location}</b>
               <span className="hint">
                 {selRow.creator} · v{selRow.version} · {fmtBytes(selRow.size)}
               </span>
             </div>
-            <div className="hint" style={{ marginTop: 4 }}>
+            <div className="hint mt-4">
               sha256 {shortHash(selRow.sha256, 20)} · {fmtTime(selRow.at)}
             </div>
 
             {why && (
-              <div style={{ marginTop: 10 }}>
+              <div className="mt-10">
                 <label>Provenance (why this artifact exists)</label>
                 <div className="chain">
                   <div className="chain-step">
@@ -188,12 +188,12 @@ export default function Artifacts() {
                   </div>
                 </div>
                 {why.evidence.length > 0 && (
-                  <div style={{ marginTop: 8 }}>
+                  <div className="mt-8">
                     <label>Evidence (before this action, same task)</label>
                     {why.evidence.slice(0, 6).map((e, i) => {
                       const ee = e as { source?: string; tool?: string; trusted?: boolean; excerpt?: string };
                       return (
-                        <div key={i} className="hint" style={{ marginBottom: 4 }}>
+                        <div key={i} className="hint mb-4">
                           {ee.trusted === false ? "⚠ untrusted " : ""}
                           {ee.source || ee.tool || "evidence"}:{" "}
                           {redactText(String(ee.excerpt || "")).slice(0, 180)}
@@ -205,7 +205,7 @@ export default function Artifacts() {
               </div>
             )}
 
-            <div style={{ marginTop: 10 }}>
+            <div className="mt-10">
               <label>Content preview (redacted)</label>
               {content ? (
                 <pre className="art-pre">

@@ -4,15 +4,14 @@ from __future__ import annotations
 import argparse
 import json
 import time
-from typing import Any, Dict, List
+from typing import TYPE_CHECKING, Any, Dict, List
 
-from rad.control import events as E
-from rad.control.controller import Controller
-from rad.control.events import EventLog
-from rad.control.objectives import Budget, ObjectiveStatus
-from rad.control.tasks import TaskStatus
 from rad.home import RadHome
 from rad.ui import col, fail, info, ok, warn
+
+if TYPE_CHECKING:
+    from rad.control import events as E
+    from rad.control.controller import Controller
 
 STATUS_COL = {
     "completed": col.green, "failed": col.red, "cancelled": col.dim, "needs_user": col.yellow,
@@ -26,7 +25,8 @@ def _c(s: str) -> str:
     return STATUS_COL.get(s, str)(s)
 
 
-def _live_printer(ev: E.Event) -> None:
+def _live_printer(ev: "E.Event") -> None:
+    from rad.control import events as E
     d = ev.data
     if ev.kind == E.TOOL_CALLED:
         print(col.magenta(f"      ⚙ {d.get('tool')} {json.dumps(d.get('args', {}), ensure_ascii=False)[:120]}"))
@@ -40,7 +40,7 @@ def _live_printer(ev: E.Event) -> None:
         print(col.red(f"      budget: {d.get('reason')}"))
 
 
-def _print_objective(o, ctl: Controller, verbose: bool = False) -> None:
+def _print_objective(o, ctl: "Controller", verbose: bool = False) -> None:
     print(f"  {col.bold(o.id)}  {_c(o.status)}  {o.goal[:90]}")
     if o.success_criteria:
         for c in o.success_criteria:
@@ -72,6 +72,8 @@ def _print_objective(o, ctl: Controller, verbose: bool = False) -> None:
 # ---------------------------------------------------------------- commands
 
 def cmd_objective(args) -> int:
+    from rad.control.controller import Controller
+    from rad.control.objectives import Budget, ObjectiveStatus
     home = RadHome(args.home)
     ctl = Controller(home)
     act = args.obj_action
@@ -149,7 +151,8 @@ def cmd_objective(args) -> int:
     return 1
 
 
-def _run(ctl: Controller, obj, args) -> int:
+def _run(ctl: "Controller", obj, args) -> int:
+    from rad.control.objectives import ObjectiveStatus
     ctl.on_event = _live_printer
     if not obj.auto:
         warn("confirm-gated: Rad will ask before each shell/write action.  (--auto = no asking)")
@@ -172,6 +175,8 @@ def _run(ctl: Controller, obj, args) -> int:
 
 
 def cmd_trace(args) -> int:
+    from rad.control.controller import Controller
+    from rad.control.events import EventLog
     home = RadHome(args.home)
     ctl = Controller(home)
     obj = ctl.store.resolve(args.ref or "last")
@@ -194,6 +199,7 @@ def cmd_trace(args) -> int:
 
 
 def _summ(kind: str, d: Dict[str, Any]) -> str:
+    from rad.control import events as E
     if kind == E.TOOL_CALLED:
         return f"{d.get('tool')} {json.dumps(d.get('args', {}), ensure_ascii=False)[:90]}"
     if kind == E.TOOL_RESULT:
@@ -213,9 +219,12 @@ def _summ(kind: str, d: Dict[str, Any]) -> str:
 
 def cmd_events(args) -> int:
     """Tail recent events across all objectives."""
+    from rad.control import events as E
+    from rad.control.controller import Controller
+    from rad.control.events import EventLog
     home = RadHome(args.home)
     ctl = Controller(home)
-    rows: List[E.Event] = []
+    rows: List["E.Event"] = []
     for o in ctl.store.list()[:20]:
         rows += EventLog(ctl.store.events_path(o.id)).all()
     rows.sort(key=lambda e: e.at)
@@ -226,6 +235,7 @@ def cmd_events(args) -> int:
 
 
 def cmd_replay(args) -> int:
+    from rad.control.controller import Controller
     from rad.control.replay import Replay
     home = RadHome(args.home)
     ctl = Controller(home)
@@ -270,6 +280,7 @@ def cmd_replay(args) -> int:
 
 
 def cmd_why(args) -> int:
+    from rad.control.controller import Controller
     from rad.control.provenance import Provenance
     home = RadHome(args.home)
     ctl = Controller(home)
@@ -356,6 +367,7 @@ def cmd_agents(args) -> int:
         print("  " + "\n  ".join(ALL_CAPS))
         return 0
     if a == "board":
+        from rad.control.controller import Controller
         scope = args.agents_args[0] if args.agents_args else "last"
         if scope == "last":
             o = Controller(home).store.resolve("last")

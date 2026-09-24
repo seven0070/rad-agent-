@@ -268,6 +268,28 @@ def test_interrupted_objectives_are_detected_and_restored(home, ws, scripted):
     assert obj2.status == ObjectiveStatus.RUNNING
 
 
+def test_doctor_interrupted_surfaces_warning_not_crash(home, ws, scripted):
+    """Regression: doctor read Interrupted objects as dicts (`i['id']`, `i['in_flight']`),
+    crashing with TypeError whenever a crash-recovery objective existed. It must report
+    the interrupted objective as a warning so `rad doctor --fix` can restore it."""
+    from rad.doctor import Doctor
+    plan = {"tasks": [{"id": "t1", "text": "a", "depends_on": [], "checks": []}]}
+    scripted.script = [([], "DONE")]
+    ctl = _ctl(home, scripted, plan)
+    obj = ctl.create("x")
+    (ctl.store.dir(obj.id) / "lock.json").unlink(missing_ok=True)
+    obj.set_status(ObjectiveStatus.RUNNING)
+    ctl.store.save(obj)
+    fs = {f.check: f for f in Doctor(home, fix=False, probe_network=False).run()}
+    assert fs["recovery"].status == "warn"
+    assert "interrupted" in fs["recovery"].message
+    assert "resume" in fs["recovery"].message
+    assert any(obj.id in d for d in fs["recovery"].detail)
+    # fix mode restores it (idempotent) and reports ok, not a crash
+    fs_fix = {f.check: f for f in Doctor(home, fix=True, probe_network=False).run()}
+    assert fs_fix["recovery"].status == "ok"
+
+
 def test_live_lock_prevents_false_crash_detection(home, ws, scripted):
     plan = {"tasks": [{"id": "t1", "text": "a", "depends_on": [], "checks": []}]}
     scripted.script = [([], "DONE")]

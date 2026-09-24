@@ -36,7 +36,7 @@ Browser-only (no Tauri): `VITE_RAD_TOKEN=$(cat ~/.rad/api.token) npm run dev`, w
 
 ```bash
 pip install -e ".[sidecar]"
-python -m sidecar.build                     # this platform
+python -m sidecar.build                     # this platform (isolated venv)
 python -m sidecar.build --triple x86_64-pc-windows-msvc   # CI: pinned per runner
 ```
 

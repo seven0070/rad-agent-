@@ -49,6 +49,13 @@ ASCII_PIPE_GOAL = (
     "`-- summary.json\n"
 )
 
+# Live obj_00533531 goal: inline one-line "ascii tree" note (not box-drawing).
+INLINE_TREE_GOAL = (
+    "Create a text analyzer package. text_analyzer/ (ascii tree): analyzer.py "
+    "(stdlib), input.txt (exact 3 lines), summary.json (accurate lines/words/"
+    "characters), test_analyzer.py, README.md. Exact 3-line input.txt. Run the tests."
+)
+
 DASH_LIST_GOAL = (
     "Create files under a folder named text_analyzer then:\n"
     "- analyzer.py\n"
@@ -109,6 +116,30 @@ def test_infer_package_dir_ascii_tree_box_drawing():
 
 def test_infer_package_dir_ascii_pipe_tree():
     assert infer_package_dir(ASCII_PIPE_GOAL) == "text_analyzer/"
+
+
+def test_infer_package_dir_inline_ascii_tree_marker():
+    assert infer_package_dir(INLINE_TREE_GOAL) == "text_analyzer/"
+
+
+def test_infer_package_dir_inline_tree_needs_two_files():
+    assert infer_package_dir("notes/ (ascii tree): only.md here") is None
+    assert infer_package_dir("docs/ (ascii tree): a.md, b.md") is None
+    assert infer_package_dir("text_analyzer/ (tree): analyzer.py, input.txt") == "text_analyzer/"
+
+
+def test_infer_coding_checks_inline_tree_joins_bare_paths():
+    checks = infer_coding_checks(INLINE_TREE_GOAL)
+    json_paths = [c.args.get("path") for c in checks if c.kind == "json_valid"]
+    assert json_paths == ["text_analyzer/summary.json"]
+    lines = [c for c in checks if c.kind == "file_line_count"]
+    assert lines and lines[0].args.get("path") == "text_analyzer/input.txt"
+    assert any(
+        c.kind == "shell_ok" and c.args.get("command") == "python3 text_analyzer/test_analyzer.py"
+        for c in checks
+    )
+    assert any(c.kind == "file_exists" and c.args.get("path") == "text_analyzer/README.md"
+               for c in checks)
 
 
 def test_infer_package_dir_dash_list_is_not_a_tree():

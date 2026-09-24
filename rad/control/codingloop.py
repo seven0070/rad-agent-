@@ -110,6 +110,10 @@ _PKG_UNDER_RE = re.compile(
     re.I,
 )
 _PKG_BRACE_RE = re.compile(r"\b([A-Za-z_][\w.-]*)/\{")
+# Inline one-line layout note: `pkg/ (ascii tree): f1, f2, …` / `pkg/ (tree): …`
+_PKG_INLINE_TREE_RE = re.compile(
+    r"\b([A-Za-z_][\w.-]*)/\s*\(\s*(?:ascii\s+)?tree\s*\)\s*:", re.I
+)
 _PKG_FILE_RE = re.compile(r"\b([A-Za-z_][\w.-]*)/(?:[\w.-]+/)*[\w.-]+\.\w+")
 _SKIP_PKG_DIRS = frozenset({"tests", "test", "docs", "doc"})
 # ASCII / box-drawing tree: `pkg/` on its own line, then ├── / └── / |-- children.
@@ -300,7 +304,8 @@ def _ascii_tree_package_dir(blob: str) -> Optional[str]:
 def infer_package_dir(goal: str, criteria: Optional[List[str]] = None) -> Optional[str]:
     """Directory the goal names as the package layout, or None for workspace-root files.
 
-    Prefers an explicit `under pkg/` or `pkg/{…}` layout, else a unique
+    Prefers an explicit `under pkg/` or `pkg/{…}` layout, else an inline
+    `pkg/ (ascii tree): f1, f2` note (≥2 named files), else a unique
     non-test directory prefix that appears on **two or more** mentioned files,
     else an ASCII / box-drawing tree (`pkg/` + `├── file` children).
     A single `pkg/foo.py` mention is not a layout (`tests/` alone is never one).
@@ -312,6 +317,12 @@ def infer_package_dir(goal: str, criteria: Optional[List[str]] = None) -> Option
     m = _PKG_BRACE_RE.search(blob)
     if m:
         return m.group(1) + "/"
+    m = _PKG_INLINE_TREE_RE.search(blob)
+    if m and m.group(1).lower() not in _SKIP_PKG_DIRS:
+        tail = blob[m.end():]
+        files = re.findall(r"\b[\w-]+\.(?:py|txt|json|md)\b", tail, re.I)
+        if len(files) >= 2:
+            return m.group(1) + "/"
     dirs = [d for d in _PKG_FILE_RE.findall(blob) if d.lower() not in _SKIP_PKG_DIRS]
     uniq = list(dict.fromkeys(dirs))
     # A single `pkg/foo.py` mention is not a package layout (the rest of the

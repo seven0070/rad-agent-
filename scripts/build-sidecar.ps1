@@ -54,10 +54,24 @@ $candidates = @(
 $pythonExe   = $null
 $pythonArgv  = @()
 
+# PS 5.1: native stderr + $ErrorActionPreference=Stop throws NativeCommandError;
+# -c strings must avoid embedded double quotes (PS mangles native argv quotes).
+$probeCode = 'import sys; sys.stdout.write(str(sys.version_info[0])+chr(46)+str(sys.version_info[1]))'
+
 foreach ($c in $candidates) {
-    $probe = & $c.Exe $c.Args @('-c', 'import sys; print("%d.%d" % sys.version_info[:2])') 2>$null
-    if ($LASTEXITCODE -eq 0 -and $probe) {
-        $verText = ($probe | Select-Object -Last 1)
+    $probe = $null
+    $probeOk = $false
+    try {
+        $ErrorActionPreference = 'Continue'
+        $probe = & $c.Exe @($c.Args) @('-c', $probeCode) 2>$null
+        $probeOk = ($LASTEXITCODE -eq 0)
+    } catch {
+        $probeOk = $false
+    } finally {
+        $ErrorActionPreference = 'Stop'
+    }
+    if ($probeOk -and $probe) {
+        $verText = [string]($probe | Select-Object -Last 1).Trim()
         try {
             $ver = [version]$verText
         } catch {
@@ -65,7 +79,7 @@ foreach ($c in $candidates) {
         }
         if ($ver -and $ver.Major -eq 3 -and $ver.Minor -ge 10) {
             $pythonExe  = $c.Exe
-            $pythonArgv = $c.Args
+            $pythonArgv = @($c.Args)
             Write-Output "[sidecar] Python $verText via $pythonExe $($pythonArgv -join ' ')"
             break
         }

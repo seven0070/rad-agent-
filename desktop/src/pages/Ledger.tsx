@@ -103,17 +103,17 @@ export default function Ledger() {
         <div className="page-header">
           <div className="page-title-group">
             <h2>
-              <IconLedger size={20} style={{ color: "var(--rad-indigo)" }} />
+              <IconLedger size={20} className="icon-indigo" />
               Replication Ledger
             </h2>
             <p className="lead">Sidecar unreachable</p>
           </div>
           <button className="btn ghost" onClick={() => void load(true)}>
-            <IconRefresh size={13} style={{ marginRight: 6 }} />
+            <IconRefresh size={13} className="mr-6" />
             Retry
           </button>
         </div>
-        <div className="card" style={{ borderColor: "rgba(244, 63, 94, 0.3)" }}>
+        <div className="card card-alert">
           <p className="err">{err}</p>
         </div>
       </div>
@@ -135,7 +135,7 @@ export default function Ledger() {
       <div className="page-header">
         <div className="page-title-group">
           <h2>
-            <IconLedger size={20} style={{ color: "var(--rad-indigo)" }} />
+            <IconLedger size={20} className="icon-indigo" />
             Replication Ledger
           </h2>
           <p className="lead">
@@ -151,8 +151,7 @@ export default function Ledger() {
         >
           <IconRefresh
             size={12}
-            className={refreshing ? "spin" : ""}
-            style={{ marginRight: 5 }}
+            className={refreshing ? "spin mr-5" : "mr-5"}
           />
           {refreshing ? "Polling…" : "Refresh"}
         </button>
@@ -166,14 +165,13 @@ export default function Ledger() {
         <span className="stat">
           replication rate{" "}
           <b
-            style={{
-              color:
-                repRate >= 80
-                  ? "var(--emerald-verif)"
-                  : repRate >= 50
-                    ? "var(--rad-amber)"
-                    : "var(--rose-danger)",
-            }}
+            className={
+              repRate >= 80
+                ? "tc-verif"
+                : repRate >= 50
+                  ? "tc-amber"
+                  : "tc-danger"
+            }
           >
             {repRate}%
           </b>
@@ -181,22 +179,22 @@ export default function Ledger() {
         <span className="stat">
           <b>{data.amendment_count}</b> amendments
         </span>
-        <span className="stat muted" style={{ marginLeft: "auto", fontSize: 11 }}>
+        <span className="stat muted ml-auto fs-11">
           append-only · amendments fold, history preserved
         </span>
       </div>
 
       {/* Empty State */}
       {data.battles.length === 0 && (
-        <div className="card" style={{ textAlign: "center", padding: "32px 20px" }}>
-          <p className="muted" style={{ margin: 0 }}>
+        <div className="card card-empty">
+          <p className="muted m-0">
             No battles recorded yet — <code>rad paper add &lt;arxiv-id&gt;</code> begins the trail.
           </p>
         </div>
       )}
 
       {/* Battle Cards */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div className="stack gap-12">
         {data.battles.map((bt) => {
           const style =
             VERDICT_STYLE[bt.replication_verdict] ?? VERDICT_STYLE.NO_CLAIM_TO_TEST;
@@ -211,8 +209,8 @@ export default function Ledger() {
               <div className="battle-row">
                 <span className={`chip ${style.chip}`}>
                   <span
-                    className="dot"
-                    style={{ backgroundColor: style.dot, width: 6, height: 6 }}
+                    className="dot dot-6"
+                    style={{ backgroundColor: style.dot }} // DYNAMIC-STYLE: verdict-mapped dot color
                   />
                   {bt.replication_verdict}
                 </span>
@@ -272,13 +270,13 @@ export default function Ledger() {
                 <div key={i} className="amendment font-mono">
                   <IconAmendment
                     size={14}
-                    style={{ color: "var(--rad-amber)", flexShrink: 0 }}
+                    className="icon-amber icon-flex-0"
                   />
                   <span>
                     amended: <b>{a.was}</b> → <b>{a.now}</b> — {a.reason}
                   </span>
                   {a.amended_at && (
-                    <span className="hint" style={{ marginLeft: "auto" }}>
+                    <span className="hint ml-auto">
                       {a.amended_at.slice(0, 16).replace("T", " ")}
                     </span>
                   )}
@@ -296,8 +294,8 @@ function LedgerSkeleton() {
   return (
     <div className="page" aria-busy="true">
       <div className="page-header">
-        <div className="page-title-group" style={{ width: "300px" }}>
-          <Skeleton height={24} width="200px" style={{ marginBottom: 6 }} />
+        <div className="page-title-group w-300">
+          <Skeleton height={24} width="200px" className="mb-6" />
           <Skeleton height={14} width="280px" />
         </div>
       </div>
@@ -306,15 +304,15 @@ function LedgerSkeleton() {
         <Skeleton height={20} width="160px" />
         <Skeleton height={20} width="120px" />
       </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div className="stack gap-12">
         {Array.from({ length: 3 }).map((_, i) => (
           <div key={i} className="battle-card">
-            <div style={{ display: "flex", gap: 10 }}>
+            <div className="flex-row gap-10">
               <Skeleton height={22} width="110px" radius="var(--radius-pill)" />
               <Skeleton height={22} width="240px" />
             </div>
             <Skeleton height={14} width="320px" />
-            <div style={{ display: "flex", gap: 8 }}>
+            <div className="flex-row gap-8">
               <Skeleton height={24} width="90px" />
               <Skeleton height={24} width="90px" />
             </div>

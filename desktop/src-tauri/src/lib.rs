@@ -88,27 +88,57 @@ fn sidecar_name(triple: &str) -> String {
     }
 }
 
-/// Resolve the packaged sidecar binary. Tauri places externalBin next to the
-/// main executable (linux/windows) or in the app bundle's resources dir (macOS).
-/// In `tauri dev` the checkout's `src-tauri/binaries/` is used.
-fn resolve_sidecar() -> Option<PathBuf> {
-    let triple = target_triple()?;
-    let name = sidecar_name(triple);
-    let mut candidates: Vec<PathBuf> = Vec::new();
-    if let Ok(exe) = std::env::current_exe() {
-        if let Some(dir) = exe.parent() {
-            candidates.push(dir.join(&name));
-            candidates.push(dir.join("binaries").join(&name));
-            candidates.push(dir.join("Resources").join(&name));
-            candidates.push(dir.join("../Resources").join(&name));
+/// File names for the packaged backend, preferred first.
+///
+/// Installers (MSI/NSIS) ship the **short** name (`rad-backend[.exe]`) next to
+/// `rad-desktop`. The build tree and `tauri dev` keep the **triple-suffixed**
+/// name (`rad-backend-<triple>[.exe]`) under `src-tauri/binaries/`. Short name
+/// first so an installed build never falls through to the compile-time path.
+fn sidecar_names() -> Vec<String> {
+    let short = if cfg!(windows) {
+        "rad-backend.exe"
+    } else {
+        "rad-backend"
+    };
+    let mut names = vec![short.to_string()];
+    if let Some(triple) = target_triple() {
+        let n = sidecar_name(triple);
+        if !names.iter().any(|x| x == &n) {
+            names.push(n);
         }
     }
-    let manifest_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("binaries").join(&name);
-    candidates.push(manifest_dir);
-    candidates.push(std::path::Path::new("binaries").join(&name));
-    candidates.into_iter().find(|p| {
-        p.is_file() && p.metadata().map(|m| m.len() > 1024).unwrap_or(false)
-    })
+    names
+}
+
+/// Resolve the packaged sidecar binary. Tauri places externalBin next to the
+/// main executable (linux/windows) or in the app bundle's resources dir
+/// (macOS), under the short name. In `tauri dev` the checkout's
+/// `src-tauri/binaries/` holds the triple-suffixed name. Install-dir layout is
+/// always tried before the compile-time manifest path (clean machine must not
+/// depend on the repo). Size gate: >1024 bytes (rejects 0-byte placeholders).
+fn resolve_sidecar() -> Option<PathBuf> {
+    let names = sidecar_names();
+    let mut dirs: Vec<PathBuf> = Vec::new();
+    if let Ok(exe) = std::env::current_exe() {
+        if let Some(dir) = exe.parent() {
+            dirs.push(dir.to_path_buf());
+            dirs.push(dir.join("binaries"));
+            dirs.push(dir.join("Resources"));
+            dirs.push(dir.join("../Resources"));
+        }
+    }
+    dirs.push(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("binaries"));
+    dirs.push(std::path::Path::new("binaries").to_path_buf());
+
+    for dir in &dirs {
+        for name in &names {
+            let p = dir.join(name);
+            if p.is_file() && p.metadata().map(|m| m.len() > 1024).unwrap_or(false) {
+                return Some(p);
+            }
+        }
+    }
+    None
 }
 
 fn python_bin() -> String {

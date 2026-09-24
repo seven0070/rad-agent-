@@ -41,11 +41,9 @@ export function Button({
       {...props}
     >
       {loading ? (
-        <span className="dot ok spin" style={{ width: 6, height: 6, marginRight: 6 }} />
+        <span className="dot ok spin dot-6 mr-6" />
       ) : icon ? (
-        <span style={{ display: "inline-flex", alignItems: "center", marginRight: children ? 6 : 0 }}>
-          {icon}
-        </span>
+        <span className={`icon-slot${children ? "" : " no-gap"}`}>{icon}</span>
       ) : null}
       {children}
     </button>

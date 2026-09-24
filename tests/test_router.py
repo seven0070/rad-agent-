@@ -86,6 +86,35 @@ def test_chat_no_brain_clear_error(home):
         assert "no brain available" in str(ei.value)
 
 
+def test_model_pin_scoped_to_force_provider_on_fallback(home):
+    """Regression: cfg.model is a pin *for the pinned provider* (home.DEFAULTS),
+    but router chat sent it to every chain entry. After nvidia timed out and
+    Class C rotated to ollama, ollama got 'z-ai/glm-5.3-flash' → HTTP 404,
+    killing the fallback that was supposed to save the run. health.py already
+    scoped the same pin (`not force or force == spec.name`) — the router must too."""
+    home.update(force_provider="nvidia", model="z-ai/glm-5.3-flash")
+    home.vault_set("nvidia", "nvapi_test")
+    seen = []
+
+    def fake_chat(spec, key, messages, **kw):
+        seen.append((spec.name, kw.get("model")))
+        if spec.name == "nvidia":
+            raise P.ProviderError("network: The read operation timed out", retryable=True)
+        return P.ChatResult(text="ok", provider=spec.name, model=kw.get("model") or "",
+                            usage={"in": 1, "out": 1})
+
+    def fake_probe(s):
+        return (True, ["qwen3:4b"]) if s.name == "ollama" else (False, [])
+
+    with mock.patch.object(P, "probe_local", side_effect=fake_probe):
+        with mock.patch.object(P, "chat", side_effect=fake_chat):
+            r = RouterState(home)
+            res = r.chat([{"role": "user", "content": "hi"}])
+            assert res.provider == "ollama"
+            assert dict(seen).get("nvidia") == "z-ai/glm-5.3-flash"   # pin reaches its own brain
+            assert all(m != "z-ai/glm-5.3-flash" for n, m in seen if n != "nvidia")
+
+
 def test_free_rotation(home):
     with mock.patch.dict(__import__("os").environ,
                          {"GROQ_API_KEY": "a", "CEREBRAS_API_KEY": "b", "GEMINI_API_KEY": "c"}):

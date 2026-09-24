@@ -103,7 +103,7 @@ export default function ActiveRun() {
 
       {l && (
         <>
-          <div className="row" style={{ marginBottom: 14 }}>
+          <div className="row mb-14">
             {["running", "planning"].includes(status) && (
               <button className="btn" disabled={!!acting} onClick={() => void act("pause")}>
                 {acting === "pause" ? "Pausing…" : "Pause"}
@@ -127,8 +127,8 @@ export default function ActiveRun() {
               {l.current_task ? (
                 <>
                   <b className={`badge ${taskStateClass(l.current_task.status)}`}>{l.current_task.status}</b>
-                  <div style={{ marginTop: 6, fontSize: 13, whiteSpace: "pre-wrap" }}>{redactText(l.current_task.text)}</div>
-                  <div className="hint" style={{ marginTop: 4 }}>
+                  <div className="mt-6 fs-13 pre-wrap">{redactText(l.current_task.text)}</div>
+                  <div className="hint mt-4">
                     attempt {l.current_task.attempts} · elapsed {fmtElapsed(taskElapsed)}
                   </div>
                 </>
@@ -138,17 +138,20 @@ export default function ActiveRun() {
             </div>
             <div className="card stat">
               <label>Task progress</label>
-              <div style={{ fontSize: 22, fontWeight: 650 }}>
+              <div className="fs-22 fw-650">
                 {done}/{total}
               </div>
               <div className="meter">
-                <div className="meter-fill" style={{ width: `${total ? (done / total) * 100 : 0}%` }} />
+                <div
+                  className="meter-fill"
+                  style={{ width: `${total ? (done / total) * 100 : 0}%` }} // DYNAMIC-STYLE: computed pct
+                />
               </div>
-              <div className="hint" style={{ marginTop: 6 }}>
+              <div className="hint mt-6">
                 {Object.entries(l.tasks.by_status)
                   .filter(([, n]) => n)
                   .map(([s, n]) => (
-                    <span key={s} className={`badge ${taskStateClass(s)}`} style={{ marginRight: 4 }}>
+                    <span key={s} className={`badge ${taskStateClass(s)} mr-4`}>
                       {s} {n}
                     </span>
                   ))}
@@ -170,7 +173,7 @@ export default function ActiveRun() {
               <div className="kv"><span>artifacts</span><b>{l.artifacts}</b></div>
               <div className="kv"><span>verification</span><b>{l.verification || "in progress"}</b></div>
               {lastRecovery && (
-                <div className="hint" style={{ marginTop: 6 }}>
+                <div className="hint mt-6">
                   ↻ {String(lastRecovery.data.failure_class)} → {String(lastRecovery.data.strategy)}
                 </div>
               )}
@@ -201,13 +204,16 @@ function BudgetBar({ label, used, total, money }: { label: string; used: number;
   const pct = budgetPct(used, total);
   const fmt = (v: number) => (money ? `$${v.toFixed(3)}` : String(Math.round(v)));
   return (
-    <div style={{ marginBottom: 8 }}>
-      <div className="row" style={{ gap: 6 }}>
-        <span className="hint" style={{ width: 64 }}>{label}</span>
-        <div className="meter" style={{ flex: 1 }}>
-          <div className={`meter-fill ${pct >= 90 ? "hot" : ""}`} style={{ width: `${pct}%` }} />
+    <div className="mb-8">
+      <div className="row gap-6">
+        <span className="hint w-64">{label}</span>
+        <div className="meter flex-1">
+          <div
+            className={`meter-fill ${pct >= 90 ? "hot" : ""}`}
+            style={{ width: `${pct}%` }} // DYNAMIC-STYLE: computed pct
+          />
         </div>
-        <span className="hint" style={{ width: 92, textAlign: "right" }}>
+        <span className="hint w-92 text-right">
           {fmt(used)} / {total ? fmt(total) : "∞"}
         </span>
       </div>

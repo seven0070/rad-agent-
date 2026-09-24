@@ -85,7 +85,7 @@ export default function Memory() {
             Recall
           </button>
         </div>
-        <div className="row" style={{ marginTop: 10 }}>
+        <div className="row mt-10">
           {["all", ...LAYERS].map((l) => (
             <button
               key={l}
@@ -106,7 +106,7 @@ export default function Memory() {
             value={remember}
             onChange={(e) => setRemember(e.target.value)}
           />
-          <select value={layer} onChange={(e) => setLayer(e.target.value)} style={{ width: 130 }}>
+          <select className="w-130" value={layer} onChange={(e) => setLayer(e.target.value)}>
             {["episodic", "semantic", "procedural"].map((l) => (
               <option key={l}>{l}</option>
             ))}
@@ -136,7 +136,7 @@ export default function Memory() {
               {shown.map((m) => (
                 <tr key={m.id}>
                   <td className="hint">{m.layer}</td>
-                  <td style={{ maxWidth: 480 }}>{redactText(m.text).slice(0, 240)}</td>
+                  <td className="mw-480">{redactText(m.text).slice(0, 240)}</td>
                   <td className="hint">{m.origin}</td>
                   <td className="hint">{m.confidence.toFixed ? m.confidence.toFixed(2) : m.confidence}</td>
                   <td>

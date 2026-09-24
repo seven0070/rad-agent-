@@ -43,6 +43,7 @@ from rad.control.recovery import FailureClass, RecoveryEngine, classify
 from rad.control.tasks import Task
 from rad.doctor import Doctor
 from rad.home import DEFAULTS
+from rad.modelselect import Requirements
 from rad.router import RouterState
 from rad.toolrouter import resolve_tool_router
 from tests.test_ascii_tree_package_dir import RW073_ASCII_GOAL
@@ -261,6 +262,60 @@ def test_router_free_lock_never_calls_paid_on_free_class_c(home):
                 assert "paid spend stays off" in str(ei.value)
                 assert ei.value.status == 429
                 assert ei.value.retryable is False
+
+
+def _probe_only_ollama(spec):
+    if spec.name == "ollama":
+        return True, ["qwen3:4b"]
+    return False, []
+
+
+def test_force_provider_survives_task_reorder_ahead_of_local(home):
+    """Pin is tried first even when modelselect would rank local above free.
+
+    Live soak: force_provider=openrouter + vault key, task requirements set,
+    transcript still ollama because select re-ranked local ahead of the pin.
+    """
+    calls = []
+    seen_prefer = []
+
+    def fake_chat(spec, key, messages, **kw):
+        calls.append(spec.name)
+        if spec.name == "openrouter":
+            raise P.ProviderError("openrouter: HTTP 403 Authorization failed", status=403, retryable=False)
+        return P.ChatResult(text="ok", provider=spec.name, model="m", usage={"in": 1, "out": 1})
+
+    req = Requirements(kind="code", need_tools=True, label="text_analyzer")
+    with mock.patch.dict(__import__("os").environ, {"OPENROUTER_API_KEY": "sk-or-test"}):
+        with mock.patch.object(P, "probe_local", side_effect=_probe_only_ollama):
+            with mock.patch.object(P, "chat", side_effect=fake_chat):
+                home.update(force_provider="openrouter")
+                r = RouterState(home)
+                ordered = [e.spec.name for e in r.build_chain_for(requirements=req)]
+                seen_prefer.append(list(req.prefer))
+                res = r.chat([{"role": "user", "content": "write analyzer.py"}],
+                             stream_cb=None, requirements=req)
+    assert ordered[0] == "openrouter"
+    assert "ollama" in ordered
+    assert calls[0] == "openrouter"
+    assert res.provider == "ollama"
+    assert seen_prefer == [[]]
+
+
+def test_unpinned_code_task_still_prefers_local_over_free(home):
+    def fake_chat(spec, key, messages, **kw):
+        return P.ChatResult(text="ok", provider=spec.name, model="m", usage={"in": 1, "out": 1})
+
+    with mock.patch.dict(__import__("os").environ, {"OPENROUTER_API_KEY": "sk-or-test"}):
+        with mock.patch.object(P, "probe_local", side_effect=_probe_only_ollama):
+            with mock.patch.object(P, "chat", side_effect=fake_chat):
+                r = RouterState(home)
+                ordered = [e.spec.name for e in r.build_chain_for(
+                    requirements=Requirements(kind="code", need_tools=True))]
+                res = r.chat([{"role": "user", "content": "write analyzer.py"}], stream_cb=None,
+                             requirements=Requirements(kind="code", need_tools=True))
+    assert ordered[0] == "ollama"
+    assert res.provider == "ollama"
 
 
 def test_force_provider_class_c_still_rotates_to_other_free(home):

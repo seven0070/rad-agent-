@@ -23,7 +23,7 @@ export function Skeleton({
     height,
     borderRadius: radius ?? "var(--radius-sm)",
     ...style,
-  };
+  }; // DYNAMIC-STYLE: width/height/radius props
 
   return (
     <div
@@ -44,13 +44,13 @@ export function SkeletonCard({
 }) {
   return (
     <div className={`card skeleton-container ${className}`} aria-busy="true">
-      <Skeleton width="40%" height="20px" style={{ marginBottom: 14 }} />
+      <Skeleton width="40%" height="20px" className="mb-14" />
       {Array.from({ length: lines }).map((_, i) => (
         <Skeleton
           key={i}
           width={i === lines - 1 ? "60%" : "100%"}
           height="14px"
-          style={{ marginBottom: 8 }}
+          className="mb-8"
         />
       ))}
     </div>

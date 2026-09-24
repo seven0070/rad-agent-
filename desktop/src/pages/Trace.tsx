@@ -94,8 +94,7 @@ export default function Trace() {
       {traces.map((tt) => (
         <div key={tt.task.id} className="card">
           <div
-            className="row"
-            style={{ justifyContent: "space-between", cursor: "pointer" }}
+            className="row justify-between cursor-pointer"
             onClick={() => setExpanded(expanded === tt.task.id ? null : tt.task.id)}
           >
             <div className="row">
@@ -116,7 +115,7 @@ export default function Trace() {
             </div>
           </div>
           {expanded === tt.task.id && (
-            <div style={{ marginTop: 10 }}>
+            <div className="mt-10">
               {tt.tools.length === 0 && <div className="hint">no tool calls recorded for this task</div>}
               <div className="table-wrap">
                 <table>
@@ -165,7 +164,7 @@ export default function Trace() {
                 </table>
               </div>
               {tt.tools.some((r) => r.output) && (
-                <details style={{ marginTop: 8 }}>
+                <details className="mt-8">
                   <summary className="hint">output summary (redacted)</summary>
                   {tt.tools.filter((r) => r.output).map((r, i) => (
                     <div key={i} className="obs-out">
@@ -177,7 +176,7 @@ export default function Trace() {
                 </details>
               )}
               {tt.verificationSummary && (
-                <div className="hint" style={{ marginTop: 8 }}>
+                <div className="hint mt-8">
                   verification: {redactText(tt.verificationSummary)}
                 </div>
               )}

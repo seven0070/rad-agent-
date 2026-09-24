@@ -12,12 +12,8 @@ from pathlib import Path
 from typing import List, Optional
 
 from rad import __version__
-from rad.health import last_class_c, operator_status
 from rad.home import DEFAULTS, RadHome, mask
 from rad.ui import ask, col, fail, info, ok, warn
-
-from rad import providers as P
-from rad.control.objectives import ObjectiveStore, usage_rollup_report
 
 
 # ---------------------------------------------------------------- helpers
@@ -61,6 +57,7 @@ def cmd_chat(args) -> int:
 
 
 def cmd_keys(args) -> int:
+    from rad import providers as P
     home = _home(args)
     if args.keys_action == "add":
         if not args.key or not args.provider:
@@ -102,6 +99,7 @@ def cmd_keys(args) -> int:
 
 
 def cmd_providers(args) -> int:
+    from rad.health import last_class_c
     home = _home(args)
     r = _router(home)
     print(col.bold("Providers — brain socket:"))
@@ -124,6 +122,7 @@ def cmd_use(args) -> int:
 
 
 def cmd_cost(args) -> int:
+    from rad.control.objectives import ObjectiveStore, usage_rollup_report
     home = _home(args)
     print(col.bold("Paid spend (free/local never appears here):"))
     print(_router(home).cost_report())
@@ -411,6 +410,7 @@ def cmd_doctor(args) -> int:
 
 def cmd_health(args) -> int:
     """Pause / resume / campaign surface. Skip-blocked unless --force."""
+    from rad.health import operator_status
     home = _home(args)
     st = operator_status(home, force=bool(getattr(args, "force", False)))
     if getattr(args, "json", False):
@@ -805,6 +805,7 @@ def cmd_listen(args) -> int:
 
 
 def cmd_models(args) -> int:
+    from rad import providers as P
     home = _home(args)
     print(col.bold("Local engines (brain socket):"))
     for spec in P.all_specs(home):
@@ -901,6 +902,21 @@ def cmd_corpus(args) -> int:
         return 0
     print(col.bold("Corpus (Rad's experience as training data):"))
     print(c.show())
+    return 0
+
+
+def cmd_triage_corpus(args) -> int:
+    from rad.triage_data import export as triage_export, show as triage_show
+    home = _home(args)
+    if args.corpus_action == "export":
+        dest = triage_export(home, args.out)
+        from rad.triage_data import stats
+        s = stats(home=home)
+        ok(f"exported {s['total']} triage rows "
+           f"({s.get('auto', 0)} auto / {s.get('escalate', 0)} escalate) → {dest}")
+        return 0
+    print(col.bold("Triage corpus (objectives history → auto/escalate labels):"))
+    print(triage_show(home))
     return 0
 
 
@@ -1155,6 +1171,7 @@ def cmd_status(args) -> int:
     """One screen: what RAD owns right now — objectives, jobs, memory, providers, storage."""
     from rad.control.objectives import ObjectiveStore
     from rad.control.events import EventLog
+    from rad.health import last_class_c
     from rad.storage import Storage
     home = _home(args)
     as_json = getattr(args, "json", False)
@@ -1675,6 +1692,11 @@ def build_parser() -> argparse.ArgumentParser:
     co.add_argument("corpus_action", nargs="?", default="show", choices=["show", "export"])
     co.add_argument("--out", default=None)
     co.set_defaults(fn=cmd_corpus)
+
+    tc = sub.add_parser("triage-corpus", help="objectives history → auto/escalate labels")
+    tc.add_argument("corpus_action", nargs="?", default="show", choices=["show", "export"])
+    tc.add_argument("--out", default=None)
+    tc.set_defaults(fn=cmd_triage_corpus)
 
     bm = sub.add_parser("benchmark", help="capability battery — is Rad smarter? now it's a number")
     bm.add_argument("bench_action", nargs="?", default="run",

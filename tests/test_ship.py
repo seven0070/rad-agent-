@@ -13,7 +13,7 @@ from rad.cli import main
 from rad.doctor import Doctor
 from rad.home import RadHome
 from rad.lab import scenarios
-from rad.providers import ProviderSpec, _chat_openai, _openai_message, _unparallel_tool_history
+from rad.providers import ProviderSpec, _chat_openai, _openai_message, _openai_visible_text, _unparallel_tool_history
 
 
 def test_version_is_synced():
@@ -163,3 +163,21 @@ def test_nvidia_requests_disable_parallel_tool_calls(monkeypatch):
 def test_rad_version_cli(capsys):
     assert main(["version"]) == 0
     assert "v1.0.1" in capsys.readouterr().out
+
+
+def test_openai_visible_text_falls_back_to_reasoning():
+    # thinking model leaves content empty, puts answer in reasoning
+    msg = {"content": "", "reasoning": "The answer is 42.", "tool_calls": None}
+    assert _openai_visible_text(msg) == "The answer is 42."
+
+    # content present wins
+    msg2 = {"content": "hello", "reasoning": "ignore me"}
+    assert _openai_visible_text(msg2) == "hello"
+
+    # tool calls present even if content empty -> return empty (tools take precedence for caller)
+    msg3 = {"content": "", "tool_calls": [{"id": "1", "function": {"name": "x"}}]}
+    assert _openai_visible_text(msg3) == ""
+
+    # list content case
+    msg4 = {"content": [{"type": "text", "text": "hi"}], "reasoning": "no"}
+    assert _openai_visible_text(msg4) == "hi"

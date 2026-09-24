@@ -112,7 +112,8 @@ release checklist below.
 cd desktop && npm install
 RAD_PYTHON=../.venv-dev/bin/python npm run tauri dev   # dev fallback: python -m rad serve
 npm run build                                          # tsc -b && vite build
-python -m sidecar.build                                # freeze rad-backend for this platform
+python -m sidecar.build                                # freeze rad-backend (isolated venv)
+powershell -File scripts/build-desktop-release.ps1     # full package: both sidecars + tauri build + bundle asserts
 ```
 
 `desktop/src-tauri/binaries/rad-backend-<triple>` is what `bundle.externalBin` ships;

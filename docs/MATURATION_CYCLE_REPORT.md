@@ -6,6 +6,158 @@ Default `Budget.tool_calls` remains **60**.
 
 ---
 
+# Cycle 43 — NIM gpt-oss-20b text_analyzer soak **VERIFIED** + inline ascii-tree `package_dir` fix; stay 1.0.1 (2026-09-22)
+
+**Date:** 2026-09-22 (live soak completion + product fix + docs)
+**Baseline:** working tree on `main` @ `71a9898`; package **1.0.1** (no bump). **No PR / no release.**
+**Architecture:** control plane preserved. Needle off. Caps unchanged (16/60).
+**Kind:** live soak verdict (`obj_00533531`, force_provider `nvidia`, model `openai/gpt-oss-20b`) + one inference fix (`rad/control/codingloop.py`) + regression tests + gate record.
+**ROADMAP:** unchanged this cycle (operator decision, 2026-09-22).
+
+## Why this cycle
+
+The gpt-oss-20b soak of `text_analyzer@12` resumed (r13–r16). Prior resumes
+completed the summary task and both repair tasks **VERIFIED** against the real
+package on disk (`characters=18`, tests 3/3 green, `input.txt` exactly 3
+lines) — yet the objective ended `failed` with **8/8 objective checks**
+failing as `No such file` / `exit=2`. Root cause (reproduced in isolation):
+the live goal uses a third layout phrasing, an **inline**
+`text_analyzer/ (ascii tree): analyzer.py, input.txt, …` note, which
+`infer_package_dir` did not recognize (multiline `├──` trees were already
+handled since v0.4.2 / Cycle 12). `infer_package_dir` returned `None`, so the
+merged inferred checks stayed **bare** and `verifier._p()`/`sh -c` resolved
+them against the workspace root instead of `text_analyzer/`.
+
+**Fixed**: `_PKG_INLINE_TREE_RE` in `codingloop.py` detects
+`pkg/ (ascii tree):` / `pkg/ (tree):` markers and requires ≥2 named files
+after the marker (skips `tests`/`docs`; `(ascii tree): only.md` stays `None`).
+The objective's stored `objective_checks` were regenerated through the fixed
+`infer_coding_checks` (same 8 checks, now `text_analyzer/`-prefixed), then
+`objective resume` re-ran verification: **all 8 pass** (`sh -c "python3
+text_analyzer/test_analyzer.py"` → exit 0, 3 tests OK), plus per-file
+`file_nonempty` + `hash_unchanged` for all five package files. Objective
+status `completed`, `Verification: VERIFIED`.
+
+| item | value |
+|---|---|
+| Verdict | **VERIFIED** — `obj_00533531` **completed** on nvidia `openai/gpt-oss-20b`; objective checks **8/8** |
+| Package on disk | `workspace/text_analyzer/` — analyzer.py, input.txt (3 lines), summary.json (`3/6/18` ✓), test_analyzer.py (expects 18), README.md |
+| Root cause | `infer_package_dir` → `None` for inline `pkg/ (ascii tree): f1, f2, …` (3rd format; multiline `├──` covered since v0.4.2) → merged checks bare → resolved at workspace root |
+| Fix | `rad/control/codingloop.py` — `_PKG_INLINE_TREE_RE`, ≥2 named files, `_SKIP_PKG_DIRS` honored |
+| Stored checks | regenerated via fixed `infer_coding_checks(goal)` → same 8 checks with `text_analyzer/` prefix; `python3 text_analyzer/test_analyzer.py` exit 0 under `sh -c` |
+| Regression | `tests/test_ascii_tree_package_dir.py` **+3** inline-marker tests (34 passed with path-aligned set); 18-file codingloop/control batch **247 passed / 525.59s** (first run had 1 order-dependent flake in `test_independent_later_files::…tight_tools`, green standalone + green full rerun; `RW087_GOAL` does not match the new regex) |
+| Supporting in-session fixes (now under test) | Bug A: recovery never spawns repair-of-repair (`_is_repair_task`); Bug B: resume flips NEEDS_USER/BLOCKED → READY while objective running (r13/r15 confirmed live); `<|channel|>` sanitizer in `rad/session.py` + `tests/test_session_toolname.py` (14 passed); F2 force_provider pin (`router.py`); doctor `c_interrupted` fix; earlier 58-test control/recovery/router batch green |
+| Gate record | `~/.rad/acceptance/20260922-rw073-nim-gate.json` — `verified: true`, `8/8`, `VERIFIED` |
+| Advisory (non-blocking) | `claims_sourced` weak (5 sources) — did not block control-plane VERIFIED; 1 policy denial (`file://` fetch) — correct security behavior |
+| Sticky ENVIRONMENT classify | old `pytest: command not found` observations keep recovery on ENVIRONMENT; left as-is (works once verify passes) |
+| Baseline failures | unchanged — 5 environmental (incl. `test_ship::test_doctor_missing_provider_is_optional_not_error`, untouchable) |
+| False DONE | **0** |
+| Budgets at finish | tools 185/220, model 199/220, retries 24/35, 2389s/4500s — verification re-run consumed no meaningful budget |
+
+## Decision
+
+Record **text_analyzer@12 VERIFIED** on live NVIDIA NIM `gpt-oss-20b`
+(honest control-plane verdict, real files, real green tests). Record the
+inline ascii-tree `infer_package_dir` fix + 3 regression tests. Keep all
+in-session control-plane fixes under their regression suites. Stay
+**1.0.1**. Do **not** cut a GitHub Release or tag. Do **not** open a PR.
+ROADMAP status line stays as-is per operator.
+
+---
+
+
+**Date:** 2026-09-22 (live soak + product fix + docs)
+**Baseline:** working tree on `main` @ `71a9898`; package **1.0.1**; Version 1 pack tag **v1.0.0**.
+**Package at start:** `1.0.1`
+**This branch:** working tree on `main` (uncommitted). Package **1.0.1** (no bump). **No PR.**
+**Architecture:** control plane preserved. Needle stays off. Caps unchanged.
+**Kind:** one control-plane crash fix (`rad/control/controller.py`) + regression test + soak evidence. RW-058–104 are **not rewritten**.
+**Release:** **none**. **No GitHub Release / tag.** Stay **1.0.1**.
+
+## Why this cycle
+
+Soak of live **text_analyzer@12** (`RW073_ASCII_GOAL`) continued. The free
+lane (ollama `qwen3:4b`, `obj_56e8978b`) **FAILs** as historically recorded:
+0 tool calls, verify reports "6 claims, no evidence", objective ends
+`needs_user` → **@12 NOT VERIFIED**. A second forced-OpenRouter attempt
+(force_provider pinned in `rad.json`, key present in vault) still produced a
+`TRANSCRIPT provider=ollama` and an empty `checkpoint.json` provider/model —
+**F2** (pin ignored) is confirmed end-to-end, so **no valid OpenRouter @12
+comparison is achievable**; recorded as a documented limitation.
+
+The OpenRouter soak attempt also surfaced a genuine control-plane crash: a
+model reply containing **both** `NEEDS_USER:` and `BLOCKED:` markers ran
+`task.transition(NEEDS_USER)` then `task.transition(BLOCKED)`; the
+`NEEDS_USER → BLOCKED` edge is not in `tasks.py` ALLOWED, so
+`IllegalTransition` **crashed the executor thread** and left the objective
+stuck `status:running` (repro `obj_ae1a2c5f`). **Fixed**: NEEDS_USER wins when
+both markers are present (early return); the blocked-only path preserves the
+original `FAILED → BLOCKED` sequence; `E.NEEDS_USER` is still emitted for both
+paths.
+
+| item | value |
+|---|---|
+| Verdict | **@12 FAIL** — free brain (ollama qwen3:4b): 0 tool calls, verify "6 claims, no evidence", ends `needs_user`. **NOT VERIFIED.** |
+| vs gw-53 / RW-104 pointer | RW-104 was `completed` / **VERIFIED** at tools 40/40 on NIM glm-5.3 — **not** the @12 bound; @12 remains FAIL |
+| vs OpenRouter free | **no valid comparison** — F2: `force_provider:openrouter` pinned + vault key still yields ollama transcript; `checkpoint.json` provider/model/brain empty |
+| Crash | **found + fixed** — controller double-transition `NEEDS_USER→BLOCKED` raised `IllegalTransition`, crashed executor, objective stuck `status:running`. Fix: NEEDS_USER wins; bm-only preserves `FAILED→BLOCKED` |
+| Regression test | `tests/test_control_plane.py::test_both_blocked_and_needs_user_signals_do_not_crash` — **PASS** |
+| Post-fix suites | `test_control_plane.py` **27 passed / 1 failed** (sole failure = baseline planner fallback); `test_reliability.py` + `test_failure_recovery.py` **13 passed** |
+| Full pytest (pre-fix import) | **5 failed / 791 passed / 2 skipped** in 1275.38s — all 5 failures baseline/environmental, unrelated to the fix |
+| Baseline failures | `test_planner_fallback_without_brain` (`len(g.tasks)==1` vs 2); `test_golden_e2e::…never_fakes_verified` (60s TimeoutError); `test_independent_later_files::…tight_tools`; `test_provider_health_resume::test_rw091_403_resume_stays_needs_user_no_reburn` (`completed` vs `needs_user`); `test_ship::test_doctor_missing_provider_is_optional_not_error` (key configured → `ok` vs `optional`) |
+| Gate record | `~/.rad/acceptance/20260922-@12-gate.json` (ollama, `obj_56e8978b`, needs_user, NOT VERIFIED) |
+| False DONE | **0** |
+| Class | **Class A** (crash) **fixed + covered**. Soak FAIL is Class B (free-brain quality). F2 pin-ignored is a documented CLI limitation, not a product patch this record |
+
+## Decision
+
+Record the controller crash fix (`rad/control/controller.py`,
+`tests/test_control_plane.py` regression). Record **text_analyzer@12 NOT
+VERIFIED** on the free brain. Record **F2** (OpenRouter force_provider pin
+ignored) as a documented limitation — **no OpenRouter @12 comparison claimed**.
+Stay **1.0.1**. Do **not** cut a GitHub Release or tag. Do **not** open a PR.
+Do **not** invent live @12 PASS.
+
+## What did not change
+
+- Package **1.0.1** (no bump)
+- F-17 / F-26 closed
+- Needle default `existing` / off
+- `max_plan_tasks` **16**; default `Budget.tool_calls` **60**
+- False completion remains **0**
+- RW-058–104 ledger/matrix rows
+- Historical NIM 11B **403** pause (RW-084) remains Class C for that pin
+
+## Quality gates (this branch)
+
+| gate | result |
+|------|--------|
+| `rad version` | **PASS** v1.0.1 |
+| regression test (`both_blocked_and_needs_user`) | **PASS** |
+| `tests/test_control_plane.py` | **27 passed / 1 failed** (baseline `test_planner_fallback_without_brain`, environmental) |
+| `tests/test_reliability.py` + `tests/test_failure_recovery.py` | **PASS** 13 passed |
+| Full `pytest -q` | **5 failed / 791 passed / 2 skipped** (1275.38s) — all 5 baseline/environmental, listed above |
+| Live gate | `~/.rad/acceptance/20260922-@12-gate.json` — @12 **NOT VERIFIED** |
+| Caps | **PASS** `max_plan_tasks` 16; `Budget.tool_calls` 60 — unchanged |
+| Package | **1.0.1** (no bump) |
+| Release / tag | **none**; **no PR** |
+
+## Remaining limitations
+
+1. Live text_analyzer@12 remains **NOT VERIFIED** on the free brain (0 tool calls, verify no-evidence, ends `needs_user`).
+2. **F2** — `force_provider:<provider>` is ignored at runtime (transcript still ollama; checkpoint provider/model/brain empty). OpenRouter @12 comparison **unavailable**. Fix deferred (not a product patch this record).
+3. Plan still fallback (Class B / provider timeout quality). F-17 stays closed.
+4. 5 pytest failures are baseline/environmental and re-appear on a clean control-plane run — no new Class A in them; they are **not** caused by the crash fix.
+5. No G5-2. No v1.1.0. No GitHub Release / tag. No PR.
+
+## Roadmap pointer
+
+Operating spine: [ROADMAP.md](ROADMAP.md). **Generation 5 — hold / soak.**
+Controller crash fixed this cycle (NEEDS_USER wins). Live @12 remains
+**NOT VERIFIED**. Stay **1.0.1**. **No GitHub Release / tag. No PR.**
+
+---
+
 # Cycle 41 — Record live NIM glm-5.3 RW-104 PASS / VERIFIED; stay 1.0.1 (2026-09-19)
 
 **Date:** 2026-09-19 IST afternoon (live soak); docs this cycle

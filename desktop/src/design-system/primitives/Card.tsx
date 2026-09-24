@@ -22,7 +22,7 @@ export function Card({
   return (
     <div
       className={`card ${interactiveClass} ${activeClass} ${className}`.trim()}
-      style={style}
+      style={style} // DYNAMIC-STYLE: caller pass-through prop
       {...props}
     >
       {children}

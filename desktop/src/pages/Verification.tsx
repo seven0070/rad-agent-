@@ -65,7 +65,7 @@ export default function Verification() {
       {err && <p className="err">{err}</p>}
 
       <div className={`ver-banner ${status === "VERIFIED" ? "vb-ok" : status === "FAILED" ? "vb-bad" : "vb-warn"}`}>
-        <b style={{ fontSize: 18 }}>{status || "UNVERIFIED"}</b>
+        <b className="fs-18">{status || "UNVERIFIED"}</b>
         <span>
           objective {id}
           {ver.at ? ` · ${fmtTime(Number(ver.at))}` : ""}
@@ -91,7 +91,7 @@ export default function Verification() {
                       <span className={`badge ${r.ok ? "b-ok" : "b-bad"}`}>{r.ok ? "PASS" : "FAIL"}</span>
                     </td>
                     <td className="hint">{String(r.level || "machine")}</td>
-                    <td className="hint" style={{ maxWidth: 560 }}>
+                    <td className="hint mw-560">
                       {redactText(String(r.detail || "")).slice(0, 400)}
                     </td>
                   </tr>
@@ -144,7 +144,7 @@ export default function Verification() {
                     )}
                   </td>
                   <td className="hint">{(t.checks || []).length}</td>
-                  <td className="hint" style={{ maxWidth: 420 }}>
+                  <td className="hint mw-420">
                     {redactText(String(t.verification?.summary || "")).slice(0, 220)}
                   </td>
                 </tr>

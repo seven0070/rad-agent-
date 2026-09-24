@@ -94,10 +94,10 @@ export default function AuthorityPage() {
       <div className="grid auth-grid">
         <div className="card">
           <label>Current profile</label>
-          <span className={`pill ${auth.profile}`} style={{ fontSize: 14 }}>
+          <span className={`pill ${auth.profile} fs-14`}>
             {auth.profile}
           </span>
-          <p className="lead" style={{ marginTop: 10 }}>{auth.blurb}</p>
+          <p className="lead mt-10">{auth.blurb}</p>
           <label>Confirmation</label>
           <div>
             {auth.confirmation}{" "}
@@ -105,13 +105,13 @@ export default function AuthorityPage() {
               <span className="hint">(ASK→ALLOW; DENY / hard / budget unchanged)</span>
             )}
           </div>
-          <label style={{ marginTop: 10 }}>Scopes</label>
+          <label className="mt-10">Scopes</label>
           <div className="hint">
             workspace_only={String(auth.scopes.workspace_only)}
             {auth.scopes.extra_paths.length ? ` · extra: ${auth.scopes.extra_paths.join(", ")}` : ""}
             {auth.scopes.hosts.length ? ` · hosts: ${auth.scopes.hosts.join(", ")}` : ""}
           </div>
-          <label style={{ marginTop: 10 }}>Budget (existing control-plane defaults — not raised here)</label>
+          <label className="mt-10">Budget (existing control-plane defaults — not raised here)</label>
           <div className="hint">
             tools {auth.budgets.tool_calls} · model {auth.budgets.model_calls} · retries {auth.budgets.retries}
           </div>
@@ -138,12 +138,12 @@ export default function AuthorityPage() {
             ))}
           </div>
           {profile === "UNRESTRICTED" && (
-            <label style={{ marginTop: 10 }}>
+            <label className="mt-10">
               <input
                 type="checkbox"
                 checked={confirmU}
                 onChange={(e) => setConfirmU(e.target.checked)}
-                style={{ width: "auto", marginRight: 8 }}
+                className="cb-inline"
               />
               I explicitly authorize UNRESTRICTED autonomy within the configured scope.
               (The backend rejects the request without this.)
@@ -151,15 +151,15 @@ export default function AuthorityPage() {
           )}
 
           {profile === "CUSTOM" && (
-            <div style={{ marginTop: 10 }}>
+            <div className="mt-10">
               <label>Per-capability effects (leave empty to keep current)</label>
               {groups.map(([name, info]) => (
-                <div className="row" key={name} style={{ marginBottom: 4 }}>
-                  <span className="hint" style={{ width: 150 }}>{name}</span>
+                <div className="row mb-4" key={name}>
+                  <span className="hint w-150">{name}</span>
                   <select
+                    className="w-110"
                     value={caps[name] ?? info.effect}
                     onChange={(e) => setCaps({ ...caps, [name]: e.target.value })}
-                    style={{ width: 110 }}
                   >
                     {["ALLOW", "ASK", "LIMITED", "DENY"].map((x) => (
                       <option key={x}>{x}</option>
@@ -170,29 +170,29 @@ export default function AuthorityPage() {
             </div>
           )}
 
-          <label style={{ marginTop: 10 }}>Scope</label>
+          <label className="mt-10">Scope</label>
           <label>
             <input
               type="checkbox"
               checked={workspaceOnly}
               onChange={(e) => setWorkspaceOnly(e.target.checked)}
-              style={{ width: "auto", marginRight: 8 }}
+              className="cb-inline"
             />
             workspace-only filesystem
           </label>
           <input
+            className="mt-6"
             placeholder="extra paths (comma-separated)"
             value={extraPaths}
             onChange={(e) => setExtraPaths(e.target.value)}
-            style={{ marginTop: 6 }}
           />
           <input
+            className="mt-6"
             placeholder="allowed hosts (comma-separated)"
             value={hosts}
             onChange={(e) => setHosts(e.target.value)}
-            style={{ marginTop: 6 }}
           />
-          <div className="row" style={{ marginTop: 12 }}>
+          <div className="row mt-12">
             <button className={profile === "UNRESTRICTED" ? "btn warn" : "btn"} disabled={busy} onClick={() => void apply()}>
               {busy ? "Applying…" : "Apply profile"}
             </button>
@@ -221,7 +221,7 @@ export default function AuthorityPage() {
             </div>
           ))}
         </div>
-        <p className="hint" style={{ marginTop: 8 }}>
+        <p className="hint mt-8">
           {auth.passthrough
             ? "STANDARD: no extra grant/scope layer — the existing policy defaults apply."
             : "This profile imposes an authority floor on top of Policy.decide; it never widens a DENY or LIMITED."}{" "}
@@ -233,7 +233,7 @@ export default function AuthorityPage() {
         <label>Authority changes (audited events)</label>
         {changes.length === 0 && <div className="hint">no recorded changes</div>}
         {changes.map((e) => (
-          <div key={e.seq} className="hint" style={{ marginBottom: 4 }}>
+          <div key={e.seq} className="hint mb-4">
             {fmtTime(e.at)} · {e.kind}{" "}
             {e.data.profile ? `→ ${String(e.data.profile)}` : ""}
             {e.data.capability ? ` ${String(e.data.capability)}=${String(e.data.effect || e.data.effect === 0 ? "" : e.data.effect)}` : ""}

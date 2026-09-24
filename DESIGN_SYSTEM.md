@@ -7,7 +7,7 @@ a one-off shadow, a bespoke button, or a hardcoded `px-*` on a control — stop,
 there's already a primitive for it.
 
 This file owns the visual and interaction contract. Read
-[`AGENTS.md`](./AGENTS.md) for architecture, state, resolver, transport, and
+[`AGENTS.md`](desktop/AGENTS.md) for architecture, state, resolver, transport, and
 testing rules.
 
 This doc contains two kinds of content, maintained differently:
@@ -467,7 +467,7 @@ long transcript or a busy terminal.
 ## State (TypeScript)
 
 The detailed state contract lives in the scoped
-[`AGENTS.md`](./AGENTS.md). Visual code follows these essentials:
+[`AGENTS.md`](desktop/AGENTS.md). Visual code follows these essentials:
 
 - Shared/cross-component state → small **nanostores**, not prop-drilling.
   Each feature owns its atoms; shared atoms live in `src/store`.

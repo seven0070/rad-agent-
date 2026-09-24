@@ -139,9 +139,9 @@ export default function Jerry() {
             value={goal}
             onChange={(e) => setGoal(e.target.value)}
             placeholder="e.g. Build a FastAPI service with tests"
-            style={{ minHeight: 64 }}
+            className="min-h-64"
           />
-          <div className="row" style={{ marginTop: 10 }}>
+          <div className="row mt-10">
             <button className="btn" disabled={creating || !goal.trim()} onClick={() => void createObjective()}>
               {creating ? "Creating…" : "Create Objective"}
             </button>
@@ -240,7 +240,7 @@ function ObjectiveCard({
       <div className="card">
         <label>Current objective</label>
         <div className="hint">none yet — create one on the right</div>
-        <div className="row" style={{ marginTop: 8 }}>
+        <div className="row mt-8">
           <button className="btn ghost" onClick={onFollowNone}>
             All objectives
           </button>
@@ -257,30 +257,30 @@ function ObjectiveCard({
 
   return (
     <div className="card">
-      <div className="row" style={{ justifyContent: "space-between" }}>
+      <div className="row justify-between">
         <div>
           <span className={`pill ${objStatusPill(status)}`}>{focus.status}</span>{" "}
           <b>{focus.id}</b>
         </div>
-        <button className="btn ghost" style={{ padding: "3px 10px" }} onClick={() => onFollow(focus.id)}>
+        <button className="btn ghost tight" onClick={() => onFollow(focus.id)}>
           Follow →
         </button>
       </div>
-      <div style={{ marginTop: 8, whiteSpace: "pre-wrap", fontSize: 13 }}>{focus.goal}</div>
-      <div className="hint" style={{ marginTop: 6 }}>
+      <div className="mt-8 pre-wrap fs-13">{focus.goal}</div>
+      <div className="hint mt-6">
         updated {fmtAgo(focus.updated)} · {focus.result_summary || focus.failure || "no result recorded yet"}
       </div>
 
       {ver && (
-        <div className={`ver-line ${ver === "VERIFIED" ? "ok" : ver === "FAILED" ? "err" : "hint"}`} style={{ marginTop: 8 }}>
+        <div className={`ver-line mt-8 ${ver === "VERIFIED" ? "ok" : ver === "FAILED" ? "err" : "hint"}`}>
           verification: {ver || "none"} — model “DONE” is never counted as verified
         </div>
       )}
 
-      {planSummary && <div className="hint" style={{ marginTop: 6 }}>{planSummary}</div>}
+      {planSummary && <div className="hint mt-6">{planSummary}</div>}
 
       {focus.usage && (
-        <div className="hint" style={{ marginTop: 4 }}>
+        <div className="hint mt-4">
           tools {focus.usage.tool_calls ?? 0} / budget {focus.budget?.tool_calls || "∞"} · model{" "}
           {focus.usage.model_calls ?? 0} / {focus.budget?.model_calls || "∞"} · retries{" "}
           {focus.usage.retries ?? 0} / {focus.budget?.retries || "∞"} · ${focus.usage.money_usd ?? 0}
@@ -288,10 +288,10 @@ function ObjectiveCard({
       )}
 
       {needsUser && (
-        <div className="banner" style={{ marginTop: 10 }}>
+        <div className="banner mt-10">
           <b>NEEDS_USER</b> — intervention required.
-          <div style={{ marginTop: 4 }}>{redactText(focus.failure || focus.result_summary || "the backend recorded a NEEDS_USER state")}</div>
-          <div className="row" style={{ marginTop: 8 }}>
+          <div className="mt-4">{redactText(focus.failure || focus.result_summary || "the backend recorded a NEEDS_USER state")}</div>
+        <div className="row mt-8">
             <button className="btn" disabled={acting} onClick={() => void act("resume")}>
               Resolve (resume)
             </button>
@@ -303,10 +303,10 @@ function ObjectiveCard({
       )}
 
       {recovery && recovery.decisions.length > 0 && (
-        <div style={{ marginTop: 10 }}>
+        <div className="mt-10">
           <label>Recovery (backend decisions)</label>
           {recovery.decisions.slice(-3).map((d, i) => (
-            <div key={i} className="hint" style={{ marginBottom: 4 }}>
+            <div key={i} className="hint mb-4">
               {fmtTime(d.at)} · {d.failure_class} → {d.strategy}: {redactText(d.reason)}
             </div>
           ))}
@@ -314,27 +314,27 @@ function ObjectiveCard({
       )}
 
       {artifacts.length > 0 && (
-        <div style={{ marginTop: 10 }}>
+        <div className="mt-10">
           <label>Artifacts (latest)</label>
           {artifacts.map((a) => (
-            <div key={a.id} className="row" style={{ marginBottom: 4 }}>
-              <span className="hint" style={{ flex: 1 }}>
+            <div key={a.id} className="row mb-4">
+              <span className="hint flex-1">
                 {a.location} (v{a.version})
               </span>
-              <button className="btn ghost" style={{ padding: "2px 8px" }} onClick={() => void explainProvenance(a.location)}>
+              <button className="btn ghost tighter" onClick={() => void explainProvenance(a.location)}>
                 why?
               </button>
             </div>
           ))}
           {whyErr && <p className="err">{whyErr}</p>}
           {why && (
-            <div className="why" style={{ marginTop: 8 }}>
+            <div className="why mt-8">
               <div className="hint">
                 {why.task.text || why.task.id} → action {why.action ? `${why.action.tool}` : "—"} →{" "}
                 {why.versions.length} version(s) · evidence {why.evidence.length}
               </div>
               {why.evidence.slice(0, 4).map((e, i) => (
-                <div key={i} className="hint" style={{ marginTop: 4 }}>
+                <div key={i} className="hint mt-4">
                   {String((e as { source?: string }).source || (e as { kind?: string }).kind || "evidence")}{" "}
                   {String((e as { excerpt?: string }).excerpt || "").slice(0, 160)}
                 </div>
@@ -344,7 +344,7 @@ function ObjectiveCard({
         </div>
       )}
 
-      <div className="row" style={{ marginTop: 12 }}>
+      <div className="row mt-12">
         {canRun && (
           <button className="btn" disabled={acting} onClick={() => void act("run")}>
             Run (plan + start)
@@ -366,7 +366,7 @@ function ObjectiveCard({
           </button>
         )}
       </div>
-      {lastUsed && <p className="hint" style={{ marginTop: 6 }}>{lastUsed}</p>}
+      {lastUsed && <p className="hint mt-6">{lastUsed}</p>}
     </div>
   );
 }
