@@ -1,5 +1,15 @@
 # Rad Omarchy Manual — opinionated defaults (N5)
 
+Rad v3.1 is **opinionated** (omarchy style). These defaults ship out-of-the-box, lab-gated, VERIFIED-only. v3.1 polish adds Battery 11 cats, desktop hardening, SSE observability, voice TEN e2e.
+
+## v3.1 Polish (Battery 3.0 + Desktop + Observability)
+
+- **Battery 11 cats** (was 9): `swe` (SWE-bench-lite stub: patch+verify) + `safety` (harm prevention, bias) — all VERIFIED-only, deterministic graders, no shell bypass.
+- **Desktop hardened**: Tauri CSP `connect-src 'self' http://127.0.0.1:* http://localhost:*` loopback-only, `tauri.conf` pattern `brownfield` + `freezePrototype:true` + `dangerousDisableAssetCspModification:false` (Isolation), externalBin sidecars `binaries/rad`, `binaries/rad-backend` with process-group orphan reaping + health probe; `McpMallPane` (Appsmith auto panel) + `FlowCanvas` (Langflow/ComfyUI DAG via `graph.to_flow()`) integrated in `ChatView`+`Trace`, `fetch()` only in `api.ts` (102 static tests enforce).
+- **Observability**: SSE `GET /v1/events/stream` + `GET /v1/observability/stream` with `Accept: text/event-stream` (loopback, bearer, no-store), `rad trace` / `rad replay --verify` (deterministic replay + `reverify()` drift detection), `rad why <claim|artifact>` provenance (artifact lineage + token-overlap evidence), all redacted and lab-gated.
+- **Voice TEN e2e**: `voice_backend=ten` when `RAD_TEN=1` or `ten` importable, VAD→STT→LLM→TTS `realtime_pipeline()` with Piper/Whisper/OpenAI fallback, `--voice auto` picks `ten`→`fallback`→`text`; stubbed when engine absent, never breaks chat.
+- **Omarchy completeness**: `manual/` covers all 11 repos + 8+4 tracks + weird set, `rad/omarchy_os.py` manifest = `rad-omarchy` fork stub (overlay `arch+hyprland+waybar` with rad as loop).
+
 Rad v3 is **opinionated** (omarchy style). These defaults ship out-of-the-box, lab-gated, VERIFIED-only.
 
 ## Defaults (v3.0)

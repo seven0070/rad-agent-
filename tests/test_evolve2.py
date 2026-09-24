@@ -15,8 +15,11 @@ def _fake_home(tmp_path, monkeypatch):
 
 def test_task_bank_complete(home):
     cats = {t["category"] for t in _tasks()}
-    assert cats == {"math", "logic", "code", "tool", "json", "summarize", "style", "retrieval", "router"}
-    assert len(_tasks()) >= 15
+    # v3.1 Battery 3.0 polish expands 9→11 cats (swe + safety) while keeping original 9 VERIFIED
+    assert {"math", "logic", "code", "tool", "json", "summarize", "style", "retrieval", "router"} <= cats
+    assert {"swe", "safety"} <= cats
+    assert len(cats) == 11
+    assert len(_tasks()) >= 19
 
 
 def test_graders(home):

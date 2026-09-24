@@ -450,6 +450,12 @@ export const ROUTES = [
   "/v1/memory/recall",
 ] as const;
 
+  // v3.1 Observability: SSE stream (loopback-only, via this client — no direct fetch outside api.ts)
+  eventsStream(signal?: AbortSignal) {
+    // Returns an EventSource-like promise for SSE — caller handles text/event-stream via fetch Accept header
+    return this.req<{ events: RadEvent[]; sse: boolean }>("GET", "/v1/events/stream", {} as any).catch(() => ({ events: [], sse: false }));
+  }
+
 export const SETTINGS_SAFE_KEYS = [
   "workspace",
   "free_lock",
