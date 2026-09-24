@@ -264,6 +264,43 @@ class WorldModel:
         out.sort(key=lambda x: -x.get("count", x.get("at", 0)))
         return out[:15]
 
+    # ------------------------------------------------------------ hybrid retriever contract (P0)
+    def _fts5_search(self, term: str, k: int = 15, include_history: bool = False) -> List[Dict[str, Any]]:
+        """FTS5 candidate pool (lexical). P0 stub: token overlap filtered as FTS5 semantics.
+        Future: sqlite FTS5 on entities/relations (BM25). No scorer change."""
+        t = term.lower().strip()
+        if not t:
+            return []
+        toks = set(re.findall(r"[a-z0-9_]{3,}", t))
+        if not toks:
+            toks = {t}
+        d = self.data()
+        out = []
+        for e in d["entities"].values():
+            if toks & set(e["name"].lower().split()):
+                out.append({"type": "entity", **e, "_fts_match": True})
+        rels = self.current_relations(d) if not include_history else d["relations"]
+        for r in rels:
+            blob = (r["from"] + " " + r["to"] + " " + r["rel"]).lower()
+            if toks & set(re.findall(r"[a-z0-9_]{3,}", blob)):
+                out.append({"type": "relation", **r, "_fts_match": True})
+        return out[:k]
+
+    def _vector_search(self, term: str, k: int = 15, include_history: bool = False) -> List[Dict[str, Any]]:
+        """Vector candidate pool (semantic). P0 stub: returns [] until embedding index lands."""
+        return []
+
+    def search(self, term: str, k: int = 15, include_history: bool = False) -> List[Dict[str, Any]]:
+        """Hybrid retriever contract: FTS5 + vector + lexical, observability-only in P0.
+        Ranking still uses lexical scorer from query() (no scorer change per P0 spec).
+        FTS5 + vector stubs populate candidate pools for future BM25/cosine fusion.
+        Parity: search() must match query() when vector stub empty.
+        """
+        _ = self._fts5_search(term, k=k*2, include_history=include_history)
+        _ = self._vector_search(term, k=k*2, include_history=include_history)
+        # P0: final ranking unchanged
+        return self.query(term, include_history=include_history)[:k]
+
     def context_block(self, text: str, max_items: int = 6) -> str:
         """Facts relevant to the current conversation, for system-prompt injection."""
         from rad.memory import tokenize

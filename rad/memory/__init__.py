@@ -317,6 +317,50 @@ class Memory:
             self._save(e)
         return out
 
+    # ------------------------------------------------------------ hybrid retriever contract (P0)
+    def _fts5_search(self, query: str, k: int = 5, scope: Optional[str] = None) -> List[Entry]:
+        """FTS5 candidate pool (lexical). P0 stub: token overlap filtered as FTS5 semantics.
+        Future: sqlite FTS5 virtual table on memory/*.md (tokenize=porter, BM25). No scorer change."""
+        q = set(tokenize(query))
+        if not q:
+            return []
+        cands: List[Tuple[float, Entry]] = []
+        for e in self.scan():
+            if scope is not None:
+                scopes = [t for t in (e.tags or []) if t.startswith("scope:")]
+                if scopes and f"scope:{scope}" not in scopes:
+                    continue
+            toks = set(tokenize(e.text))
+            # FTS5-like: require at least one query token in entry (AND semantics relaxed to OR for P0)
+            overlap = len(q & toks) / len(q) if q else 0
+            if overlap > 0:
+                cands.append((overlap, e))
+        cands.sort(key=lambda x: -x[0])
+        return [e for _, e in cands[:k]]
+
+    def _vector_search(self, query: str, k: int = 5, scope: Optional[str] = None) -> List[Entry]:
+        """Vector candidate pool (semantic). P0 stub: returns [] until embedding index lands.
+        Contract: cosine over embedded Entry.text — stub preserves call shape for wiring validation."""
+        # stub: embedding not yet computed; keep parity by returning empty but contract-valid
+        return []
+
+    def search(self, query: str, k: int = 5, scope: Optional[str] = None) -> List[Entry]:
+        """Hybrid retriever contract: FTS5 + vector + lexical, observability-only in P0.
+        Ranking still uses strength/decay scorer from recall() (no scorer change per P0 spec).
+        FTS5 + vector stubs populate candidate pools for future BM25/cosine fusion.
+        Parity: search() must match recall() ordering when stub vector is empty.
+        """
+        # observability: collect stub pools (P0 does not fuse differently)
+        _fts = self._fts5_search(query, k=k*2, scope=scope)
+        _vec = self._vector_search(query, k=k*2, scope=scope)
+        # P0: union candidate ids for logging/parity checks (future: RRF/BM25+cosine)
+        _candidate_ids = {e.id for e in _fts} | {e.id for e in _vec}
+        # final ranking = strength/decay scorer (same as recall) — no scorer change
+        out = self.recall(query, k=k, scope=scope)
+        # annotate parity: when vector stub empty, search must equal recall
+        # (checked by test pinning)
+        return out
+
     # ------------------------------------------------------------ correction
     def get(self, mid: str) -> Optional[Entry]:
         for e in self.scan():
